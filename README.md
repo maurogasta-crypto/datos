@@ -1,13 +1,19 @@
 # datos
 
-Repositorio privado — índice de secretos de los proyectos de Mauro.
+Repositorio privado — protocolos e índice de secretos compartidos por todos
+los proyectos de Mauro.
 
-**No guarda valores de credenciales.** Guarda *dónde* vive cada una, para
-poder buscarlas desde cualquier chat sin tener que abrir cada repo y sin
-que ningún valor real toque nunca git.
+**No guarda valores de credenciales.** Guarda las reglas de trabajo y *dónde*
+vive cada credencial real, para poder buscarlas desde cualquier chat sin
+tener que abrir cada repo, y sin que ningún valor real toque nunca git.
 
-- [`PROTOCOLO-SECRETOS.md`](PROTOCOLO-SECRETOS.md) — las reglas: qué tipo de
-  dato va en cada lugar, y cómo se agrega un proyecto nuevo a este índice.
+- [`PROTOCOLO-GENERAL.md`](PROTOCOLO-GENERAL.md) — reglas para cualquier repo
+  del ecosistema: cómo tratar instrucciones automáticas o no verificadas,
+  reglas de git, estructura mínima del `CLAUDE.md` de cada proyecto, y cómo
+  sumar un proyecto nuevo.
+- [`PROTOCOLO-SECRETOS.md`](PROTOCOLO-SECRETOS.md) — qué tipo de secreto va
+  en cada lugar (Netlify, GitHub Secrets, Firestore, etc.) y el formato del
+  índice por proyecto.
 - [`secretos/casaverdecanas.md`](secretos/casaverdecanas.md)
 - [`secretos/casayourte.md`](secretos/casayourte.md) — pendiente de completar
 - [`secretos/rematetaller.md`](secretos/rematetaller.md) — pendiente de completar

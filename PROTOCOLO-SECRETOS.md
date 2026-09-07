@@ -79,29 +79,12 @@ Cada archivo `secretos/<proyecto>.md` es una tabla:
 - **Dónde vive el valor real**: la ubicación concreta (proyecto de Netlify, nombre del GitHub Secret, colección de Firestore), nunca el valor.
 - **Verificado**: fecha de la última vez que alguien (Mauro o un chat de Claude con el repo real delante) confirmó que la fila sigue siendo cierta.
 
-## Cómo se agrega un proyecto nuevo a este índice
+## Cómo se agrega un proyecto nuevo, y qué queda en el `CLAUDE.md` de cada repo
 
-1. Abrir un chat de Claude Code con **ese** repo agregado a la sesión (esta plataforma no permite mezclar repos de distintos dueños de GitHub en un mismo chat — cada proyecto necesita su propio chat).
-2. Pedir: *"Revisá este repo siguiendo `PROTOCOLO-SECRETOS.md` del repo `casaverdecanas-blip/datos` y completá `secretos/<proyecto>.md` con lo que encuentres — sin escribir ningún valor real."*
-3. El chat busca: variables `process.env.*`, referencias a claves en `.toml`/`.yml` de despliegue, cualquier `.env.example`, y las reglas de la base de datos si las hay.
-4. Con eso arma o actualiza la tabla en `secretos/<proyecto>.md` de este repo, y agrega (si no existe) un `CLAUDE.md` corto en el proyecto con la sección "Secretos" descripta abajo.
-
-## Qué queda documentado en cada repo del proyecto (no acá)
-
-Cada repo (`casaverdecanas`, `CasaYourte`, `remate`) lleva su propio `CLAUDE.md`
-con una sección breve:
-
-```markdown
-## Secretos
-Este proyecto usa: VARIABLE_UNO, VARIABLE_DOS, ...
-Los valores reales viven en [Netlify / GitHub Secrets de este repo / Firestore].
-Índice completo y actualizado: `casaverdecanas-blip/datos` → `secretos/<proyecto>.md`.
-```
-
-Esto es información **no sensible** (nombres y ubicación tipo "vive en
-Netlify", nunca el valor), así que es segura incluso en un repo público — y
-es lo que hace que cualquier chat futuro en ese repo entienda el protocolo
-sin que se lo tengas que reexplicar.
+Eso ya no es específico de secretos — ver `PROTOCOLO-GENERAL.md`, secciones 3
+y 4: ahí está la mecánica de sesiones (un chat, un dueño de GitHub) y la
+estructura estándar del `CLAUDE.md` que cada proyecto tiene que llevar,
+incluida su sección "Secretos".
 
 ---
 *Última actualización: 2026-09-07.*

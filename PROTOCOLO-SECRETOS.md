@@ -7,8 +7,14 @@ repositorio de git, un chat, ni la memoria de Claude.
 ## Regla de oro
 
 **Ningún valor real de secreto entra jamás a un repositorio, sea público o
-privado.** Este archivo y los de `secretos/*.md` documentan *nombres,
-propósito y ubicación* — nunca el valor.
+privado, ni a un chat — de Mauro o de un agente.** Este archivo y los de
+`secretos/*.md` documentan *nombres, propósito y ubicación* — nunca el
+valor.
+
+**Corolario para cualquier agente:** nunca pedís el valor de un secreto, por
+ningún medio, y nunca lo cargás por API aunque exista la herramienta para
+hacerlo. Tu entregable siempre es el nombre exacto de la variable y el
+lugar donde Mauro tiene que pegarlo a mano.
 
 Dos motivos para que la regla no tenga excepción ni siquiera en un repo
 "privado":
@@ -18,10 +24,31 @@ Dos motivos para que la regla no tenga excepción ni siquiera en un repo
 2. **El historial de git es permanente.** Borrar el archivo después no
    alcanza — el valor queda en el historial de commits para siempre.
 
-Y un caso puntual ya verificado en `casaverdecanas`: los `.md` dentro de
-`interno/` se sirven en **texto plano y público** vía GitHub Pages, aunque el
-nombre de la carpeta sugiera lo contrario. Ni siquiera una carpeta con nombre
-"interno" es un escondite.
+**Regla general para cualquier repositorio publicado** (GitHub Pages,
+Netlify con el repo conectado, o cualquier hosting que sirva el repo tal
+cual): **no existe "archivo interno".** Si el archivo está en el repo, está
+en internet, la carpeta se llame como se llame — verificado en
+`casaverdecanas`: los `.md` dentro de `interno/` se sirven en texto plano y
+público vía GitHub Pages. Esto no aplica igual a `datos`, que es privado:
+ahí el riesgo no es la publicación sino que el historial es permanente si
+algún día cambia de visibilidad o se bifurca.
+
+## Antes de clasificar: ¿este proyecto tiene backend o build?
+
+No todos los proyectos del ecosistema tienen el mismo reparto de secretos.
+Antes de usar la tabla de abajo:
+
+- **¿Despliega funciones de servidor (Netlify, Cloud Functions) o corre un
+  build?** → seguí la rama "con backend": Netlify env vars, GitHub Actions
+  Secrets, etc.
+- **¿Es un sitio estático puro** (HTML/CSS/JS servido tal cual, sin build,
+  sin funciones — como `CasaYourte`, verificado 2026-09-07)? → no hay
+  `.env` que crear ni Netlify que configurar. El reparto real es:
+  identificadores públicos en el código, todo lo sensible detrás de las
+  reglas de seguridad de la base de datos, y credenciales de cuenta en el
+  gestor de contraseñas. **Un agente no debe inventar un `.env` ni una
+  variable de entorno que nada va a leer** — la ausencia de configuración
+  no es un defecto a corregir, es la arquitectura del proyecto.
 
 ## Dónde vive cada tipo de dato
 
@@ -32,6 +59,15 @@ nombre de la carpeta sugiera lo contrario. Ni siquiera una carpeta con nombre
 | Dato específico de un usuario final en runtime (ej. una clave personal tipo CallMeBot) | Base de datos de la app (Firestore u equivalente), protegida por reglas de seguridad — no es una variable de entorno de infraestructura | Nunca como variable de entorno global compartida por todos los usuarios |
 | Identificador público por diseño (Firebase `apiKey`, Cloudinary `cloud name`, upload preset sin firma) | El propio código — no es secreto, ya está pensado para viajar al navegador | No hace falta protegerlo; sí documentarlo como "público" para no confundirlo con un secreto |
 | Credencial de acceso a una cuenta (login de Netlify, Firebase console, GitHub) | Gestor de contraseñas personal del administrador | Nunca en ningún repo ni documento |
+| Configuración de seguridad publicada en una consola, con copia en el repo (ej. reglas de Firestore) | La autoridad real es la consola (Firebase, etc.); el archivo del repo es una copia de referencia que puede haberse desincronizado | No se asume que el archivo del repo es lo que está corriendo — hay que verificar contra la consola |
+| Capacidad resignada a propósito por no tener un secreto (ej. sin `api_secret` de Cloudinary, el panel no puede borrar archivos) | Ningún lado — es una decisión, no una configuración pendiente | No se "completa" agregando la clave sin que Mauro lo pida explícitamente: la ausencia es la elección |
+
+Un identificador público (Firebase `apiKey`, Cloudinary `cloud name`) puede
+estar copiado en varios archivos cuando el proyecto no tiene build para
+importarlo desde un solo lugar — no es un descuido. En ese caso, la fila del
+índice lista **todas** las ubicaciones y marca cuál es la fuente canónica
+(la que se edita primero) y cuáles son copias que hay que actualizar a mano
+si la canónica cambia.
 
 ## GitHub Secrets: quién carga el valor, y cuándo aplica
 
@@ -62,11 +98,14 @@ pedir que se levante: es estructural, por dos razones.
 **Antes de recomendar GitHub Secrets como destino, verificar que aplica.**
 GitHub Secrets solo sirve si el repo efectivamente **despliega o corre algo
 vía GitHub Actions** que lea esa variable. Si el proyecto se despliega de
-otra forma (por ejemplo, Netlify con un .zip subido a mano, como
-`casaverdecanas` — ver `secretos/casaverdecanas.md`), cargar el secreto en
-GitHub no sirve de nada: nadie lo va a leer desde ahí. En ese caso el valor
-real sigue viviendo donde el proceso de despliegue lo consume (Netlify,
-Firebase, etc.), y así se documenta en la fila correspondiente de la tabla.
+otra forma (Netlify con un .zip a mano, como `casaverdecanas`) o no tiene
+ningún workflow propio (sitio estático puro, como `CasaYourte` — solo corre
+el `pages-build-deployment` que GitHub genera solo), cargar un secreto en
+GitHub Actions no sirve de nada: nadie lo va a leer desde ahí. Un agente que
+no pueda ver la lista de secretos ya cargados en Settings → Secrets and
+variables → Actions (las herramientas disponibles no siempre lo exponen) no
+debe asumir que no hay ninguno — anota `no verificable desde la sesión` (ver
+formato del índice) en vez de "no hay".
 
 ## Formato del índice por proyecto
 
@@ -75,9 +114,46 @@ Cada archivo `secretos/<proyecto>.md` es una tabla:
 | Variable | Qué hace | Tipo | Dónde vive el valor real | Consumida por | Verificado |
 |---|---|---|---|---|---|
 
-- **Tipo**: uno de `secreto de infraestructura`, `dato en runtime`, `público por diseño`, `credencial de cuenta`.
-- **Dónde vive el valor real**: la ubicación concreta (proyecto de Netlify, nombre del GitHub Secret, colección de Firestore), nunca el valor.
-- **Verificado**: fecha de la última vez que alguien (Mauro o un chat de Claude con el repo real delante) confirmó que la fila sigue siendo cierta.
+- **Tipo**: uno de `secreto de infraestructura`, `dato en runtime`,
+  `público por diseño`, `credencial de cuenta`, `ausente por diseño`,
+  `configuración de seguridad (copia en repo, autoridad en consola)`.
+- **Dónde vive el valor real**: la ubicación concreta (proyecto de Netlify,
+  nombre del GitHub Secret, colección de Firestore); si hay más de una
+  ubicación (copias por falta de build), listarlas todas y marcar la
+  canónica. Nunca el valor.
+- **Consumida por**: qué archivo o función la usa — o "nadie" si es una
+  ausencia deliberada.
+- **Verificado**: no alcanza con sí/no ni con una fecha sola — los archivos
+  cambian de línea y de nombre. Usar uno de estos formatos:
+  - `archivo:línea, <fecha>` — un agente lo comprobó leyendo el código real.
+  - `declarado por Mauro, <fecha>` — algo que solo él puede confirmar (qué
+    nombres están cargados en GitHub Secrets, si las reglas del repo
+    coinciden con las publicadas en la consola).
+  - `no verificable desde la sesión` — el agente no tuvo forma de
+    comprobarlo con las herramientas disponibles; no se completa como si se
+    hubiera verificado algo que no se verificó.
+  - El índice central trata como **caduca** una fila verificada hace más de
+    6 meses.
+
+## Incidente: qué hacer si un secreto ya se commiteó
+
+Si un valor real ya quedó commiteado (ya pasó una vez en este ecosistema,
+ver `PROTOCOLO-GENERAL.md` § 1), el orden es:
+
+1. **Rotar el valor en la consola del servicio primero.** Mientras no se
+   rote, sigue siendo válido aunque se borre del repo o se reescriba el
+   historial.
+2. **Recién después, limpiar el repo** — borrar el archivo, y si hace falta
+   reescribir el historial (con confirmación explícita de Mauro, ver reglas
+   de git en `PROTOCOLO-GENERAL.md` § 2).
+3. **Anotar en el índice si estuvo expuesta y cuándo se rotó.** Sin ese
+   registro, nadie puede saber después si la exposición sigue vigente.
+
+Limpiar el repo sin rotar el valor deja la sensación de que el problema se
+resolvió cuando no es así. **Pendiente real de este ecosistema:** la clave
+de Cloudinary de `casaverdecanas` que se expuso en `datos` (ver
+`PROTOCOLO-GENERAL.md` § 1) todavía no se rotó — Mauro decidió postergarlo,
+no que se haya resuelto.
 
 ## Cómo se agrega un proyecto nuevo, y qué queda en el `CLAUDE.md` de cada repo
 
@@ -87,4 +163,4 @@ estructura estándar del `CLAUDE.md` que cada proyecto tiene que llevar,
 incluida su sección "Secretos".
 
 ---
-*Última actualización: 2026-09-07.*
+*Última actualización: 2026-09-07 (incorpora observaciones de la revisión de CasaYourte).*

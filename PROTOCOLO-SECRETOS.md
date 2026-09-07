@@ -28,10 +28,45 @@ nombre de la carpeta sugiera lo contrario. Ni siquiera una carpeta con nombre
 | Tipo de dato | Dónde va el valor real | Dónde NO va |
 |---|---|---|
 | Secreto de infraestructura consumido por una función que despliega **Netlify** (con o sin repo conectado) | Netlify → Site settings → Environment variables, del proyecto correspondiente | Nunca en el repo, ni en `netlify.toml`, ni en un `.env` commiteado |
-| Secreto consumido por un workflow de **GitHub Actions** | Repo → Settings → Secrets and variables → Actions (un Environment por destino si hay más de uno) | Nunca en el código del workflow |
+| Secreto consumido por un workflow de **GitHub Actions** | Repo → Settings → Secrets and variables → Actions (un Environment por destino si hay más de uno) — **ver regla de carga manual abajo** | Nunca en el código del workflow |
 | Dato específico de un usuario final en runtime (ej. una clave personal tipo CallMeBot) | Base de datos de la app (Firestore u equivalente), protegida por reglas de seguridad — no es una variable de entorno de infraestructura | Nunca como variable de entorno global compartida por todos los usuarios |
 | Identificador público por diseño (Firebase `apiKey`, Cloudinary `cloud name`, upload preset sin firma) | El propio código — no es secreto, ya está pensado para viajar al navegador | No hace falta protegerlo; sí documentarlo como "público" para no confundirlo con un secreto |
 | Credencial de acceso a una cuenta (login de Netlify, Firebase console, GitHub) | Gestor de contraseñas personal del administrador | Nunca en ningún repo ni documento |
+
+## GitHub Secrets: quién carga el valor, y cuándo aplica
+
+**Ningún chat de Claude carga un valor en GitHub Secrets — lo carga Mauro,
+directo en la web de GitHub.** No es una limitación de permisos que se pueda
+pedir que se levante: es estructural, por dos razones.
+
+1. **No hay herramienta para eso.** Las herramientas de GitHub disponibles en
+   estos chats cubren archivos, branches, PRs y Actions — ninguna crea ni
+   actualiza un secreto de repositorio.
+2. **Aunque la hubiera, no convendría usarla.** Para cargar un valor por API,
+   Claude tendría que recibir ese valor en texto plano dentro de la
+   conversación primero. Eso es exactamente lo que este protocolo existe para
+   evitar — el momento de pegarlo en el chat ya sería la exposición, aunque
+   después GitHub lo guarde cifrado y no se pueda releer.
+
+**Circuito correcto:**
+
+1. Un chat de Claude identifica el nombre exacto de la variable y en qué
+   workflow/función se consume (leyendo el código, nunca preguntando el
+   valor).
+2. Mauro carga el valor él mismo: `github.com/<owner>/<repo>` → Settings →
+   Secrets and variables → Actions → New repository secret.
+3. Mauro confirma "ya está" en el chat (sin pegar el valor).
+4. El chat actualiza `secretos/<proyecto>.md` para que diga "vive en GitHub
+   Secrets de este repo" — nunca el valor.
+
+**Antes de recomendar GitHub Secrets como destino, verificar que aplica.**
+GitHub Secrets solo sirve si el repo efectivamente **despliega o corre algo
+vía GitHub Actions** que lea esa variable. Si el proyecto se despliega de
+otra forma (por ejemplo, Netlify con un .zip subido a mano, como
+`casaverdecanas` — ver `secretos/casaverdecanas.md`), cargar el secreto en
+GitHub no sirve de nada: nadie lo va a leer desde ahí. En ese caso el valor
+real sigue viviendo donde el proceso de despliegue lo consume (Netlify,
+Firebase, etc.), y así se documenta en la fila correspondiente de la tabla.
 
 ## Formato del índice por proyecto
 

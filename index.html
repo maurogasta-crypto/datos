@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel</title>
+<link rel="stylesheet" href="estilos.css?v=1">
+</head>
+<body>
+
+<div id="barra">
+  <div class="marca">Panel<small id="sello"></small></div>
+  <button class="btn" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
+</div>
+
+<!-- ── LA PUERTA ─────────────────────────────────────────── -->
+<div id="puerta" class="contenedor hide">
+  <h1>Entrar</h1>
+  <p class="gris">Este panel es de una sola persona. Los datos no están acá adentro:
+    están en Firestore, y las reglas sólo dejan pasar a un UID. Que alguien vea este
+    archivo no le sirve de nada.</p>
+  <div class="tarj">
+    <label for="mail">Mail</label>
+    <input type="email" id="mail" inputmode="email" autocomplete="username">
+    <label for="clave">Contraseña</label>
+    <input type="password" id="clave" autocomplete="current-password">
+    <div class="fila-btn">
+      <button class="btn" id="btnOlvide">Olvidé la contraseña</button>
+      <button class="btn p" id="btnEntrar">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── EL PANEL ──────────────────────────────────────────── -->
+<div id="app" class="contenedor hide">
+
+  <!-- 1 · el tablero -->
+  <section id="v-tablero">
+    <h1>Qué está pendiente</h1>
+    <p class="gris" id="resumen">Leyendo…</p>
+
+    <div class="cuadro">
+      <div class="tuyo"><b id="c-tuyo">—</b><span>te esperan a vos</span></div>
+      <div class="mio"><b id="c-mio">—</b><span>los hago yo</span></div>
+      <div class="hecho"><b id="c-hecho">—</b><span>hechos</span></div>
+      <div><b id="c-total">—</b><span>en total</span></div>
+    </div>
+
+    <div class="seg" id="filtro" role="group" aria-label="Qué mostrar">
+      <button data-v="abiertos" aria-pressed="true">Lo que falta</button>
+      <button data-v="tuyo" aria-pressed="false">Te esperan</button>
+      <button data-v="todo" aria-pressed="false">Todo</button>
+    </div>
+
+    <div id="lista"></div>
+  </section>
+
+  <!-- 2 · pegar el parte -->
+  <section id="v-pegar" class="hide">
+    <h1>Pegar el parte</h1>
+    <p class="gris">El JSON que te paso por el chat. <b>Nada de esto es sensible</b>:
+      es el estado de los proyectos. Lo sensible se escribe en «Fichas», y por ahí
+      no pasa nunca.</p>
+    <textarea id="entrada" placeholder='{ "panel": "pendientes", "pendientes": [ … ] }'></textarea>
+    <div class="fila-btn">
+      <button class="btn" id="btnRevisar">Revisar</button>
+      <button class="btn p" id="btnAplicar" disabled>Nada para aplicar</button>
+    </div>
+    <p class="gris" id="estadoPegar"></p>
+    <div id="revision"></div>
+  </section>
+
+  <!-- 3 · fichas (viene en la tanda 2) -->
+  <section id="v-fichas" class="hide">
+    <h1>Fichas</h1>
+    <div class="tarj">
+      <p class="gris" style="margin:0;">Acá van los datos sensibles: titularidad de cuentas,
+        contactos, números. <b>Los escribís vos, acá adentro.</b> No pasan por el chat, no van
+        a ningún repositorio y yo no los veo nunca.</p>
+      <p class="gris" style="margin:.7rem 0 0;">Todavía no está construido: es la tanda 2.
+        Primero se prueba la puerta, y recién cuando se sabe que sólo entrás vos se guarda
+        acá lo que importa.</p>
+    </div>
+  </section>
+
+  <!-- 4 · la puerta, comprobada -->
+  <section id="v-puerta" class="hide">
+    <h1>La puerta</h1>
+    <p class="gris">Lo único que protege estos datos son las reglas de Firestore.
+      Acá está tu UID y el texto exacto para publicarlas.</p>
+    <div class="tarj">
+      <label>Tu UID</label>
+      <input id="miUid" readonly class="mono" style="font-size:.8rem;">
+      <div class="fila-btn"><button class="btn" id="btnCopiarUid">Copiar el UID</button></div>
+    </div>
+    <div class="tarj">
+      <label>Las reglas, con tu UID adentro</label>
+      <textarea id="reglas" readonly style="min-height:14rem;"></textarea>
+      <div class="fila-btn"><button class="btn p" id="btnCopiarReglas">Copiar las reglas</button></div>
+      <p class="gris" style="margin-bottom:0;">Firebase → proyecto <b>datos-830f8</b> →
+        Firestore Database → Reglas → seleccionar todo, pegar y <b>Publicar</b>.
+        Completo, nunca un pedazo: las reglas se suman.</p>
+    </div>
+    <div class="tarj">
+      <label>Probar que están vivas</label>
+      <p class="gris" style="margin-top:.2rem;">Intenta leer una colección que no existe en
+        las reglas. Tiene que <b>fallar</b>: esa negativa es lo único que demuestra que lo
+        publicado es este texto y no otro.</p>
+      <div class="fila-btn"><button class="btn" id="btnProbar">Probar</button></div>
+      <div id="resProbar"></div>
+    </div>
+  </section>
+</div>
+
+<div id="nav" role="group" aria-label="Secciones">
+  <button data-v="tablero" aria-pressed="true">Pendientes</button>
+  <button data-v="pegar" aria-pressed="false">Pegar</button>
+  <button data-v="fichas" aria-pressed="false">Fichas</button>
+  <button data-v="puerta" aria-pressed="false">La puerta</button>
+</div>
+
+<script type="module">
+import { P, $, db, auth } from "./nucleo.js";
+import {
+  doc, getDoc, setDoc, collection, getDocs, query, orderBy,
+  serverTimestamp, writeBatch
+} from "./firebase-init.js";
+
+P.PANEL = "panel-1";
+
+/* ═══════════════════════════════════════════════════════════
+   EL TABLERO
+
+   Qué hay pendiente en cada proyecto, quién lo tiene que hacer, y cómo fue
+   cambiando. Nace de un problema concreto: el estado de los cuatro repos
+   vivía en la cabeza de una conversación, y una conversación se termina.
+
+   DOS ZONAS QUE NUNCA SE MEZCLAN, y es lo que hace que esto sea seguro:
+
+     · lo que YO puedo generar — pendientes, tandas, estados. No es sensible,
+       viaja por el chat, se pega acá y se aplica de un toque;
+     · lo que sólo escribís VOS — titularidad, contactos, números. Se escribe
+       en esta pantalla y no sale nunca: ni al chat, ni a un repositorio.
+
+   Yo no tengo —ni debo tener— credenciales de esta base. No puedo escribir
+   acá directamente, y eso no es una limitación a resolver: es el motivo por
+   el que lo de la segunda zona está a salvo.
+   ═══════════════════════════════════════════════════════════ */
+
+const QUIEN = { mauro: "te espera", claude: "lo hago yo", ambos: "los dos" };
+
+let PROYECTOS = [];     // [{ id, nombre, orden }]
+let PENDIENTES = [];    // [{ id, proyecto, clave, titulo, porQue, estado, quien, historia[] }]
+let CAMBIOS = [];       // lo que trajo el JSON y todavía no se escribió
+let filtro = "abiertos";
+let yo = null;
+
+/* ---------- arranque ---------- */
+P.pintarSello();
+(async () => {
+  yo = await P.quienEntra();
+  if (!yo) { $("puerta").classList.remove("hide"); return; }
+  $("app").classList.remove("hide");
+  $("miUid").value = yo.uid;
+  $("reglas").value = textoDeReglas(yo.uid);
+  await leer();
+})();
+
+/* ---------- la puerta ---------- */
+$("btnEntrar").addEventListener("click", async () => {
+  const b = $("btnEntrar"); b.disabled = true;
+  try {
+    await P.entrar($("mail").value, $("clave").value);
+    location.reload();
+  } catch (e) { P.aviso(P.explicar(e), "error"); b.disabled = false; }
+});
+$("clave").addEventListener("keydown", (e) => { if (e.key === "Enter") $("btnEntrar").click(); });
+$("btnOlvide").addEventListener("click", async () => {
+  const m = $("mail").value.trim();
+  if (!m) return P.aviso("Escribí tu mail primero.", "error");
+  try { await P.recuperar(m); P.aviso("Te mandé el mail para cambiarla."); }
+  catch (e) { P.aviso(P.explicar(e), "error"); }
+});
+$("btnSalir").addEventListener("click", async () => {
+  if (!(await P.preguntar("¿Salir del panel?"))) return;
+  await P.salir(); location.reload();
+});
+
+/* ---------- navegación ---------- */
+const VISTAS = ["tablero", "pegar", "fichas", "puerta"];
+$("nav").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  VISTAS.forEach((v) => $("v-" + v).classList.toggle("hide", v !== b.dataset.v));
+  $("nav").querySelectorAll("button").forEach((x) =>
+    x.setAttribute("aria-pressed", String(x.dataset.v === b.dataset.v)));
+  window.scrollTo(0, 0);
+});
+
+$("filtro").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  filtro = b.dataset.v;
+  $("filtro").querySelectorAll("button").forEach((x) =>
+    x.setAttribute("aria-pressed", String(x.dataset.v === filtro)));
+  pintar();
+});
+
+/* ---------- leer ---------- */
+async function leer() {
+  try {
+    const [pr, pe] = await Promise.all([
+      getDocs(collection(db, "proyectos")),
+      getDocs(collection(db, "pendientes"))
+    ]);
+    PROYECTOS = [];
+    pr.forEach((d) => PROYECTOS.push({ id: d.id, ...d.data() }));
+    // Sin orderBy en la consulta (evita pedir un índice por una lista de
+    // veinte cosas): se ordena acá.
+    PROYECTOS.sort((a, b) => (a.orden || 99) - (b.orden || 99)
+      || String(a.nombre || a.id).localeCompare(String(b.nombre || b.id), "es"));
+    PENDIENTES = [];
+    pe.forEach((d) => PENDIENTES.push({ id: d.id, ...d.data() }));
+    pintar();
+  } catch (e) {
+    $("resumen").textContent = P.explicar(e);
+    $("lista").innerHTML = "";
+  }
+}
+
+/* ---------- pintar ---------- */
+const nombreProy = (id) => (PROYECTOS.find((p) => p.id === id) || {}).nombre || id;
+const abierto = (p) => p.estado !== "hecho" && p.estado !== "retirado";
+
+function pintar() {
+  const n = (f) => PENDIENTES.filter(f).length;
+  $("c-tuyo").textContent = n((p) => abierto(p) && p.quien !== "claude");
+  $("c-mio").textContent = n((p) => abierto(p) && p.quien === "claude");
+  $("c-hecho").textContent = n((p) => p.estado === "hecho");
+  $("c-total").textContent = PENDIENTES.length;
+
+  const visibles = PENDIENTES.filter((p) =>
+    filtro === "todo" ? true
+    : filtro === "tuyo" ? (abierto(p) && p.quien !== "claude")
+    : abierto(p));
+
+  $("resumen").textContent = PENDIENTES.length
+    ? visibles.length + " de " + PENDIENTES.length + " · última lectura " + new Date().toLocaleTimeString("es-UY")
+    : "Todavía no hay nada. Pegá el primer parte en la solapa «Pegar».";
+
+  // Agrupados por proyecto, en el orden del catálogo; lo que no tenga
+  // proyecto conocido cae al final en vez de desaparecer.
+  const orden = PROYECTOS.map((p) => p.id);
+  const grupos = {};
+  visibles.forEach((p) => (grupos[p.proyecto || "(sin proyecto)"] ||= []).push(p));
+  const ids = Object.keys(grupos).sort((a, b) => {
+    const A = orden.indexOf(a), B = orden.indexOf(b);
+    return (A < 0 ? 99 : A) - (B < 0 ? 99 : B) || a.localeCompare(b, "es");
+  });
+
+  let h = "";
+  ids.forEach((id) => {
+    const g = grupos[id].slice().sort((a, b) =>
+      String(a.clave || "").localeCompare(String(b.clave || ""), "es", { numeric: true }));
+    h += '<div class="proy">' + P.esc(nombreProy(id)) + " · " + g.length + "</div>";
+    g.forEach((p) => {
+      const clase = p.estado === "hecho" ? "hecho"
+                  : p.estado === "retirado" ? "retirado"
+                  : (p.quien === "claude" ? "mio" : "tuyo");
+      h += '<div class="pend ' + clase + '">'
+        + '<div class="cab">'
+        + (p.clave ? '<span class="clave">' + P.esc(p.clave) + "</span>" : "")
+        + '<span class="tit">' + P.esc(p.titulo || "(sin título)") + "</span>"
+        + '<span class="quien">' + P.esc(
+            p.estado === "hecho" ? "hecho"
+            : p.estado === "retirado" ? "retirado"
+            : (QUIEN[p.quien] || "te espera")) + "</span>"
+        + "</div>"
+        + (p.porQue ? '<div class="porque">' + P.esc(p.porQue) + "</div>" : "");
+      const hist = Array.isArray(p.historia) ? p.historia.slice(-4) : [];
+      if (hist.length) {
+        h += '<div class="hist">';
+        hist.forEach((x) => {
+          h += "<div><i>" + P.esc(x.fecha || "") + "</i> · " + P.esc(x.texto || "") + "</div>";
+        });
+        h += "</div>";
+      }
+      h += "</div>";
+    });
+  });
+  $("lista").innerHTML = h || '<p class="gris">Nada para mostrar con este filtro.</p>';
+}
+
+/* ---------- pegar el parte ---------- */
+/* Mismo flujo que la pantalla de traducción de CasaYourte: se pega, se
+   REVISA con todo a la vista, y recién entonces se escribe. Nada se
+   escribe sin que lo hayas mirado. */
+const ESTADOS = ["abierto", "hecho", "retirado"];
+const QUIENES = ["mauro", "claude", "ambos"];
+// Los campos que se comparan para saber si una pieza cambió. La historia va
+// aparte: se suma, no se compara.
+const CAMPOS = ["proyecto", "clave", "titulo", "porQue", "estado", "quien"];
+
+$("btnRevisar").addEventListener("click", () => {
+  const txt = $("entrada").value.trim();
+  CAMBIOS = [];
+  $("revision").innerHTML = "";
+  $("btnAplicar").disabled = true;
+  $("btnAplicar").textContent = "Nada para aplicar";
+  if (!txt) return P.aviso("Pegá primero el JSON.", "error");
+
+  let j;
+  try { j = JSON.parse(txt); }
+  catch (e) {
+    // A veces vuelve envuelto en ```json … ```
+    const m = /\{[\s\S]*\}/.exec(txt);
+    if (!m) return P.aviso("Eso no es un JSON válido.", "error");
+    try { j = JSON.parse(m[0]); } catch (e2) { return P.aviso("Eso no es un JSON válido.", "error"); }
+  }
+
+  const problemas = [];
+  const porId = {};
+  PENDIENTES.forEach((p) => (porId[p.id] = p));
+
+  (Array.isArray(j.proyectos) ? j.proyectos : []).forEach((p) => {
+    if (!p || !p.id) return problemas.push("un proyecto sin id");
+    const datos = { nombre: p.nombre || p.id, orden: Number(p.orden) || 99 };
+    // Sólo si cambia algo. Sin esto, pegar dos veces el mismo parte listaba
+    // los cinco proyectos como si fueran cambios, y «no hay nada nuevo» —que
+    // es la respuesta correcta— no aparecía nunca.
+    const antes = PROYECTOS.find((x) => x.id === p.id);
+    if (antes && antes.nombre === datos.nombre && (antes.orden || 99) === datos.orden) return;
+    CAMBIOS.push({ tipo: "proyecto", id: p.id, datos });
+  });
+
+  (Array.isArray(j.pendientes) ? j.pendientes : []).forEach((p) => {
+    if (!p || !p.id) return problemas.push("un pendiente sin id");
+    if (p.estado && !ESTADOS.includes(p.estado))
+      return problemas.push(p.id + ": estado «" + p.estado + "» no existe");
+    if (p.quien && !QUIENES.includes(p.quien))
+      return problemas.push(p.id + ": quien «" + p.quien + "» no existe");
+    const antes = porId[p.id];
+    const datos = {
+      proyecto: p.proyecto || (antes && antes.proyecto) || "",
+      clave: p.clave !== undefined ? p.clave : (antes ? antes.clave : ""),
+      titulo: p.titulo !== undefined ? p.titulo : (antes ? antes.titulo : ""),
+      porQue: p.porQue !== undefined ? p.porQue : (antes ? antes.porQue : ""),
+      estado: p.estado || (antes && antes.estado) || "abierto",
+      quien: p.quien || (antes && antes.quien) || "mauro"
+    };
+    /* La historia SE SUMA, nunca se reemplaza. Es lo único que no se puede
+       reconstruir: si una tanda la pisara, se perdería cómo llegó cada cosa
+       hasta acá, que es justamente lo que este tablero existe para guardar. */
+    const previa = (antes && Array.isArray(antes.historia)) ? antes.historia : [];
+    const nuevas = (Array.isArray(p.historia) ? p.historia : [])
+      .filter((x) => x && x.texto)
+      .filter((x) => !previa.some((y) => y.texto === x.texto && y.fecha === x.fecha))
+      .map((x) => ({ fecha: x.fecha || P.hoy(), texto: String(x.texto) }));
+    datos.historia = previa.concat(nuevas);
+    const cambia = !antes || nuevas.length > 0
+      || CAMPOS.some((k) => String(antes[k] ?? "") !== String(datos[k] ?? ""));
+    if (!cambia) return;
+    CAMBIOS.push({ tipo: "pendiente", id: p.id, datos, antes, nuevas: nuevas.length });
+  });
+
+  pintarRevision(problemas);
+});
+
+function pintarRevision(problemas) {
+  let h = "";
+  if (problemas.length) {
+    h += '<div class="rev"><span class="que">se descartaron</span><div>'
+       + P.esc(problemas.join(" · ")) + "</div></div>";
+  }
+  CAMBIOS.forEach((c) => {
+    if (c.tipo === "proyecto") {
+      h += '<div class="rev"><span class="que">proyecto</span><div>'
+         + P.esc(c.datos.nombre) + " <span class=\"mono\" style=\"color:var(--gris2)\">"
+         + P.esc(c.id) + "</span></div></div>";
+      return;
+    }
+    const nuevo = !c.antes;
+    h += '<div class="rev"><span class="que">'
+      + (nuevo ? '<span class="nuevo">nuevo</span>' : '<span class="cambia">cambia</span>')
+      + " · " + P.esc(c.id) + "</span>"
+      + "<div><b>" + P.esc(c.datos.titulo) + "</b></div>";
+    if (!nuevo) {
+      const dif = [];
+      ["estado", "quien", "titulo", "porQue", "proyecto", "clave"].forEach((k) => {
+        if (String(c.antes[k] ?? "") !== String(c.datos[k] ?? ""))
+          dif.push(k + ": «" + (c.antes[k] ?? "") + "» → «" + (c.datos[k] ?? "") + "»");
+      });
+      if (dif.length) h += "<div style=\"color:var(--gris)\">" + P.esc(dif.join(" · ")) + "</div>";
+    }
+    if (c.nuevas) h += "<div style=\"color:var(--gris)\">+" + c.nuevas + " línea(s) de historia</div>";
+    h += "</div>";
+  });
+  $("revision").innerHTML = h;
+  $("estadoPegar").textContent = CAMBIOS.length
+    ? CAMBIOS.length + " para escribir" + (problemas.length ? " · " + problemas.length + " descartados" : "")
+    : (problemas.length ? "Nada para escribir · " + problemas.length + " descartados" : "No hay nada nuevo.");
+  $("btnAplicar").disabled = CAMBIOS.length === 0;
+  $("btnAplicar").textContent = CAMBIOS.length ? "Aplicar " + CAMBIOS.length : "Nada para aplicar";
+}
+
+$("btnAplicar").addEventListener("click", async () => {
+  if (!CAMBIOS.length) return;
+  if (!(await P.preguntar("Se van a escribir " + CAMBIOS.length + " cambios en la base.\n\n"
+      + "La historia se suma, no se pisa."))) return;
+  const b = $("btnAplicar"); b.disabled = true; b.textContent = "…";
+  try {
+    // De a lotes: writeBatch acepta hasta 500 y así son pocas escrituras.
+    for (let i = 0; i < CAMBIOS.length; i += 400) {
+      const lote = writeBatch(db);
+      CAMBIOS.slice(i, i + 400).forEach((c) => {
+        const ref = doc(db, c.tipo === "proyecto" ? "proyectos" : "pendientes", c.id);
+        lote.set(ref, { ...c.datos, actualizadoEn: serverTimestamp() }, { merge: true });
+      });
+      await lote.commit();
+    }
+    CAMBIOS = [];
+    $("entrada").value = "";
+    $("revision").innerHTML = "";
+    $("estadoPegar").textContent = "";
+    await leer();
+    P.aviso("Escrito. Ya está en el tablero.");
+  } catch (e) {
+    P.aviso(P.explicar(e), "error");
+    $("estadoPegar").textContent = P.explicar(e);
+  } finally { b.disabled = false; b.textContent = "Nada para aplicar"; }
+});
+
+/* ---------- la puerta, comprobada ---------- */
+function textoDeReglas(uid) {
+  return "rules_version = '2';\n\n"
+    + "// Panel de datos — datos-830f8\n"
+    + "// UNA sola persona. No hay roles ni permisos: o sos ese uid, o no entrás.\n"
+    + "// Deny por defecto y SIN catch-all permisivo: cada colección tiene su\n"
+    + "// bloque, y lo que no está declarado queda negado por el cierre de abajo.\n"
+    + "service cloud.firestore {\n"
+    + "  match /databases/{database}/documents {\n\n"
+    + "    function soyYo() {\n"
+    + "      return request.auth != null && request.auth.uid == '" + uid + "';\n"
+    + "    }\n\n"
+    + "    match /proyectos/{id}  { allow read, write: if soyYo(); }\n"
+    + "    match /pendientes/{id} { allow read, write: if soyYo(); }\n"
+    + "    match /tandas/{id}     { allow read, write: if soyYo(); }\n"
+    + "    match /fichas/{id}     { allow read, write: if soyYo(); }\n\n"
+    + "    // El cierre. Una colección nueva no entra sola: hay que darle su\n"
+    + "    // bloque arriba, a propósito.\n"
+    + "    match /{document=**} { allow read, write: if false; }\n"
+    + "  }\n"
+    + "}\n";
+}
+
+const copiar = async (texto, ok) => {
+  try { await navigator.clipboard.writeText(texto); P.aviso(ok); }
+  catch (e) { P.aviso("No se pudo copiar. Seleccionalo a mano.", "error"); }
+};
+$("btnCopiarUid").addEventListener("click", () => copiar($("miUid").value, "UID copiado."));
+$("btnCopiarReglas").addEventListener("click", () => copiar($("reglas").value, "Reglas copiadas."));
+
+/* Acá lo bueno es que FALLE. Que una lectura funcione prueba que ESA lectura
+   está permitida; no prueba que lo prohibido esté prohibido — y eso es lo
+   único que demuestra que lo publicado en la consola es este texto. */
+$("btnProbar").addEventListener("click", async () => {
+  const b = $("btnProbar"); b.disabled = true;
+  $("resProbar").innerHTML = '<p class="gris">Probando…</p>';
+  let h = "";
+  try {
+    await getDocs(collection(db, "zz-sin-regla"));
+    h = '<p class="gris" style="color:var(--mal)"><b>PASÓ, y no debería.</b> Se leyó una '
+      + 'colección que las reglas no declaran. Lo publicado en la consola no es este texto: '
+      + 'copiá las reglas de arriba y publicalas completas.</p>';
+  } catch (e) {
+    h = ((e && e.code) === "permission-denied")
+      ? '<p class="gris" style="color:var(--ok)"><b>Denegado, como corresponde.</b> '
+        + 'Las reglas están publicadas y vivas.</p>'
+      : '<p class="gris" style="color:var(--ojo)">No se pudo probar: ' + P.esc(P.explicar(e)) + "</p>";
+  }
+  $("resProbar").innerHTML = h;
+  b.disabled = false;
+});
+</script>
+</body>
+</html>

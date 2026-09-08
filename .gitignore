@@ -1,0 +1,12 @@
+# Plantilla del ecosistema (PROTOCOLO-GENERAL.md § 3). Se usen o no todas
+# las líneas: están para que un archivo con credenciales no llegue nunca a
+# un `git add .` distraído. Este repositorio es PÚBLICO.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*-service-account*.json
+firebase-adminsdk*.json
+.firebase/
+.firebaserc

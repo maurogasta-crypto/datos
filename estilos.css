@@ -1,0 +1,138 @@
+/* ═══════════════════════════════════════════════════════════
+   estilos.css — el sistema de diseño del panel.
+   Sello: estilos-1
+
+   Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
+   sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
+   la barra de gestos de Android tapa el último renglón de cada lista y se
+   arregla pantalla por pantalla, mal.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --tinta:#14161a; --tinta2:#1b1e24; --tinta3:#232830;
+  --linea:#2e343e; --texto:#e8e6e1; --gris:#a8a49c; --gris2:#6f6b64;
+  --acento:#d8a657; --ok:#8fbf7f; --mal:#e08b8b; --ojo:#d9b44a;
+  --r:10px; --r-s:6px;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --techo: env(safe-area-inset-top, 0px);
+  --piso: calc(env(safe-area-inset-bottom, 0px) + 62px);
+}
+
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { margin:0; background:var(--tinta); color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:16px; line-height:1.5; overscroll-behavior-y:contain; }
+body { padding-top:var(--techo); padding-bottom:var(--piso); }
+.hide { display:none !important; }
+
+.contenedor { max-width:760px; margin:0 auto; padding:0 14px; }
+
+h1 { font-size:1.15rem; margin:.9rem 0 .2rem; letter-spacing:-.01em; }
+h2 { font-size:.98rem; margin:1.4rem 0 .5rem; }
+.gris { color:var(--gris); font-size:.86rem; margin:.2rem 0 .8rem; }
+.mono { font-family:var(--mono); }
+a { color:var(--acento); }
+
+/* ── barra de arriba ── */
+#barra { position:sticky; top:0; z-index:20; background:var(--tinta);
+  border-bottom:1px solid var(--linea); padding:.55rem 14px;
+  display:flex; align-items:center; gap:.6rem; }
+#barra .marca { font-weight:600; font-size:.95rem; flex:1; }
+#barra .marca small { display:block; font-family:var(--mono); font-size:.56rem;
+  color:var(--gris2); font-weight:400; letter-spacing:.06em; }
+
+/* ── barra de abajo: la navegación va abajo, al alcance del pulgar ── */
+#nav { position:fixed; left:0; right:0; bottom:0; z-index:30;
+  background:var(--tinta2); border-top:1px solid var(--linea);
+  display:flex; padding-bottom:env(safe-area-inset-bottom,0px); }
+#nav button { flex:1; min-height:44px; background:none; border:0; color:var(--gris);
+  font-family:var(--mono); font-size:.6rem; letter-spacing:.1em;
+  text-transform:uppercase; padding:.7rem .3rem; cursor:pointer; }
+#nav button[aria-pressed="true"] { color:var(--acento); background:var(--tinta3); }
+
+/* ── botones ── */
+.btn { min-height:44px; padding:.7rem 1rem; border-radius:var(--r-s);
+  border:1px solid var(--linea); background:var(--tinta3); color:var(--texto);
+  font-size:.9rem; cursor:pointer; }
+.btn.p { background:var(--acento); border-color:var(--acento); color:var(--tinta); font-weight:600; }
+.btn:disabled { opacity:.45; }
+.fila-btn { display:flex; gap:.5rem; margin:.7rem 0; }
+.fila-btn .btn { flex:1; }
+
+/* ── campos ── */
+label { display:block; font-size:.78rem; color:var(--gris); margin:.7rem 0 .2rem; }
+input, textarea, select { width:100%; min-height:44px; padding:.6rem .7rem;
+  background:var(--tinta3); border:1px solid var(--linea); border-radius:var(--r-s);
+  color:var(--texto); font-size:1rem; font-family:inherit; }
+textarea { min-height:7rem; font-family:var(--mono); font-size:.78rem;
+  line-height:1.45; white-space:pre; overflow-x:auto; }
+
+/* ── tarjetas ── */
+.tarj { background:var(--tinta2); border:1px solid var(--linea);
+  border-radius:var(--r); padding:.9rem; margin:.7rem 0; }
+
+/* ── el cuadro de números ── */
+.cuadro { display:grid; grid-template-columns:repeat(auto-fit,minmax(84px,1fr));
+  gap:.4rem; margin:.7rem 0; }
+.cuadro div { background:var(--tinta3); border-radius:var(--r-s); padding:.55rem .5rem; }
+.cuadro b { display:block; font-family:var(--mono); font-size:1.05rem; line-height:1.1; }
+.cuadro span { display:block; font-size:.66rem; color:var(--gris); margin-top:.15rem; line-height:1.25; }
+.cuadro div.tuyo b { color:var(--ojo); }
+.cuadro div.mio b { color:var(--acento); }
+.cuadro div.hecho b { color:var(--ok); }
+
+/* ── filtros ── */
+.seg { display:flex; border:1px solid var(--linea); border-radius:999px;
+  overflow:hidden; margin:.6rem 0; }
+.seg button { flex:1; min-height:40px; background:none; border:0; color:var(--gris);
+  font-family:var(--mono); font-size:.58rem; letter-spacing:.08em;
+  text-transform:uppercase; padding:.5rem .3rem; cursor:pointer; }
+.seg button[aria-pressed="true"] { background:var(--acento); color:var(--tinta); font-weight:600; }
+
+/* ── un pendiente ── */
+.proy { font-family:var(--mono); font-size:.6rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--gris2); margin:1.3rem 0 .4rem;
+  border-bottom:1px solid var(--linea); padding-bottom:.3rem; }
+.pend { background:var(--tinta2); border:1px solid var(--linea);
+  border-left:3px solid var(--linea); border-radius:var(--r-s);
+  padding:.7rem .8rem; margin:.45rem 0; }
+.pend.tuyo { border-left-color:var(--ojo); }
+.pend.mio { border-left-color:var(--acento); }
+.pend.hecho { border-left-color:var(--ok); opacity:.6; }
+.pend.retirado { border-left-color:var(--gris2); opacity:.5; }
+.pend .cab { display:flex; align-items:baseline; gap:.5rem; }
+.pend .clave { font-family:var(--mono); font-size:.68rem; color:var(--gris2); flex:none; }
+.pend .tit { font-weight:600; font-size:.94rem; flex:1; }
+.pend .quien { font-family:var(--mono); font-size:.54rem; letter-spacing:.1em;
+  text-transform:uppercase; padding:.15rem .4rem; border-radius:999px; flex:none;
+  border:1px solid var(--linea); color:var(--gris); }
+.pend.tuyo .quien { color:var(--ojo); border-color:var(--ojo); }
+.pend.mio .quien { color:var(--acento); border-color:var(--acento); }
+.pend .porque { font-size:.85rem; color:var(--gris); margin-top:.35rem; }
+.pend .hist { font-size:.76rem; color:var(--gris2); margin-top:.4rem;
+  border-top:1px dashed var(--linea); padding-top:.35rem; }
+.pend .hist div { margin-top:.2rem; }
+.pend .hist i { font-family:var(--mono); font-style:normal; color:var(--gris2); }
+
+/* ── el aviso breve ── */
+#aviso { position:fixed; left:50%; transform:translateX(-50%) translateY(200%);
+  bottom:calc(var(--piso) + 10px); z-index:50; max-width:min(92vw,520px);
+  background:var(--tinta3); border:1px solid var(--linea); color:var(--texto);
+  padding:.7rem .9rem; border-radius:var(--r-s); font-size:.88rem;
+  transition:transform .2s ease; box-shadow:0 6px 24px rgba(0,0,0,.4); }
+#aviso.on { transform:translateX(-50%) translateY(0); }
+#aviso.malo { border-color:var(--mal); color:var(--mal); }
+
+/* ── preguntar ── */
+.capa { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.6);
+  display:grid; place-items:center; padding:16px; }
+.capa .caja { background:var(--tinta2); border:1px solid var(--linea);
+  border-radius:var(--r); padding:1rem; max-width:440px; width:100%; }
+.capa p { margin:0 0 .3rem; white-space:pre-wrap; font-size:.92rem; }
+
+/* ── estados de una línea de revisión ── */
+.rev { border-top:1px solid var(--linea); padding:.6rem 0; font-size:.86rem; }
+.rev .que { font-family:var(--mono); font-size:.6rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--gris2); }
+.rev .nuevo { color:var(--ok); }
+.rev .cambia { color:var(--ojo); }

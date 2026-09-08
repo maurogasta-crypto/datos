@@ -1,0 +1,50 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════
+//  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
+//
+//  ⚠ ESTE ARCHIVO ES UNA COPIA. La autoridad es lo que está publicado en
+//  la consola de Firebase. Una copia en el repositorio se desactualiza en
+//  silencio, así que el panel trae una prueba —«La puerta» → Probar— que
+//  intenta leer una colección que estas reglas no declaran: tiene que
+//  FALLAR. Esa negativa es lo único que demuestra que lo publicado es esto.
+//
+//  ⚠ EL UID VA COMPLETADO. Acá abajo dice TU-UID-ACA a propósito: el texto
+//  con tu UID adentro lo arma el panel (solapa «La puerta»), con un botón
+//  para copiarlo. Este archivo es la referencia, no el que se pega.
+//
+//  MODELO: una sola persona. No hay roles, no hay permisos, no hay
+//  invitaciones. O sos ese uid, o no entrás. Cada camino de entrada que se
+//  agregue es superficie que hay que revisar, y acá no hay nadie más a
+//  quien darle acceso.
+//
+//  ⚠ LAS REGLAS SE SUMAN: basta con que UN bloque permita para que el
+//  acceso quede abierto. Por eso esto se pega SIEMPRE completo, nunca por
+//  fragmentos. Y hay un cierre explícito abajo en vez de confiar en el
+//  deny por defecto: una colección nueva no entra sola.
+// ═══════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function soyYo() {
+      return request.auth != null && request.auth.uid == 'TU-UID-ACA';
+    }
+
+    // ── Lo que el panel genera y Mauro aplica de un toque ──
+    // No es sensible: es el estado de los proyectos. Viaja por el chat.
+    match /proyectos/{id}  { allow read, write: if soyYo(); }
+    match /pendientes/{id} { allow read, write: if soyYo(); }
+    match /tandas/{id}     { allow read, write: if soyYo(); }
+
+    // ── Lo que sólo escribe Mauro, en el panel ──
+    // Titularidad de cuentas, contactos, números. NO pasa por el chat, no
+    // va a ningún repositorio, y ningún agente lo lee nunca.
+    match /fichas/{id}     { allow read, write: if soyYo(); }
+
+    // ── El cierre ──
+    // Lo que no tiene bloque propio arriba, queda negado. Una colección
+    // nueva se agrega a propósito, no por olvido.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

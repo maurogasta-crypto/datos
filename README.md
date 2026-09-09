@@ -17,3 +17,6 @@ tener que abrir cada repo, y sin que ningún valor real toque nunca git.
 - [`secretos/casaverdecanas.md`](secretos/casaverdecanas.md)
 - [`secretos/casayourte.md`](secretos/casayourte.md) — pendiente de completar
 - [`secretos/rematetaller.md`](secretos/rematetaller.md) — pendiente de completar
+- [`secretos/panel.md`](secretos/panel.md) — el panel de datos
+  (`maurogasta-crypto/datos`, público). **No confundir ese repositorio con
+  éste:** allá va el cascarón del panel, acá los protocolos y los índices.

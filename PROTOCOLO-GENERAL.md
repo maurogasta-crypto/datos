@@ -189,5 +189,68 @@ el punto de partida.
 6. Cualquier convención nueva que surja de ese intercambio se agrega acá,
    no se queda solo en el historial de una conversación.
 
+
+## 5. El panel es donde se presenta la información
+
+Decidido por Mauro el 2026-09-09, después de levantar el panel de datos.
+
+**Todo lo que un chat produzca sobre el estado de cualquier proyecto se presenta
+en el panel** — `maurogasta-crypto/datos`, publicado en
+https://maurogasta-crypto.github.io/datos/. No en un mensaje que se pierde
+cuando la conversación se termina, no en un archivo suelto: en el panel, que es
+transversal a los cinco proyectos y sobrevive a la sesión que lo generó.
+
+Vale para los proyectos de hoy y para cualquiera que se sume después. Un
+proyecto nuevo entra al panel como una fila más de `proyectos/`.
+
+### El mecanismo, y por qué es ése
+
+Un agente **no escribe en `datos-830f8`**: genera un JSON con el parte, Mauro lo
+carga en la solapa «El parte», lo revisa con todo a la vista y lo aplica. Que el
+agente no tenga las credenciales no es una limitación pendiente de resolver —
+es lo que mantiene a salvo la otra zona, las fichas.
+
+Se evaluó la alternativa de que el agente escribiera un `estado.json` en el
+repositorio y el panel lo leyera solo, sin pegar nada. **Se descartó:** ese
+repositorio es público por necesidad —GitHub Pages no sirve un sitio privado—,
+así que el estado de los cinco proyectos quedaría legible para cualquiera que
+supiera la dirección. La base de datos, en cambio, ya está cerrada por reglas.
+El costo es un toque de Mauro por tanda; la alternativa era publicar el estado.
+
+Para que ese toque no sea pelear con el portapapeles en un teléfono, el parte
+**entra por archivo** («Elegir un archivo»), no sólo pegado.
+
+### El estado sale, a pedido
+
+**Todo lo que se guarda tiene que poder salir para que Mauro lo mire.** El panel
+saca el estado completo en el mismo formato en que entra («Ver el estado» /
+«Bajar el archivo»), y la vuelta es sin pérdida: volver a meter lo que salió
+tiene que contestar «no hay nada nuevo».
+
+Lo mismo vale para lo que un chat guarde en este repositorio privado: **si Mauro
+lo pide, se le entrega en un formato que pueda leer**, sin obligarlo a navegar
+el repo desde el teléfono.
+
+Esa exportación sirve además para lo que más falta hace: **dársela a un chat
+nuevo al abrirlo**, para que arranque sabiendo en qué quedó cada proyecto en vez
+de adivinarlo.
+
+### La excepción, que no es una inconsistencia
+
+Las **fichas** —titularidad de cuentas, contactos, números, en `fichas/`— **no se
+presentan, no se exportan y no viajan.** El panel no tiene ni tendrá un botón que
+las junte en un texto listo para pegar: ese botón sería el camino por el que se
+filtrarían, y sin él el camino no existe. Se copia un valor suelto, de a uno y a
+propósito.
+
+Que el estado se pueda sacar y las fichas no es justamente la diferencia entre
+las dos zonas, no una contradicción: el estado ya viaja por el chat porque no es
+sensible.
+
+**Y las contraseñas no van a las fichas.** Viven en el gestor de contraseñas de
+Mauro y en ningún documento.
+
 ---
-*Última actualización: 2026-09-07 (incorpora observaciones de la revisión de CasaYourte: canales no confiables explícitos, mecánica real de sesiones cruzadas, procedimiento de incidente).*
+*Última actualización: 2026-09-09 (entra la sección 5: el panel como lugar
+donde se presenta toda la información, el mecanismo por el que el estado llega
+a la base, y la regla de que lo guardado se exporta a pedido).*

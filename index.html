@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-2">
+<link rel="stylesheet" href="estilos.css?v=estilos-3">
 </head>
 <body>
 
@@ -37,23 +37,69 @@
 
   <!-- 1 · el tablero -->
   <section id="v-tablero">
-    <h1>Qué está pendiente</h1>
-    <p class="gris" id="resumen">Leyendo…</p>
 
-    <div class="cuadro">
-      <div class="tuyo"><b id="c-tuyo">—</b><span>te esperan a vos</span></div>
-      <div class="mio"><b id="c-mio">—</b><span>los hago yo</span></div>
-      <div class="hecho"><b id="c-hecho">—</b><span>hechos</span></div>
-      <div><b id="c-total">—</b><span>en total</span></div>
+    <!-- 1a · la lista -->
+    <div id="t-lista">
+      <h1>Qué está pendiente</h1>
+      <p class="gris" id="resumen">Leyendo…</p>
+
+      <div class="cuadro">
+        <div class="pregunta"><b id="c-pregunta">—</b><span>te pregunté</span></div>
+        <div class="tuyo"><b id="c-tuyo">—</b><span>te esperan a vos</span></div>
+        <div class="mio"><b id="c-mio">—</b><span>los hago yo</span></div>
+        <div class="hecho"><b id="c-hecho">—</b><span>hechos</span></div>
+        <div><b id="c-total">—</b><span>en total</span></div>
+      </div>
+
+      <div class="seg" id="filtro" role="group" aria-label="Qué mostrar">
+        <button data-v="preguntas" aria-pressed="false">Preguntas</button>
+        <button data-v="abiertos" aria-pressed="true">Lo que falta</button>
+        <button data-v="tuyo" aria-pressed="false">Te esperan</button>
+        <button data-v="todo" aria-pressed="false">Todo</button>
+      </div>
+
+      <div id="lista"></div>
     </div>
 
-    <div class="seg" id="filtro" role="group" aria-label="Qué mostrar">
-      <button data-v="abiertos" aria-pressed="true">Lo que falta</button>
-      <button data-v="tuyo" aria-pressed="false">Te esperan</button>
-      <button data-v="todo" aria-pressed="false">Todo</button>
-    </div>
+    <!-- 1b · un pendiente abierto: acá se marca y se responde -->
+    <div id="t-editor" class="hide">
+      <p class="volver"><a href="#lista" id="t-volver">← Volver al tablero</a></p>
+      <h1 id="t-cual">—</h1>
+      <p class="gris" id="t-donde"></p>
+      <p class="gris" id="t-porque"></p>
 
-    <div id="lista"></div>
+      <div class="tarj" id="t-caja-pregunta">
+        <label>Lo que te pregunté</label>
+        <p class="duro" id="t-pregunta"></p>
+        <label for="t-respuesta">Tu respuesta</label>
+        <textarea id="t-respuesta" class="libre"
+          placeholder="Contestá acá. Sale en el JSON que me pasás."></textarea>
+      </div>
+
+      <div class="tarj">
+        <label>¿Cómo está?</label>
+        <div class="seg" id="t-estado" role="group" aria-label="Estado">
+          <button data-v="abierto">Abierto</button>
+          <button data-v="hecho">Hecho</button>
+          <button data-v="retirado">Retirado</button>
+        </div>
+        <label>¿De quién depende?</label>
+        <div class="seg" id="t-quien" role="group" aria-label="Quién">
+          <button data-v="mauro">Me espera</button>
+          <button data-v="claude">Lo hace Claude</button>
+          <button data-v="ambos">Los dos</button>
+        </div>
+        <label for="t-nota">Agregar a la historia (opcional)</label>
+        <input id="t-nota" autocomplete="off" placeholder="Qué pasó con esto.">
+      </div>
+
+      <div class="fila-btn">
+        <button class="btn" id="btnPendCancelar">Cancelar</button>
+        <button class="btn p" id="btnPendGuardar">Guardar</button>
+      </div>
+      <p class="gris">Lo que guardes acá sale en «Sacar lo que hay», en la solapa
+        «El parte». Ése es el paquete que me pasás.</p>
+    </div>
   </section>
 
   <!-- 2 · el parte: entra y sale -->
@@ -181,7 +227,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js?v=init-1";
 
-P.PANEL = "panel-4";
+P.PANEL = "panel-5";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -285,9 +331,15 @@ async function leer() {
 /* ---------- pintar ---------- */
 const nombreProy = (id) => (PROYECTOS.find((p) => p.id === id) || {}).nombre || id;
 const abierto = (p) => p.estado !== "hecho" && p.estado !== "retirado";
+/* Una pregunta cuenta como pendiente mientras no tenga respuesta. Es el punto
+   de todo esto: que no quede una pregunta enterrada abajo de otras quince
+   cosas mientras se avanza en un tema y se olvida el anterior. */
+const sinResponder = (p) => !!(p.pregunta || "").trim()
+  && !(p.respuesta || "").trim() && abierto(p);
 
 function pintar() {
   const n = (f) => PENDIENTES.filter(f).length;
+  $("c-pregunta").textContent = n(sinResponder);
   $("c-tuyo").textContent = n((p) => abierto(p) && p.quien !== "claude");
   $("c-mio").textContent = n((p) => abierto(p) && p.quien === "claude");
   $("c-hecho").textContent = n((p) => p.estado === "hecho");
@@ -295,6 +347,7 @@ function pintar() {
 
   const visibles = PENDIENTES.filter((p) =>
     filtro === "todo" ? true
+    : filtro === "preguntas" ? sinResponder(p)
     : filtro === "tuyo" ? (abierto(p) && p.quien !== "claude")
     : abierto(p));
 
@@ -321,7 +374,8 @@ function pintar() {
       const clase = p.estado === "hecho" ? "hecho"
                   : p.estado === "retirado" ? "retirado"
                   : (p.quien === "claude" ? "mio" : "tuyo");
-      h += '<div class="pend ' + clase + '">'
+      const marca = sinResponder(p) ? " sinresponder" : "";
+      h += '<div class="pend ' + clase + marca + '" data-abrir="' + P.esc(p.id) + '">'
         + '<div class="cab">'
         + (p.clave ? '<span class="clave">' + P.esc(p.clave) + "</span>" : "")
         + '<span class="tit">' + P.esc(p.titulo || "(sin título)") + "</span>"
@@ -331,6 +385,12 @@ function pintar() {
             : (QUIEN[p.quien] || "te espera")) + "</span>"
         + "</div>"
         + (p.porQue ? '<div class="porque">' + P.esc(p.porQue) + "</div>" : "");
+      if (p.pregunta) {
+        h += '<div class="preg"><span class="k">te pregunté</span>' + P.esc(p.pregunta) + "</div>";
+        h += (p.respuesta)
+          ? '<div class="resp"><span class="k">contestaste</span>' + P.esc(p.respuesta) + "</div>"
+          : '<div class="resp falta">sin responder — tocá para contestar</div>';
+      }
       const hist = Array.isArray(p.historia) ? p.historia.slice(-4) : [];
       if (hist.length) {
         h += '<div class="hist">';
@@ -345,6 +405,116 @@ function pintar() {
   $("lista").innerHTML = h || '<p class="gris">Nada para mostrar con este filtro.</p>';
 }
 
+/* ---------- abrir un pendiente: marcarlo y responder ---------- */
+/* Hasta acá el tablero era de sólo lectura: mostraba lo que yo mandaba y no
+   había forma de contestar. Eso obligaba a que todo volviera por el chat, y es
+   justo donde las cosas se pierden — se avanza en un tema y el anterior queda
+   enterrado quince renglones más abajo.
+
+   Ahora el panel es el canal: yo pregunto en el parte, Mauro contesta acá
+   cuando puede, y la exportación se lleva las respuestas. El chat sigue
+   abierto para lo que se resuelva al vuelo; son dos caminos, no uno que
+   reemplaza al otro. */
+
+let abriendo = null;    // el pendiente abierto, o null
+
+/* Los dos segmentados del editor funcionan igual: se marca uno y se lee cuál
+   quedó marcado. Una sola función para los dos, y ninguna variable suelta que
+   se pueda desincronizar con lo que se ve. */
+function marcarSeg(cual, valor) {
+  $(cual).querySelectorAll("button").forEach((b) =>
+    b.setAttribute("aria-pressed", String(b.dataset.v === valor)));
+}
+const leerSeg = (cual) => {
+  const b = $(cual).querySelector('[aria-pressed="true"]');
+  return b ? b.dataset.v : "";
+};
+["t-estado", "t-quien"].forEach((cual) =>
+  $(cual).addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) marcarSeg(cual, b.dataset.v);
+  }));
+
+function abrirPendiente(p) {
+  abriendo = p;
+  $("t-cual").textContent = p.titulo || "(sin título)";
+  $("t-donde").textContent = [nombreProy(p.proyecto), p.clave].filter(Boolean).join(" · ");
+  $("t-porque").textContent = p.porQue || "";
+  $("t-porque").classList.toggle("hide", !p.porQue);
+
+  /* La caja de la pregunta sólo aparece si hay pregunta: un cuadro de respuesta
+     vacío sobre nada invita a escribir donde no corresponde. */
+  const hay = !!(p.pregunta || "").trim();
+  $("t-caja-pregunta").classList.toggle("hide", !hay);
+  $("t-pregunta").textContent = p.pregunta || "";
+  $("t-respuesta").value = p.respuesta || "";
+
+  marcarSeg("t-estado", p.estado || "abierto");
+  marcarSeg("t-quien", p.quien || "mauro");
+  $("t-nota").value = "";
+
+  $("t-lista").classList.add("hide");
+  $("t-editor").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+
+function cerrarPendiente() {
+  abriendo = null;
+  $("t-editor").classList.add("hide");
+  $("t-lista").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+
+$("lista").addEventListener("click", (e) => {
+  const caja = e.target.closest("[data-abrir]");
+  if (!caja) return;
+  const p = PENDIENTES.find((x) => x.id === caja.dataset.abrir);
+  if (p) abrirPendiente(p);
+});
+$("btnPendCancelar").addEventListener("click", cerrarPendiente);
+$("t-volver").addEventListener("click", (e) => { e.preventDefault(); cerrarPendiente(); });
+
+$("btnPendGuardar").addEventListener("click", async () => {
+  if (!abriendo) return;
+  const p = abriendo;
+  const respuesta = $("t-respuesta").value.trim();
+  const estado = leerSeg("t-estado") || "abierto";
+  const quien = leerSeg("t-quien") || "mauro";
+  const nota = $("t-nota").value.trim();
+
+  /* Qué cambió, dicho en palabras. Va a la historia, que es lo único que no se
+     puede reconstruir después. */
+  const cambios = [];
+  if (estado !== (p.estado || "abierto")) cambios.push("pasa a «" + estado + "»");
+  if (quien !== (p.quien || "mauro")) cambios.push("queda en «" + (QUIEN[quien] || quien) + "»");
+  if (respuesta !== (p.respuesta || "")) cambios.push("respondido");
+  if (!cambios.length && !nota)
+    return P.aviso("No cambiaste nada todavía.", "error");
+
+  const lineas = [];
+  if (cambios.length) lineas.push({ fecha: P.hoy(), texto: "Mauro: " + cambios.join(" · "), por: "mauro" });
+  if (nota) lineas.push({ fecha: P.hoy(), texto: "Mauro: " + nota, por: "mauro" });
+
+  const b = $("btnPendGuardar"); b.disabled = true; b.textContent = "…";
+  try {
+    await setDoc(doc(db, "pendientes", p.id), {
+      respuesta, estado, quien,
+      /* La historia SE SUMA. Vale igual cuando el que escribe es Mauro. */
+      historia: (Array.isArray(p.historia) ? p.historia : []).concat(lineas),
+      /* La marca del apretón de manos: esto lo tocó Mauro y yo todavía no lo vi.
+         Se apaga sola cuando yo mando un parte que incluya este pendiente. */
+      tocado: true,
+      respondidoEn: P.hoy(),
+      actualizadoEn: serverTimestamp()
+    }, { merge: true });
+    await leer();
+    cerrarPendiente();
+    P.aviso("Guardado. Sale en el próximo «Sacar lo que hay».");
+  } catch (e) {
+    P.aviso(P.explicar(e), "error");
+  } finally { b.disabled = false; b.textContent = "Guardar"; }
+});
+
 /* ---------- pegar el parte ---------- */
 /* Mismo flujo que la pantalla de traducción de CasaYourte: se pega, se
    REVISA con todo a la vista, y recién entonces se escribe. Nada se
@@ -353,7 +523,12 @@ const ESTADOS = ["abierto", "hecho", "retirado"];
 const QUIENES = ["mauro", "claude", "ambos"];
 // Los campos que se comparan para saber si una pieza cambió. La historia va
 // aparte: se suma, no se compara.
-const CAMPOS = ["proyecto", "clave", "titulo", "porQue", "estado", "quien"];
+/* «respuesta» está adentro a propósito: si yo mandara una distinta a la que
+   escribió Mauro, tiene que aparecer como cambio en la revisión y no colarse.
+   Lo normal es que yo NO la mande —abajo se preserva la que ya está—, pero
+   «normal» no es una garantía y esto sí. */
+const CAMPOS = ["proyecto", "clave", "titulo", "porQue", "estado", "quien",
+                "pregunta", "respuesta"];
 
 $("btnRevisar").addEventListener("click", () => {
   const txt = $("entrada").value.trim();
@@ -400,7 +575,12 @@ $("btnRevisar").addEventListener("click", () => {
       titulo: p.titulo !== undefined ? p.titulo : (antes ? antes.titulo : ""),
       porQue: p.porQue !== undefined ? p.porQue : (antes ? antes.porQue : ""),
       estado: p.estado || (antes && antes.estado) || "abierto",
-      quien: p.quien || (antes && antes.quien) || "mauro"
+      quien: p.quien || (antes && antes.quien) || "mauro",
+      pregunta: p.pregunta !== undefined ? p.pregunta : (antes ? (antes.pregunta || "") : ""),
+      /* Lo que contestó Mauro NO se pisa por omisión. Si mi parte no trae
+         respuesta, queda la suya: perder una respuesta por no haberla
+         repetido sería exactamente lo que este circuito viene a evitar. */
+      respuesta: p.respuesta !== undefined ? p.respuesta : (antes ? (antes.respuesta || "") : "")
     };
     /* La historia SE SUMA, nunca se reemplaza. Es lo único que no se puede
        reconstruir: si una tanda la pisara, se perdería cómo llegó cada cosa
@@ -468,7 +648,12 @@ $("btnAplicar").addEventListener("click", async () => {
       const lote = writeBatch(db);
       CAMBIOS.slice(i, i + 400).forEach((c) => {
         const ref = doc(db, c.tipo === "proyecto" ? "proyectos" : "pendientes", c.id);
-        lote.set(ref, { ...c.datos, actualizadoEn: serverTimestamp() }, { merge: true });
+        /* El otro lado del apretón de manos: si este parte incluye el
+           pendiente, es que ya lo vi, así que la marca se apaga. Lo que Mauro
+           tocó y yo todavía no contesté sigue marcado. */
+        const extra = c.tipo === "pendiente" ? { tocado: false } : {};
+        lote.set(ref, { ...c.datos, ...extra, actualizadoEn: serverTimestamp() },
+                 { merge: true });
       });
       await lote.commit();
     }
@@ -530,9 +715,16 @@ function estadoActual() {
       porQue: p.porQue || "",
       estado: p.estado || "abierto",
       quien: p.quien || "mauro",
+      pregunta: p.pregunta || "",
+      respuesta: p.respuesta || "",
       historia: (Array.isArray(p.historia) ? p.historia : [])
         .map((h) => ({ fecha: h.fecha || "", texto: h.texto || "" }))
-    }))
+    })),
+    /* Lo primero que tengo que mirar al recibir esto: qué tocó Mauro desde el
+       parte anterior. Sin esta lista habría que comparar a ojo contra lo que
+       mandé, que es justamente el trabajo que se olvida hacer. */
+    tocados: PENDIENTES.filter((p) => p.tocado).map((p) => p.id),
+    sinResponder: PENDIENTES.filter(sinResponder).map((p) => p.id)
   };
 }
 const textoDelEstado = () => JSON.stringify(estadoActual(), null, 2);

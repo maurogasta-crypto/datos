@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-2
+   Sello: estilos-3
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -188,3 +188,27 @@ textarea { min-height:7rem; font-family:var(--mono); font-size:.78rem;
    que necesita un JSON. Para una nota escrita a mano hace falta lo contrario. */
 textarea.libre { font-family:inherit; font-size:.95rem; white-space:pre-wrap;
   min-height:5rem; }
+
+/* ── preguntas y respuestas dentro de un pendiente ── */
+/* Una pregunta sin responder tiene que saltar a la vista en una lista larga:
+   es lo único del tablero que está frenando el trabajo de los dos. */
+.cuadro div.pregunta b { color:var(--mal); }
+.pend.sinresponder { border-left-color:var(--mal); }
+
+.preg, .resp { font-size:.85rem; margin-top:.45rem; padding-top:.4rem;
+  border-top:1px dashed var(--linea); }
+.preg .k, .resp .k { display:block; font-family:var(--mono); font-size:.56rem;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--gris2);
+  margin-bottom:.15rem; }
+.preg { color:var(--texto); }
+.resp { color:var(--gris); white-space:pre-wrap; }
+.resp.falta { color:var(--mal); font-family:var(--mono); font-size:.68rem;
+  letter-spacing:.04em; }
+
+/* Un pendiente se puede abrir, así que tiene que parecer que se puede tocar. */
+.pend[data-abrir] { cursor:pointer; }
+.pend[data-abrir]:active { background:var(--tinta3); }
+
+/* El segmentado del editor: tres opciones y ninguna marcada de arranque sería
+   un estado imposible, así que abrirPendiente() siempre marca una. */
+#t-estado button, #t-quien button { font-size:.56rem; }

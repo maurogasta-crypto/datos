@@ -64,6 +64,36 @@ el que lo de la segunda fila está a salvo. El flujo es el mismo que la pantalla
 de traducción de CasaYourte: Claude genera un JSON, Mauro lo carga, lo mira y lo
 aplica. Nada se escribe sin que lo hayas visto.
 
+### El panel es el canal
+
+Es el motivo de existir de todo esto, y funciona como una ronda:
+
+1. **Yo mando un parte.** Además de qué está pendiente, trae **preguntas**: lo
+   que necesito que confirmes, aceptes, valides o decidas, y lo que depende de
+   que hagas algo.
+2. **Vos contestás acá, a tu ritmo.** Tocás un pendiente, lo abrís, escribís la
+   respuesta, marcás en qué estado quedó y de quién depende ahora. Podés dejarlo
+   a medias y volver mañana.
+3. **Sacás el paquete** con «Sacar lo que hay» y me lo pasás.
+4. **Yo trabajo esa ronda entera** y devuelvo el parte siguiente.
+
+Lo que esto compra: **que nada quede olvidado por avanzar.** Mientras se
+desarrolla un punto, los anteriores no se hunden en el historial de una
+conversación — quedan acá, contados, con su pregunta a la vista.
+
+El chat sigue abierto para lo que se resuelva al vuelo. Son dos caminos, no uno
+que reemplaza al otro.
+
+**El apretón de manos.** Cada pendiente lleva una marca `tocado`: se enciende
+cuando vos guardás algo y **se apaga sola** cuando yo mando un parte que lo
+incluye —o sea, cuando ya lo vi—. La exportación trae la lista `tocados` arriba
+de todo: es lo primero que miro, y evita tener que comparar a ojo contra lo que
+mandé.
+
+**Tu respuesta no se pisa.** Si mi parte no menciona la respuesta de un
+pendiente, queda la tuya. Perder una respuesta por no haberla repetido sería
+exactamente lo que este circuito viene a evitar.
+
 ### El parte entra y sale
 
 La solapa «El parte» tiene las dos direcciones, y las dos son del estado de los
@@ -146,15 +176,15 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-3` |
-| `index.html` | `P.PANEL` | `panel-4` |
-| `estilos.css` | (en el comentario) | `estilos-2` |
+| `index.html` | `P.PANEL` | `panel-5` |
+| `estilos.css` | (en el comentario) | `estilos-3` |
 | `firebase-init.js` | (en el comentario) | `init-1` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-2` y `nucleo.js?v=nucleo-3`. Sin ese número, el
+pide `estilos.css?v=estilos-3` y `nucleo.js?v=nucleo-3`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

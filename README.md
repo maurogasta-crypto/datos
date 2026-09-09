@@ -27,6 +27,9 @@ tener que abrir cada repo, y sin que ningún valor real toque nunca git.
   su código real contra un DOM y un Firestore de mentira.
 - [`secretos/casaverdecanas.md`](secretos/casaverdecanas.md)
 - [`secretos/casayourte.md`](secretos/casayourte.md) — pendiente de completar
+- [`secretos/harmonia.md`](secretos/harmonia.md) — `toromboto/harmonia`, el sexto
+  proyecto: el único con build (Vite) y con funciones de servidor (Vercel), y
+  por eso el único que usa variables de entorno de verdad
 - [`secretos/rematetaller.md`](secretos/rematetaller.md) — pendiente de completar
 - [`secretos/panel.md`](secretos/panel.md) — el panel de datos
   (`maurogasta-crypto/datos`, público). **No confundir ese repositorio con

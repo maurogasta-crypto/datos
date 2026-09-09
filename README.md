@@ -22,7 +22,10 @@ tener que abrir cada repo, y sin que ningún valor real toque nunca git.
 - [`ESTADO-DE-LOS-TRES.md`](ESTADO-DE-LOS-TRES.md) — qué tiene cada proyecto que
   a los otros les falta, y en qué orden conviene emparejarlos.
 - [`partes/`](partes/) — cada parte generado para el panel, con su fecha. El
-  registro de qué se le pidió aplicar a Mauro y cuándo.
+  registro de qué se le pidió aplicar a Mauro y cuándo. El último es
+  [`2026-09-09-ronda2-luces-y-gestos.json`](partes/2026-09-09-ronda2-luces-y-gestos.json):
+  13 pendientes —6 con pregunta—, 6 reglas nuevas y el alta de `harmonia` como
+  sexto proyecto.
 - [`pruebas/panel/`](pruebas/panel/) — el banco de pruebas del panel, que corre
   su código real contra un DOM y un Firestore de mentira.
 - [`secretos/casaverdecanas.md`](secretos/casaverdecanas.md)

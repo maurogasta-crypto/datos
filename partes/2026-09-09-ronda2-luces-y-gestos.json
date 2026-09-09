@@ -1,0 +1,301 @@
+{
+  "panel": "pendientes",
+  "generado": "2026-09-09",
+  "proyectos": [
+    {
+      "id": "remate",
+      "nombre": "Rematetaller",
+      "orden": 1
+    },
+    {
+      "id": "casaverde",
+      "nombre": "Casa Verde",
+      "orden": 2
+    },
+    {
+      "id": "casayourte",
+      "nombre": "CasaYourte",
+      "orden": 3
+    },
+    {
+      "id": "datos",
+      "nombre": "datos · protocolos",
+      "orden": 4
+    },
+    {
+      "id": "panel",
+      "nombre": "Panel",
+      "orden": 5
+    },
+    {
+      "id": "harmonia",
+      "nombre": "Harmonía",
+      "orden": 6
+    }
+  ],
+  "pendientes": [
+    {
+      "id": "remate:L1",
+      "proyecto": "remate",
+      "clave": "L1",
+      "titulo": "Publicar las reglas de Firestore v0.7 en la consola",
+      "porQue": "La tanda 25 agrega la colección `lucesRegistro` con su bloque propio. Rige el deny por defecto: sin publicar, la luz enciende igual pero el registro de quién la encendió no se puede escribir ni leer. La autoridad es la consola, no el archivo del repositorio.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: entregado en el repo, rama claude/gesture-music-iot-prototype-9sg4u3. Se pega completo, nunca por fragmentos."
+        }
+      ]
+    },
+    {
+      "id": "remate:L2",
+      "proyecto": "remate",
+      "clave": "L2",
+      "titulo": "Crear el proyecto de Vercel de remate y cargar las cinco variables",
+      "porQue": "Es la primera y única función de servidor del proyecto: sin ella la pantalla de luces no tiene con qué hablar. Los nombres están en `.env.example`; los valores los carga Mauro a mano y nunca pasan por el chat.",
+      "pregunta": "¿Con qué cuenta de Vercel? Conviene que sea la misma que Harmonía, aunque sean dueños de GitHub distintos: dos cuentas es el mismo problema que dos proyectos, un nivel más arriba.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: paso a paso en LUCES.md § 3.2. Ojo con Tuya: hay que entrar a Service API → Go to Authorize y habilitar IoT Core, o la firma va bien y Tuya contesta que no igual. Y después de cargar las variables hay que volver a desplegar."
+        }
+      ]
+    },
+    {
+      "id": "remate:L3",
+      "proyecto": "remate",
+      "clave": "L3",
+      "titulo": "Escribir la dirección del puente en PUENTE_LUCES",
+      "porQue": "Una línea de `interno/utils.js`. Vacía, la pantalla explica qué falta en vez de fallar con un error de red que no significa nada. No es un secreto: sin token de Firebase válido la función no hace nada.",
+      "pregunta": "Cuando exista el proyecto de Vercel, pasame la dirección y la escribo — o la escribís vos desde la web de GitHub, que es una línea.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: depende de L2."
+        }
+      ]
+    },
+    {
+      "id": "remate:L4",
+      "proyecto": "remate",
+      "clave": "L4",
+      "titulo": "Tildar el permiso «Luces del depósito» a quien corresponda",
+      "porQue": "Configuración → cada persona. Los dos presets de alta (Ayudante y Gestión) ya lo traen: quien trabaja en el depósito necesita la luz. Quien lo aplica de verdad es el servidor, no la pantalla.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: el permiso ya está en el catálogo de utils.js y en la barra."
+        }
+      ]
+    },
+    {
+      "id": "remate:L5",
+      "proyecto": "remate",
+      "clave": "L5",
+      "titulo": "Mergear la rama de la tanda 25",
+      "porQue": "`main` de un sitio es producción y sale en vivo, así que la rama es el único momento en que alguien mira antes. Pero una rama que no se mergea es pérdida silenciosa, que ya pasó tres veces en este ecosistema.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: rama claude/gesture-music-iot-prototype-9sg4u3. Antes de subir se corrió `node pruebas/luces.mjs` (24/24) y se comprobó que parsea el JavaScript de los .html, incluido el que vive adentro de luces.html."
+        }
+      ]
+    },
+    {
+      "id": "harmonia:H1",
+      "proyecto": "harmonia",
+      "clave": "H1",
+      "titulo": "Averiguar con qué cuenta de Vercel se despliega Harmonía",
+      "porQue": "Apareció al ir a cargar las variables del puente de gestos: no había forma de saberlo. Y el repositorio no lo puede contestar nunca — Vercel no escribe nada ahí: no hay vercel.json, ni .vercel/, ni configuración.",
+      "pregunta": "¿Aparece Vercel en github.com/toromboto/harmonia → Settings → Integrations → GitHub Apps? Si no aparece, no hay nada que recuperar y se crea una nueva.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: procedimiento completo en DESPLIEGUE.md del propio repo. Los tres primeros pasos se hacen desde el teléfono, en la web de GitHub, sin saber ninguna contraseña de Vercel. Lo único verificable desde el código es la cuenta de GitHub: los 50 commits son del usuario toromboto, hechos desde la web."
+        }
+      ]
+    },
+    {
+      "id": "harmonia:H2",
+      "proyecto": "harmonia",
+      "clave": "H2",
+      "titulo": "Completar la titularidad de las cuentas de Tuya y de Vercel",
+      "porQue": "La sección «Titularidad de las cuentas» de secretos/harmonia.md estaba vacía, y eso ya costó algo concreto: es exactamente lo que causó H1. Es dato de contacto, no secreto — la contraseña no va a ningún documento.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: la sección ya dice lo que se pudo verificar y lo que no. Falta lo que sólo podés confirmar vos."
+        }
+      ]
+    },
+    {
+      "id": "harmonia:H3",
+      "proyecto": "harmonia",
+      "clave": "H3",
+      "titulo": "¿Se le saca a Harmonía el puente de Tuya?",
+      "porQue": "El control de luces quedó establecido en remate, con autenticación de Firebase, que es claramente mejor que la «clave de la sala» de Harmonía. El instrumento de gestos en sí es música y su lugar es Harmonía, pero su parte IoT ya no tiene destino: son dos puentes a Tuya en el ecosistema haciendo lo mismo peor.",
+      "pregunta": "¿Le saco lo de Tuya al instrumento de gestos y queda sólo el instrumento? Menos superficie, y una sola historia de luces.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: si sí, se van api/tuya.js, public/gestos/iot.js, la variable HARMONIA_CLAVE y su fila de la tabla de secretos, y el panel de luces de gestos.html. Es una tanda chica."
+        }
+      ]
+    },
+    {
+      "id": "harmonia:H4",
+      "proyecto": "harmonia",
+      "clave": "H4",
+      "titulo": "src/App.jsx es un monolito de 3268 líneas con módulos huérfanos al lado",
+      "porQue": "`src/main.jsx` importa App.jsx y nada más. Los módulos de src/theory/, src/audio/ y src/components/ existen pero no se importan: están duplicados adentro del monolito, y algunos por triplicado. Es el equivalente de Harmonía al estado paralelo que en los tres sitios costó caro.",
+      "estado": "abierto",
+      "quien": "claude",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: no es urgente y no lo toqué. Queda anotado para que la próxima sesión que abra src/theory/notes.js sepa, antes de mejorarlo, que no lo usa nadie. Anotado también en ESTADO-DE-LOS-TRES.md § 6."
+        }
+      ]
+    },
+    {
+      "id": "harmonia:H5",
+      "proyecto": "harmonia",
+      "clave": "H5",
+      "titulo": "¿Va o no va un package-lock.json?",
+      "porQue": "Se coló uno en un `git add -A` y lo saqué. Tenerlo cambia cómo compila Vercel (`npm ci` en vez de `npm install`) y agrega un archivo grande que se mueve solo, en un proyecto que se edita desde el teléfono. Puede tener sentido, pero como decisión.",
+      "pregunta": "¿Lo agrego a propósito, o el proyecto sigue sin lockfile?",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: sacado en un commit aparte, con el motivo."
+        }
+      ]
+    },
+    {
+      "id": "datos:R1",
+      "proyecto": "datos",
+      "clave": "R1",
+      "titulo": "Los dos repositorios `datos`: la duplicación de protocolos y secretos",
+      "porQue": "maurogasta-crypto/datos tiene en su main copias de PROTOCOLO-GENERAL.md, PROTOCOLO-SECRETOS.md y todo secretos/. El README de casaverdecanas-blip/datos lo describe como público y destinado a «el cascarón del panel, acá los protocolos y los índices». O el README está viejo, o esa duplicación no debería estar.",
+      "pregunta": "¿Se retiran los protocolos y el índice de secretos del repo del panel, o se corrige el README que dice que ahí no van?",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: mientras no se decida, escribí en los dos para que no diverjan más. El contenido es no sensible por el propio protocolo (nombres y ubicaciones, ningún valor), así que no es un incidente — es una decisión pendiente."
+        }
+      ]
+    },
+    {
+      "id": "datos:R2",
+      "proyecto": "datos",
+      "clave": "R2",
+      "titulo": "El main del repo del panel sigue sin la mitad del reglamento",
+      "porQue": "maurogasta-crypto/datos no tiene en main PROTOCOLO-DESARROLLO.md, PROTOCOLO-INTERFAZ.md, ESTADO-DE-LOS-TRES.md, partes/ ni pruebas/: están en una rama sin mergear. Es la tercera vez que pasa lo que describe PROTOCOLO-GENERAL.md § 2.1 — existen y no rigen.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: en casaverdecanas-blip/datos sí están en main. Es el espejo el que quedó corto."
+        }
+      ]
+    },
+    {
+      "id": "datos:R3",
+      "proyecto": "datos",
+      "clave": "R3",
+      "titulo": "Mergear las ramas de esta sesión en los dos `datos`",
+      "porQue": "El § 2.1 dice que en los repos de memoria se empuja directo a main. Esta sesión tenía la rama fijada por instrucción del entorno, así que los pushes quedaron en rama. Es lo único que se hizo contra el protocolo, y a propósito.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: rama claude/gesture-music-iot-prototype-9sg4u3 en los dos."
+        }
+      ]
+    }
+  ],
+  "protocolos": [
+    {
+      "id": "general:puente-tercero",
+      "ambito": "general",
+      "orden": 31,
+      "titulo": "Cuando un tercero exige un secreto, la forma del puente",
+      "regla": "Un secreto en el navegador no es un secreto: si un servicio exige firmar, hace falta un servidor, y tiene esta forma. El cliente manda un ALIAS, nunca un identificador, contra lista blanca. La autorización sale de donde ya sale todo —el token de sesión y `usuarios/{uid}`—, nunca de una contraseña compartida nueva. Autenticar y autorizar son dos cosas y se hacen las dos. Y el servidor NO lleva credencial de servidor de la base: lee la ficha con el token de la propia persona, así que no puede leer nada que ella no pudiera leer sola. Más CORS con lista blanca explícita y un freno del lado del servidor.",
+      "porQue": "Una clave compartida entre la página y la función funciona, y crea un modelo de acceso paralelo al que la app ya tiene: dos listas de quién puede qué, que se desincronizan el día que alguien deja de trabajar y le sacan la cuenta pero no la clave. Y un service account en el hosting sería una llave maestra de toda la base para prender una luz.",
+      "origen": "Rematetaller, tanda 25, 2026-09-09 · PROTOCOLO-DESARROLLO.md § 4.9. Le sirve ya a casaverdecanas, cuyas funciones de Netlify no atan quién puede llamarlas a usuarios/{uid}.",
+      "vigencia": "vigente"
+    },
+    {
+      "id": "general:banco-node",
+      "ambito": "general",
+      "orden": 32,
+      "titulo": "Un banco de pruebas que corre con `node` a secas",
+      "regla": "Para la lógica que decide quién puede, o que habla con un tercero: un `.mjs` en `pruebas/` que corre sin npm, sin dependencias y sin navegador, simulando los terceros al reemplazar `globalThis.fetch`. Tres criterios: se importa el código real que se despliega, no una copia; lo que se verifica es el mecanismo y no una imitación (si hay que probar que se verifica una firma, el banco firma de verdad); y se prueban las negativas, incluido que ningún mensaje de error repita un secreto.",
+      "porQue": "La pantalla de diagnóstico prueba el sistema vivo, pero no puede provocar a mano un token falsificado, una nube que contesta que no, ni una credencial vencida a mitad de camino. Un banco que reimplementa lo que prueba, prueba la reimplementación.",
+      "origen": "Rematetaller y Harmonía, 2026-09-09 · PROTOCOLO-DESARROLLO.md § 11.7. Los dos lo estrenaron el mismo día, 24 casos cada uno.",
+      "vigencia": "vigente"
+    },
+    {
+      "id": "general:cdn-diferido",
+      "ambito": "general",
+      "orden": 33,
+      "titulo": "Un `import` estático desde un CDN es un punto único de falla de la página entera",
+      "regla": "Lo que se carga de un CDN se carga diferido, en el momento en que hace falta, y con el error dicho. No arriba de todo con un `import` estático.",
+      "porQue": "Con el import estático, un CDN que no contesta —un ascensor, un tren, una red que filtra— no rompe la parte que lo usa: rompe TODO, en blanco y sin un solo mensaje. Se descubrió cargando la página compilada en un navegador de verdad, no leyendo el código: los desplegables quedaron vacíos y no había nada que explicara por qué.",
+      "origen": "Harmonía, instrumento de gestos, 2026-09-09 · ESTADO-DE-LOS-TRES.md § 6. Aplica a los tres sitios, que cargan Firebase por CDN.",
+      "vigencia": "vigente"
+    },
+    {
+      "id": "general:linea-telefono",
+      "ambito": "general",
+      "orden": 34,
+      "titulo": "La línea no es «tiene build o no»: es «se edita y se verifica desde el teléfono»",
+      "regla": "La restricción que manda es que todo se pueda hacer desde el teléfono. Un proyecto con build la puede cumplir por otro camino: la parte que se toca seguido vive en una carpeta que el build copia tal cual, sin compilar. Sigue valiendo que no se le agrega build, framework, npm ni backend a un proyecto que no lo tiene, por iniciativa de un agente.",
+      "porQue": "Los tres sitios nunca tuvieron build, así que «sin build» y «editable desde el teléfono» parecían la misma cosa. Harmonía muestra que no lo son, y da una tercera respuesta que no se le había ocurrido a nadie.",
+      "origen": "Harmonía, 2026-09-09 · PROTOCOLO-DESARROLLO.md § 1 y ESTADO-DE-LOS-TRES.md § 6.",
+      "vigencia": "vigente"
+    },
+    {
+      "id": "harmonia:no-es-de-los-tres",
+      "ambito": "harmonia",
+      "orden": 1,
+      "titulo": "Harmonía no comparte la arquitectura de los tres sitios, y no es una deuda",
+      "regla": "React + Vite + Tailwind, con build y npm, en Vercel, sin Firestore ni Auth ni Cloudinary. PROTOCOLO-DESARROLLO.md no le aplica entero: le aplican § 4.9 (la forma del puente), § 7 (documentación) y § 8 (cómo se entrega una tanda), que son sobre cómo se trabaja y no sobre con qué. No se agrega como columna de la matriz de ESTADO-DE-LOS-TRES.md § 1.",
+      "porQue": "Nació así, no es un panel con Firestore y no comparte ni los datos ni la gente con los otros. Una columna llena de guiones no informa: sugiere una deuda que no existe.",
+      "origen": "Alta del proyecto en el ecosistema, 2026-09-09 · ESTADO-DE-LOS-TRES.md § 6.",
+      "vigencia": "vigente"
+    },
+    {
+      "id": "harmonia:paleta-copiada",
+      "ambito": "harmonia",
+      "orden": 2,
+      "titulo": "La paleta tonal está copiada, a propósito, y no hay nada que avise",
+      "regla": "La fuente canónica de los colores tonales es la constante `NC` de `src/App.jsx`. `public/gestos/musica.js` tiene una COPIA, porque esa página no pasa por el build. Si cambia una, se cambia la otra a mano, en la misma tanda.",
+      "porQue": "Es el mismo caso que PROTOCOLO-SECRETOS.md describe para los identificadores públicos repetidos cuando no hay build para importarlos de un solo lugar: no es un descuido, es lo que se paga, y por eso está anotado.",
+      "origen": "Harmonía, instrumento de gestos, 2026-09-09 · GESTOS.md § 1.",
+      "vigencia": "vigente"
+    }
+  ]
+}

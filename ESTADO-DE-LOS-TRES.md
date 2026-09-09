@@ -72,6 +72,19 @@ sobreviva al hecho es justamente el error que esta leyenda existe para evitar.
 5. **La puerta con salida:** al que no puede entrar se le explica y se le ofrece
    WhatsApp con el mensaje precargado, y los textos los editan los
    administradores desde el panel.
+6. **La forma del puente a un tercero que exige firmar** (nuevo, 2026-09-09 ·
+   `PROTOCOLO-DESARROLLO.md` § 4.9). El navegador manda un alias y su token de
+   sesión; el servidor traduce, comprueba el permiso en `usuarios/{uid}` leyendo
+   **con ese mismo token**, y firma. Sin contraseña compartida y sin credencial
+   de servidor de la base. **A quién le sirve ya:** a `casaverdecanas`, que tiene
+   funciones de Netlify con `GEMINI_API_KEY` y `CLOUDINARY_API_SECRET` — hoy
+   quién puede llamarlas no está atado a `usuarios/{uid}`, y con esta forma lo
+   estaría.
+7. **El banco de pruebas que corre con `node` a secas** (nuevo, § 11.7). Sin
+   npm, sin navegador, con los terceros simulados y firmando de verdad lo que
+   hay que verificar. **A quién le sirve:** a los tres. La pantalla de
+   diagnóstico prueba el sistema vivo; esto prueba lo que no se puede provocar a
+   mano.
 
 ### De `casaverdecanas`, para los otros dos
 1. **`--piso` y `--techo` sobre `env(safe-area-inset-*)`,** más el molde único
@@ -376,3 +389,57 @@ Rematetaller** —las reglas v0.6 quedaron verificadas contra la consola— y ap
 A6, un defecto en vivo de la puerta pública que nadie había visto. De esa corrida
 salió el § 11 del protocolo: el proceso de verificación, con la regla de que después
 de dos intentos sobre el mismo problema el tercero no es un intento, es una medición.*
+
+---
+
+## 6. El sexto proyecto, y por qué no entra en la matriz
+
+Sumado el **2026-09-09**. `toromboto/harmonia` — diccionario armónico,
+improvisación y colores tonales, para tango, jazz, piano y bandoneón.
+
+**No comparte la arquitectura de los tres.** React + Vite + Tailwind, con build
+y con `npm`, desplegado en Vercel. No tiene Firestore, ni Auth, ni Cloudinary:
+todo su estado vive en el `localStorage` del teléfono. Por eso **no se agrega
+como cuarta columna** de la matriz del § 1: casi todas esas filas no le
+aplicarían, y una columna llena de guiones no informa nada — sugiere una deuda
+que no existe.
+
+Lo que sí comparte, y por lo que está en el ecosistema:
+
+| | |
+|---|---|
+| Reglas de secretos | índice en `secretos/harmonia.md`, `.gitignore` de la plantilla, valores sólo en Vercel y cargados a mano |
+| Documentación | `CLAUDE.md` con la estructura de `PROTOCOLO-GENERAL.md` § 3 — **no lo tenía**, se le escribió en la misma tanda |
+| Entrega | la documentación sube con el código, y no se declara entregado lo que no se entregó |
+| El banco de pruebas sin dependencias | § 11.7, en las dos direcciones: lo estrenaron el mismo día `remate` y `harmonia` |
+
+### Lo que le enseñó al resto
+
+**La línea que importa no es «tiene build o no», es «se puede editar y verificar
+desde el teléfono».** Harmonía cumple lo segundo por otro camino: la parte que
+se toca seguido vive en `public/`, que Vite copia tal cual, sin compilar. Es
+una tercera respuesta a la restricción del § 1 de `PROTOCOLO-DESARROLLO.md`, y
+no se le había ocurrido a nadie porque los tres sitios nunca tuvieron build.
+
+**Y una que se descubrió cargando la página en un navegador de verdad:** un
+`import` estático desde un CDN es un punto único de falla para la página
+entera. Si el CDN no contesta —un ascensor, un tren, una red que filtra— no
+falla la parte que lo usa: **falla todo, en blanco y sin un mensaje**. La forma
+correcta es carga diferida, en el momento en que hace falta, con el error
+dicho. Aplica a cualquiera de los tres que cargue algo por CDN, que son los
+tres.
+
+### Lo que le falta, respecto de los otros
+
+| | |
+|---|---|
+| Documentación técnica en el repositorio | ❌ — tiene `README.md`, `GESTOS.md` y `DESPLIEGUE.md`, pero no la estructura de tres libros |
+| Un núcleo que no se duplica | ❌ — `src/App.jsx` es un monolito de 3268 líneas, y `src/theory/`, `src/audio/` y `src/components/` **existen pero no se importan**: están duplicados adentro, algunos por triplicado |
+| Sellos de versión | ⚠️ — los tiene `public/gestos/`, no `src/` |
+| Titularidad de las cuentas | ⚠️ — ver `secretos/harmonia.md`: se sabe la cuenta de GitHub, no la de Vercel |
+
+Ese monolito es el equivalente de Harmonía a lo que en los tres sitios costó
+caro: un estado paralelo que nadie retiró a tiempo (§ 2.2 y § 2.4 de
+`PROTOCOLO-DESARROLLO.md`). No es urgente, pero está anotado acá para que la
+próxima sesión que abra `src/theory/notes.js` sepa, antes de mejorarlo, que no
+lo usa nadie.

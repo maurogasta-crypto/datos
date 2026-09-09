@@ -30,7 +30,7 @@ lo que hace que valga la pena unificarlos:
 | Base de datos | Firestore. La seguridad la aplican las **Security Rules del servidor**, nunca la interfaz |
 | Sesiones | Firebase Auth (mail + contraseña) |
 | Fotos | Cloudinary, subida desde el navegador con **upload preset sin firma** |
-| Backend | Ninguno, salvo `casaverdecanas`, que tiene funciones de Netlify subidas a mano por .zip |
+| Backend | Ninguno, salvo dos excepciones acotadas: `casaverdecanas`, con funciones de Netlify subidas a mano por .zip, y `Rematetaller`, con **una sola** función en Vercel desde el 2026-09-09 — el puente a las luces del depósito (§ 4.9) |
 | Dispositivo | **Teléfono Android.** El escritorio es el caso raro |
 | Idioma | Rioplatense, voseo — en la interfaz y en la documentación |
 
@@ -45,6 +45,20 @@ lo que hace que valga la pena unificarlos:
 **Nada de esto es accidental y no se cambia sin decisión explícita de Mauro.**
 Agregar un build, un framework o un `package.json` a cualquiera de los tres
 rompe la restricción 1 y no se hace por iniciativa de un agente.
+
+> **Y hay un sexto proyecto que no tiene esta forma: `toromboto/harmonia`.**
+> React + Vite + Tailwind, con build, con `npm`, desplegado en Vercel. No es una
+> desviación a corregir: nació así, no es un panel con Firestore, y no comparte
+> ni los datos ni la gente con los otros. **Este documento no le aplica entero**
+> — le aplican § 4.9, § 7 y § 8, que son sobre cómo se trabaja, no sobre con qué.
+> Está en el ecosistema porque comparte las reglas de secretos, de documentación
+> y de entrega, y porque su índice vive en `secretos/harmonia.md` como el de
+> todos.
+>
+> La lección que dejó, y vale para cualquier app futura: **la línea que importa
+> no es "tiene build o no", es "se puede editar y verificar desde el teléfono".**
+> Harmonía cumple la segunda por otro camino: la parte que se toca seguido vive
+> en `public/`, que Vite copia tal cual, sin compilar.
 
 ---
 
@@ -390,6 +404,58 @@ Los pasos, entonces:
 con nada más hasta resolverlo.**
 
 ---
+
+
+### 4.9 · Cuando un tercero exige un secreto, la forma del puente `[Rematetaller]`
+
+Tarde o temprano un proyecto necesita hablar con un servicio que **exige firmar
+con un secreto** — Tuya para las luces del depósito fue el primero, y no va a
+ser el último. Ahí el sitio estático se queda corto y no hay vuelta: **un
+secreto en el navegador no es un secreto.** Cualquiera que abra el código lo
+lee.
+
+Lo que sí se puede es que el servidor sea **lo más chico posible**, y que tenga
+esta forma. Los cuatro puntos son el precio de no abrir un agujero, no
+preferencias de estilo:
+
+1. **El cliente manda un alias, nunca un identificador.** El panel pide
+   `{"luz":"deposito"}`; el servidor traduce ese alias al identificador real
+   del aparato, que vive en una variable de entorno y no sale de ahí. Lista
+   blanca: un alias que no está, se rechaza. Y **un alias no habilita cualquier
+   comando** — sin una lista explícita, el único permitido es el declarado.
+
+2. **La autorización sale de donde ya sale todo, no de una contraseña nueva.**
+   La tentación es una clave compartida entre la página y la función. Funciona,
+   y crea **un modelo de acceso paralelo** al que el proyecto ya tiene: dos
+   listas de quién puede qué, que se desincronizan el día que alguien deja de
+   trabajar acá y le sacan la cuenta pero no la clave. En un proyecto con
+   Firebase Auth, lo que viaja es el **token de sesión**, y el permiso se lee de
+   `usuarios/{uid}` como cualquier otro (§ 4.1).
+
+3. **Autenticar y autorizar son dos cosas, y se hacen las dos.** Verificar la
+   firma del token prueba *quién es*; no prueba *qué puede*. Un token válido de
+   alguien desactivado sigue siendo un token válido.
+
+4. **El servidor no lleva credencial de servidor de la base.** Lee la ficha con
+   **el token de la propia persona**, así que la lectura pasa por las mismas
+   reglas de Firestore que si la hiciera el navegador — y la función **no puede
+   leer nada que esa persona no pudiera leer sola**. Un *service account* en el
+   hosting sería una llave maestra de toda la base para prender una luz. Si
+   mañana cambian las reglas, el puente cambia con ellas sin tocarlo.
+
+Y dos cosas más que no son de la forma pero se pagan igual si faltan:
+
+- **CORS con lista blanca explícita.** El panel y la función viven en dominios
+  distintos. Un `*` ahí deja que cualquier página del mundo use la sesión de
+  quien la visite. Y la lista tiene la dirección del sitio adentro: **si el
+  sitio cambia de dominio, la lista cambia en la misma tanda**, o deja de
+  responder sin que nada lo relacione con el dominio.
+- **El freno del lado del servidor.** El del navegador se saltea abriendo las
+  herramientas de desarrollo.
+
+**Nada de esto se agrega por iniciativa de un agente** (§ 10.3): meterle un
+backend a un proyecto que no lo tiene es decisión de Mauro. Lo que dice esta
+sección es qué forma tiene que tener **cuando él lo decida**.
 
 ## 5. La app instalable (PWA)
 
@@ -752,6 +818,7 @@ después cuesta diez veces más agregarla.
 | **`CLAUDE.md` con la estructura de `PROTOCOLO-GENERAL.md` § 3** | Es lo primero que lee cualquier agente. Sin él, cada sesión reconstruye el proyecto de cero y adivina |
 | **`.gitignore` de la plantilla, e índice en `datos/secretos/<proyecto>.md` con su tabla de titularidad** | Barato el primer día. Después es un incidente |
 | **Una pantalla de diagnóstico** (§11.2) | Se escribe una vez y sirve para siempre. Escribirla el día que hace falta es escribirla tarde, y sin ella el tercer intento a ciegas se paga en horas |
+| **Si habla con un tercero que exige firmar, la forma del puente** (§ 4.9) | Un secreto en el navegador no es un secreto, y una contraseña compartida crea un modelo de acceso paralelo al que la app ya tiene |
 | **Rioplatense, voseo, interfaz y documentación** | |
 
 ### 10.2 · Lo que cada app decide por su cuenta
@@ -1020,3 +1087,33 @@ entrada del registro —hasta ahora el protocolo decía que el Libro 2 existe y 
 más, y por eso cada proyecto inventó el suyo—; y el § 8 se reescribe con lo mejor de
 los dos flujos que ya existían: de dónde sale el número de tanda (Casa Verde), qué
 se declara al entregar y cómo se retira una función.*
+
+
+### 11.7 · Un banco que corre con `node` a secas `[Rematetaller]`
+
+La pantalla de diagnóstico (§ 11.2) prueba el sistema **vivo**: conexiones
+reales, reglas publicadas, en un teléfono. Lo que no puede probar es la lógica
+en los casos que no se pueden provocar a mano — un token falsificado, una nube
+que contesta que no, una credencial vencida a mitad de camino.
+
+Para eso, la forma que funcionó es un archivo `.mjs` en `pruebas/` que **corre
+con `node` a secas**: sin `npm`, sin dependencias, sin navegador, sin nada que
+instalar. Los terceros se simulan reemplazando `globalThis.fetch`.
+
+Tres criterios, que son los que lo hacen valer algo:
+
+1. **Se prueba el código real, no una copia.** El banco importa el archivo que
+   se despliega. Un banco que reimplementa lo que prueba, prueba la
+   reimplementación.
+2. **Lo que se verifica es el mecanismo, no una imitación.** Si lo que hay que
+   probar es que se verifica una firma, el banco **firma de verdad** — genera un
+   par de claves y arma los tokens, buenos y malos. Simular la verificación
+   prueba el simulacro.
+3. **Se prueban las negativas, igual que en § 11.3.** El token de otro
+   proyecto, el vencido, el firmado con otra clave, el `alg: none`, la cuenta
+   desactivada, la sesión sin permiso. Y que **ningún mensaje de error repita un
+   secreto**: eso se comprueba buscando el valor en la respuesta, no leyendo el
+   código con buena voluntad.
+
+**Cuándo conviene:** cuando hay lógica que decide *quién puede*, o que habla con
+un tercero. Para una pantalla que pinta una lista, la de diagnóstico alcanza.

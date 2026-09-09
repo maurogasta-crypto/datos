@@ -145,6 +145,11 @@ Y una trampa que ya casi pasa: `index.html` y `nucleo.js` piden
 
 - **No hay build ni terminal.** HTML/CSS/JS servido tal cual, y se edita desde
   el celular por la web de GitHub. Nada de `npm`.
+- **Hay un banco de pruebas, y no está acá.** Corre este código contra un DOM de
+  verdad y un Firestore de mentira: 41 comprobaciones, entre ellas que el estado
+  exportado se pueda volver a importar sin pérdida y que ninguna ficha asome en
+  él. Vive en el repo privado `casaverdecanas-blip/datos` → `pruebas/panel/`,
+  justamente para no traerle `npm` a este repositorio. Si tocás el panel, corrélo.
 - **El núcleo es `nucleo.js` y no se duplica.** Si algo hace falta en dos
   pantallas, sube ahí en la misma tanda.
 - **Una colección nueva entra con su regla, en la misma tanda.** Rige el cierre

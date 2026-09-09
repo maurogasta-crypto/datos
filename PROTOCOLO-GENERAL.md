@@ -356,8 +356,76 @@ tiene dos zonas que no se mezclan.
 **Pasar una regla de un sitio a «general» es el resultado típico de una
 auditoría**, y es exactamente la mejora que se buscaba propagar.
 
+
+## 8. La rutina de cada tanda: qué se hace siempre
+
+Pedida por Mauro el 2026-09-09. Las secciones 5 a 7 dicen dónde va la
+información, cómo se conversa y cuándo se audita. Ésta dice **qué hay que hacer
+en cada corrida, sin que nadie lo pida.**
+
+Es una lista de obligaciones, no de sugerencias. Un agente que termina una tanda
+sin haberla cumplido no terminó la tanda.
+
+### Al abrir
+
+1. **Leer los protocolos de este repositorio** —éste, `PROTOCOLO-SECRETOS.md`,
+   `PROTOCOLO-DESARROLLO.md`, `PROTOCOLO-INTERFAZ.md`,
+   `ESTADO-DE-LOS-TRES.md`— y el `CLAUDE.md` del repo en el que se va a
+   trabajar. Si la sesión no puede leer este repositorio, pedirlo antes de
+   escribir código.
+2. **Pedirle a Mauro el paquete exportado del panel** si no lo trajo. Sin él se
+   arranca adivinando en qué quedó cada proyecto.
+3. **Mirar primero `tocados` y `sinResponder`** del paquete. Eso es lo que él
+   respondió y lo que sigue esperando; leerlo después de trabajar es leerlo
+   tarde.
+
+### Al cerrar — las cinco cosas
+
+Ninguna es opcional y ninguna espera a que Mauro la pida.
+
+1. **El código sube con su documentación, en la misma tanda.** El `README.md` y
+   el `CLAUDE.md` del repo tocado quedan diciendo la verdad: sellos, archivos,
+   qué hace cada cosa y por qué. Una documentación que explica mal el motivo de
+   algo se convierte en una regla falsa que alguien va a obedecer.
+
+2. **Todo lo que no es código sube a `casaverdecanas-blip/datos`,** que es
+   privado: cambios de protocolo, índices de secretos (`secretos/<proyecto>.md`),
+   bancos de pruebas, y los partes generados en `partes/<fecha>-<tema>.json`.
+   Automáticamente. El contenedor de una sesión es efímero: lo que no se sube,
+   se pierde, y con él se pierde por qué se hizo lo que se hizo.
+
+3. **Revisar lo desarrollado contra la documentación que ya existe y buscar
+   dónde quedó incoherente.** No alcanza con documentar lo nuevo: lo nuevo suele
+   volver falso algo viejo. Los lugares donde eso pasa, siempre los mismos:
+   - el `CLAUDE.md` y el `README.md` del repo tocado;
+   - `secretos/<proyecto>.md` de este repositorio;
+   - `ESTADO-DE-LOS-TRES.md`, si lo hecho en un sitio ahora les sirve a los otros;
+   - las reglas del panel, si una regla nueva contradice o generaliza otra;
+   - los sellos de versión y los `?v=` con los que se piden los archivos.
+
+4. **Generar el parte para el panel** y entregarlo como archivo: pendientes
+   nuevos y cerrados, **las preguntas** que necesitan una decisión de Mauro, y
+   las reglas nuevas o cambiadas. Es lo que cierra el circuito de la sección 6.
+
+5. **No declarar entregado nada que no se haya entregado.** Si algo quedó a
+   medias, se dice cuál y por qué, y entra al parte como pendiente abierto.
+
+### La regla que sostiene a las otras cuatro
+
+**Lo que se documenta sale de leer el código y la configuración reales**, nunca
+de lo que una conversación —ni siquiera ésta— afirme que dice el código. Es la
+misma regla de la sección 1, aplicada al cierre: al documentar es cuando más
+tienta escribir de memoria.
+
+### Cuándo entra la auditoría
+
+La auditoría de protocolos (sección 7) no va en cada tanda: va cuando pasó
+bastante o cuando aparece su señal. Pero el punto 3 de esta lista es su versión
+diaria — mirar si lo hecho acá deja algo incoherente en otro lado es exactamente
+lo mismo, a escala de una tanda.
+
 ---
 *Última actualización: 2026-09-09 (entran las secciones 5 —el panel como lugar
 donde se presenta la información—, 6 —el panel como canal, con la ronda y el
-apretón de manos— y 7 —la auditoría de protocolos, para que una mejora hecha en
-un sitio llegue a los demás).*
+apretón de manos—, 7 —la auditoría de protocolos— y 8 —la rutina obligatoria de
+cada tanda, al abrir y al cerrar).*

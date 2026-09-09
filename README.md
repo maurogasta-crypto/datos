@@ -14,6 +14,10 @@ tener que abrir cada repo, y sin que ningún valor real toque nunca git.
 - [`PROTOCOLO-SECRETOS.md`](PROTOCOLO-SECRETOS.md) — qué tipo de secreto va
   en cada lugar (Netlify, GitHub Secrets, Firestore, etc.) y el formato del
   índice por proyecto.
+- [`partes/`](partes/) — cada parte generado para el panel, con su fecha. El
+  registro de qué se le pidió aplicar a Mauro y cuándo.
+- [`pruebas/panel/`](pruebas/panel/) — el banco de pruebas del panel, que corre
+  su código real contra un DOM y un Firestore de mentira.
 - [`secretos/casaverdecanas.md`](secretos/casaverdecanas.md)
 - [`secretos/casayourte.md`](secretos/casayourte.md) — pendiente de completar
 - [`secretos/rematetaller.md`](secretos/rematetaller.md) — pendiente de completar

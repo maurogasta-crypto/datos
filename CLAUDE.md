@@ -35,7 +35,7 @@ Es la regla de fondo de este proyecto, y la razón por la que existe:
 
 | | Quién escribe | ¿Pasa por el chat? | Colecciones |
 |---|---|---|---|
-| **El estado de los proyectos** | lo genera Claude, lo aplica Mauro | **sí** — no es sensible | `proyectos/`, `pendientes/`, `tandas/` |
+| **El estado de los proyectos y las reglas** | lo genera Claude, lo aplica Mauro | **sí** — no es sensible | `proyectos/`, `pendientes/`, `tandas/`, `protocolos/` |
 | **Las fichas** | **sólo Mauro**, en el panel | **nunca** | `fichas/` |
 
 **Un agente no tiene credenciales de `datos-830f8` y no las pide.** No escribe en

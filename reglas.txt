@@ -36,6 +36,7 @@ service cloud.firestore {
     match /proyectos/{id}  { allow read, write: if soyYo(); }
     match /pendientes/{id} { allow read, write: if soyYo(); }
     match /tandas/{id}     { allow read, write: if soyYo(); }
+    match /protocolos/{id} { allow read, write: if soyYo(); }
 
     // ── Lo que sólo escribe Mauro, en el panel ──
     // Titularidad de cuentas, contactos, números. NO pasa por el chat, no

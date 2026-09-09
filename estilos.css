@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-3
+   Sello: estilos-4
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -212,3 +212,32 @@ textarea.libre { font-family:inherit; font-size:.95rem; white-space:pre-wrap;
 /* El segmentado del editor: tres opciones y ninguna marcada de arranque sería
    un estado imposible, así que abrirPendiente() siempre marca una. */
 #t-estado button, #t-quien button { font-size:.56rem; }
+
+/* ── una regla ── */
+/* Se parece a un pendiente a propósito: es la misma clase de objeto —algo que
+   se lee de un vistazo y se abre para tocar— y dos lenguajes visuales para lo
+   mismo obligan a aprender dos veces. */
+.regla { background:var(--tinta2); border:1px solid var(--linea);
+  border-left:3px solid var(--acento); border-radius:var(--r-s);
+  padding:.7rem .8rem; margin:.45rem 0; cursor:pointer; }
+.regla:active { background:var(--tinta3); }
+.regla.propuesta { border-left-color:var(--ojo); }
+.regla.retirada { border-left-color:var(--gris2); opacity:.55; }
+.regla .cab { display:flex; align-items:baseline; gap:.5rem; }
+.regla .tit { font-weight:600; font-size:.94rem; flex:1; }
+.regla .texto { font-size:.88rem; margin-top:.35rem; white-space:pre-wrap; }
+.regla .porque { font-size:.82rem; color:var(--gris); margin-top:.45rem;
+  border-top:1px dashed var(--linea); padding-top:.4rem; white-space:pre-wrap; }
+.regla .porque .k { display:block; font-family:var(--mono); font-size:.56rem;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--gris2);
+  margin-bottom:.15rem; }
+.regla .cuando { font-family:var(--mono); font-size:.58rem; color:var(--gris2);
+  margin-top:.5rem; letter-spacing:.06em; }
+.regla .quien { font-family:var(--mono); font-size:.54rem; letter-spacing:.1em;
+  text-transform:uppercase; padding:.15rem .4rem; border-radius:999px; flex:none;
+  border:1px solid var(--ojo); color:var(--ojo); }
+
+/* ── cinco solapas entran; seis no ── */
+/* Con cinco, «Pendientes» ya es la más larga que cabe. Si algún día hace falta
+   una sexta, no se achica la letra: se junta algo o se saca algo. */
+#nav button { padding:.7rem .15rem; font-size:.55rem; letter-spacing:.06em; }

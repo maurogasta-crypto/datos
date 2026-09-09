@@ -94,6 +94,32 @@ mandé.
 pendiente, queda la tuya. Perder una respuesta por no haberla repetido sería
 exactamente lo que este circuito viene a evitar.
 
+### Las reglas
+
+Los protocolos vivían sólo en `casaverdecanas-blip/datos`, que se lee desde una
+computadora. Acá se trabaja desde el teléfono, así que en la práctica no se
+leían — y **una regla que nadie lee no es una regla**. Ahora están en la solapa
+«Reglas», y se pueden tocar.
+
+Cada regla tiene un **ámbito**, y la distinción es el punto:
+
+- **Para todos** — vale en los cinco proyectos.
+- **Un sitio** — sólo ahí, porque usa otras herramientas o puede otras cosas.
+  Netlify existe en Casa Verde y no en los otros; sólo `remate` separa monedas.
+
+Y una **vigencia**: vigente, propuesta o retirada. Una regla que dejó de
+aplicarse se marca retirada en vez de borrarse: así queda por qué existió.
+
+**La auditoría.** Arriba de la solapa hay una caja con la fecha de la última.
+Es el momento de mirar si una mejora que salió en un sitio se aplicó en los
+otros que hacen lo mismo — **una herramienta que sirve en uno y no se llevó a
+los demás es trabajo hecho dos veces**. Lo que salga de la auditoría entra como
+pendientes, igual que todo.
+
+Las reglas viajan en el parte como los pendientes: yo las propongo, vos las
+revisás con todo a la vista y las aplicás. La exportación las lleva, y señala
+en `reglasTocadas` las que editaste.
+
 ### El parte entra y sale
 
 La solapa «El parte» tiene las dos direcciones, y las dos son del estado de los
@@ -160,7 +186,7 @@ vuelve.
 
 | Archivo | Qué hace |
 |---|---|
-| `index.html` | el panel entero: tablero, el parte, fichas, la puerta |
+| `index.html` | el panel entero: tablero, el parte, las reglas, fichas, la puerta |
 | `nucleo.js` | el núcleo: la puerta, avisos, errores con causa, fechas locales |
 | `firebase-init.js` | **el único contacto con el SDK de Firebase** |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
@@ -176,15 +202,15 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-3` |
-| `index.html` | `P.PANEL` | `panel-5` |
-| `estilos.css` | (en el comentario) | `estilos-3` |
+| `index.html` | `P.PANEL` | `panel-6` |
+| `estilos.css` | (en el comentario) | `estilos-4` |
 | `firebase-init.js` | (en el comentario) | `init-1` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-3` y `nucleo.js?v=nucleo-3`. Sin ese número, el
+pide `estilos.css?v=estilos-4` y `nucleo.js?v=nucleo-3`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

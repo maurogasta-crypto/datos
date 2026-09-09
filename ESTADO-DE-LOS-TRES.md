@@ -21,7 +21,7 @@ documentación de cada uno.
 | `PRESETS` de alta de usuario | ❌ | ❌ | ✅ |
 | Reglas: deny por defecto, sin catch-all | ✅ | ✅ | ✅ |
 | Reglas: exige `activo == true`, no solo sesión | ✅ | ✅ | ✅ |
-| Copia de las reglas en el repositorio | ✅ | ✅ | 🕐 |
+| Copia de las reglas en el repositorio | ✅ | ✅ | ✅ |
 | `firebase-init.js` como punto único del SDK | ✅ | ✅ | ⚠️ dentro de `utils.js` |
 | Caché persistente de Firestore | ✅ | ✅ | ❌ `getFirestore` pelado |
 | Ayuda `?` por pantalla | ❌ | ❌ | ✅ |
@@ -50,10 +50,11 @@ Versión del SDK de Firebase: **12.16.0** en `casaverdecanas` y `CasaYourte`,
 entregado hasta que esté en vivo (§ 7.4 de `PROTOCOLO-DESARROLLO.md`): se pasa a
 ✅ recién ahí.
 
-*Al 2026-09-09 no queda ninguno.* Los cuatro relojes que había —`CLAUDE.md` y
-`.gitignore` de CasaYourte y de Rematetaller— se comprobaron contra `main` de
-cada repositorio y están los cuatro. Que la marca sobreviva al hecho es
-justamente el error que esta leyenda existe para evitar.
+*Al 2026-09-09 no queda ninguno.* Los cinco relojes que había se comprobaron
+uno por uno contra `main` del repositorio correspondiente y los cinco estaban:
+el `CLAUDE.md` y el `.gitignore` de CasaYourte y de Rematetaller, y
+`firestore.rules` en la raíz de Rematetaller (8 KB, en `main`). Que la marca
+sobreviva al hecho es justamente el error que esta leyenda existe para evitar.
 
 ---
 

@@ -167,16 +167,16 @@ La primera vez, y en este orden:
 secreto —el token lo da GitHub para esa corrida— y **existe por una razón
 concreta, no por costumbre**:
 
-GitHub **no dispara compilaciones a partir de push hechos por una app de
-GitHub**. Es su protección contra bucles infinitos, y todos los push de un
-agente son de esa clase. Con la publicación «desde una rama», el sitio se quedó
-sirviendo la tanda 1 mientras el repositorio ya iba por la cuarta: cinco commits
-en `main` y ni una publicación nueva. No había forma de que una tanda llegara al
-teléfono sin que Mauro tocara el repositorio a mano cada vez.
+**La compilación vieja de Pages —la de «Deploy from a branch»— no corre para
+los push de una app de GitHub**, y todos los push de un agente son de esa clase.
+El sitio se quedó sirviendo la tanda 1 mientras el repositorio ya iba por la
+cuarta: cinco commits en `main` y ni una publicación. Parecía caché del
+teléfono, y no lo era.
 
-El workflow se dispara con un push a `main` **y también a pedido**
-(`workflow_dispatch`), que es lo que permite que un agente pida la publicación
-después de subir.
+Un workflow propio sí corre: comprobado el 2026-09-09, dos publicaciones
+seguidas disparadas por push de la app. Así que **cada tanda se publica sola**.
+El `workflow_dispatch` está igual, para pedirla a mano cuando haga falta —por
+ejemplo después de cambiar un ajuste de Pages, que no es un push.
 
 **Requiere que Pages esté en `Settings → Pages → Source: GitHub Actions`.** Con
 la opción vieja («Deploy from a branch») este archivo no hace nada y el problema

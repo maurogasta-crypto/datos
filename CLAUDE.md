@@ -55,8 +55,9 @@ historial de git es permanente: borrar un archivo después no alcanza.
 ¿Usa variables de entorno? **No.** No hay funciones de servidor. Hay **un**
 workflow —`.github/workflows/pages.yml`, que publica el sitio— y **no consume
 ningún secreto**: el token se lo da GitHub para esa corrida. Existe porque
-GitHub no dispara compilaciones a partir de push hechos por una app, así que sin
-él ninguna tanda de un agente llegaba al sitio publicado. Ver `README.md`.
+la compilación vieja de Pages («Deploy from a branch») no corre para los push de
+una app de GitHub, así que sin él ninguna tanda de un agente llegaba al sitio.
+Un workflow propio sí corre con esos push: cada tanda se publica sola. Ver `README.md`.
 
 | Nombre | Qué hace | Tipo | Dónde vive el valor real | Consumido por | Verificado |
 |---|---|---|---|---|---|

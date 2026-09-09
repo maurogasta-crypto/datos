@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    firebase-init.js — EL ÚNICO CONTACTO CON EL SDK DE FIREBASE.
-   Sello: init-1
+   Sello: init-2
 
    Ninguna otra página importa nada de firebase directamente. Si mañana
    cambia la versión del SDK, o el proyecto, o hay que agregar una función,
@@ -20,7 +20,9 @@ import {
   sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs,
+  getFirestore, initializeFirestore, persistentLocalCache,
+  persistentMultipleTabManager,
+  doc, getDoc, setDoc, deleteDoc, collection, getDocs,
   query, orderBy, serverTimestamp, writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -35,7 +37,24 @@ export const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+/* LA CACHÉ PERSISTENTE. Es lo que hace que el panel instalado sirva de algo
+   sin señal: sin ella el cascarón abre y no hay un solo dato adentro. Se la
+   presta Casa Verde, que la tiene desde hace tiempo.
+
+   El `try` no es adorno. `initializeFirestore` falla si algo ya llamó a
+   `getFirestore(app)` antes, y el navegador puede negar el almacenamiento
+   (modo incógnito, disco lleno, ajuste del usuario). En cualquiera de esos
+   casos vale más un panel que anda sin caché que uno que no abre. */
+let _db;
+try {
+  _db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (e) {
+  console.warn("Firestore sin caché persistente:", e && e.message);
+  _db = getFirestore(app);
+}
+export const db = _db;
 
 export {
   onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail,

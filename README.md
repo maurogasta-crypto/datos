@@ -191,6 +191,9 @@ vuelve.
 | `firebase-init.js` | **el único contacto con el SDK de Firebase** |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
 | `reglas.txt` | copia de las reglas de Firestore, para referencia |
+| `sw.js` | el service worker: hace que se instale y abra sin señal |
+| `manifest.json` | nombre, colores e iconos de la app instalada |
+| `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | el icono del tablero |
 | `.github/workflows/pages.yml` | publica el sitio; el único workflow, sin secretos |
 
 ## Los sellos de versión
@@ -202,9 +205,9 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-3` |
-| `index.html` | `P.PANEL` | `panel-6` |
+| `index.html` | `P.PANEL` | `panel-7` |
 | `estilos.css` | (en el comentario) | `estilos-4` |
-| `firebase-init.js` | (en el comentario) | `init-1` |
+| `firebase-init.js` | (en el comentario) | `init-2` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
@@ -258,10 +261,34 @@ Tres cosas que son decisiones, no huecos:
 La colección `fichas/` ya tenía su regla desde la tanda 1, así que esta tanda no
 toca `reglas.txt` ni pide volver a publicar nada en la consola.
 
+## La app instalable
+
+Se instala en el teléfono y abre sin señal.
+
+**Cómo se instala.** Abrí https://maurogasta-crypto.github.io/datos/ en Chrome →
+menú de tres puntos → **Instalar aplicación** (o «Añadir a la pantalla de
+inicio»). Queda con su icono, sin la barra del navegador.
+
+**Cómo funciona.** `sw.js` guarda el cascarón —`index.html`, `estilos.css`,
+`nucleo.js`, los iconos— y **Firestore guarda los datos** con su caché
+persistente (`firebase-init.js`). Sin las dos cosas, el panel abriría sin señal
+y estaría vacío, que no sirve de nada.
+
+La estrategia es **red primero, caché de respaldo**: estando en línea siempre se
+sirve lo último, y la caché sólo entra cuando la red falló. Con caché primero,
+una tanda nueva no llegaría hasta que el teléfono decidiera revalidar — y esto
+se toca todos los días. Es la misma estrategia de CasaYourte, traída tal cual.
+
+> **Si cambia un archivo de la lista `SHELL`, sube la `VERSION` de `sw.js`.**
+> Si no, el teléfono sirve una mezcla de viejo y nuevo: parece que el despliegue
+> no hizo nada y en realidad hizo la mitad.
+
+La lista `SHELL` **no repite los `?v=`** a propósito: sería la tercera copia del
+mismo número —el sello, la dirección y la lista—, y ese es el error que este
+ecosistema ya cometió cuatro veces. En su lugar, la búsqueda en caché ignora la
+parte del `?` (`ignoreSearch`). Eso el panel se lo devuelve a los otros: allá la
+lista sí repite los nombres.
+
 ## Lo que falta
 
-- **La app instalable.** Un `sw.js` con lista `SHELL` y contador que no se pueda
-  saltear, para que el panel abra sin señal. Con él se va, de paso, la arista de
-  la caché: hoy los módulos se piden sin número de versión en la dirección, así
-  que un cambio en `nucleo.js` puede tardar en llegar al teléfono y el sello de
-  arriba queda mostrando el número viejo.
+- **Nada urgente.** La lista original de la tanda 1 está completa.

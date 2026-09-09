@@ -6,6 +6,12 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
 <link rel="stylesheet" href="estilos.css?v=estilos-4">
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" href="./icono-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
@@ -281,9 +287,9 @@
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-3";
 import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
-} from "./firebase-init.js?v=init-1";
+} from "./firebase-init.js?v=init-2";
 
-P.PANEL = "panel-6";
+P.PANEL = "panel-7";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -1264,6 +1270,17 @@ $("btnFichaBorrar").addEventListener("click", async () => {
   } catch (e) { P.aviso(P.explicar(e), "error"); }
   finally { b.disabled = false; }
 });
+
+/* ---------- la app instalable ---------- */
+/* Se registra al final y sin await: que el panel se pueda instalar no puede
+   retrasar que se vea. Y si el navegador no lo soporta, o lo niega, el panel
+   funciona igual — es una mejora, no un requisito. */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js")
+      .catch((e) => console.warn("El panel no se pudo registrar como app:", e && e.message));
+  });
+}
 
 /* ---------- la puerta, comprobada ---------- */
 function textoDeReglas(uid) {

@@ -15,7 +15,7 @@
 import {
   auth, db, onAuthStateChanged, signInWithEmailAndPassword, signOut,
   sendPasswordResetEmail
-} from "./firebase-init.js?v=init-1";
+} from "./firebase-init.js?v=init-2";
 
 export const P = {};
 P.VERSION = "nucleo-3";

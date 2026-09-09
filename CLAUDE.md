@@ -9,6 +9,10 @@ los datos sensibles que no pueden estar en ningún repositorio ni en ningún cha
 Sitio **estático**: HTML/CSS/JS servido tal cual, módulos ES por CDN, sin build,
 sin `npm`, sin frameworks. Se edita desde el celular, por la web de GitHub.
 
+**Es una app instalable.** `sw.js` guarda el cascarón y Firestore guarda los
+datos con su caché persistente. Si cambia un archivo de la lista `SHELL`, sube
+la `VERSION` de `sw.js`, o los teléfonos sirven una mezcla de viejo y nuevo.
+
 | | |
 |---|---|
 | Panel | https://maurogasta-crypto.github.io/datos/ |

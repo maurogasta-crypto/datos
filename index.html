@@ -71,16 +71,49 @@
     <div id="revision"></div>
   </section>
 
-  <!-- 3 · fichas (viene en la tanda 2) -->
+  <!-- 3 · fichas -->
   <section id="v-fichas" class="hide">
-    <h1>Fichas</h1>
-    <div class="tarj">
-      <p class="gris" style="margin:0;">Acá van los datos sensibles: titularidad de cuentas,
-        contactos, números. <b>Los escribís vos, acá adentro.</b> No pasan por el chat, no van
-        a ningún repositorio y yo no los veo nunca.</p>
-      <p class="gris" style="margin:.7rem 0 0;">Todavía no está construido: es la tanda 2.
-        Primero se prueba la puerta, y recién cuando se sabe que sólo entrás vos se guarda
-        acá lo que importa.</p>
+
+    <!-- 3a · la lista -->
+    <div id="f-lista">
+      <h1>Fichas</h1>
+      <p class="gris">Titularidad de cuentas, contactos, números. <b>Los escribís vos, acá
+        adentro.</b> No pasan por el chat, no van a ningún repositorio, y ningún agente los
+        lee nunca.</p>
+      <p class="duro">Acá no van contraseñas. Ésas viven en tu gestor de contraseñas y en
+        ningún documento — tampoco en éste.</p>
+      <input id="f-buscar" type="search" placeholder="Buscar en las fichas…" autocomplete="off">
+      <div class="fila-btn"><button class="btn p" id="btnFichaNueva">Nueva ficha</button></div>
+      <p class="gris" id="f-estado">Leyendo…</p>
+      <div id="f-fichas"></div>
+    </div>
+
+    <!-- 3b · una ficha abierta -->
+    <div id="f-editor" class="hide">
+      <p class="volver"><a href="#lista" id="f-volver">← Volver a las fichas</a></p>
+      <h1 id="f-cual">Nueva ficha</h1>
+      <div class="tarj">
+        <label for="f-titulo">Título</label>
+        <input id="f-titulo" autocomplete="off" placeholder="Cuenta de Cloudinary de Casa Verde">
+        <label for="f-proyecto">Proyecto</label>
+        <select id="f-proyecto"></select>
+      </div>
+      <div class="tarj">
+        <label>Los datos</label>
+        <p class="gris" style="margin-top:.1rem;">Un renglón por dato: a la izquierda qué es,
+          a la derecha el valor.</p>
+        <div id="f-campos"></div>
+        <div class="fila-btn"><button class="btn" id="btnCampo">Agregar un dato</button></div>
+      </div>
+      <div class="tarj">
+        <label for="f-notas">Notas</label>
+        <textarea id="f-notas" class="libre" placeholder="Lo que no entra en un renglón."></textarea>
+      </div>
+      <div class="fila-btn">
+        <button class="btn" id="btnFichaCancelar">Cancelar</button>
+        <button class="btn p" id="btnFichaGuardar">Guardar</button>
+      </div>
+      <div class="fila-btn"><button class="btn borrar" id="btnFichaBorrar">Borrar esta ficha</button></div>
     </div>
   </section>
 
@@ -123,11 +156,10 @@
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js";
 import {
-  doc, getDoc, setDoc, collection, getDocs, query, orderBy,
-  serverTimestamp, writeBatch
+  doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js";
 
-P.PANEL = "panel-1";
+P.PANEL = "panel-2";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -192,6 +224,7 @@ const VISTAS = ["tablero", "pegar", "fichas", "puerta"];
 $("nav").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   VISTAS.forEach((v) => $("v-" + v).classList.toggle("hide", v !== b.dataset.v));
+  if (b.dataset.v === "fichas" && !fichasLeidas) leerFichas();
   $("nav").querySelectorAll("button").forEach((x) =>
     x.setAttribute("aria-pressed", String(x.dataset.v === b.dataset.v)));
   window.scrollTo(0, 0);
@@ -427,6 +460,205 @@ $("btnAplicar").addEventListener("click", async () => {
     P.aviso(P.explicar(e), "error");
     $("estadoPegar").textContent = P.explicar(e);
   } finally { b.disabled = false; b.textContent = "Nada para aplicar"; }
+});
+
+/* ---------- las fichas ---------- */
+/* LA SEGUNDA ZONA. Todo lo de acá abajo lo escribís VOS, en esta pantalla, y
+   no sale nunca: ni al chat, ni a un repositorio, ni a un JSON para pegar en
+   otro lado.
+
+   Por eso esta pantalla NO tiene un botón de exportar. No es un olvido: un
+   botón que junte todas las fichas en un texto listo para pegar es
+   exactamente el camino por el que esto se filtraría, y sin ese botón no
+   existe el camino. Copiar un valor suelto sí —para eso está el botón de
+   cada renglón—, pero de a uno y a propósito.
+
+   Y las contraseñas no van acá. Viven en tu gestor de contraseñas y en
+   ningún documento: guardar una acá sería mover un secreto a un lugar que
+   no es el suyo. Ver PROTOCOLO-SECRETOS.md. */
+
+let FICHAS = [];
+let fichasLeidas = false;
+let editando = null;      // { id, creadoEn } · null cuando no hay nada abierto
+
+/* Buscar sin acentos ni mayúsculas: en el teléfono nadie escribe «Cloudinary»
+   con la tilde correcta ni le importa, y una búsqueda que no encuentra por eso
+   es una búsqueda rota. */
+const norm = (v) => String(v ?? "").toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+async function leerFichas() {
+  try {
+    const q = await getDocs(collection(db, "fichas"));
+    FICHAS = [];
+    q.forEach((d) => FICHAS.push({ id: d.id, ...d.data() }));
+    fichasLeidas = true;
+    pintarFichas();
+  } catch (e) {
+    $("f-estado").textContent = P.explicar(e);
+    $("f-fichas").innerHTML = "";
+  }
+}
+
+function pintarFichas() {
+  const busca = norm($("f-buscar").value.trim());
+  const entra = (f) => !busca || norm([
+    f.titulo, f.notas, nombreProy(f.proyecto),
+    ...(Array.isArray(f.campos) ? f.campos.map((c) => c.clave + " " + c.valor) : [])
+  ].join(" ")).includes(busca);
+
+  const visibles = FICHAS.filter(entra);
+  $("f-estado").textContent = FICHAS.length
+    ? (busca ? visibles.length + " de " + FICHAS.length : FICHAS.length + (FICHAS.length === 1 ? " ficha" : " fichas"))
+    : "Todavía no hay ninguna. Empezá por «Nueva ficha».";
+
+  // Agrupadas por proyecto, en el mismo orden que el tablero; lo que no tenga
+  // proyecto cae al final en vez de desaparecer.
+  const orden = PROYECTOS.map((p) => p.id);
+  const grupos = {};
+  visibles.forEach((f) => (grupos[f.proyecto || ""] ||= []).push(f));
+  const ids = Object.keys(grupos).sort((a, b) => {
+    const A = orden.indexOf(a), B = orden.indexOf(b);
+    return (A < 0 ? 99 : A) - (B < 0 ? 99 : B) || a.localeCompare(b, "es");
+  });
+
+  let h = "";
+  ids.forEach((id) => {
+    const g = grupos[id].slice().sort((a, b) =>
+      String(a.titulo || "").localeCompare(String(b.titulo || ""), "es"));
+    h += '<div class="proy">' + P.esc(id ? nombreProy(id) : "sin proyecto") + " · " + g.length + "</div>";
+    g.forEach((f) => {
+      h += '<div class="ficha" data-id="' + P.esc(f.id) + '">'
+        + '<div class="cab"><span class="tit">' + P.esc(f.titulo || "(sin título)") + "</span>"
+        + '<button class="mini" data-abrir="' + P.esc(f.id) + '">Abrir</button></div>';
+      (Array.isArray(f.campos) ? f.campos : []).forEach((c) => {
+        if (!c || (!c.clave && !c.valor)) return;
+        h += '<div class="campo"><span class="k">' + P.esc(c.clave) + "</span>"
+          + '<span class="v">' + P.esc(c.valor) + "</span>"
+          + '<button class="mini" data-copiar="' + P.esc(c.valor) + '">Copiar</button></div>';
+      });
+      if (f.notas) h += '<div class="notas">' + P.esc(f.notas) + "</div>";
+      if (f.actualizadoEn) h += '<div class="cuando">' + P.esc(P.fecha(f.actualizadoEn)) + "</div>";
+      h += "</div>";
+    });
+  });
+  $("f-fichas").innerHTML = h || (FICHAS.length ? '<p class="gris">Nada con esa búsqueda.</p>' : "");
+}
+
+$("f-buscar").addEventListener("input", pintarFichas);
+
+/* Un solo listener para toda la lista: las fichas se repintan enteras, y
+   colgarle un listener a cada botón en cada repintado los va acumulando. */
+$("f-fichas").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.copiar !== undefined) return copiar(b.dataset.copiar, "Copiado.");
+  if (b.dataset.abrir) {
+    const f = FICHAS.find((x) => x.id === b.dataset.abrir);
+    if (f) abrirFicha(f);
+  }
+});
+
+/* ---------- una ficha abierta ---------- */
+function filaCampo(clave, valor) {
+  const fila = document.createElement("div");
+  fila.className = "par";
+  fila.innerHTML = '<input class="k" placeholder="qué es" autocomplete="off">'
+    + '<input class="v" placeholder="el valor" autocomplete="off">'
+    + '<button class="mini quitar" type="button" aria-label="Quitar este dato">×</button>';
+  fila.querySelector(".k").value = clave || "";
+  fila.querySelector(".v").value = valor || "";
+  fila.querySelector(".quitar").onclick = () => fila.remove();
+  return fila;
+}
+
+function abrirFicha(f) {
+  editando = { id: (f && f.id) || null, creadoEn: (f && f.creadoEn) || null };
+  $("f-cual").textContent = f ? "Editar ficha" : "Nueva ficha";
+  $("f-titulo").value = (f && f.titulo) || "";
+  $("f-notas").value = (f && f.notas) || "";
+
+  // El desplegable sale del catálogo de proyectos. Si la ficha tiene uno que
+  // ya no está en el catálogo, se agrega igual: perder el dato en silencio
+  // por un desplegable incompleto es peor que mostrar un nombre suelto.
+  const actual = (f && f.proyecto) || "";
+  const opciones = PROYECTOS.map((p) => ({ id: p.id, nombre: p.nombre || p.id }));
+  if (actual && !opciones.some((o) => o.id === actual)) opciones.push({ id: actual, nombre: actual });
+  $("f-proyecto").innerHTML = '<option value="">(sin proyecto)</option>'
+    + opciones.map((o) => '<option value="' + P.esc(o.id) + '">' + P.esc(o.nombre) + "</option>").join("");
+  $("f-proyecto").value = actual;
+
+  const cont = $("f-campos");
+  cont.innerHTML = "";
+  const campos = (f && Array.isArray(f.campos) && f.campos.length) ? f.campos : [{ clave: "", valor: "" }];
+  campos.forEach((c) => cont.appendChild(filaCampo(c.clave, c.valor)));
+
+  $("btnFichaBorrar").classList.toggle("hide", !f);
+  $("f-lista").classList.add("hide");
+  $("f-editor").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+
+function cerrarFicha() {
+  editando = null;
+  $("f-editor").classList.add("hide");
+  $("f-lista").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+
+$("btnFichaNueva").addEventListener("click", () => abrirFicha(null));
+$("btnCampo").addEventListener("click", () => $("f-campos").appendChild(filaCampo("", "")));
+$("btnFichaCancelar").addEventListener("click", cerrarFicha);
+/* El volver es un enlace, no un history.back(): desde acá se guardó, se borró
+   o se canceló, y para cuando se toca Atrás el back ya no lleva a donde uno
+   cree. Es la regla que Casa Verde le presta a los tres. */
+$("f-volver").addEventListener("click", (e) => { e.preventDefault(); cerrarFicha(); });
+
+$("btnFichaGuardar").addEventListener("click", async () => {
+  const titulo = $("f-titulo").value.trim();
+  if (!titulo) return P.aviso("Ponele un título: es lo único con lo que después la vas a encontrar.", "error");
+
+  const campos = [];
+  $("f-campos").querySelectorAll(".par").forEach((fila) => {
+    const k = fila.querySelector(".k").value.trim();
+    const v = fila.querySelector(".v").value.trim();
+    if (k || v) campos.push({ clave: k, valor: v });
+  });
+
+  const b = $("btnFichaGuardar"); b.disabled = true; b.textContent = "…";
+  try {
+    // Sin merge, a propósito: si sacaste un dato de la ficha tiene que
+    // desaparecer de la base. Con merge se quedaría ahí para siempre, y una
+    // ficha que no se puede achicar no sirve para datos sensibles.
+    const id = editando.id || doc(collection(db, "fichas")).id;
+    await setDoc(doc(db, "fichas", id), {
+      titulo,
+      proyecto: $("f-proyecto").value || "",
+      campos,
+      notas: $("f-notas").value.trim(),
+      creadoEn: editando.creadoEn || serverTimestamp(),
+      actualizadoEn: serverTimestamp()
+    });
+    await leerFichas();
+    cerrarFicha();
+    P.aviso("Guardada.");
+  } catch (e) {
+    P.aviso(P.explicar(e), "error");
+  } finally { b.disabled = false; b.textContent = "Guardar"; }
+});
+
+$("btnFichaBorrar").addEventListener("click", async () => {
+  if (!editando || !editando.id) return;
+  if (!(await P.preguntar("Se va a borrar esta ficha de la base.\n\n"
+      + "No hay papelera y no queda copia en ningún lado: es el precio de que "
+      + "esto no viva en un repositorio."))) return;
+  const b = $("btnFichaBorrar"); b.disabled = true;
+  try {
+    await deleteDoc(doc(db, "fichas", editando.id));
+    await leerFichas();
+    cerrarFicha();
+    P.aviso("Borrada.");
+  } catch (e) { P.aviso(P.explicar(e), "error"); }
+  finally { b.disabled = false; }
 });
 
 /* ---------- la puerta, comprobada ---------- */

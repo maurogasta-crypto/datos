@@ -104,8 +104,8 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-2` |
-| `index.html` | `P.PANEL` | `panel-1` |
-| `estilos.css` | (en el comentario) | `estilos-1` |
+| `index.html` | `P.PANEL` | `panel-2` |
+| `estilos.css` | (en el comentario) | `estilos-2` |
 | `firebase-init.js` | (en el comentario) | `init-1` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
@@ -124,10 +124,31 @@ teléfono.
   Ojo con el repositorio homónimo: ver el recuadro del principio.
 - Sigue los protocolos del repo **privado** `casaverdecanas-blip/datos`.
 
+## Las fichas
+
+La segunda zona: titularidad de cuentas, contactos, números. **Se escriben en el
+panel y no salen de ahí.** Cada ficha tiene un título, un proyecto, los datos que
+le pongas —un renglón por dato— y notas libres.
+
+Tres cosas que son decisiones, no huecos:
+
+- **No hay botón de exportar.** No es un olvido. Un control que junte todas las
+  fichas en un texto listo para pegar es exactamente el camino por el que esto se
+  filtraría; sin ese botón, el camino no existe. Copiar **un** valor suelto sí:
+  para eso está el botón de cada renglón.
+- **Acá no van contraseñas.** Viven en tu gestor de contraseñas y en ningún
+  documento — tampoco en éste. Guardar una acá sería mover un secreto a un lugar
+  que no es el suyo.
+- **Borrar borra de verdad**, sin papelera y sin copia en ningún lado. Es el
+  precio de que esto no viva en un repositorio, y por eso pregunta antes.
+
+La colección `fichas/` ya tenía su regla desde la tanda 1, así que esta tanda no
+toca `reglas.txt` ni pide volver a publicar nada en la consola.
+
 ## Lo que falta
 
-- **Tanda 2 · las fichas.** Titularidad de cuentas, contactos, números: se
-  escriben en el panel y no salen de ahí. Va después de comprobar la puerta.
 - **La app instalable.** Un `sw.js` con lista `SHELL` y contador que no se pueda
-  saltear, para que el panel abra sin señal. No entra en la tanda 1 a propósito:
-  primero que ande, después que se instale.
+  saltear, para que el panel abra sin señal. Con él se va, de paso, la arista de
+  la caché: hoy los módulos se piden sin número de versión en la dirección, así
+  que un cambio en `nucleo.js` puede tardar en llegar al teléfono y el sello de
+  arriba queda mostrando el número viejo.

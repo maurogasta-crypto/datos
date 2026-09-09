@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-1
+   Sello: estilos-2
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -136,3 +136,55 @@ textarea { min-height:7rem; font-family:var(--mono); font-size:.78rem;
   text-transform:uppercase; color:var(--gris2); }
 .rev .nuevo { color:var(--ok); }
 .rev .cambia { color:var(--ojo); }
+
+/* ── un renglón que hay que leer sí o sí ── */
+/* No es un error, así que no va en rojo; pero tampoco es una aclaración al
+   pasar. El borde de la izquierda lo saca del cuerpo del texto sin gritar. */
+.duro { border-left:3px solid var(--ojo); background:var(--tinta2);
+  padding:.6rem .75rem; border-radius:0 var(--r-s) var(--r-s) 0;
+  font-size:.84rem; color:var(--texto); margin:.7rem 0; }
+
+/* ── el volver, que es un enlace ── */
+.volver { margin:.9rem 0 0; font-size:.86rem; }
+.volver a { text-decoration:none; }
+
+/* ── una ficha ── */
+.ficha { background:var(--tinta2); border:1px solid var(--linea);
+  border-radius:var(--r-s); padding:.7rem .8rem; margin:.45rem 0; }
+.ficha .cab { display:flex; align-items:center; gap:.5rem; }
+.ficha .tit { font-weight:600; font-size:.94rem; flex:1; }
+.ficha .notas { font-size:.85rem; color:var(--gris); margin-top:.45rem;
+  white-space:pre-wrap; }
+.ficha .cuando { font-family:var(--mono); font-size:.58rem; color:var(--gris2);
+  margin-top:.5rem; letter-spacing:.06em; }
+
+/* Un dato: qué es, el valor, y copiarlo. El valor puede ser largo y no se
+   corta con puntos suspensivos — una cuenta bancaria a medias no sirve. */
+.campo { display:flex; align-items:baseline; gap:.5rem; margin-top:.4rem;
+  border-top:1px dashed var(--linea); padding-top:.4rem; }
+.campo .k { font-family:var(--mono); font-size:.62rem; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--gris2); flex:none; max-width:38%;
+  overflow-wrap:anywhere; }
+.campo .v { flex:1; font-size:.9rem; overflow-wrap:anywhere; }
+
+/* ── un botón chico, para lo que acompaña y no manda ── */
+/* Sigue teniendo 34px de alto: más chico que eso, en un teléfono, se falla. */
+.mini { min-height:34px; padding:.3rem .6rem; border-radius:var(--r-s);
+  border:1px solid var(--linea); background:var(--tinta3); color:var(--gris);
+  font-size:.72rem; cursor:pointer; flex:none; }
+
+/* ── el par clave/valor mientras se edita ── */
+.par { display:flex; gap:.4rem; margin-top:.4rem; }
+.par input { min-height:42px; font-size:.9rem; }
+.par input.k { flex:0 0 34%; font-family:var(--mono); font-size:.8rem; }
+.par input.v { flex:1; }
+.par .quitar { align-self:stretch; font-size:1rem; line-height:1; }
+
+/* ── borrar no se disfraza de acción cualquiera, pero tampoco grita ── */
+.btn.borrar { color:var(--mal); border-color:var(--mal); background:none; }
+
+/* ── un textarea para escribir, no para pegar código ── */
+/* El textarea por defecto es monoespaciado y sin cortar renglón, que es lo
+   que necesita un JSON. Para una nota escrita a mano hace falta lo contrario. */
+textarea.libre { font-family:inherit; font-size:.95rem; white-space:pre-wrap;
+  min-height:5rem; }

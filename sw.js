@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    sw.js — el service worker del panel.
-   Sello: sw-2
+   Sello: sw-3
 
    Hace que el panel se instale en el teléfono y abra sin señal.
 
@@ -14,7 +14,7 @@
    parece que el despliegue no hizo nada y en realidad hizo la mitad.
    ═══════════════════════════════════════════════════════════ */
 
-const VERSION = 'panel-shell-v2';
+const VERSION = 'panel-shell-v3';
 
 /* Sin `?v=` a propósito. El panel pide `estilos.css?v=estilos-4` y
    `nucleo.js?v=nucleo-3`, y repetir esos números acá sería la TERCERA copia

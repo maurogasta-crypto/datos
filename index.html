@@ -301,7 +301,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js?v=init-2";
 
-P.PANEL = "panel-8";
+P.PANEL = "panel-9";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -1032,15 +1032,15 @@ $("btnBajarEstado").addEventListener("click", async () => {
    demás. Para eso está la auditoría: el momento de mirar si algo que salió
    bien en uno quedó encerrado ahí. */
 
-const AMBITOS = [
-  ["general", "Para todos"],
-  ["casaverde", "Casa Verde"],
-  ["casayourte", "CasaYourte"],
-  ["remate", "remateTaller"],
-  ["panel", "El panel"],
-  ["datos", "El repo datos"]
-];
-const nombreAmbito = (id) => (AMBITOS.find((a) => a[0] === id) || [id, id])[1];
+/* Los ámbitos SALEN del catálogo de proyectos, no de una lista escrita acá.
+   Escritos a mano eran la segunda copia de la misma lista, y el día que entró
+   un proyecto nuevo —Harmonía, 2026-09-09— pasó lo que pasa siempre: sus
+   reglas se veían, pero al abrir una y guardarla el desplegable no tenía su
+   opción, así que la guardaba como «general». Sin error y sin aviso.
+   Ahora un proyecto nuevo trae su ámbito solo. */
+const AMBITOS = () => [["general", "Para todos"]]
+  .concat(PROYECTOS.map((p) => [p.id, p.nombre || p.id]));
+const nombreAmbito = (id) => (AMBITOS().find((a) => a[0] === id) || [id, id])[1];
 const VIGENCIAS = ["vigente", "propuesta", "retirada"];
 
 let PROTOCOLOS = [];
@@ -1067,11 +1067,19 @@ async function leerProtocolos() {
   }
 }
 
-function llenarAmbitos() {
+/* Se rehacen siempre, no sólo la primera vez: si entra un proyecto en un parte,
+   su ámbito tiene que aparecer sin recargar. `extra` agrega el ámbito de una
+   regla cuyo proyecto ya no está en el catálogo — perder el dato en silencio
+   por un desplegable incompleto es peor que mostrar un nombre suelto. */
+function llenarAmbitos(extra) {
+  const lista = AMBITOS().slice();
+  if (extra && !lista.some((a) => a[0] === extra)) lista.push([extra, extra]);
   const opciones = (todos) => (todos ? '<option value="">Todas</option>' : "")
-    + AMBITOS.map((a) => '<option value="' + a[0] + '">' + P.esc(a[1]) + "</option>").join("");
-  if (!$("r-ambito").options.length) $("r-ambito").innerHTML = opciones(true);
-  if (!$("r-de").options.length) $("r-de").innerHTML = opciones(false);
+    + lista.map((a) => '<option value="' + P.esc(a[0]) + '">' + P.esc(a[1]) + "</option>").join("");
+  const antes = $("r-ambito").value;
+  $("r-ambito").innerHTML = opciones(true);
+  $("r-ambito").value = lista.some((a) => a[0] === antes) ? antes : "";
+  $("r-de").innerHTML = opciones(false);
 }
 
 function pintarProtocolos() {
@@ -1085,7 +1093,7 @@ function pintarProtocolos() {
     ? visibles.length + " de " + PROTOCOLOS.length
     : "Todavía no hay ninguna. Te las paso en un parte, o escribí la primera acá.";
 
-  const orden = AMBITOS.map((a) => a[0]);
+  const orden = AMBITOS().map((a) => a[0]);
   const grupos = {};
   visibles.forEach((r) => (grupos[r.ambito || "general"] ||= []).push(r));
   const ids = Object.keys(grupos).sort((a, b) => {
@@ -1139,7 +1147,7 @@ $("r-vigencia").addEventListener("click", (e) => {
 function abrirRegla(r) {
   editandoRegla = { id: (r && r.id) || null, creadoEn: (r && r.creadoEn) || null,
                     ultima: (r && r.ultima) || null, orden: (r && r.orden) || 99 };
-  llenarAmbitos();
+  llenarAmbitos(r && r.ambito);
   $("r-cual").textContent = r ? "Editar regla" : "Nueva regla";
   $("r-titulo").value = (r && r.titulo) || "";
   $("r-de").value = (r && r.ambito) || "general";

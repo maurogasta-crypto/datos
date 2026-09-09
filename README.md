@@ -134,7 +134,8 @@ computadora. Acá se trabaja desde el teléfono, así que en la práctica no se
 leían — y **una regla que nadie lee no es una regla**. Ahora están en la solapa
 «Reglas», y se pueden tocar.
 
-Cada regla tiene un **ámbito**, y la distinción es el punto:
+Cada regla tiene un **ámbito**, que **sale del catálogo de proyectos**: un
+proyecto nuevo trae su ámbito solo, sin tocar código. La distinción es el punto:
 
 - **Para todos** — vale en los cinco proyectos.
 - **Un sitio** — sólo ahí, porque usa otras herramientas o puede otras cosas.
@@ -238,10 +239,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-3` |
-| `index.html` | `P.PANEL` | `panel-8` |
+| `index.html` | `P.PANEL` | `panel-9` |
 | `estilos.css` | (en el comentario) | `estilos-5` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `panel-shell-v2` |
+| `sw.js` | `VERSION` | `panel-shell-v3` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

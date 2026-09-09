@@ -1,0 +1,247 @@
+{
+  "panel": "pendientes",
+  "generado": "2026-09-09",
+  "pendientes": [
+    {
+      "id": "casaverde:A7",
+      "proyecto": "casaverde",
+      "clave": "A7",
+      "titulo": "Publicar firestore.rules en la consola",
+      "porQue": "El archivo del repositorio ya impide que un admin se desactive, pero la autoridad es lo publicado.",
+      "estado": "hecho",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: visto. Queda cerrado."
+        }
+      ]
+    },
+    {
+      "id": "panel:reglas",
+      "proyecto": "panel",
+      "clave": "",
+      "titulo": "Publicar las reglas de datos-830f8",
+      "porQue": "Hasta que estén publicadas con tu UID, la base está como la dejó Firebase al crearla.",
+      "estado": "hecho",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: visto, y la prueba de la puerta dio denegado. Ojo: volvió a abrirse al entrar «protocolos» en la tanda 6, y lo cerraste de nuevo."
+        }
+      ]
+    },
+    {
+      "id": "remate:A6",
+      "proyecto": "remate",
+      "clave": "A6",
+      "titulo": "Cargar config/publico desde el panel",
+      "porQue": "Sin ese documento la puerta pública esconde el botón y dice a quién escribirle, sin dar con qué.",
+      "estado": "hecho",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: visto. Queda cerrado."
+        }
+      ]
+    },
+    {
+      "id": "casaverde:D9",
+      "proyecto": "casaverde",
+      "clave": "D9",
+      "titulo": "Unificar el campo del permiso: `it.permiso` o `it.perm`",
+      "porQue": "Los dos sitios tienen una función que decide si un ítem del menú se muestra, y las dos leen un campo con distinto nombre. Casa Verde lee `it.permiso`; CasaYourte lee `it.perm`. Mismo nombre de función, misma idea, campo distinto: copiar un ítem del menú de un proyecto al otro lo rompe SIN ERROR — el ítem simplemente no aparece, o aparece para quien no debería.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: leído el código real de los dos. Hay una segunda diferencia que no estaba anotada: Casa Verde acepta también una LISTA de permisos (`puedeAlguno`), CasaYourte sólo uno."
+        },
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: medido. CasaYourte usa `perm` en 4 ítems, todos en `nucleo.js` y en ningún otro archivo. Casa Verde usa `permiso` en 25. Y `puedeAlguno` no existe en CasaYourte."
+        },
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: recomiendo que CasaYourte adopte `permiso`. Son 4 renglones contra 25, queda la palabra entera (vocabulario común) y de paso CasaYourte gana la lista de permisos, que hoy no tiene."
+        }
+      ],
+      "pregunta": "¿Confirmás que CasaYourte pase a `permiso` y gane la lista de permisos? Son 4 ítems en un solo archivo. Si preferís lo contrario —Casa Verde a `perm`— son 25 y se pierde la lista."
+    },
+    {
+      "id": "panel:fichas",
+      "proyecto": "panel",
+      "clave": "",
+      "titulo": "Las fichas sensibles (tanda 2)",
+      "porQue": "Titularidad de cuentas, contactos, números. Los escribís vos en el panel y no salen de ahí.",
+      "estado": "hecho",
+      "quien": "claude",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: entregado. Lista, buscador y editor. Sin botón de exportar, a propósito, y con un aviso de que las contraseñas no van ahí."
+        }
+      ]
+    },
+    {
+      "id": "panel:canal",
+      "proyecto": "panel",
+      "clave": "",
+      "titulo": "El panel como canal: preguntas y respuestas",
+      "porQue": "El tablero era de sólo lectura, así que todo tenía que volver por el chat — justo donde las cosas se pierden.",
+      "estado": "hecho",
+      "quien": "claude",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: entregado en la tanda 5. Marcás estado, respondés y la exportación se lleva todo con la lista `tocados`."
+        },
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: probado hoy de punta a punta con tu exportación real."
+        }
+      ]
+    },
+    {
+      "id": "panel:reglas-solapa",
+      "proyecto": "panel",
+      "clave": "",
+      "titulo": "La solapa de reglas y la auditoría (tanda 6)",
+      "porQue": "Los protocolos vivían sólo en un repositorio que se lee desde una computadora. Acá se trabaja desde el teléfono.",
+      "estado": "hecho",
+      "quien": "claude",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: entregado. 47 reglas con ámbito y vigencia, y la caja de auditoría con su fecha."
+        }
+      ]
+    },
+    {
+      "id": "datos:protocolos",
+      "proyecto": "datos",
+      "clave": "",
+      "titulo": "Secciones 5 a 8 del protocolo general",
+      "porQue": "Dónde se presenta la información, el panel como canal, la auditoría, y la rutina obligatoria de cada tanda.",
+      "estado": "hecho",
+      "quien": "claude",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: entregado y en `main` del repo privado."
+        }
+      ]
+    },
+    {
+      "id": "datos:varados",
+      "proyecto": "datos",
+      "clave": "",
+      "titulo": "Los tres protocolos que nadie podía leer",
+      "porQue": "`PROTOCOLO-DESARROLLO.md`, `PROTOCOLO-INTERFAZ.md` y `ESTADO-DE-LOS-TRES.md` estaban citados por los cuatro CLAUDE.md y no estaban en `main`: quedaron varados en una rama de la sesión del 7-sep.",
+      "estado": "hecho",
+      "quien": "claude",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: cien kilobytes de reglamento que existían y no regían. Ya están en `main`."
+        },
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: de paso, los cinco `🕐` de ESTADO-DE-LOS-TRES estaban desactualizados. Verificados uno por uno contra `main` de cada repo: los cinco hechos hace días."
+        }
+      ]
+    },
+    {
+      "id": "panel:pwa",
+      "proyecto": "panel",
+      "clave": "",
+      "titulo": "La app instalable del panel",
+      "porQue": "Un `sw.js` con lista `SHELL` y un contador que no se pueda saltear, para que el panel abra sin señal.",
+      "estado": "abierto",
+      "quien": "claude",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: es lo único que queda de la lista original de la tanda 1."
+        },
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: remate tiene el mismo pendiente abierto (D8). Conviene resolverlo una vez y llevarlo a los dos — es justo el caso que la auditoría busca."
+        }
+      ]
+    },
+    {
+      "id": "panel:apreton",
+      "proyecto": "panel",
+      "clave": "",
+      "titulo": "La marca `tocado` sólo se apaga si algo cambia",
+      "porQue": "Si te acuso recibo de un pendiente sin cambiarle nada, el parte no lo incluye como cambio y la marca queda encendida para siempre. Hoy lo resuelvo agregando un renglón de historia, que sí es un cambio — pero es un rodeo, no un mecanismo.",
+      "estado": "abierto",
+      "quien": "claude",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: lo encontré usando tu exportación real, no probándolo."
+        }
+      ]
+    },
+    {
+      "id": "general:main-sitios",
+      "proyecto": "datos",
+      "clave": "",
+      "titulo": "¿Los tres sitios también van directo a `main`?",
+      "porQue": "Quedó escrito que en `datos` y en el panel empujo directo a `main`. En `casaverdecanas`, `CasaYourte` y `remate` sigo usando rama, porque ahí `main` es producción: publica en vivo por GitHub Pages sin que nadie lo mire.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: hoy quedan ramas sin mergear en los tres, de la sesión del 7-sep."
+        }
+      ],
+      "pregunta": "¿Dejamos los tres sitios por rama (más seguro, pero ya se olvidó de mergear dos veces) o también van directo a `main`?"
+    },
+    {
+      "id": "general:auditoria-1",
+      "proyecto": "datos",
+      "clave": "",
+      "titulo": "La primera auditoría de protocolos",
+      "porQue": "El protocolo está escrito y la caja está en el panel, pero nunca se corrió una.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [
+        {
+          "fecha": "2026-09-09",
+          "texto": "Claude: ya hay un caso concreto esperándola: el `sw.js` del panel y el de remate son el mismo problema."
+        }
+      ],
+      "pregunta": "¿Corremos la primera auditoría en la próxima tanda, o preferís avanzar antes con la app instalable?"
+    },
+    {
+      "id": "datos:prueba-txt",
+      "proyecto": "datos",
+      "clave": "",
+      "titulo": "Sacar `Prueba.txt` del repo privado",
+      "porQue": "Es un archivo de un byte que quedó de una prueba vieja y sigue en `main`.",
+      "estado": "abierto",
+      "quien": "mauro",
+      "historia": [],
+      "pregunta": "¿Lo borro?"
+    }
+  ],
+  "protocolos": [
+    {
+      "id": "general:main-directo",
+      "ambito": "general",
+      "orden": 30,
+      "titulo": "En los repos de memoria se empuja a `main`; en los sitios, no",
+      "regla": "En `casaverdecanas-blip/datos` y en el panel se empuja directo a `main`. En los tres repositorios de los sitios no: ahí `main` es producción y sale en vivo sin que nadie lo mire, así que va por rama.",
+      "porQue": "Dos de dos veces el trabajo quedó varado en una rama sin mergear: el reglamento de 100 KB de la sesión del 7-sep, y las secciones 5 a 8 más el banco de pruebas de la del 9-sep. En un repositorio que es la memoria, una rama sin mergear no es prudencia: es pérdida silenciosa.",
+      "origen": "Decisión de Mauro, 2026-09-09 · PROTOCOLO-GENERAL.md § 2.1.",
+      "vigencia": "vigente"
+    }
+  ]
+}

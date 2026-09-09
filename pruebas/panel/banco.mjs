@@ -440,5 +440,47 @@ $("entrada").value = $("salida").value;
 $("btnRevisar").click(); await esperar();
 ok($("estadoPegar").textContent === "No hay nada nuevo.", "y la vuelta sigue sin pérdida");
 
+
+console.log("\n19 · el parte de vuelta entra sobre el estado REAL de Mauro");
+/* La base arranca vacía y se carga con lo que Mauro exportó de verdad; recién
+   entonces se aplica el parte de respuesta. Probar contra un estado inventado
+   no dice nada sobre el que existe. */
+BASE.proyectos = {}; BASE.pendientes = {}; BASE.protocolos = {};
+await api.leer(); await api.leerProtocolos(); await esperar();
+const suyo = JSON.parse(fs.readFileSync("estado-mauro.json", "utf8"));
+$("entrada").value = JSON.stringify(suyo);
+$("btnRevisar").click(); await esperar();
+$("btnAplicar").click(); await esperar(); sí(); await esperar(); await esperar(); await esperar();
+ok(api.PENDIENTES().length === suyo.pendientes.length, "su estado quedó cargado (" + api.PENDIENTES().length + " pendientes)");
+ok(api.PROTOCOLOS().length === suyo.protocolos.length, "y sus " + api.PROTOCOLOS().length + " reglas");
+
+// Vuelve a marcar lo que él tocó, para reproducir el apretón de manos.
+/* Se escribe directo en la base falsa: `db` vive dentro del módulo. */
+for (const id of suyo.tocados) escribir(ref("pendientes", id), { tocado: true }, { merge: true });
+await api.leer(); await esperar();
+ok(api.PENDIENTES().filter((p) => p.tocado).length === suyo.tocados.length,
+   "y sus " + suyo.tocados.length + " marcas de «tocado»");
+
+const respuesta = JSON.parse(fs.readFileSync("parte-2026-09-09-ronda1.json", "utf8"));
+$("entrada").value = JSON.stringify(respuesta);
+$("btnRevisar").click(); await esperar();
+ok(!$("revision").innerHTML.includes("se descartaron"), "la revisión no descarta nada");
+ok($("btnAplicar").disabled === false, "hay cambios para aplicar");
+$("btnAplicar").click(); await esperar(); sí(); await esperar(); await esperar(); await esperar();
+
+const quedan = api.PENDIENTES().filter((p) => p.tocado).map((p) => p.id);
+ok(quedan.length === 0, "las cuatro marcas de «tocado» se apagaron · quedan: " + (quedan.join(", ") || "ninguna"));
+
+const d9 = api.PENDIENTES().find((p) => p.id === "casaverde:D9");
+ok(!!d9.pregunta && !d9.respuesta, "D9 vuelve con una pregunta y sin respuesta");
+ok(d9.historia.some((h) => h.texto.includes("Que quiere decir")),
+   "y su pregunta original sigue en la historia, no se pisó");
+ok(d9.historia.length >= 5, "la historia sumó mis renglones sin borrar los suyos (" + d9.historia.length + ")");
+
+api.pintar();
+ok($("c-pregunta").textContent === "4", "el tablero le muestra 4 preguntas sin responder");
+const a7 = api.PENDIENTES().find((p) => p.id === "casaverde:A7");
+ok(a7.estado === "hecho", "lo que marcó hecho sigue hecho");
+
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

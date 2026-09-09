@@ -29,7 +29,7 @@ Sale `Todo en orden.` y código 0, o la lista de fallas y código 1.
 
 ## Qué comprueba, y por qué esas cosas
 
-Son 100 comprobaciones en dieciocho grupos. Las que más valen no son las obvias:
+Son 111 comprobaciones en diecinueve grupos. Las que más valen no son las obvias:
 
 - **La vuelta del parte no pierde nada** (grupo 9). Se carga el parte real desde
   un archivo, se aplica, se saca el estado y **se vuelve a meter**: tiene que
@@ -55,6 +55,12 @@ Son 100 comprobaciones en dieciocho grupos. Las que más valen no son las obvias
   que arma la solapa «La puerta» —que es el que realmente se pega—, y que el
   cierre `if false` siga negando el resto. La próxima colección que se agregue
   sin su regla falla acá y no en el teléfono.
+- **La ronda completa contra el estado REAL de Mauro** (grupo 19). Se carga
+  `estado-mauro.json` —lo que él exportó del panel el 2026-09-09—, se reponen sus
+  marcas de «tocado», y se aplica encima el parte de respuesta. Se comprueba que
+  no se descarte nada, que las cuatro marcas se apaguen, que su pregunta original
+  siga en la historia sin pisarse, y que el tablero le muestre las preguntas
+  nuevas. Probar contra un estado inventado no dice nada sobre el que existe.
 - **El parte de reglas real entra limpio** (grupo 18). Las 42 reglas de
   `parte-protocolos.json` pasan por la revisión del panel sin descartes. Que un
   JSON sea válido no dice que el panel lo acepte.

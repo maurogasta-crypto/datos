@@ -41,9 +41,32 @@ de la variable y el lugar donde pegarla.
 
 ## Titularidad de las cuentas
 
-*(Pendiente de completar por Mauro — dato de contacto, no secreto. La consola
-de Tuya y la cuenta de Vercel de Harmonía no estaban documentadas en ningún
-lado al 2026-09-09.)*
+*(Pendiente de completar por Mauro — dato de contacto, no secreto.)*
+
+**Y esta sección vacía ya costó algo concreto:** el 2026-09-09, al ir a cargar
+las variables de entorno del puente de Tuya, no había forma de saber con qué
+cuenta se despliega Harmonía en Vercel. No es un descuido del repositorio —
+**Vercel no escribe nada en el repo**: no hay `vercel.json`, no hay `.vercel/`,
+no hay configuración. El repositorio no puede contestar esa pregunta ni ahora
+ni nunca.
+
+Lo único verificable desde el código, y verificado leyéndolo:
+
+| Qué | Valor | Cómo se comprobó |
+|---|---|---|
+| Cuenta de GitHub que escribe el repositorio | usuario **`toromboto`** (id 284471731) | los 50 commits del historial, y la API de GitHub |
+| Dirección de correo de esos commits | `canavosiomariano@gmail.com` | metadatos de autor de los commits — **ya son públicos**, van en cada commit de un repo público. No es una contraseña ni un secreto: es el dato de contacto que esta sección existe para registrar |
+| Cómo se edita | desde la **web de GitHub** (committer `web-flow`) | metadatos de los commits |
+
+**Eso NO dice cuál es la cuenta de Vercel.** Dice cuál hay que mirar: la cuenta
+de Vercel se creó autorizando alguna cuenta de GitHub, y esa autorización sí
+queda registrada del lado de GitHub. El procedimiento para averiguarlo —tres
+pasos que se hacen desde el teléfono, sin saber ninguna contraseña de Vercel—
+está en `DESPLIEGUE.md`, en el propio repo de Harmonía.
+
+**Falta completar acá, cuando Mauro lo confirme:** el titular de la cuenta de
+**Vercel** y el de la consola de **Tuya**. La contraseña no — ésa vive en el
+gestor de contraseñas y en ningún documento.
 
 ## Dos cosas que conviene que queden anotadas
 

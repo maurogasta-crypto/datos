@@ -30,7 +30,9 @@ tener que abrir cada repo, y sin que ningún valor real toque nunca git.
 - [`secretos/harmonia.md`](secretos/harmonia.md) — `toromboto/harmonia`, el sexto
   proyecto: el único con build (Vite) y con funciones de servidor (Vercel), y
   por eso el único que usa variables de entorno de verdad
-- [`secretos/rematetaller.md`](secretos/rematetaller.md) — pendiente de completar
+- [`secretos/rematetaller.md`](secretos/rematetaller.md) — **completado el 2026-09-09**,
+  leyendo el repo real. Es el primero que estrena variables de entorno además de
+  Casa Verde: la función de las luces del depósito
 - [`secretos/panel.md`](secretos/panel.md) — el panel de datos
   (`maurogasta-crypto/datos`, público). **No confundir ese repositorio con
   éste:** allá va el cascarón del panel, acá los protocolos y los índices.

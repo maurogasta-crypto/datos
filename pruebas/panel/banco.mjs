@@ -17,17 +17,25 @@ const getDocs = async (ref) => {
   const m = BASE[ref.__c] || {};
   return { forEach: (cb) => Object.keys(m).forEach((k) => cb({ id: k, data: () => m[k] })) };
 };
-const setDoc = async (ref, datos) => { (BASE[ref.__c] ||= {})[ref.__id] = JSON.parse(JSON.stringify(datos)); };
+/* {merge:true} tiene que MEZCLAR, como el Firestore de verdad. Con la versión
+   que reemplazaba el documento entero, el banco decía que guardar una respuesta
+   borraba el título del pendiente — un error que no existe en producción. Un
+   doble falso que miente distinto que el real no prueba nada. */
+const clonar = (o) => JSON.parse(JSON.stringify(o));
+const escribir = (ref, datos, opts) => {
+  const m = (BASE[ref.__c] ||= {});
+  m[ref.__id] = (opts && opts.merge)
+    ? { ...(m[ref.__id] || {}), ...clonar(datos) }
+    : clonar(datos);
+};
+const setDoc = async (ref, datos, opts) => escribir(ref, datos, opts);
 const deleteDoc = async (ref) => { delete (BASE[ref.__c] || {})[ref.__id]; };
 const serverTimestamp = () => "2026-09-09";
 const writeBatch = () => {
   const cola = [];
   return {
-    set: (ref, datos) => cola.push([ref, datos]),
-    commit: async () => cola.forEach(([ref, datos]) => {
-      const m = (BASE[ref.__c] ||= {});
-      m[ref.__id] = { ...(m[ref.__id] || {}), ...JSON.parse(JSON.stringify(datos)) };
-    })
+    set: (ref, datos, opts) => cola.push([ref, datos, opts]),
+    commit: async () => cola.forEach(([ref, datos, opts]) => escribir(ref, datos, opts))
   };
 };
 
@@ -54,7 +62,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{});
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch",
-  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, estadoActual, leer, PENDIENTES: () => PENDIENTES };");
+  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, estadoActual, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -184,8 +192,9 @@ ok(vuelta.proyectos.length === 5 && vuelta.pendientes.length === 9, "salieron lo
 ok(vuelta.pendientes.every((p) => Array.isArray(p.historia)), "con su historia cada uno");
 /* Mirar la estructura, no el texto: el parte tiene un pendiente que se llama
    «las fichas», y buscar esa palabra encuentra el título, no un dato. */
-ok(JSON.stringify(Object.keys(vuelta).sort()) === '["generado","panel","pendientes","proyectos"]',
-   "el estado tiene esas cuatro claves y ninguna más");
+ok(JSON.stringify(Object.keys(vuelta).sort()) ===
+   '["generado","panel","pendientes","proyectos","sinResponder","tocados"]',
+   "el estado tiene esas seis claves y ninguna más");
 const idsFicha = Object.keys(BASE.fichas || {});
 ok(idsFicha.length > 0 && !idsFicha.some((id) => salida.includes(id)),
    "hay fichas en la base y ninguna asomó en la salida");
@@ -248,6 +257,84 @@ const enTabla = (arch) => {
  ["firebase-init.js", lee(ini, /Sello:\s*(\S+)/)]
 ].forEach(([arch, real]) =>
   ok(enTabla(arch) === real, arch + ": README dice «" + enTabla(arch) + "», el archivo «" + real + "»"));
+
+
+console.log("\n13 · el circuito: yo pregunto, Mauro responde, la respuesta vuelve");
+/* Es el motivo de existir del panel como canal. Si esto falla, una pregunta
+   se pierde entre tandas — que es justo lo que se quiso evitar. */
+/* El grupo 10 vacía la base a propósito. Se repone acá para no depender del
+   orden: una prueba que sólo pasa si la anterior dejó todo como estaba es una
+   prueba frágil. */
+$("entrada").value = JSON.stringify(parte);
+$("btnRevisar").click(); await esperar();
+$("btnAplicar").click(); await esperar(); sí();
+await esperar(); await esperar(); await esperar();
+const unId = api.PENDIENTES()[0] ? api.PENDIENTES()[0].id : null;
+ok(!!unId, "hay pendientes en la base para probar");
+
+// (a) mando un parte con una pregunta
+$("entrada").value = JSON.stringify({
+  panel: "pendientes",
+  pendientes: [{ id: unId, pregunta: "¿Publico esto o lo dejo en borrador?" }]
+});
+$("btnRevisar").click(); await esperar();
+ok($("btnAplicar").disabled === false, "la pregunta aparece como cambio");
+$("btnAplicar").click(); await esperar(); sí();
+await esperar(); await esperar(); await esperar();
+const conPreg = api.PENDIENTES().find((p) => p.id === unId);
+ok(conPreg.pregunta.startsWith("¿Publico"), "quedó guardada la pregunta");
+ok(BASE.pendientes[unId].tocado === false, "aplicar un parte apaga la marca «lo tocó Mauro»");
+
+// (b) el tablero la señala
+api.pintar();
+ok($("c-pregunta").textContent === "1", "el contador dice que hay 1 sin responder");
+ok($("lista").innerHTML.includes("sin responder"), "y la tarjeta lo dice");
+ok($("lista").innerHTML.includes("sinresponder"), "y se marca distinto");
+
+// (c) Mauro la abre y contesta
+api.abrirPendiente(conPreg);
+ok(!$("t-editor").classList.contains("hide"), "se abre el pendiente");
+ok(!$("t-caja-pregunta").classList.contains("hide"), "con la caja de la pregunta");
+$("t-respuesta").value = "Publicalo.";
+$("t-estado").querySelector('[data-v="hecho"]').click();
+$("t-nota").value = "Lo miré en el teléfono.";
+$("btnPendGuardar").click(); await esperar(); await esperar(); await esperar();
+const resp = api.PENDIENTES().find((p) => p.id === unId);
+ok(resp.respuesta === "Publicalo.", "guardó la respuesta");
+ok(resp.estado === "hecho", "y el estado que marcó");
+ok(resp.tocado === true, "y queda marcado como tocado por Mauro");
+ok(resp.historia.filter((h) => h.por === "mauro").length === 2,
+   "la historia sumó sus dos líneas (el cambio y la nota)");
+ok(resp.historia.length > 2, "sin pisar la historia previa");
+
+// (d) sale en la exportación, señalado
+$("btnVerEstado").click(); await esperar();
+const paq = JSON.parse($("salida").value);
+ok(paq.tocados.includes(unId), "la exportación lo lista en «tocados»");
+const salido = paq.pendientes.find((p) => p.id === unId);
+ok(salido.respuesta === "Publicalo." && salido.pregunta.startsWith("¿Publico"),
+   "y lleva la pregunta y la respuesta adentro");
+ok(salido.titulo === "Otro título" || salido.titulo.length > 0,
+   "y guardar una respuesta NO borró el resto del pendiente (merge de verdad)");
+
+// (e) un parte mío que NO repita la respuesta no la borra
+$("entrada").value = JSON.stringify({
+  panel: "pendientes",
+  pendientes: [{ id: unId, titulo: "Otro título", quien: "claude" }]
+});
+$("btnRevisar").click(); await esperar();
+$("btnAplicar").click(); await esperar(); sí();
+await esperar(); await esperar(); await esperar();
+const despues = api.PENDIENTES().find((p) => p.id === unId);
+ok(despues.respuesta === "Publicalo.", "la respuesta de Mauro sobrevive a un parte que no la menciona");
+ok(despues.titulo === "Otro título", "(y el parte sí cambió lo que traía)");
+
+console.log("\n14 · la vuelta sigue sin perder nada, ahora con preguntas");
+$("btnVerEstado").click(); await esperar();
+$("entrada").value = $("salida").value;
+$("btnRevisar").click(); await esperar();
+ok($("estadoPegar").textContent === "No hay nada nuevo.",
+   "exportar e importar siguen siendo la misma cosa");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

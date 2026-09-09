@@ -29,7 +29,7 @@ Sale `Todo en orden.` y código 0, o la lista de fallas y código 1.
 
 ## Qué comprueba, y por qué esas cosas
 
-Son 41 comprobaciones en doce grupos. Las que más valen no son las obvias:
+Son 63 comprobaciones en catorce grupos. Las que más valen no son las obvias:
 
 - **La vuelta del parte no pierde nada** (grupo 9). Se carga el parte real desde
   un archivo, se aplica, se saca el estado y **se vuelve a meter**: tiene que
@@ -50,6 +50,24 @@ Son 41 comprobaciones en doce grupos. Las que más valen no son las obvias:
 - **`index.html` y `nucleo.js` piden `firebase-init.js` por la misma dirección**
   (grupo 11). Dos direcciones distintas son dos módulos para el navegador, y eso
   es dos `initializeApp()`.
+- **La ronda completa, de punta a punta** (grupo 13). Se manda un parte con una
+  pregunta, se aplica, el tablero la señala, Mauro la abre y contesta, la
+  respuesta sale en la exportación listada en `tocados`, y **un parte que no la
+  menciona no la borra**. Si esto falla, una pregunta se pierde entre tandas, que
+  es justo lo que el canal viene a evitar.
+
+## Un error que tuvo el propio banco, y por qué queda anotado
+
+El Firestore falso ignoraba `{merge:true}` y reemplazaba el documento entero.
+Con eso, el banco «descubrió» que guardar una respuesta borraba el título del
+pendiente — un error que en producción no existe. **Un doble que miente distinto
+que el real no prueba nada**, y cuesta más que no tenerlo: manda a arreglar lo
+que no está roto.
+
+Ya van tres pruebas que fallaron por sí mismas y no por el panel: ésta, la que
+buscaba la palabra «exportar» y se encontraba dentro del comentario que explica
+por qué ese botón no existe, y la que leía la tabla equivocada del README.
+Cuando una prueba falla, la primera pregunta es si prueba lo que dice probar.
 
 ## Lo que el banco NO prueba
 

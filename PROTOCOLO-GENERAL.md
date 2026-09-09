@@ -250,7 +250,56 @@ sensible.
 **Y las contraseñas no van a las fichas.** Viven en el gestor de contraseñas de
 Mauro y en ningún documento.
 
+
+## 6. El panel es el canal de comunicación
+
+Decidido por Mauro el 2026-09-09. La sección 5 dice **dónde se presenta** la
+información; ésta dice **cómo se conversa**.
+
+**El panel es el canal preferido.** Todo lo que un agente necesite que Mauro
+confirme, acepte, valide o decida, y todo lo que dependa de que él haga algo,
+**va marcado ahí** — no sólo dicho en el chat, donde se hunde en cuanto la
+conversación avanza al punto siguiente.
+
+### La ronda
+
+1. **El agente manda un parte.** Además de los pendientes, cada uno puede llevar
+   una `pregunta`: lo que necesita de Mauro.
+2. **Mauro contesta en el panel, a su ritmo.** Abre el pendiente, escribe la
+   `respuesta`, marca en qué estado quedó y de quién depende ahora. Puede dejarlo
+   a medias y volver otro día.
+3. **Exporta el paquete** y se lo pasa al agente.
+4. **El agente trabaja esa ronda entera** y devuelve el parte siguiente.
+
+Lo que esto compra, y es el motivo: **que nada quede olvidado por avanzar.**
+Mientras se desarrolla un punto, los anteriores no se pierden quince renglones
+más arriba en una conversación.
+
+**El chat sigue abierto** para lo que se resuelva al vuelo. Son dos caminos que
+conviven, no uno que reemplaza al otro. Lo que no puede pasar es que algo que
+requiere una decisión de Mauro exista **sólo** en el chat.
+
+### El apretón de manos
+
+Cada pendiente lleva la marca `tocado`: se enciende cuando Mauro guarda algo y
+**se apaga sola** cuando el agente manda un parte que incluye ese pendiente —o
+sea, cuando ya lo vio—. La exportación publica arriba las listas `tocados` y
+`sinResponder`.
+
+**Lo primero que hace un agente al recibir un paquete es mirar `tocados`.**
+Comparar a ojo contra lo que mandó es el trabajo que se olvida hacer.
+
+### Reglas que no se negocian
+
+- **La respuesta de Mauro no se pisa.** Si el parte del agente no menciona la
+  respuesta de un pendiente, queda la que él escribió. Perder una respuesta por
+  no haberla repetido sería exactamente lo que este circuito viene a evitar.
+- **La historia se suma, nunca se reemplaza** — también cuando el que escribe es
+  Mauro, y sus líneas quedan marcadas como suyas.
+- **Una pregunta sin responder cuenta como pendiente abierto**, aunque el
+  pendiente esté marcado hecho.
+
 ---
-*Última actualización: 2026-09-09 (entra la sección 5: el panel como lugar
-donde se presenta toda la información, el mecanismo por el que el estado llega
-a la base, y la regla de que lo guardado se exporta a pedido).*
+*Última actualización: 2026-09-09 (entran la sección 5 —el panel como lugar
+donde se presenta toda la información— y la 6 —el panel como canal de
+comunicación, con la ronda de preguntas y respuestas y el apretón de manos).*

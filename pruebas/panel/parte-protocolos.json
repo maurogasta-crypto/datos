@@ -466,10 +466,20 @@
       "id": "general:main-directo",
       "ambito": "general",
       "orden": 30,
-      "titulo": "En los repos de memoria se empuja a `main`; en los sitios, no",
-      "regla": "En `casaverdecanas-blip/datos` y en el panel se empuja directo a `main`. En los tres repositorios de los sitios no: ahí `main` es producción y sale en vivo sin que nadie lo mire, así que va por rama.",
-      "porQue": "Dos de dos veces el trabajo quedó varado en una rama sin mergear: el reglamento de 100 KB de la sesión del 7-sep, y las secciones 5 a 8 más el banco de pruebas de la del 9-sep. En un repositorio que es la memoria, una rama sin mergear no es prudencia: es pérdida silenciosa.",
+      "titulo": "Se empuja a `main` en todos los repos, y por eso la verificación es obligatoria",
+      "regla": "En los cinco repositorios se empuja directo a `main`. En los tres sitios `main` ES producción —publica en vivo por Pages—, así que antes de empujar: que el JS parsee, que lo que se pueda correr se corra, que los sellos hayan subido (y la VERSION del sw.js si el archivo está en SHELL, y los ?v=), y que la documentación diga la verdad.",
+      "porQue": "Dos de dos veces el trabajo quedó varado en una rama sin mergear: el reglamento de 100 KB del 7-sep y las secciones 5 a 8 del 9-sep. La rama no protegía: escondía. Pero al sacarla se sacó el único momento en que alguien miraba antes de publicar, así que ese momento se corre hacia atrás, al agente, y deja de ser opcional.",
       "origen": "Decisión de Mauro, 2026-09-09 · PROTOCOLO-GENERAL.md § 2.1.",
+      "vigencia": "vigente"
+    },
+    {
+      "id": "general:llevar-no-reinventar",
+      "ambito": "general",
+      "orden": 31,
+      "titulo": "Si un sitio ya resolvió algo, se lleva; no se reinventa",
+      "regla": "Antes de escribir una capacidad nueva, mirar si otro de los sitios ya la tiene. Si la tiene, se lleva su versión —con su nombre— en vez de escribir una equivalente.",
+      "porQue": "CasaYourte no tenía listas de permisos y Casa Verde sí, desde hacía tiempo. Y el mismo campo se llamaba distinto en cada uno, así que copiar un ítem del menú de un proyecto al otro lo rompía sin dar error. Reinventar cuesta el doble y además crea la divergencia.",
+      "origen": "Primer caso resuelto por la auditoría, 2026-09-09.",
       "vigencia": "vigente"
     }
   ]

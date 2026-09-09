@@ -299,7 +299,65 @@ Comparar a ojo contra lo que mandó es el trabajo que se olvida hacer.
 - **Una pregunta sin responder cuenta como pendiente abierto**, aunque el
   pendiente esté marcado hecho.
 
+
+## 7. La auditoría de protocolos
+
+Pedida por Mauro el 2026-09-09. Es el mecanismo que evita que una mejora quede
+encerrada en el sitio donde nació.
+
+### Por qué existe
+
+Los cinco proyectos usan herramientas parecidas y se enfrentan a problemas
+parecidos: Firestore con reglas, un núcleo que no se duplica, sellos de versión,
+un botón Atrás que no puede ser `history.back()`, teléfonos con barra de gestos.
+Cuando algo se resuelve bien en uno, **casi siempre sirve en los otros** — y sin
+un momento dedicado a mirarlo, no se lleva: el que lo resolvió sigue con su
+tanda y el que lo necesita no se entera.
+
+**Una herramienta que sirve en un sitio y no se llevó a los demás es trabajo
+hecho dos veces.** La otra mitad: una regla que se dejó de cumplir sin que nadie
+lo note deja de ser una regla.
+
+### Qué se mira
+
+1. **Cómo se está trabajando en cada sitio**, contra las reglas de ámbito
+   «general» del panel. ¿Se están cumpliendo? ¿Alguna quedó vieja?
+2. **Qué mejoras se reportaron en un sitio y no se aplicaron en los otros** que
+   usan las mismas herramientas o enfrentan la misma situación. El insumo es
+   `ESTADO-DE-LOS-TRES.md` y las reglas de ámbito propio: una regla que dice
+   algo que a otro sitio también le serviría es candidata a pasar a «general».
+3. **Qué reglas propias sobran**, porque describen algo que ya vale para todos.
+4. **Qué hay en el panel marcado `propuesta`** y nunca se decidió.
+
+### Cómo se hace
+
+No es una pantalla ni un informe aparte: **es una tanda.** Lo que sale de la
+auditoría entra como pendientes y preguntas, igual que todo lo demás, y se
+responde por el circuito de la sección 6.
+
+La fecha de la última vive dentro de la propia regla de la auditoría
+(`protocolos/general:auditoria`, campo `ultima`), y el panel la muestra arriba
+de la solapa «Reglas». Mauro la marca cuando la hizo.
+
+### Cuándo
+
+Cuando pase bastante desde la anterior, o cuando aparezca la señal que la
+justifica: **el mismo problema resuelto dos veces en dos sitios distintos.** Si
+eso pasa, la auditoría ya llegaba tarde.
+
+### El ámbito de una regla no es decoración
+
+Cada regla del panel dice si vale **para todos** o **para un sitio**. Esa
+distinción es lo que hace posible la auditoría: sin ella, o se escriben reglas
+falsas para cinco proyectos, o se escribe cinco veces la misma. Netlify existe
+en Casa Verde y no en los otros; sólo `remate` separa monedas; sólo el panel
+tiene dos zonas que no se mezclan.
+
+**Pasar una regla de un sitio a «general» es el resultado típico de una
+auditoría**, y es exactamente la mejora que se buscaba propagar.
+
 ---
-*Última actualización: 2026-09-09 (entran la sección 5 —el panel como lugar
-donde se presenta toda la información— y la 6 —el panel como canal de
-comunicación, con la ronda de preguntas y respuestas y el apretón de manos).*
+*Última actualización: 2026-09-09 (entran las secciones 5 —el panel como lugar
+donde se presenta la información—, 6 —el panel como canal, con la ronda y el
+apretón de manos— y 7 —la auditoría de protocolos, para que una mejora hecha en
+un sitio llegue a los demás).*

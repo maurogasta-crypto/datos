@@ -62,7 +62,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{});
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch",
-  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, estadoActual, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES };");
+  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, estadoActual, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -72,6 +72,7 @@ const api = correr(P, $, {}, {}, doc, setDoc, deleteDoc, collection,
   getDocs, serverTimestamp, writeBatch);
 
 /* ---- utilidades de prueba ---- */
+const AMBITOS_OK = ["general","casaverde","casayourte","remate","panel","datos"];
 let fallos = 0;
 const ok = (c, q) => { console.log((c ? "  ok   " : "  FALLA") + "  " + q); if (!c) fallos++; };
 const esperar = () => new Promise((r) => setTimeout(r, 0));
@@ -193,8 +194,8 @@ ok(vuelta.pendientes.every((p) => Array.isArray(p.historia)), "con su historia c
 /* Mirar la estructura, no el texto: el parte tiene un pendiente que se llama
    «las fichas», y buscar esa palabra encuentra el título, no un dato. */
 ok(JSON.stringify(Object.keys(vuelta).sort()) ===
-   '["generado","panel","pendientes","proyectos","sinResponder","tocados"]',
-   "el estado tiene esas seis claves y ninguna más");
+   '["generado","panel","pendientes","protocolos","proyectos","reglasTocadas","sinResponder","tocados"]',
+   "el estado tiene esas ocho claves y ninguna más");
 const idsFicha = Object.keys(BASE.fichas || {});
 ok(idsFicha.length > 0 && !idsFicha.some((id) => salida.includes(id)),
    "hay fichas en la base y ninguna asomó en la salida");
@@ -335,6 +336,109 @@ $("entrada").value = $("salida").value;
 $("btnRevisar").click(); await esperar();
 ok($("estadoPegar").textContent === "No hay nada nuevo.",
    "exportar e importar siguen siendo la misma cosa");
+
+
+console.log("\n15 · las reglas: entran por parte, se editan acá y salen");
+await api.leerProtocolos(); await esperar();
+ok($("r-estado").textContent.includes("Todavía no hay ninguna"), "arranca sin reglas");
+
+// (a) yo propongo reglas en un parte, una general y una de un sitio
+$("entrada").value = JSON.stringify({ panel: "pendientes", protocolos: [
+  { id: "general:completos", titulo: "Archivos completos, nunca diffs", ambito: "general",
+    regla: "Toda modificación se entrega como archivo completo.",
+    porQue: "Se trabaja desde el teléfono, con la web de GitHub.", orden: 1 },
+  { id: "remate:monedas", titulo: "Cada moneda es un sistema aparte", ambito: "remate",
+    regla: "UYU y USD nunca se suman.", porQue: "Un total mezclado no significa nada.", orden: 1 },
+  { id: "general:auditoria", titulo: "Auditoría de protocolos", ambito: "general",
+    regla: "Revisar si una mejora de un sitio llegó a los otros.", orden: 99 }
+]});
+$("btnRevisar").click(); await esperar();
+ok($("btnAplicar").textContent.includes("3"), "las tres aparecen como cambio");
+ok($("revision").innerHTML.includes("regla ·"), "y la revisión dice que son reglas");
+$("btnAplicar").click(); await esperar(); sí(); await esperar(); await esperar(); await esperar();
+ok(Object.keys(BASE.protocolos || {}).length === 3, "se escribieron en «protocolos», no en otra colección");
+
+// (b) el filtro por sitio
+api.pintarProtocolos();
+ok($("r-reglas").innerHTML.includes("remateTaller"), "agrupa por sitio con su nombre legible");
+$("r-ambito").value = "remate"; api.pintarProtocolos();
+ok($("r-estado").textContent === "1 de 3", "el filtro por sitio deja una sola");
+$("r-ambito").value = ""; api.pintarProtocolos();
+
+// (c) Mauro edita una
+const reg = api.PROTOCOLOS().find((r) => r.id === "remate:monedas");
+api.abrirRegla(reg);
+ok($("r-titulo").value === "Cada moneda es un sistema aparte", "abre con lo que había");
+ok($("r-de").value === "remate", "y con su sitio marcado");
+$("r-porque").value = "Ya pasó una vez: un total mezclado no significa nada.";
+$("r-vigencia").querySelector('[data-v="propuesta"]').click();
+$("btnReglaGuardar").click(); await esperar(); await esperar(); await esperar();
+const edit = api.PROTOCOLOS().find((r) => r.id === "remate:monedas");
+ok(edit.porQue.startsWith("Ya pasó"), "guardó el porqué");
+ok(edit.vigencia === "propuesta", "y la vigencia");
+ok(edit.tocado === true, "y queda marcada como tocada por Mauro");
+ok(edit.regla === "UYU y USD nunca se suman.", "sin borrar lo que no tocó");
+
+// (d) la auditoría
+ok(!$("caja-auditoria").classList.contains("hide"), "la caja de auditoría aparece");
+ok($("r-auditoria").textContent.includes("Todavía no"), "y dice que no se hizo ninguna");
+$("btnAuditoria").click(); await esperar(); sí(); await esperar(); await esperar(); await esperar();
+ok($("r-auditoria").textContent.includes("La última fue"), "anotarla la registra");
+
+// (e) salen en el paquete
+$("btnVerEstado").click(); await esperar(); await esperar();
+const paq2 = JSON.parse($("salida").value);
+ok(paq2.protocolos.length === 3, "las tres salen en la exportación");
+ok(paq2.reglasTocadas.includes("remate:monedas"), "y se señala la que tocó Mauro");
+ok(paq2.protocolos.find((r) => r.id === "general:auditoria").ultima,
+   "la fecha de la auditoría viaja con su regla");
+
+console.log("\n16 · la vuelta sigue sin perder nada, ahora con reglas");
+$("entrada").value = $("salida").value;
+$("btnRevisar").click(); await esperar();
+ok($("estadoPegar").textContent === "No hay nada nuevo.",
+   "exportar e importar siguen siendo la misma cosa");
+
+console.log("\n17 · una colección nueva entra con su regla, en la misma tanda");
+/* La regla de oro del ecosistema, y acá se puede comprobar sola: rige el
+   cierre `if false`, así que una colección sin bloque propio queda inaccesible
+   y la pantalla no anda. Se mira el archivo Y el texto que arma el panel: la
+   copia del repo se desactualiza en silencio, el que se pega es el otro. */
+const reglasTxt = fs.readFileSync(RAIZ + "reglas.txt", "utf8");
+["proyectos", "pendientes", "tandas", "fichas", "protocolos"].forEach((c) => {
+  ok(new RegExp("match /" + c + "/\\{id\\}").test(reglasTxt), "reglas.txt declara " + c);
+  ok(html.includes("match /" + c + "/{id}"), "y el texto que arma el panel también declara " + c);
+});
+ok(/match \/\{document=\*\*\} \{ allow read, write: if false; \}/.test(reglasTxt),
+   "y el cierre sigue negando todo lo demás");
+
+
+console.log("\n18 · el parte de reglas real entra limpio");
+/* No alcanza con que el JSON sea válido: tiene que pasar por la revisión del
+   panel sin descartes y quedar en la base tal cual. */
+BASE.protocolos = {};
+await api.leerProtocolos(); await esperar();
+const semilla = JSON.parse(fs.readFileSync("parte-protocolos.json", "utf8"));
+$("entrada").value = JSON.stringify(semilla);
+$("btnRevisar").click(); await esperar();
+ok(!$("revision").innerHTML.includes("se descartaron"), "la revisión no descarta ninguna");
+ok($("btnAplicar").textContent.includes(String(semilla.protocolos.length)),
+   "propone escribir las " + semilla.protocolos.length);
+$("btnAplicar").click(); await esperar(); sí(); await esperar(); await esperar(); await esperar();
+ok(api.PROTOCOLOS().length === semilla.protocolos.length, "quedaron todas en la base");
+
+const ambitos = new Set(api.PROTOCOLOS().map((r) => r.ambito));
+ok([...ambitos].every((a) => AMBITOS_OK.includes(a)),
+   "todos los ámbitos existen en el desplegable · " + [...ambitos].join(", "));
+ok(api.PROTOCOLOS().some((r) => r.id === "general:auditoria" ),
+   "viene la regla de la auditoría, que es la que enciende su caja");
+api.pintarProtocolos();
+ok(!$("caja-auditoria").classList.contains("hide"), "y la caja aparece");
+
+$("btnVerEstado").click(); await esperar(); await esperar();
+$("entrada").value = $("salida").value;
+$("btnRevisar").click(); await esperar();
+ok($("estadoPegar").textContent === "No hay nada nuevo.", "y la vuelta sigue sin pérdida");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

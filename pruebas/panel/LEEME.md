@@ -29,7 +29,7 @@ Sale `Todo en orden.` y código 0, o la lista de fallas y código 1.
 
 ## Qué comprueba, y por qué esas cosas
 
-Son 63 comprobaciones en catorce grupos. Las que más valen no son las obvias:
+Son 100 comprobaciones en dieciocho grupos. Las que más valen no son las obvias:
 
 - **La vuelta del parte no pierde nada** (grupo 9). Se carga el parte real desde
   un archivo, se aplica, se saca el estado y **se vuelve a meter**: tiene que
@@ -50,6 +50,14 @@ Son 63 comprobaciones en catorce grupos. Las que más valen no son las obvias:
 - **`index.html` y `nucleo.js` piden `firebase-init.js` por la misma dirección**
   (grupo 11). Dos direcciones distintas son dos módulos para el navegador, y eso
   es dos `initializeApp()`.
+- **Una colección nueva entra con su regla** (grupo 17). Comprueba que cada
+  colección que el panel usa tenga su bloque en `reglas.txt` **y** en el texto
+  que arma la solapa «La puerta» —que es el que realmente se pega—, y que el
+  cierre `if false` siga negando el resto. La próxima colección que se agregue
+  sin su regla falla acá y no en el teléfono.
+- **El parte de reglas real entra limpio** (grupo 18). Las 42 reglas de
+  `parte-protocolos.json` pasan por la revisión del panel sin descartes. Que un
+  JSON sea válido no dice que el panel lo acepte.
 - **La ronda completa, de punta a punta** (grupo 13). Se manda un parte con una
   pregunta, se aplica, el tablero la señala, Mauro la abre y contesta, la
   respuesta sale en la exportación listada en `tocados`, y **un parte que no la

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-4
+   Sello: estilos-5
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -241,3 +241,38 @@ textarea.libre { font-family:inherit; font-size:.95rem; white-space:pre-wrap;
 /* Con cinco, «Pendientes» ya es la más larga que cabe. Si algún día hace falta
    una sexta, no se achica la letra: se junta algo o se saca algo. */
 #nav button { padding:.7rem .15rem; font-size:.55rem; letter-spacing:.06em; }
+
+/* ── prioridad ── */
+/* Tres niveles y no cinco: con cinco nadie usa los del medio y todo termina
+   siendo «alta». El color sólo marca la más urgente; las otras dos se leen. */
+.prio { font-family:var(--mono); font-size:.52rem; letter-spacing:.09em;
+  text-transform:uppercase; padding:.15rem .4rem; border-radius:999px;
+  flex:none; border:1px solid var(--linea); color:var(--gris2); }
+.prio.alta { color:var(--ojo); border-color:var(--ojo); }
+
+/* ── de qué proyecto es, cuando se miran todos juntos ── */
+.deque { font-family:var(--mono); font-size:.56rem; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--gris2); margin-top:.25rem; }
+
+/* ── trabas ── */
+/* Lo que traba a otros va en el color del aviso; lo que está frenado se apaga,
+   porque no se puede empezar y no tiene que competir por la atención. */
+.traba, .frena { font-size:.82rem; margin-top:.45rem; padding-top:.4rem;
+  border-top:1px dashed var(--linea); }
+.traba .k, .frena .k { display:block; font-family:var(--mono); font-size:.56rem;
+  letter-spacing:.12em; text-transform:uppercase; margin-bottom:.15rem; }
+.traba { color:var(--texto); }
+.traba .k { color:var(--ojo); }
+.frena { color:var(--gris); }
+.frena .k { color:var(--gris2); }
+.pend.frenado { opacity:.62; }
+.pend.frenado .tit { font-weight:500; }
+
+#aviso-trabas { margin:.7rem 0; }
+#aviso-trabas .duro { margin:0; }
+
+/* ── el selector de app ── */
+/* Manda sobre todo lo que se ve, así que se ve como algo que se toca y no
+   como un campo más de un formulario. */
+#cual-app { font-size:1.02rem; font-weight:600; border-color:var(--acento);
+  background:var(--tinta2); }

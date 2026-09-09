@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-4">
+<link rel="stylesheet" href="estilos.css?v=estilos-5">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
@@ -47,6 +47,8 @@
     <!-- 1a · la lista -->
     <div id="t-lista">
       <h1>Qué está pendiente</h1>
+      <label for="cual-app">¿En qué estás trabajando?</label>
+      <select id="cual-app"></select>
       <p class="gris" id="resumen">Leyendo…</p>
 
       <div class="cuadro">
@@ -58,11 +60,13 @@
       </div>
 
       <div class="seg" id="filtro" role="group" aria-label="Qué mostrar">
-        <button data-v="preguntas" aria-pressed="false">Preguntas</button>
         <button data-v="abiertos" aria-pressed="true">Lo que falta</button>
-        <button data-v="tuyo" aria-pressed="false">Te esperan</button>
+        <button data-v="preguntas" aria-pressed="false">Preguntas</button>
+        <button data-v="trabas" aria-pressed="false">Trabas</button>
         <button data-v="todo" aria-pressed="false">Todo</button>
       </div>
+
+      <div id="aviso-trabas" class="hide"></div>
 
       <div id="lista"></div>
     </div>
@@ -82,7 +86,15 @@
           placeholder="Contestá acá. Sale en el JSON que me pasás."></textarea>
       </div>
 
+      <div id="t-trabas" class="hide"></div>
+
       <div class="tarj">
+        <label>¿Qué tan urgente?</label>
+        <div class="seg" id="t-prioridad" role="group" aria-label="Prioridad">
+          <button data-v="alta">Primero</button>
+          <button data-v="media">Después</button>
+          <button data-v="baja">Cuando se pueda</button>
+        </div>
         <label>¿Cómo está?</label>
         <div class="seg" id="t-estado" role="group" aria-label="Estado">
           <button data-v="abierto">Abierto</button>
@@ -289,7 +301,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js?v=init-2";
 
-P.PANEL = "panel-7";
+P.PANEL = "panel-8";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -392,6 +404,68 @@ async function leer() {
 }
 
 /* ---------- pintar ---------- */
+/* ---------- prioridades y trabas ---------- */
+/* Dos cosas que la lista plana no podía decir:
+
+   · CUÁL PRIMERO. Veinte pendientes sin orden son veinte decisiones cada vez
+     que se abre el panel. La prioridad la pongo yo en el parte y Mauro la
+     corrige si no coincide con lo que le urge.
+
+   · QUÉ TRABA QUÉ. Un pendiente puede estar esperando a otro. Si eso no se
+     ve, se avanza en lo de abajo y lo de arriba queda olvidado —que es
+     exactamente lo que este panel existe para evitar—. Se declara en una sola
+     dirección, `esperaA`, y el otro lado se deduce: nadie tiene que acordarse
+     de escribir las dos puntas. */
+
+const PRIORIDADES = ["alta", "media", "baja"];
+const NOMBRE_PRIO = { alta: "primero", media: "después", baja: "cuando se pueda" };
+const pesoPrio = (p) => {
+  const i = PRIORIDADES.indexOf(p && p.prioridad);
+  return i < 0 ? 1 : i;                 // sin prioridad = media
+};
+
+/* A quién traba este pendiente: los que lo nombran en su `esperaA` y siguen
+   abiertos. Si él ya está hecho no traba a nadie, por más que lo nombren. */
+const trabaA = (p) => !abierto(p) ? []
+  : PENDIENTES.filter((x) => abierto(x)
+      && (Array.isArray(x.esperaA) ? x.esperaA : []).includes(p.id));
+
+/* Qué lo está frenando: lo que espera y todavía no está hecho. */
+const frenadoPor = (p) => (Array.isArray(p.esperaA) ? p.esperaA : [])
+  .map((id) => PENDIENTES.find((x) => x.id === id))
+  .filter((x) => x && abierto(x));
+
+const tituloDe = (id) => {
+  const x = PENDIENTES.find((y) => y.id === id);
+  return x ? (x.titulo || id) : id;
+};
+
+/* ---------- el selector de app ---------- */
+/* Todo lo que se ve cuelga de esto. Se recuerda en el teléfono: quien abre el
+   panel casi siempre viene a seguir con lo mismo de ayer. */
+let APP = "";
+try { APP = localStorage.getItem("panel.app") || ""; } catch (e) { APP = ""; }
+
+function llenarApps() {
+  const sel = $("cual-app");
+  const antes = sel.value || APP;
+  sel.innerHTML = '<option value="">Todas las apps</option>'
+    + PROYECTOS.map((p) => '<option value="' + P.esc(p.id) + '">'
+        + P.esc(p.nombre || p.id) + "</option>").join("");
+  sel.value = PROYECTOS.some((p) => p.id === antes) ? antes : "";
+  APP = sel.value;
+}
+
+$("cual-app").addEventListener("change", () => {
+  APP = $("cual-app").value;
+  try { localStorage.setItem("panel.app", APP); } catch (e) {}
+  /* La solapa de reglas sigue al selector: si estoy trabajando en un sitio,
+     las reglas que importan son las suyas y las generales. */
+  if ($("r-ambito").options.length) { $("r-ambito").value = APP; pintarProtocolos(); }
+  pintar();
+});
+
+/* ---------- pintar ---------- */
 const nombreProy = (id) => (PROYECTOS.find((p) => p.id === id) || {}).nombre || id;
 const abierto = (p) => p.estado !== "hecho" && p.estado !== "retirado";
 /* Una pregunta cuenta como pendiente mientras no tenga respuesta. Es el punto
@@ -400,71 +474,112 @@ const abierto = (p) => p.estado !== "hecho" && p.estado !== "retirado";
 const sinResponder = (p) => !!(p.pregunta || "").trim()
   && !(p.respuesta || "").trim() && abierto(p);
 
+function tarjeta(p) {
+  const clase = p.estado === "hecho" ? "hecho"
+              : p.estado === "retirado" ? "retirado"
+              : (p.quien === "claude" ? "mio" : "tuyo");
+  const marca = sinResponder(p) ? " sinresponder" : "";
+  const frena = frenadoPor(p);
+  const traba = trabaA(p);
+  let h = '<div class="pend ' + clase + marca + (frena.length ? " frenado" : "")
+    + '" data-abrir="' + P.esc(p.id) + '">'
+    + '<div class="cab">'
+    + (p.clave ? '<span class="clave">' + P.esc(p.clave) + "</span>" : "")
+    + '<span class="tit">' + P.esc(p.titulo || "(sin título)") + "</span>"
+    + (abierto(p) ? '<span class="prio ' + P.esc(p.prioridad || "media") + '">'
+        + P.esc(NOMBRE_PRIO[p.prioridad] || NOMBRE_PRIO.media) + "</span>" : "")
+    + "</div>";
+  if (!APP && p.proyecto) h += '<div class="deque">' + P.esc(nombreProy(p.proyecto)) + "</div>";
+  if (p.porQue) h += '<div class="porque">' + P.esc(p.porQue) + "</div>";
+  if (traba.length) {
+    h += '<div class="traba"><span class="k">traba ' + traba.length
+      + (traba.length === 1 ? " cosa" : " cosas") + "</span>"
+      + P.esc(traba.map((x) => x.titulo || x.id).join(" · ")) + "</div>";
+  }
+  if (frena.length) {
+    h += '<div class="frena"><span class="k">esperando</span>'
+      + P.esc(frena.map((x) => x.titulo || x.id).join(" · ")) + "</div>";
+  }
+  if (p.pregunta) {
+    h += '<div class="preg"><span class="k">te pregunté</span>' + P.esc(p.pregunta) + "</div>";
+    h += (p.respuesta)
+      ? '<div class="resp"><span class="k">contestaste</span>' + P.esc(p.respuesta) + "</div>"
+      : '<div class="resp falta">sin responder — tocá para contestar</div>';
+  }
+  const hist = Array.isArray(p.historia) ? p.historia.slice(-3) : [];
+  if (hist.length) {
+    h += '<div class="hist">';
+    hist.forEach((x) => { h += "<div><i>" + P.esc(x.fecha || "") + "</i> · " + P.esc(x.texto || "") + "</div>"; });
+    h += "</div>";
+  }
+  return h + "</div>";
+}
+
+/* Por prioridad, y dentro de cada una lo que no está frenado antes que lo que
+   sí: no tiene sentido encabezar la lista con algo que no se puede empezar. */
+const porUrgencia = (a, b) =>
+  pesoPrio(a) - pesoPrio(b)
+  || (frenadoPor(a).length ? 1 : 0) - (frenadoPor(b).length ? 1 : 0)
+  || (PROYECTOS.findIndex((x) => x.id === a.proyecto) - PROYECTOS.findIndex((x) => x.id === b.proyecto))
+  || String(a.clave || "").localeCompare(String(b.clave || ""), "es", { numeric: true });
+
+function bloque(titulo, lista, vacio) {
+  if (!lista.length) return vacio ? '<div class="proy">' + P.esc(titulo)
+    + '</div><p class="gris">' + P.esc(vacio) + "</p>" : "";
+  return '<div class="proy">' + P.esc(titulo) + " · " + lista.length + "</div>"
+    + lista.slice().sort(porUrgencia).map(tarjeta).join("");
+}
+
 function pintar() {
-  const n = (f) => PENDIENTES.filter(f).length;
+  llenarApps();
+  const deLaApp = (p) => !APP || p.proyecto === APP;
+  const mios = PENDIENTES.filter(deLaApp);
+  const n = (f) => mios.filter(f).length;
+
   $("c-pregunta").textContent = n(sinResponder);
   $("c-tuyo").textContent = n((p) => abierto(p) && p.quien !== "claude");
   $("c-mio").textContent = n((p) => abierto(p) && p.quien === "claude");
   $("c-hecho").textContent = n((p) => p.estado === "hecho");
-  $("c-total").textContent = PENDIENTES.length;
+  $("c-total").textContent = mios.length;
 
-  const visibles = PENDIENTES.filter((p) =>
-    filtro === "todo" ? true
-    : filtro === "preguntas" ? sinResponder(p)
-    : filtro === "tuyo" ? (abierto(p) && p.quien !== "claude")
-    : abierto(p));
+  /* El aviso de trabas va arriba de todo y no depende del filtro: es lo que
+     no se puede descubrir mirando la lista. */
+  const trabando = mios.filter((p) => abierto(p) && trabaA(p).length)
+    .sort((a, b) => trabaA(b).length - trabaA(a).length);
+  $("aviso-trabas").classList.toggle("hide", !trabando.length);
+  if (trabando.length) {
+    $("aviso-trabas").innerHTML = '<div class="duro"><b>'
+      + trabando.length + (trabando.length === 1 ? " cosa está trabando otras." : " cosas están trabando otras.")
+      + "</b> Resolverlas destraba " + trabando.reduce((t, p) => t + trabaA(p).length, 0)
+      + " pendientes más.</div>";
+  }
 
-  $("resumen").textContent = PENDIENTES.length
-    ? visibles.length + " de " + PENDIENTES.length + " · última lectura " + new Date().toLocaleTimeString("es-UY")
-    : "Todavía no hay nada. Pegá el primer parte en la solapa «Pegar».";
-
-  // Agrupados por proyecto, en el orden del catálogo; lo que no tenga
-  // proyecto conocido cae al final en vez de desaparecer.
-  const orden = PROYECTOS.map((p) => p.id);
-  const grupos = {};
-  visibles.forEach((p) => (grupos[p.proyecto || "(sin proyecto)"] ||= []).push(p));
-  const ids = Object.keys(grupos).sort((a, b) => {
-    const A = orden.indexOf(a), B = orden.indexOf(b);
-    return (A < 0 ? 99 : A) - (B < 0 ? 99 : B) || a.localeCompare(b, "es");
-  });
+  $("resumen").textContent = !PENDIENTES.length
+    ? "Todavía no hay nada. Cargá el primer parte en la solapa «Parte»."
+    : (APP ? nombreProy(APP) : "Los " + PROYECTOS.length + " proyectos")
+      + " · " + mios.filter(abierto).length + " sin terminar de " + mios.length;
 
   let h = "";
-  ids.forEach((id) => {
-    const g = grupos[id].slice().sort((a, b) =>
-      String(a.clave || "").localeCompare(String(b.clave || ""), "es", { numeric: true }));
-    h += '<div class="proy">' + P.esc(nombreProy(id)) + " · " + g.length + "</div>";
-    g.forEach((p) => {
-      const clase = p.estado === "hecho" ? "hecho"
-                  : p.estado === "retirado" ? "retirado"
-                  : (p.quien === "claude" ? "mio" : "tuyo");
-      const marca = sinResponder(p) ? " sinresponder" : "";
-      h += '<div class="pend ' + clase + marca + '" data-abrir="' + P.esc(p.id) + '">'
-        + '<div class="cab">'
-        + (p.clave ? '<span class="clave">' + P.esc(p.clave) + "</span>" : "")
-        + '<span class="tit">' + P.esc(p.titulo || "(sin título)") + "</span>"
-        + '<span class="quien">' + P.esc(
-            p.estado === "hecho" ? "hecho"
-            : p.estado === "retirado" ? "retirado"
-            : (QUIEN[p.quien] || "te espera")) + "</span>"
-        + "</div>"
-        + (p.porQue ? '<div class="porque">' + P.esc(p.porQue) + "</div>" : "");
-      if (p.pregunta) {
-        h += '<div class="preg"><span class="k">te pregunté</span>' + P.esc(p.pregunta) + "</div>";
-        h += (p.respuesta)
-          ? '<div class="resp"><span class="k">contestaste</span>' + P.esc(p.respuesta) + "</div>"
-          : '<div class="resp falta">sin responder — tocá para contestar</div>';
-      }
-      const hist = Array.isArray(p.historia) ? p.historia.slice(-4) : [];
-      if (hist.length) {
-        h += '<div class="hist">';
-        hist.forEach((x) => {
-          h += "<div><i>" + P.esc(x.fecha || "") + "</i> · " + P.esc(x.texto || "") + "</div>";
-        });
-        h += "</div>";
-      }
-      h += "</div>";
-    });
-  });
+  if (filtro === "preguntas") {
+    h = bloque("Preguntas sin responder", mios.filter(sinResponder),
+               "Ninguna. Cuando te pregunte algo, aparece acá.");
+  } else if (filtro === "trabas") {
+    h = bloque("Traban a otras", trabando, "Nada está trabando nada.")
+      + bloque("Frenadas por otra", mios.filter((p) => abierto(p) && frenadoPor(p).length), "");
+  } else {
+    /* LO EXPLÍCITO: dos bloques, y no un cartelito adentro de cada tarjeta.
+       Lo que tiene que hacer Mauro y lo que hago yo son dos trabajos
+       distintos y se leen en momentos distintos. */
+    const abiertos = mios.filter(abierto);
+    h = bloque("Te toca a vos", abiertos.filter((p) => p.quien !== "claude"),
+               "Nada te está esperando.")
+      + bloque("Lo hago yo", abiertos.filter((p) => p.quien === "claude"),
+               "Nada de mi lado.");
+    if (filtro === "todo") {
+      h += bloque("Hechos", mios.filter((p) => p.estado === "hecho"), "")
+        + bloque("Retirados", mios.filter((p) => p.estado === "retirado"), "");
+    }
+  }
   $("lista").innerHTML = h || '<p class="gris">Nada para mostrar con este filtro.</p>';
 }
 
@@ -492,7 +607,7 @@ const leerSeg = (cual) => {
   const b = $(cual).querySelector('[aria-pressed="true"]');
   return b ? b.dataset.v : "";
 };
-["t-estado", "t-quien"].forEach((cual) =>
+["t-estado", "t-quien", "t-prioridad"].forEach((cual) =>
   $(cual).addEventListener("click", (e) => {
     const b = e.target.closest("button");
     if (b) marcarSeg(cual, b.dataset.v);
@@ -514,6 +629,19 @@ function abrirPendiente(p) {
 
   marcarSeg("t-estado", p.estado || "abierto");
   marcarSeg("t-quien", p.quien || "mauro");
+  marcarSeg("t-prioridad", p.prioridad || "media");
+
+  /* Las trabas se muestran y no se editan: las declaro yo en el parte, porque
+     salen de mirar el conjunto. Pero tienen que estar A LA VISTA al decidir,
+     no escondidas en la lista. */
+  const frena = frenadoPor(p), traba = trabaA(p);
+  $("t-trabas").classList.toggle("hide", !frena.length && !traba.length);
+  $("t-trabas").innerHTML =
+    (frena.length ? '<div class="duro"><b>No se puede empezar todavía.</b> Espera a: '
+        + P.esc(frena.map((x) => x.titulo || x.id).join(" · ")) + "</div>" : "")
+    + (traba.length ? '<div class="duro"><b>Esto traba ' + traba.length
+        + (traba.length === 1 ? " cosa" : " cosas") + ".</b> " 
+        + P.esc(traba.map((x) => x.titulo || x.id).join(" · ")) + "</div>" : "");
   $("t-nota").value = "";
 
   $("t-lista").classList.add("hide");
@@ -543,6 +671,7 @@ $("btnPendGuardar").addEventListener("click", async () => {
   const respuesta = $("t-respuesta").value.trim();
   const estado = leerSeg("t-estado") || "abierto";
   const quien = leerSeg("t-quien") || "mauro";
+  const prioridad = leerSeg("t-prioridad") || "media";
   const nota = $("t-nota").value.trim();
 
   /* Qué cambió, dicho en palabras. Va a la historia, que es lo único que no se
@@ -551,6 +680,7 @@ $("btnPendGuardar").addEventListener("click", async () => {
   if (estado !== (p.estado || "abierto")) cambios.push("pasa a «" + estado + "»");
   if (quien !== (p.quien || "mauro")) cambios.push("queda en «" + (QUIEN[quien] || quien) + "»");
   if (respuesta !== (p.respuesta || "")) cambios.push("respondido");
+  if (prioridad !== (p.prioridad || "media")) cambios.push("urgencia: " + (NOMBRE_PRIO[prioridad] || prioridad));
   if (!cambios.length && !nota)
     return P.aviso("No cambiaste nada todavía.", "error");
 
@@ -561,7 +691,7 @@ $("btnPendGuardar").addEventListener("click", async () => {
   const b = $("btnPendGuardar"); b.disabled = true; b.textContent = "…";
   try {
     await setDoc(doc(db, "pendientes", p.id), {
-      respuesta, estado, quien,
+      respuesta, estado, quien, prioridad,
       /* La historia SE SUMA. Vale igual cuando el que escribe es Mauro. */
       historia: (Array.isArray(p.historia) ? p.historia : []).concat(lineas),
       /* La marca del apretón de manos: esto lo tocó Mauro y yo todavía no lo vi.
@@ -591,7 +721,7 @@ const QUIENES = ["mauro", "claude", "ambos"];
    Lo normal es que yo NO la mande —abajo se preserva la que ya está—, pero
    «normal» no es una garantía y esto sí. */
 const CAMPOS = ["proyecto", "clave", "titulo", "porQue", "estado", "quien",
-                "pregunta", "respuesta"];
+                "pregunta", "respuesta", "prioridad", "esperaA"];
 
 $("btnRevisar").addEventListener("click", () => {
   const txt = $("entrada").value.trim();
@@ -653,6 +783,8 @@ $("btnRevisar").addEventListener("click", () => {
       return problemas.push(p.id + ": estado «" + p.estado + "» no existe");
     if (p.quien && !QUIENES.includes(p.quien))
       return problemas.push(p.id + ": quien «" + p.quien + "» no existe");
+    if (p.prioridad && !PRIORIDADES.includes(p.prioridad))
+      return problemas.push(p.id + ": prioridad «" + p.prioridad + "» no existe");
     const antes = porId[p.id];
     const datos = {
       proyecto: p.proyecto || (antes && antes.proyecto) || "",
@@ -665,7 +797,12 @@ $("btnRevisar").addEventListener("click", () => {
       /* Lo que contestó Mauro NO se pisa por omisión. Si mi parte no trae
          respuesta, queda la suya: perder una respuesta por no haberla
          repetido sería exactamente lo que este circuito viene a evitar. */
-      respuesta: p.respuesta !== undefined ? p.respuesta : (antes ? (antes.respuesta || "") : "")
+      respuesta: p.respuesta !== undefined ? p.respuesta : (antes ? (antes.respuesta || "") : ""),
+      prioridad: p.prioridad || (antes && antes.prioridad) || "media",
+      /* Lista, no texto: se compara como cadena en CAMPOS y eso alcanza,
+         porque el orden con que la escribo es el orden con que vuelve. */
+      esperaA: Array.isArray(p.esperaA) ? p.esperaA
+             : (antes && Array.isArray(antes.esperaA) ? antes.esperaA : [])
     };
     /* La historia SE SUMA, nunca se reemplaza. Es lo único que no se puede
        reconstruir: si una tanda la pisara, se perdería cómo llegó cada cosa
@@ -819,6 +956,8 @@ function estadoActual() {
       quien: p.quien || "mauro",
       pregunta: p.pregunta || "",
       respuesta: p.respuesta || "",
+      prioridad: p.prioridad || "media",
+      esperaA: Array.isArray(p.esperaA) ? p.esperaA : [],
       historia: (Array.isArray(p.historia) ? p.historia : [])
         .map((h) => ({ fecha: h.fecha || "", texto: h.texto || "" }))
     })),
@@ -838,7 +977,12 @@ function estadoActual() {
     })),
     tocados: PENDIENTES.filter((p) => p.tocado).map((p) => p.id),
     reglasTocadas: PROTOCOLOS.filter((r) => r.tocado).map((r) => r.id),
-    sinResponder: PENDIENTES.filter(sinResponder).map((p) => p.id)
+    sinResponder: PENDIENTES.filter(sinResponder).map((p) => p.id),
+    /* Lo que hay que mirar antes que nada: qué está frenando a qué. Se calcula
+       al salir, no se guarda: es derivado de `esperaA` y de los estados, y un
+       derivado guardado se desactualiza en silencio. */
+    trabando: PENDIENTES.filter((p) => abierto(p) && trabaA(p).length)
+      .map((p) => ({ id: p.id, traba: trabaA(p).map((x) => x.id) }))
   };
 }
 const textoDelEstado = () => JSON.stringify(estadoActual(), null, 2);

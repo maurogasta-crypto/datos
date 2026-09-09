@@ -64,6 +64,39 @@ el que lo de la segunda fila está a salvo. El flujo es el mismo que la pantalla
 de traducción de CasaYourte: Claude genera un JSON, Mauro lo carga, lo mira y lo
 aplica. Nada se escribe sin que lo hayas visto.
 
+### El tablero: en qué app, qué primero, y qué traba qué
+
+Arriba de todo hay un **selector de app**. Todo lo que se ve cuelga de él —los
+contadores, la lista, y las reglas de la otra solapa—, y se recuerda en el
+teléfono: quien abre el panel casi siempre viene a seguir con lo de ayer.
+
+Debajo, la lista **no es una lista**: son dos bloques.
+
+| | |
+|---|---|
+| **Te toca a vos** | lo que no puede avanzar sin Mauro |
+| **Lo hago yo** | lo que espera a un agente |
+
+Están separados a propósito, y no como un cartelito adentro de cada tarjeta:
+son dos trabajos distintos y se leen en momentos distintos.
+
+**La urgencia.** Tres niveles —*primero*, *después*, *cuando se pueda*— y no
+cinco: con cinco nadie usa los del medio y todo termina siendo «alta». La
+propone Claude en el parte; Mauro la corrige si no coincide con lo que le urge.
+Dentro de cada bloque manda la urgencia, no el nombre.
+
+**Las trabas.** Un pendiente puede declarar `esperaA: ["otro:id"]`. De ahí sale
+todo lo demás **solo**:
+
+- la que espera se muestra apagada y va al final: no se puede empezar;
+- la que traba dice a cuántas traba;
+- arriba de la lista aparece un aviso con cuántas cosas se destrabarían;
+- cuando la que trababa se marca hecha, **la traba desaparece sola**. Es
+  derivada, no un dato que alguien tenga que acordarse de borrar.
+
+Se declara en una sola dirección a propósito. Escribir las dos puntas es
+garantizar que un día una quede sin la otra.
+
 ### El panel es el canal
 
 Es el motivo de existir de todo esto, y funciona como una ronda:
@@ -205,15 +238,16 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-3` |
-| `index.html` | `P.PANEL` | `panel-7` |
-| `estilos.css` | (en el comentario) | `estilos-4` |
+| `index.html` | `P.PANEL` | `panel-8` |
+| `estilos.css` | (en el comentario) | `estilos-5` |
 | `firebase-init.js` | (en el comentario) | `init-2` |
+| `sw.js` | `VERSION` | `panel-shell-v2` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-4` y `nucleo.js?v=nucleo-3`. Sin ese número, el
+pide `estilos.css?v=estilos-5` y `nucleo.js?v=nucleo-3`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

@@ -103,7 +103,7 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-1` |
+| `nucleo.js` | `P.VERSION` | `nucleo-2` |
 | `index.html` | `P.PANEL` | `panel-1` |
 | `estilos.css` | (en el comentario) | `estilos-1` |
 | `firebase-init.js` | (en el comentario) | `init-1` |

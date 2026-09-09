@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    nucleo.js — EL NÚCLEO DEL PANEL.
-   Sello: nucleo-1
+   Sello: nucleo-2
 
    Todo lo que hace falta en más de una pantalla vive acá y no se copia.
    Es la regla de los otros tres proyectos (PROTOCOLO-DESARROLLO §2, §3.2).
@@ -18,7 +18,7 @@ import {
 } from "./firebase-init.js";
 
 export const P = {};
-P.VERSION = "nucleo-1";
+P.VERSION = "nucleo-2";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */
@@ -59,7 +59,17 @@ const CAUSAS = {
   "auth/invalid-email": "Ese mail está mal escrito.",
   "auth/user-not-found": "No existe ninguna cuenta con ese mail.",
   "auth/too-many-requests": "Demasiados intentos seguidos. Esperá un rato y probá de nuevo.",
-  "auth/network-request-failed": "No se pudo llegar a Firebase. Es la red."
+  "auth/network-request-failed": "No se pudo llegar a Firebase. Es la red.",
+  /* Los dos errores del primer día. No son un problema del panel: son un paso
+     de configuración que todavía no se dio, y cada uno pide una cosa distinta
+     en la consola. Sin esta explicación, el panel devuelve el código pelado y
+     no hay forma de saber que la respuesta está en Firebase y no acá. */
+  "auth/configuration-not-found": "El proyecto todavía no tiene Authentication. Consola de "
+    + "Firebase → datos-830f8 → Authentication → Comenzar, y habilitá «Correo electrónico/contraseña».",
+  "auth/operation-not-allowed": "Authentication existe, pero el acceso con mail y contraseña está "
+    + "apagado. Consola de Firebase → Authentication → Sign-in method → habilitalo.",
+  "auth/invalid-api-key": "La configuración de firebase-init.js no corresponde a ningún proyecto. "
+    + "No es un permiso: es el projectId o la apiKey mal copiados."
 };
 P.explicar = (e) => {
   const c = (e && e.code) || "";

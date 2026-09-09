@@ -461,6 +461,16 @@
       "porQue": "Al documentar es cuando más tienta escribir de memoria, y es cuando más caro sale.",
       "origen": "PROTOCOLO-GENERAL.md § 1 y § 8.",
       "vigencia": "vigente"
+    },
+    {
+      "id": "general:main-directo",
+      "ambito": "general",
+      "orden": 30,
+      "titulo": "En los repos de memoria se empuja a `main`; en los sitios, no",
+      "regla": "En `casaverdecanas-blip/datos` y en el panel se empuja directo a `main`. En los tres repositorios de los sitios no: ahí `main` es producción y sale en vivo sin que nadie lo mire, así que va por rama.",
+      "porQue": "Dos de dos veces el trabajo quedó varado en una rama sin mergear: el reglamento de 100 KB de la sesión del 7-sep, y las secciones 5 a 8 más el banco de pruebas de la del 9-sep. En un repositorio que es la memoria, una rama sin mergear no es prudencia: es pérdida silenciosa.",
+      "origen": "Decisión de Mauro, 2026-09-09 · PROTOCOLO-GENERAL.md § 2.1.",
+      "vigencia": "vigente"
     }
   ]
 }

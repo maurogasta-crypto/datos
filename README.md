@@ -123,13 +123,23 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-2` |
-| `index.html` | `P.PANEL` | `panel-3` |
+| `nucleo.js` | `P.VERSION` | `nucleo-3` |
+| `index.html` | `P.PANEL` | `panel-4` |
 | `estilos.css` | (en el comentario) | `estilos-2` |
 | `firebase-init.js` | (en el comentario) | `init-1` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
+
+**El sello también va en la dirección**, y esto no es decorativo: `index.html`
+pide `estilos.css?v=estilos-2` y `nucleo.js?v=nucleo-3`. Sin ese número, el
+teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
+un sello, subí el número de la dirección en la misma tanda.**
+
+Y una trampa que ya casi pasa: `index.html` y `nucleo.js` piden
+`firebase-init.js` **por la misma dirección, letra por letra**. Si una llevara
+`?v=` y la otra no, serían dos módulos distintos para el navegador, con dos
+`initializeApp()` — y Firebase falla con «app already exists».
 
 ## Al trabajar acá
 

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    nucleo.js — EL NÚCLEO DEL PANEL.
-   Sello: nucleo-2
+   Sello: nucleo-3
 
    Todo lo que hace falta en más de una pantalla vive acá y no se copia.
    Es la regla de los otros tres proyectos (PROTOCOLO-DESARROLLO §2, §3.2).
@@ -15,10 +15,10 @@
 import {
   auth, db, onAuthStateChanged, signInWithEmailAndPassword, signOut,
   sendPasswordResetEmail
-} from "./firebase-init.js";
+} from "./firebase-init.js?v=init-1";
 
 export const P = {};
-P.VERSION = "nucleo-2";
+P.VERSION = "nucleo-3";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */

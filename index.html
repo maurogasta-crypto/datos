@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=1">
+<link rel="stylesheet" href="estilos.css?v=estilos-2">
 </head>
 <body>
 
@@ -65,15 +65,16 @@
 
     <h2>Meter lo que te pasé</h2>
     <div class="fila-btn">
-      <button class="btn" id="btnArchivo">Elegir un archivo</button>
+      <button class="btn p" id="btnArchivo">Elegir el archivo que te pasé</button>
     </div>
-    <input type="file" id="archivo" accept=".json,application/json,text/plain" class="hide">
+    <input type="file" id="archivo" class="hide">
     <p class="gris" style="margin-top:0;">O pegalo a mano, si lo tenés en el portapapeles:</p>
     <textarea id="entrada" placeholder='{ "panel": "pendientes", "pendientes": [ … ] }'></textarea>
     <div class="fila-btn">
       <button class="btn" id="btnRevisar">Revisar</button>
       <button class="btn p" id="btnAplicar" disabled>Nada para aplicar</button>
     </div>
+    <p class="gris" id="cual-archivo"></p>
     <p class="gris" id="estadoPegar"></p>
     <div id="revision"></div>
 
@@ -175,12 +176,12 @@
 </div>
 
 <script type="module">
-import { P, $, db, auth } from "./nucleo.js";
+import { P, $, db, auth } from "./nucleo.js?v=nucleo-3";
 import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
-} from "./firebase-init.js";
+} from "./firebase-init.js?v=init-1";
 
-P.PANEL = "panel-3";
+P.PANEL = "panel-4";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -494,6 +495,7 @@ $("archivo").addEventListener("change", async (e) => {
   try {
     $("entrada").value = await f.text();
     $("btnRevisar").click();
+    $("cual-archivo").textContent = "Archivo leído: " + f.name;
     P.aviso("Leído: " + f.name);
   } catch (err) {
     P.aviso("No se pudo leer ese archivo.", "error");

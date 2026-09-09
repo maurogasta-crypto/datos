@@ -13,7 +13,7 @@ sin `npm`, sin frameworks. Se edita desde el celular, por la web de GitHub.
 |---|---|
 | Panel | https://maurogasta-crypto.github.io/datos/ |
 | Repositorio | `maurogasta-crypto/datos` — público a propósito |
-| Despliegue | GitHub Pages, *Deploy from a branch* → `main` / `(root)` |
+| Despliegue | GitHub Pages con *Source: GitHub Actions* (`.github/workflows/pages.yml`) |
 | Base de datos | Firebase **`datos-830f8`** — Firestore + Authentication |
 
 **⚠ Hay dos repositorios llamados `datos`, y no son el mismo.** Éste
@@ -52,7 +52,11 @@ avanzar hiciera falta un dato de ahí, se para y se pregunta cómo seguir sin é
 repositorio, a ningún otro, ni a ningún chat — de Mauro o de un agente. El
 historial de git es permanente: borrar un archivo después no alcanza.
 
-¿Usa variables de entorno? **No.** No hay funciones de servidor ni workflows.
+¿Usa variables de entorno? **No.** No hay funciones de servidor. Hay **un**
+workflow —`.github/workflows/pages.yml`, que publica el sitio— y **no consume
+ningún secreto**: el token se lo da GitHub para esa corrida. Existe porque
+GitHub no dispara compilaciones a partir de push hechos por una app, así que sin
+él ninguna tanda de un agente llegaba al sitio publicado. Ver `README.md`.
 
 | Nombre | Qué hace | Tipo | Dónde vive el valor real | Consumido por | Verificado |
 |---|---|---|---|---|---|

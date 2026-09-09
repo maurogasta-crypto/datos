@@ -8,7 +8,7 @@ pueden estar en ningún repositorio ni en ningún chat.
 |---|---|
 | Panel | https://maurogasta-crypto.github.io/datos/ |
 | Repositorio | `maurogasta-crypto/datos` — **público a propósito** |
-| Despliegue | GitHub Pages, *Deploy from a branch* → `main` / `(root)` |
+| Despliegue | GitHub Pages con *Source: GitHub Actions* — ver abajo |
 | Base de datos | Firebase **`datos-830f8`** (Firestore + Authentication) |
 | Reglas | [`reglas.txt`](reglas.txt) — copia; la autoridad es la consola |
 
@@ -105,6 +105,27 @@ La primera vez, y en este orden:
 > **No guardes nada sensible antes del paso 5.** Si la base quedó en modo de
 > prueba, está abierta a cualquiera que sepa el `projectId` hasta que la cierres.
 
+## Por qué hay un workflow, si acá no había ninguno
+
+`.github/workflows/pages.yml` publica el sitio. Es el único, no usa ningún
+secreto —el token lo da GitHub para esa corrida— y **existe por una razón
+concreta, no por costumbre**:
+
+GitHub **no dispara compilaciones a partir de push hechos por una app de
+GitHub**. Es su protección contra bucles infinitos, y todos los push de un
+agente son de esa clase. Con la publicación «desde una rama», el sitio se quedó
+sirviendo la tanda 1 mientras el repositorio ya iba por la cuarta: cinco commits
+en `main` y ni una publicación nueva. No había forma de que una tanda llegara al
+teléfono sin que Mauro tocara el repositorio a mano cada vez.
+
+El workflow se dispara con un push a `main` **y también a pedido**
+(`workflow_dispatch`), que es lo que permite que un agente pida la publicación
+después de subir.
+
+**Requiere que Pages esté en `Settings → Pages → Source: GitHub Actions`.** Con
+la opción vieja («Deploy from a branch») este archivo no hace nada y el problema
+vuelve.
+
 ## Los archivos
 
 | Archivo | Qué hace |
@@ -114,6 +135,7 @@ La primera vez, y en este orden:
 | `firebase-init.js` | **el único contacto con el SDK de Firebase** |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
 | `reglas.txt` | copia de las reglas de Firestore, para referencia |
+| `.github/workflows/pages.yml` | publica el sitio; el único workflow, sin secretos |
 
 ## Los sellos de versión
 

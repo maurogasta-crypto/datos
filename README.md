@@ -14,6 +14,13 @@ tener que abrir cada repo, y sin que ningún valor real toque nunca git.
 - [`PROTOCOLO-SECRETOS.md`](PROTOCOLO-SECRETOS.md) — qué tipo de secreto va
   en cada lugar (Netlify, GitHub Secrets, Firestore, etc.) y el formato del
   índice por proyecto.
+- [`PROTOCOLO-DESARROLLO.md`](PROTOCOLO-DESARROLLO.md) — el reglamento técnico
+  común a los sitios: código, vocabulario, reglas de Firestore, PWA, sellos de
+  versión, cómo se entrega una tanda, y cuándo se deja de arreglar y se mide.
+- [`PROTOCOLO-INTERFAZ.md`](PROTOCOLO-INTERFAZ.md) — cómo se maneja la gente en
+  todos: pantalla, navegación, la cuenta, la ayuda, las fotos, el botón Atrás.
+- [`ESTADO-DE-LOS-TRES.md`](ESTADO-DE-LOS-TRES.md) — qué tiene cada proyecto que
+  a los otros les falta, y en qué orden conviene emparejarlos.
 - [`partes/`](partes/) — cada parte generado para el panel, con su fecha. El
   registro de qué se le pidió aplicar a Mauro y cuándo.
 - [`pruebas/panel/`](pruebas/panel/) — el banco de pruebas del panel, que corre

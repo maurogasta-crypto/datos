@@ -222,7 +222,7 @@ vuelve.
 |---|---|
 | `index.html` | el panel entero: tablero, el parte, las reglas, fichas, la puerta |
 | `nucleo.js` | el núcleo: la puerta, avisos, errores con causa, fechas locales |
-| `firebase-init.js` | **el único contacto con el SDK de Firebase** |
+| `firebase-init.js` | **el único contacto con el SDK de Firebase**, que baja diferido: ver «El SDK no viene puesto» |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
 | `reglas.txt` | copia de las reglas de Firestore, para referencia |
 | `sw.js` | el service worker: hace que se instale y abra sin señal |
@@ -238,17 +238,17 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-3` |
-| `index.html` | `P.PANEL` | `panel-9` |
+| `nucleo.js` | `P.VERSION` | `nucleo-4` |
+| `index.html` | `P.PANEL` | `panel-10` |
 | `estilos.css` | (en el comentario) | `estilos-5` |
-| `firebase-init.js` | (en el comentario) | `init-2` |
-| `sw.js` | `VERSION` | `panel-shell-v3` |
+| `firebase-init.js` | (en el comentario) | `init-3` |
+| `sw.js` | `VERSION` | `panel-shell-v4` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-5` y `nucleo.js?v=nucleo-3`. Sin ese número, el
+pide `estilos.css?v=estilos-5` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 
@@ -308,6 +308,40 @@ inicio»). Queda con su icono, sin la barra del navegador.
 `nucleo.js`, los iconos— y **Firestore guarda los datos** con su caché
 persistente (`firebase-init.js`). Sin las dos cosas, el panel abriría sin señal
 y estaría vacío, que no sirve de nada.
+
+### El SDK no viene puesto
+
+**Lo que el cascarón guarda no alcanza para que el panel funcione**, y hasta el
+sello `init-2` eso se veía de la peor manera. `firebase-init.js` empezaba con
+tres `import` estáticos desde `gstatic.com`. Un `import` estático es una
+dependencia dura: si el CDN no contesta —falta de señal, una red que filtra
+dominios, gstatic caído— ese módulo no evalúa; y como `nucleo.js` lo importa,
+tampoco evalúa; y como el panel importa el núcleo, tampoco. **La página quedaba
+en blanco, sin un solo mensaje** — justo después de que el service worker
+hubiera servido perfecto el HTML, el CSS y el JS. La app instalada parecía rota.
+
+Desde `init-3` el SDK entra por `import()` dinámico, dentro de un `try`, cuando
+el arranque lo pide. Si no llega, **el panel abre igual y dice qué falta**, con
+un botón de Reintentar para cuando vuelva la señal.
+
+Lo que hace que eso no obligara a reescribir el panel entero: `firebase-init.js`
+exporta `let`, no `const`. Un `export let` es un **enlace vivo** — quien hizo
+`import { doc } from "./firebase-init.js"` ve el valor que la variable tenga al
+usarla, no el que tenía al importar. Así `cargarFirebase()` los rellena y los
+treinta y pico de lugares que escriben `doc(db, …)` siguen igual.
+
+> **La contra, que hay que saber:** antes de que `cargarFirebase()` resuelva,
+> `db`, `auth` y todas las funciones del SDK valen `undefined`. Nada que dependa
+> de Firebase puede correr al nivel superior del módulo. Por eso el arranque la
+> espera primero, y por eso el banco de pruebas tiene el bloque 30, que corre el
+> panel con el SDK caído a propósito.
+
+Salió del hallazgo **A2** de la primera auditoría de protocolos: la regla
+`general:cdn-diferido` estaba escrita, era de ámbito general, estaba vigente, y
+no se cumplía en ninguno de los cuatro sitios. Este es el primero que la aplica.
+Los otros tres siguen pendientes.
+
+### Red primero, caché de respaldo
 
 La estrategia es **red primero, caché de respaldo**: estando en línea siempre se
 sirve lo último, y la caché sólo entra cuando la red falló. Con caché primero,

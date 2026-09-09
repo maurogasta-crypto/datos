@@ -14,7 +14,7 @@
    parece que el despliegue no hizo nada y en realidad hizo la mitad.
    ═══════════════════════════════════════════════════════════ */
 
-const VERSION = 'panel-shell-v3';
+const VERSION = 'panel-shell-v4';
 
 /* Sin `?v=` a propósito. El panel pide `estilos.css?v=estilos-4` y
    `nucleo.js?v=nucleo-3`, y repetir esos números acá sería la TERCERA copia

@@ -20,6 +20,26 @@
   <button class="btn" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
 </div>
 
+<!-- ── SIN SDK ───────────────────────────────────────────
+     Lo que se ve cuando el SDK de Firebase no baja de gstatic. Antes de
+     init-3 este caso era una pantalla en blanco: el `import` estático
+     tumbaba el módulo entero. Ahora el cascarón abre igual —lo guarda el
+     `sw.js`— y esto explica qué falta. Ver firebase-init.js. -->
+<div id="sin-sdk" class="contenedor hide">
+  <h1>El panel abrió, pero le falta Firebase</h1>
+  <div class="tarj">
+    <p id="sin-sdk-que" class="gris"></p>
+    <p class="gris">El cascarón del panel está guardado en este teléfono, por eso
+      llegaste hasta acá. Lo que no se guarda nunca es el SDK de Firebase, que se
+      baja de <code>gstatic.com</code> cada vez — y sin él no hay ni sesión ni datos.</p>
+    <p class="gris">Si es falta de señal, se arregla solo al volver. Si estás en una
+      red que filtra dominios (una oficina, un hotel), probá con datos móviles.</p>
+    <div class="fila-btn">
+      <button class="btn p" id="btnReintentar">Reintentar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── LA PUERTA ─────────────────────────────────────────── -->
 <div id="puerta" class="contenedor hide">
   <h1>Entrar</h1>
@@ -296,12 +316,12 @@
 </div>
 
 <script type="module">
-import { P, $, db, auth } from "./nucleo.js?v=nucleo-3";
+import { P, $, db, auth } from "./nucleo.js?v=nucleo-4";
 import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
-} from "./firebase-init.js?v=init-2";
+} from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-9";
+P.PANEL = "panel-10";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -331,15 +351,42 @@ let filtro = "abiertos";
 let yo = null;
 
 /* ---------- arranque ---------- */
+/* El sello se pinta ANTES de tocar Firebase, a propósito: si el SDK no baja,
+   igual queremos ver qué versión está sirviendo el teléfono. Es lo primero
+   que se mira ante un comportamiento raro. */
 P.pintarSello();
-(async () => {
+
+/* Lo primero es el SDK, que desde init-3 se baja acá y no al importar. Nada
+   de lo de abajo puede correr antes: `db` y `auth` valen `undefined` hasta
+   que esto resuelve. */
+async function arrancar() {
+  /* Se limpian las tres, no sólo el cartel: `arrancar()` vuelve a correr al
+     tocar «Reintentar», y dejar visible lo de la pasada anterior mostraría un
+     panel que ya no tiene con qué hablarle a la base. */
+  $("sin-sdk").classList.add("hide");
+  $("puerta").classList.add("hide");
+  $("app").classList.add("hide");
+  if (!(await P.arrancarFirebase())) {
+    $("sin-sdk-que").textContent = P.fallaFirebase
+      ? P.fallaFirebase.message
+      : "No se pudo cargar el SDK de Firebase.";
+    $("sin-sdk").classList.remove("hide");
+    return;
+  }
+  await entrarAlPanel();
+}
+
+$("btnReintentar").addEventListener("click", arrancar);
+arrancar();
+
+async function entrarAlPanel() {
   yo = await P.quienEntra();
   if (!yo) { $("puerta").classList.remove("hide"); return; }
   $("app").classList.remove("hide");
   $("miUid").value = yo.uid;
   $("reglas").value = textoDeReglas(yo.uid);
   await leer();
-})();
+}
 
 /* ---------- la puerta ---------- */
 $("btnEntrar").addEventListener("click", async () => {

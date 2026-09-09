@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    nucleo.js — EL NÚCLEO DEL PANEL.
-   Sello: nucleo-3
+   Sello: nucleo-4
 
    Todo lo que hace falta en más de una pantalla vive acá y no se copia.
    Es la regla de los otros tres proyectos (PROTOCOLO-DESARROLLO §2, §3.2).
@@ -14,11 +14,11 @@
 
 import {
   auth, db, onAuthStateChanged, signInWithEmailAndPassword, signOut,
-  sendPasswordResetEmail
-} from "./firebase-init.js?v=init-2";
+  sendPasswordResetEmail, cargarFirebase
+} from "./firebase-init.js?v=init-3";
 
 export const P = {};
-P.VERSION = "nucleo-3";
+P.VERSION = "nucleo-4";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */
@@ -132,4 +132,28 @@ P.pintarSello = () => {
   if (s) s.textContent = P.PANEL + " · " + P.VERSION;
 };
 
-export { auth, db };
+/* ---------- el SDK, que ya no viene puesto ---------- */
+/* Desde init-3 el SDK de Firebase se baja cuando se lo pide, no al importar
+   el módulo. Esto es lo que hay que esperar antes de tocar `auth` o `db`:
+   antes de que resuelva, las dos valen `undefined`.
+
+   Se pone acá y no en cada pantalla porque es el núcleo el que las usa
+   (`P.quienEntra`, `P.entrar`, `P.salir`, `P.recuperar`), y porque mañana
+   puede haber una segunda pantalla: la regla es que esto no se duplique.
+
+   Devuelve `true` si el SDK está listo, o `false` si no bajó. NO tira: el
+   punto entero es que la pantalla siga viva para poder contar qué pasa. El
+   detalle queda en `P.fallaFirebase`. */
+P.fallaFirebase = null;
+P.arrancarFirebase = async function () {
+  try {
+    await cargarFirebase();
+    P.fallaFirebase = null;
+    return true;
+  } catch (e) {
+    P.fallaFirebase = e;
+    return false;
+  }
+};
+
+export { auth, db, cargarFirebase };

@@ -56,12 +56,19 @@
     <div id="lista"></div>
   </section>
 
-  <!-- 2 · pegar el parte -->
+  <!-- 2 · el parte: entra y sale -->
   <section id="v-pegar" class="hide">
-    <h1>Pegar el parte</h1>
-    <p class="gris">El JSON que te paso por el chat. <b>Nada de esto es sensible</b>:
-      es el estado de los proyectos. Lo sensible se escribe en «Fichas», y por ahí
+    <h1>El parte</h1>
+    <p class="gris">El estado de los proyectos, que te paso yo y aplicás vos.
+      <b>Nada de esto es sensible.</b> Lo sensible se escribe en «Fichas», y por ahí
       no pasa nunca.</p>
+
+    <h2>Meter lo que te pasé</h2>
+    <div class="fila-btn">
+      <button class="btn" id="btnArchivo">Elegir un archivo</button>
+    </div>
+    <input type="file" id="archivo" accept=".json,application/json,text/plain" class="hide">
+    <p class="gris" style="margin-top:0;">O pegalo a mano, si lo tenés en el portapapeles:</p>
     <textarea id="entrada" placeholder='{ "panel": "pendientes", "pendientes": [ … ] }'></textarea>
     <div class="fila-btn">
       <button class="btn" id="btnRevisar">Revisar</button>
@@ -69,6 +76,20 @@
     </div>
     <p class="gris" id="estadoPegar"></p>
     <div id="revision"></div>
+
+    <h2>Sacar lo que hay</h2>
+    <p class="gris">El estado completo tal como está en la base, en el mismo formato
+      que entra. Sirve para respaldarlo, para mirarlo, y sobre todo para dármelo al
+      empezar un chat nuevo: así arranco sabiendo dónde quedó todo en vez de
+      adivinar.</p>
+    <div class="fila-btn">
+      <button class="btn" id="btnVerEstado">Ver el estado</button>
+      <button class="btn" id="btnBajarEstado">Bajar el archivo</button>
+    </div>
+    <div id="caja-salida" class="hide">
+      <textarea id="salida" readonly></textarea>
+      <div class="fila-btn"><button class="btn" id="btnCopiarEstado">Copiar todo</button></div>
+    </div>
   </section>
 
   <!-- 3 · fichas -->
@@ -159,7 +180,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js";
 
-P.PANEL = "panel-2";
+P.PANEL = "panel-3";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -460,6 +481,84 @@ $("btnAplicar").addEventListener("click", async () => {
     P.aviso(P.explicar(e), "error");
     $("estadoPegar").textContent = P.explicar(e);
   } finally { b.disabled = false; b.textContent = "Nada para aplicar"; }
+});
+
+/* ---------- el archivo entra ---------- */
+/* Pegar un JSON largo en un teléfono es pelear con el portapapeles y con el
+   teclado. El archivo evita las dos cosas: se elige, se lee y se revisa solo.
+   El textarea sigue estando para cuando el dato ya está en el portapapeles. */
+$("btnArchivo").addEventListener("click", () => $("archivo").click());
+$("archivo").addEventListener("change", async (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  try {
+    $("entrada").value = await f.text();
+    $("btnRevisar").click();
+    P.aviso("Leído: " + f.name);
+  } catch (err) {
+    P.aviso("No se pudo leer ese archivo.", "error");
+  } finally {
+    /* Sin esto, elegir DOS VECES el mismo archivo no dispara nada: el valor no
+       cambió, así que no hay evento. Y elegir el mismo archivo otra vez es
+       justo lo que uno hace cuando algo salió mal. */
+    e.target.value = "";
+  }
+});
+
+/* ---------- el estado sale ---------- */
+/* La vuelta completa: lo que entró tiene que poder volver a salir, en el mismo
+   formato, sin pérdida. Sirve para respaldar, para mirar qué hay, y sobre todo
+   para dárselo a un chat nuevo — que es lo único que evita que cada
+   conversación empiece adivinando en qué quedó cada proyecto.
+
+   Es del estado de los proyectos y de nada más. Las fichas no salen por acá ni
+   por ningún lado: son la otra zona. */
+function estadoActual() {
+  return {
+    panel: "pendientes",
+    generado: P.hoy(),
+    proyectos: PROYECTOS.map((p) => ({
+      id: p.id, nombre: p.nombre || p.id, orden: Number(p.orden) || 99
+    })),
+    pendientes: PENDIENTES.map((p) => ({
+      id: p.id,
+      proyecto: p.proyecto || "",
+      clave: p.clave || "",
+      titulo: p.titulo || "",
+      porQue: p.porQue || "",
+      estado: p.estado || "abierto",
+      quien: p.quien || "mauro",
+      historia: (Array.isArray(p.historia) ? p.historia : [])
+        .map((h) => ({ fecha: h.fecha || "", texto: h.texto || "" }))
+    }))
+  };
+}
+const textoDelEstado = () => JSON.stringify(estadoActual(), null, 2);
+
+$("btnVerEstado").addEventListener("click", () => {
+  if (!PENDIENTES.length && !PROYECTOS.length)
+    return P.aviso("La base está vacía: todavía no hay nada que sacar.", "error");
+  $("salida").value = textoDelEstado();
+  $("caja-salida").classList.remove("hide");
+  $("salida").scrollIntoView({ block: "nearest" });
+});
+
+$("btnCopiarEstado").addEventListener("click", () => copiar($("salida").value, "Copiado entero."));
+
+$("btnBajarEstado").addEventListener("click", () => {
+  if (!PENDIENTES.length && !PROYECTOS.length)
+    return P.aviso("La base está vacía: todavía no hay nada que sacar.", "error");
+  const url = URL.createObjectURL(new Blob([textoDelEstado()], { type: "application/json" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "estado-" + P.hoy() + ".json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  /* El revoke no va en el mismo tick: en Android el navegador todavía no
+     empezó a bajarlo y el archivo sale vacío. */
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  P.aviso("Bajando estado-" + P.hoy() + ".json");
 });
 
 /* ---------- las fichas ---------- */

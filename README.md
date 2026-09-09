@@ -61,8 +61,28 @@ Es la idea de fondo de todo el panel:
 **Claude no tiene —ni debe tener— credenciales de `datos-830f8`.** No puede
 escribir en esta base, y eso no es una limitación a resolver: es el motivo por
 el que lo de la segunda fila está a salvo. El flujo es el mismo que la pantalla
-de traducción de CasaYourte: Claude genera un JSON, Mauro lo pega, lo mira y lo
+de traducción de CasaYourte: Claude genera un JSON, Mauro lo carga, lo mira y lo
 aplica. Nada se escribe sin que lo hayas visto.
+
+### El parte entra y sale
+
+La solapa «El parte» tiene las dos direcciones, y las dos son del estado de los
+proyectos — **nunca de las fichas**:
+
+- **Entra** por «Elegir un archivo»: se elige el `.json` que te pasé y el panel
+  lo lee y lo revisa solo, sin pegar nada. El textarea sigue estando para cuando
+  ya lo tenés en el portapapeles.
+- **Sale** por «Ver el estado» o «Bajar el archivo»: el contenido de la base en
+  el mismo formato en que entra. Para respaldarlo, para mirarlo, y sobre todo
+  **para dárselo a un chat nuevo** — es lo único que evita que cada conversación
+  arranque adivinando en qué quedó cada proyecto.
+
+La vuelta es sin pérdida: meter de nuevo lo que salió tiene que contestar «no
+hay nada nuevo», y eso está probado.
+
+Que el estado se pueda sacar y las fichas no, no es una inconsistencia: son las
+dos zonas. El estado ya viaja por el chat porque no es sensible; las fichas no
+viajan a ningún lado.
 
 ## La puerta
 
@@ -89,7 +109,7 @@ La primera vez, y en este orden:
 
 | Archivo | Qué hace |
 |---|---|
-| `index.html` | el panel entero: tablero, pegar, fichas, la puerta |
+| `index.html` | el panel entero: tablero, el parte, fichas, la puerta |
 | `nucleo.js` | el núcleo: la puerta, avisos, errores con causa, fechas locales |
 | `firebase-init.js` | **el único contacto con el SDK de Firebase** |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
@@ -104,7 +124,7 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-2` |
-| `index.html` | `P.PANEL` | `panel-2` |
+| `index.html` | `P.PANEL` | `panel-3` |
 | `estilos.css` | (en el comentario) | `estilos-2` |
 | `firebase-init.js` | (en el comentario) | `init-1` |
 

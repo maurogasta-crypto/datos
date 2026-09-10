@@ -239,7 +239,7 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-11` |
+| `index.html` | `P.PANEL` | `panel-12` |
 | `estilos.css` | (en el comentario) | `estilos-6` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
 | `sw.js` | `VERSION` | `panel-shell-v4` |

@@ -331,7 +331,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-11";
+P.PANEL = "panel-12";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -808,12 +808,20 @@ $("btnRevisar").addEventListener("click", () => {
 
   (Array.isArray(j.proyectos) ? j.proyectos : []).forEach((p) => {
     if (!p || !p.id) return problemas.push("un proyecto sin id");
-    const datos = { nombre: p.nombre || p.id, orden: Number(p.orden) || 99 };
+    const antes = PROYECTOS.find((x) => x.id === p.id);
+    /* La ficha técnica del proyecto: con qué está hecho. Si el parte no la
+       trae, se conserva la que ya estaba — un parte que sólo renombra un
+       proyecto no tiene por qué borrarle la ficha. */
+    const tecnica = Array.isArray(p.tecnica) ? p.tecnica.filter((f) => f && f.clave)
+                  : ((antes && Array.isArray(antes.tecnica)) ? antes.tecnica : []);
+    const datos = { nombre: p.nombre || p.id, orden: Number(p.orden) || 99, tecnica };
     // Sólo si cambia algo. Sin esto, pegar dos veces el mismo parte listaba
     // los cinco proyectos como si fueran cambios, y «no hay nada nuevo» —que
     // es la respuesta correcta— no aparecía nunca.
-    const antes = PROYECTOS.find((x) => x.id === p.id);
-    if (antes && antes.nombre === datos.nombre && (antes.orden || 99) === datos.orden) return;
+    const igual = antes && antes.nombre === datos.nombre
+      && (antes.orden || 99) === datos.orden
+      && JSON.stringify(antes.tecnica || []) === JSON.stringify(tecnica);
+    if (igual) return;
     CAMBIOS.push({ tipo: "proyecto", id: p.id, datos });
   });
 
@@ -1005,8 +1013,12 @@ function estadoActual() {
   return {
     panel: "pendientes",
     generado: P.hoy(),
+    /* La ficha técnica sale con el estado: es de la zona NO sensible —la
+       genera Claude— y si no saliera, la vuelta perdería lo que entró.
+       Lo que NO sale por acá son las fichas, que son la otra zona. */
     proyectos: PROYECTOS.map((p) => ({
-      id: p.id, nombre: p.nombre || p.id, orden: Number(p.orden) || 99
+      id: p.id, nombre: p.nombre || p.id, orden: Number(p.orden) || 99,
+      tecnica: Array.isArray(p.tecnica) ? p.tecnica : []
     })),
     pendientes: PENDIENTES.map((p) => ({
       id: p.id,

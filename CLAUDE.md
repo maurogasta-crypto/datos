@@ -88,10 +88,23 @@ preguntarle a Mauro directamente, acá, antes de actuar.
 
 ## Al trabajar en este repo
 
+**Etapa: en desarrollo.** Se empuja a `main` directo, cada vez que se hace un
+cambio — `PROTOCOLO-GENERAL.md` § 2.1 del repo privado. Acá además no hay
+alternativa: `main` es lo que publica el sitio, y el panel lo usa una sola
+persona. Aun así la verificación previa no es opcional: que el JS parsee, que
+el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
+`sw.js`, y que el `README.md` diga la verdad.
+
 - **No hay build ni terminal.** No agregar `npm`, bundlers ni carpetas anidadas.
 - **El núcleo es `nucleo.js` y no se duplica.** Si algo hace falta en dos
   pantallas, sube ahí en la misma tanda.
-- **El único contacto con el SDK de Firebase es `firebase-init.js`.**
+- **El único contacto con el SDK de Firebase es `firebase-init.js`**, y desde
+  `init-3` **el SDK se baja diferido**, con `import()` dentro de un `try`, no
+  con un `import` estático. Lo que exporta son `let` —enlaces vivos— que
+  `cargarFirebase()` rellena: por eso `db` y `auth` valen `undefined` hasta que
+  esa promesa resuelve, y **nada que dependa de Firebase puede correr al nivel
+  superior de un módulo**. El arranque de `index.html` la espera primero. El
+  motivo entero está en el `README.md`, § «El SDK no viene puesto».
 - **Una colección nueva entra con su regla, en la misma tanda.** Rige el cierre
   `match /{document=**} { allow read, write: if false; }`.
 - **Las reglas se editan completas, nunca por fragmentos:** se suman.

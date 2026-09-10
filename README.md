@@ -239,8 +239,8 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-10` |
-| `estilos.css` | (en el comentario) | `estilos-5` |
+| `index.html` | `P.PANEL` | `panel-11` |
+| `estilos.css` | (en el comentario) | `estilos-6` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
 | `sw.js` | `VERSION` | `panel-shell-v4` |
 
@@ -248,7 +248,7 @@ teléfono.
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-5` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-6` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 
@@ -274,6 +274,33 @@ Y una trampa que ya casi pasa: `index.html` y `nucleo.js` piden
 - **Acá no se sube ningún dato.** Ni de ejemplo. Este repositorio es público.
   Ojo con el repositorio homónimo: ver el recuadro del principio.
 - Sigue los protocolos del repo **privado** `casaverdecanas-blip/datos`.
+
+## La ficha técnica de cada app
+
+Al elegir una app en el selector, arriba de los contadores aparece **con qué
+está hecha**: repositorio y quién lo administra, enlace público, base de datos,
+Netlify si usa, y lo que sea que tenga configurado.
+
+**Son las dos zonas de siempre, y el renglón es el puente entre ellas.**
+
+| | De dónde sale | Quién la escribe |
+|---|---|---|
+| Lo que se ve de entrada | `proyectos/<id>.tecnica` | lo genera Claude, se aplica con el parte. **No es sensible** |
+| Lo que trae el botón «ver» | `fichas/`, filtradas por proyecto | **sólo Mauro**, en la solapa Fichas. **No viaja** |
+
+Un renglón de `tecnica` es `{ clave, valor, nota?, buscar? }`. `buscar` es con
+qué se rastrean las fichas de ese proyecto, y existe porque el renglón puede
+llamarse «Base de datos» y la ficha «Firebase»; si no está, se busca por
+`clave`.
+
+**El botón dice cuántas fichas hay antes de tocarlo**, y se apaga si no hay
+ninguna: un botón que a veces no muestra nada enseña a no tocarlo.
+
+> **Lo que no hace, y no es un olvido.** No hay ningún botón que junte las
+> fichas en un texto listo para pegar — ni acá ni en la solapa Fichas. Ese
+> botón sería el camino por el que lo sensible se filtraría, y sin él el camino
+> no existe. Para copiar un valor suelto está el botón de cada campo, que copia
+> **uno** y a propósito. El banco de pruebas lo verifica en el bloque 32.
 
 ## Las fichas
 

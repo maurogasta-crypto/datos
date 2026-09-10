@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-5">
+<link rel="stylesheet" href="estilos.css?v=estilos-6">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
@@ -70,6 +70,16 @@
       <label for="cual-app">¿En qué estás trabajando?</label>
       <select id="cual-app"></select>
       <p class="gris" id="resumen">Leyendo…</p>
+
+      <!-- 1b · la ficha técnica de la app elegida.
+           Con qué está hecha, dónde corre, quién la administra. Sale de
+           `proyectos/<id>.tecnica`, que es la zona NO sensible: la genero yo
+           y la aplicás vos con el parte.
+           El botón «ver» de cada renglón busca en `fichas/` lo que hayas
+           registrado para ese servicio y lo muestra ACÁ, en pantalla. No hay
+           —ni va a haber— un botón que junte todo: ver PROTOCOLO-GENERAL § 5,
+           «La excepción, que no es una inconsistencia». -->
+      <div id="ficha-tecnica" class="hide"></div>
 
       <div class="cuadro">
         <div class="pregunta"><b id="c-pregunta">—</b><span>te pregunté</span></div>
@@ -321,7 +331,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-10";
+P.PANEL = "panel-11";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -579,6 +589,11 @@ function bloque(titulo, lista, vacio) {
 
 function pintar() {
   llenarApps();
+  pintarFichaTecnica();
+  /* Las fichas se leen cuando hacen falta, no al arrancar: el tablero abre sin
+     tocar la zona sensible. Pero el botón «ver» necesita saber CUÁNTAS hay para
+     poder decirlo, así que en cuanto hay una app elegida se piden una vez. */
+  if (APP && !fichasLeidas) leerFichas().then(pintarFichaTecnica).catch(() => {});
   const deLaApp = (p) => !APP || p.proyecto === APP;
   const mios = PENDIENTES.filter(deLaApp);
   const n = (f) => mios.filter(f).length;
@@ -1269,6 +1284,128 @@ $("btnAuditoria").addEventListener("click", async () => {
     await leerProtocolos();
     P.aviso("Anotada la auditoría de hoy.");
   } catch (e) { P.aviso(P.explicar(e), "error"); }
+});
+
+/* ---------- la ficha técnica de cada app ---------- */
+/* Pedida por Mauro el 2026-09-10: al elegir una app en el selector, ver de una
+   con qué está hecha — repositorio, quién la administra, enlace público, base
+   de datos, Netlify, lo que use.
+
+   DOS ZONAS, otra vez, y es la misma regla de siempre:
+
+     · lo NO sensible —el nombre del repositorio, la dirección pública, el
+       identificador de un proyecto de Firebase— vive en `proyectos/<id>.tecnica`.
+       Lo genero yo y lo aplicás vos con el parte, como todo lo demás;
+     · lo sensible —con qué cuenta se entra, a qué correo llega la recuperación,
+       un identificador que no querés publicar— vive en `fichas/`, lo escribís
+       sólo vos, y NO viaja.
+
+   El botón «ver» de cada renglón es el puente entre las dos: busca en tus
+   fichas de ese proyecto lo que hayas registrado para ese servicio y lo muestra
+   acá, en pantalla, sin sacarlo de la base.
+
+   Lo que NO hace, a propósito: juntar todo en un texto listo para pegar. Ese
+   botón sería el camino por el que las fichas se filtrarían, y sin él el camino
+   no existe (PROTOCOLO-GENERAL § 5). Para copiar un valor suelto está el botón
+   de cada campo, que copia UNO y a propósito. */
+
+/* Un renglón de la ficha técnica:
+     { clave: "Repositorio", valor: "toromboto/harmonia",
+       nota: "Mauro es colaborador, no dueño",   ← opcional
+       buscar: "github" }                        ← opcional; por defecto, `clave`
+   `buscar` es con qué se rastrean tus fichas. Existe porque el renglón puede
+   llamarse «Base de datos» y la ficha «Firebase». */
+const norma = (v) => String(v ?? "").toLowerCase()
+  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+function fichasDe(proyecto, buscar) {
+  const q = norma(buscar);
+  if (!q) return [];
+  return FICHAS.filter((f) => {
+    if ((f.proyecto || "") !== proyecto) return false;
+    if (norma(f.titulo).includes(q)) return true;
+    if (norma(f.notas).includes(q)) return true;
+    return (f.campos || []).some((c) => norma(c.clave).includes(q) || norma(c.valor).includes(q));
+  });
+}
+
+function pintarFichaTecnica() {
+  const caja = $("ficha-tecnica");
+
+  /* Sin app elegida no hay ficha: es información de UNA app, y mezclar las seis
+     es justamente lo que el selector viene a evitar (§ 9, «el trabajo se mira
+     por app»). */
+  const pr = APP ? PROYECTOS.find((x) => x.id === APP) : null;
+  const filas = (pr && Array.isArray(pr.tecnica)) ? pr.tecnica.filter((f) => f && f.clave) : [];
+
+  if (!pr) { caja.classList.add("hide"); caja.innerHTML = ""; return; }
+  caja.classList.remove("hide");
+
+  if (!filas.length) {
+    caja.innerHTML = '<div class="tarj"><p class="gris">Todavía no cargué la ficha '
+      + 'técnica de ' + P.esc(pr.nombre || pr.id) + '. Pedímela y entra en el próximo parte: '
+      + 'repositorio, quién lo administra, enlace público, base de datos, y lo que use.</p></div>';
+    return;
+  }
+
+  const h = filas.map((f, i) => {
+    const buscar = f.buscar || f.clave;
+    const n = fichasDe(APP, buscar).length;
+    return '<div class="ft-fila">'
+      + '<div class="ft-k">' + P.esc(f.clave) + "</div>"
+      + '<div class="ft-v">' + P.esc(f.valor || "—")
+      + (f.nota ? '<div class="ft-nota">' + P.esc(f.nota) + "</div>" : "")
+      + "</div>"
+      /* El botón dice cuántas fichas hay ANTES de tocarlo. Un botón que a veces
+         no muestra nada enseña a no tocarlo. */
+      + '<button class="btn ft-ver" data-ver="' + i + '" data-buscar="' + P.esc(buscar) + '"'
+      + (n ? "" : " disabled") + ">" + (n ? "ver " + n : "—") + "</button>"
+      + '<div class="ft-detalle hide" id="ft-d-' + i + '"></div>'
+      + "</div>";
+  }).join("");
+
+  caja.innerHTML = '<div class="tarj"><h2 style="margin:.1rem 0 .5rem">Con qué está hecha</h2>'
+    + h
+    + '<p class="gris" style="margin:.6rem 0 0;font-size:.78rem">Lo de arriba lo genero yo '
+    + 'y no es sensible. «ver» trae lo que registraste en tus fichas, y eso no sale de esta '
+    + 'pantalla.</p></div>';
+}
+
+/* Un solo listener para toda la ficha: se repinta entera al cambiar de app,
+   así que enganchar botón por botón dejaría listeners colgados. Es la misma
+   razón por la que la lista de fichas usa uno solo. */
+$("ficha-tecnica").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ver]");
+  if (!b) return;
+  const caja = $("ft-d-" + b.dataset.ver);
+  if (!caja) return;
+
+  if (!caja.classList.contains("hide")) {      // ya estaba abierto: se cierra
+    caja.classList.add("hide"); caja.innerHTML = "";
+    b.textContent = "ver " + fichasDe(APP, b.dataset.buscar).length;
+    return;
+  }
+
+  const encontradas = fichasDe(APP, b.dataset.buscar);
+  caja.innerHTML = encontradas.map((f) =>
+    '<div class="ft-ficha"><b>' + P.esc(f.titulo) + "</b>"
+    + (f.campos || []).map((c) =>
+        '<div class="par-ver"><span class="k">' + P.esc(c.clave) + "</span>"
+        + '<span class="v">' + P.esc(c.valor) + "</span>"
+        /* Copia UNO. No hay «copiar todo», y no es un olvido. */
+        + '<button class="btn mini" data-copiar="' + P.esc(c.valor) + '">copiar</button></div>').join("")
+    + (f.notas ? '<div class="ft-nota">' + P.esc(f.notas) + "</div>" : "")
+    + "</div>").join("");
+  caja.classList.remove("hide");
+  b.textContent = "ocultar";
+});
+
+/* Copiar un valor suelto, de a uno y a propósito. */
+$("ficha-tecnica").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-copiar]");
+  if (!b) return;
+  try { await navigator.clipboard.writeText(b.dataset.copiar); P.aviso("Copiado.", "ok"); }
+  catch { P.aviso("El navegador no dejó copiar. Tocá el valor y copialo a mano.", "error"); }
 });
 
 /* ---------- las fichas ---------- */

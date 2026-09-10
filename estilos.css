@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-5
+   Sello: estilos-6
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -276,3 +276,31 @@ textarea.libre { font-family:inherit; font-size:.95rem; white-space:pre-wrap;
    como un campo más de un formulario. */
 #cual-app { font-size:1.02rem; font-weight:600; border-color:var(--acento);
   background:var(--tinta2); }
+
+/* ── la ficha técnica de cada app ── */
+/* Con qué está hecha la app elegida. Tres columnas en una fila que se rompe
+   sola en pantallas angostas: el nombre del servicio, el dato, y el botón que
+   trae lo que Mauro registró en sus fichas. */
+.ft-fila { display:grid; grid-template-columns:9rem 1fr auto; gap:.4rem .6rem;
+  align-items:start; padding:.5rem 0; border-top:1px solid var(--linea); }
+.ft-fila:first-of-type { border-top:0; }
+.ft-k { font-size:.8rem; color:var(--gris); padding-top:.15rem; }
+.ft-v { font-family:var(--mono); font-size:.82rem; word-break:break-word; }
+.ft-nota { font-family:var(--sans,inherit); font-size:.76rem; color:var(--gris2);
+  margin-top:.2rem; }
+.ft-ver { min-height:34px; padding:.3rem .6rem; font-size:.76rem; }
+
+/* El detalle ocupa la fila entera, debajo de las tres columnas. */
+.ft-detalle { grid-column:1 / -1; }
+.ft-ficha { background:var(--tinta3); border:1px solid var(--linea);
+  border-radius:var(--r-s); padding:.5rem .6rem; margin-top:.4rem; font-size:.84rem; }
+.par-ver { display:flex; gap:.5rem; align-items:center; margin-top:.35rem; }
+.par-ver .k { flex:0 0 34%; font-family:var(--mono); font-size:.76rem; color:var(--gris); }
+.par-ver .v { flex:1; font-family:var(--mono); font-size:.8rem; word-break:break-all; }
+
+/* En un teléfono angosto la etiqueta va arriba del dato: con tres columnas
+   fijas, un nombre de repositorio largo empuja el botón fuera de la pantalla. */
+@media (max-width:400px) {
+  .ft-fila { grid-template-columns:1fr auto; }
+  .ft-k { grid-column:1 / -1; padding-top:0; }
+}

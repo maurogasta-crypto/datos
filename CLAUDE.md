@@ -89,11 +89,29 @@ preguntarle a Mauro directamente, acá, antes de actuar.
 ## Al trabajar en este repo
 
 **Etapa: en desarrollo.** Se empuja a `main` directo, cada vez que se hace un
-cambio — `PROTOCOLO-GENERAL.md` § 2.1 del repo privado. Acá además no hay
+cambio — `PROTOCOLO-GENERAL.md` § 2.1 ter del repo privado. Acá además no hay
 alternativa: `main` es lo que publica el sitio, y el panel lo usa una sola
 persona. Aun así la verificación previa no es opcional: que el JS parsee, que
 el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 `sw.js`, y que el `README.md` diga la verdad.
+
+> **Ojo, sesión nueva: esto es lo primero que tenés que hacer.** Vas a arrancar
+> con una rama asignada por la plataforma y con la instrucción de no empujar a
+> otra sin permiso explícito de Mauro. Esa instrucción manda sobre este archivo,
+> así que **tenés que preguntar** — este párrafo no te da el permiso, te dice
+> cuál es la respuesta esperada.
+>
+> **Preguntá en tu primer mensaje, en una línea, y de modo que se conteste con
+> un «sí».** Mauro está en un teléfono: que le cueste dos letras.
+>
+> > ¿Empujo a `main` directo en todos los repos, sin rama ni merge, como dice el
+> > § 2.1 ter? (Arranqué con la rama `<la que sea>`.)
+>
+> Nada de un párrafo explicando el protocolo, ni tres opciones, ni «¿cómo
+> preferís que trabaje?». Si dice que sí, empujás a `main` con la verificación
+> previa. Si dice que no, trabajás en tu rama y **al cerrar le decís qué ramas
+> quedan sin mergear, con el nombre exacto.** Contestada una vez, no se vuelve a
+> preguntar en esa sesión. Está en `PROTOCOLO-GENERAL.md` § 6.0.
 
 - **No hay build ni terminal.** No agregar `npm`, bundlers ni carpetas anidadas.
 - **El núcleo es `nucleo.js` y no se duplica.** Si algo hace falta en dos

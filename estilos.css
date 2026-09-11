@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-7
+   Sello: estilos-8
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -70,6 +70,19 @@ textarea { min-height:7rem; font-family:var(--mono); font-size:.78rem;
 /* ── tarjetas ── */
 .tarj { background:var(--tinta2); border:1px solid var(--linea);
   border-radius:var(--r); padding:.9rem; margin:.7rem 0; }
+
+/* ── «Lo primero»: qué depende de Mauro ──
+   Una fila por cosa, el texto a la izquierda y el botón que lleva allá a la
+   derecha, donde cae el pulgar. La roja es la de las reglas: es la única de
+   las tres que deja algo abierto mientras espera. */
+.tt-fila { display:flex; align-items:center; gap:.6rem; padding:.55rem 0;
+  border-top:1px solid var(--linea); }
+.tt-fila:first-of-type { border-top:0; padding-top:0; }
+.tt-que { flex:1; min-width:0; }
+.tt-que b { display:block; font-size:.9rem; }
+.tt-que span { display:block; color:var(--gris); font-size:.76rem; margin-top:.1rem; }
+.tt-fila .btn { flex:0 0 auto; min-height:38px; padding:.45rem .9rem; font-size:.8rem; }
+.tt-mal .tt-que b { color:var(--mal); }
 
 /* ── el cuadro de números ── */
 .cuadro { display:grid; grid-template-columns:repeat(auto-fit,minmax(84px,1fr));

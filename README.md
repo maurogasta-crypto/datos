@@ -100,7 +100,8 @@ son dos trabajos distintos y se leen en momentos distintos.
 
 **La urgencia.** Tres niveles —*primero*, *después*, *cuando se pueda*— y no
 cinco: con cinco nadie usa los del medio y todo termina siendo «alta». La
-propone Claude en el parte; Mauro la corrige si no coincide con lo que le urge.
+propone Claude al escribir el pendiente; Mauro la corrige acá si no coincide con
+lo que le urge.
 Dentro de cada bloque manda la urgencia, no el nombre.
 
 **Las trabas.** Un pendiente puede declarar `esperaA: ["otro:id"]`. De ahí sale
@@ -115,18 +116,16 @@ todo lo demás **solo**:
 Se declara en una sola dirección a propósito. Escribir las dos puntas es
 garantizar que un día una quede sin la otra.
 
-### El panel es el canal
+### El panel es el canal, y desde `panel-16` es el canal entero
 
-Es el motivo de existir de todo esto, y funciona como una ronda:
+Es el motivo de existir de todo esto. Ahora funciona así:
 
-1. **Yo mando un parte.** Además de qué está pendiente, trae **preguntas**: lo
-   que necesito que confirmes, aceptes, valides o decidas, y lo que depende de
-   que hagas algo.
+1. **Yo escribo en la base.** Qué está pendiente, y **preguntas**: lo que
+   necesito que confirmes, aceptes, valides o decidas.
 2. **Vos contestás acá, a tu ritmo.** Tocás un pendiente, lo abrís, escribís la
    respuesta, marcás en qué estado quedó y de quién depende ahora. Podés dejarlo
    a medias y volver mañana.
-3. **Sacás el paquete** con «Sacar lo que hay» y me lo pasás.
-4. **Yo trabajo esa ronda entera** y devuelvo el parte siguiente.
+3. **Yo lo leo de la base** al empezar la ronda siguiente.
 
 Lo que esto compra: **que nada quede olvidado por avanzar.** Mientras se
 desarrolla un punto, los anteriores no se hunden en el historial de una
@@ -135,15 +134,55 @@ conversación — quedan acá, contados, con su pregunta a la vista.
 El chat sigue abierto para lo que se resuelva al vuelo. Son dos caminos, no uno
 que reemplaza al otro.
 
-**El apretón de manos.** Cada pendiente lleva una marca `tocado`: se enciende
-cuando vos guardás algo y **se apaga sola** cuando yo mando un parte que lo
-incluye —o sea, cuando ya lo vi—. La exportación trae la lista `tocados` arriba
-de todo: es lo primero que miro, y evita tener que comparar a ojo contra lo que
-mandé.
+> **La solapa «Parte» se retiró en `panel-16`.** Era el paso 3 de la versión
+> vieja: un JSON que yo generaba, que vos pegabas y aplicabas después de
+> revisarlo. Existía porque hasta el 2026-09-11 un agente no tenía credenciales
+> de `datos-830f8` — y desde que las tiene, era un rodeo de dos pasos para
+> llegar a un lugar donde ya estaba parado. Se fue entera: la entrada por
+> archivo, la revisión, el aplicar por lotes y la exportación.
+>
+> **Lo único que se perdió con ella es la exportación**, que era la única forma
+> de sacar un respaldo desde el teléfono. Hoy el respaldo lo hace el agente con
+> `node herramientas/firestore.mjs panel bajar`, desde el repo privado. Si algún
+> día hace falta un botón para bajarlo sin agente, se agrega — pero como un
+> volcado de la base, no como el formato de intercambio que era.
 
-**Tu respuesta no se pisa.** Si mi parte no menciona la respuesta de un
-pendiente, queda la tuya. Perder una respuesta por no haberla repetido sería
-exactamente lo que este circuito viene a evitar.
+**El apretón de manos.** Cada pendiente lleva una marca `tocado`: se enciende
+cuando vos guardás algo y **se apaga sola** cuando yo vuelvo a escribir ese
+pendiente, o sea cuando ya lo vi. Sirve para lo mismo que antes: que no haya que
+comparar a ojo qué tocaste desde la última vez.
+
+> **Y acá hay un grado menos de garantía que antes, que conviene decir en voz
+> alta.** Hasta `panel-15`, si mi parte no mencionaba tu respuesta, el panel la
+> preservaba: era un mecanismo. Hoy escribo con `escribir()` de
+> `herramientas/firestore.mjs`, que **reemplaza el documento entero** — de ahí
+> sale que `tocado` se apague solo, y de ahí sale también que tu respuesta se
+> pierda si no la leí antes de escribir. O sea que lo que la protege ya no es un
+> mecanismo sino **la disciplina de leer antes de escribir**. El banco lo prueba
+> en las dos direcciones (grupo 13), justamente para que no se olvide.
+
+### Lo primero: qué depende de vos, y en qué orden
+
+Arriba del tablero, desde `panel-16`. El panel ya sabía todas estas cosas y las
+tenía repartidas en tres pantallas, así que para saber qué hacer primero había
+que recorrerlas y sumar de cabeza. Ahora están juntas y cada una lleva a su
+lugar de un toque.
+
+**El orden no es estético, y conviene que no se toque:**
+
+1. **Las reglas sin publicar.** Primero porque son lo único de la lista que deja
+   una base abierta mientras espera, y porque nadie más que vos puede hacerlas:
+   publicar reglas es entrar a la consola de Firebase con tu cuenta.
+2. **Las preguntas sin responder.** Segundas porque cada una tiene a un agente
+   parado esperando.
+3. **Los pendientes que te esperan.** Últimos porque no bloquean a nadie más, y
+   porque ya tienen su propia urgencia adentro.
+
+Las trabas no entran ahí: tienen su propio aviso, arriba de la lista, y no
+dependen del filtro. Repetirlas sería ruido.
+
+Cuando no hay nada, lo dice. Un bloque vacío deja la duda de si no hay nada o si
+no cargó.
 
 ### Las reglas
 
@@ -168,9 +207,9 @@ otros que hacen lo mismo — **una herramienta que sirve en uno y no se llevó a
 los demás es trabajo hecho dos veces**. Lo que salga de la auditoría entra como
 pendientes, igual que todo.
 
-Las reglas viajan en el parte como los pendientes: yo las propongo, vos las
-revisás con todo a la vista y las aplicás. La exportación las lleva, y señala
-en `reglasTocadas` las que editaste.
+Las reglas las escribo yo en la base, como los pendientes, y vos las corregís
+acá. Cada una que tocás queda marcada con `tocado`, así sé cuáles revisar sin
+compararlas a ojo.
 
 ### El parte entra y sale
 
@@ -238,7 +277,7 @@ vuelve.
 
 | Archivo | Qué hace |
 |---|---|
-| `index.html` | el panel entero: tablero, el parte, las reglas, fichas, la puerta |
+| `index.html` | el panel entero: tablero, sitios, las reglas, fichas, la puerta |
 | `nucleo.js` | el núcleo: la puerta, avisos, errores con causa, fechas locales |
 | `firebase-init.js` | **el único contacto con el SDK de Firebase**, que baja diferido: ver «El SDK no viene puesto» |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
@@ -258,16 +297,16 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-15` |
-| `estilos.css` | (en el comentario) | `estilos-7` |
+| `index.html` | `P.PANEL` | `panel-16` |
+| `estilos.css` | (en el comentario) | `estilos-8` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v6` |
+| `sw.js` | `VERSION` | `panel-shell-v7` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-7` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-8` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 
@@ -383,8 +422,34 @@ Cada pestaña tiene, de arriba abajo:
 | **Quién es y dónde se ve** | un resumen de una línea y tres botones: ver el sitio, el repositorio, y el documento que explica cómo funciona |
 | **Previsualización** | el sitio real, adentro del panel, detrás de un botón |
 | **Con qué está hecha** | la ficha técnica de siempre, sin los botones de fichas |
-| **Quién entra a su base** | el proyecto de Firebase, dónde vive el texto de las reglas, si están publicadas, y **qué colecciones NO lee el agente** |
+| **Quién entra a su base** | el proyecto de Firebase, dónde vive el texto de las reglas, si están publicadas, **qué colecciones NO lee el agente**, y el botón para copiarlas |
 | **Qué falta** | los contadores de ese proyecto y los cuatro pendientes más urgentes |
+
+### Publicar las reglas de un sitio, desde el panel
+
+Desde `panel-16`. Antes el panel decía «pendiente de publicar» y ahí se
+terminaba: para publicarlas había que acordarse de en qué repositorio vive el
+archivo, abrirlo en GitHub, **seleccionar todo el texto en un teléfono** —que es
+lo peor de todo— y recién después ir a la consola. Cuatro pasos para una tarea
+que el panel ya sabía que estaba pendiente.
+
+Ahora hay dos botones: **Copiar las reglas** baja el texto y lo deja en el
+portapapeles, y **Abrir la consola** lleva a la pantalla de reglas de esa base.
+
+- El texto se baja de `raw.githubusercontent.com`, que es la única dirección de
+  GitHub que sirve el archivo pelado **y** manda `Access-Control-Allow-Origin`.
+  La que guarda `proyectos/` es la de mirarlo, y se convierte en el momento. Los
+  cuatro repositorios son públicos, así que esto no necesita ningún servidor.
+- Se baja **al tocar**, no al pintar la pantalla: son cuatro archivos de varios
+  kilobytes y bajarlos todos para copiar uno es regalar la conexión.
+- **La base del propio panel es la excepción.** Su `reglas.txt` es una plantilla
+  con marcadores, no un archivo para pegar: publicarla tal cual dejaría afuera a
+  todo el mundo, porque ningún usuario tiene un uid llamado `TU-UID-ACA`. Para
+  esa base el botón lleva a «La puerta», que es donde se le ponen los UID. Y si
+  igual se intentara copiar una plantilla, el panel lo detecta y se niega: es el
+  cinturón por si otro proyecto adopta la misma forma y nadie se acuerda.
+- Si el archivo no baja, lo dice con el motivo. Un 404 no es un problema de
+  señal: significa que el archivo se movió y hay que corregir `reglasUrl`.
 
 **La previsualización va detrás de un botón, no puesta.** Cuatro `iframe` son
 cuatro sitios enteros bajando en un teléfono cada vez que se abre la pantalla.
@@ -423,7 +488,7 @@ Netlify si usa, y lo que sea que tenga configurado.
 
 | | De dónde sale | Quién la escribe |
 |---|---|---|
-| Lo que se ve de entrada | `proyectos/<id>.tecnica` | lo genera Claude, se aplica con el parte. **No es sensible** |
+| Lo que se ve de entrada | `proyectos/<id>.tecnica` | lo escribe Claude directo en la base. **No es sensible** |
 | Lo que trae el botón «ver» | `fichas/`, filtradas por proyecto | **sólo Mauro**, en la solapa Fichas. **No viaja** |
 
 Un renglón de `tecnica` es `{ clave, valor, nota?, buscar? }`. `buscar` es con

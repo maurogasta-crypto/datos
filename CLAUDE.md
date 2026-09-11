@@ -152,8 +152,22 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   tiene nombre y poco más, y la pantalla tiene que servir igual desde ese día.
 - **Sellos de versión.** Si se cambia un archivo, sube su sello. Se ven arriba
   del panel.
-- **Nada se escribe en la base sin que Mauro lo haya mirado**: se pega, se
-  revisa con todo a la vista, y recién entonces se aplica.
+- **El panel baja las reglas de los otros sitios de sus repositorios**, por
+  `raw.githubusercontent.com`, para que Mauro las copie sin salir de acá. Los
+  cuatro repos son públicos y eso manda CORS; si alguno se volviera privado, el
+  botón deja de funcionar y hay que decirlo, no esconderlo.
+- **La solapa «Parte» ya no existe** (se retiró en `panel-16`). Era el rodeo de
+  cuando un agente no tenía credenciales: generar un JSON, que Mauro lo pegara y
+  lo aplicara. Desde que escribe directo en la base, era un rodeo hacia un lugar
+  donde ya estaba parado. **No se vuelve a agregar una pantalla de pegar JSON.**
+  Lo único que se fue con ella es el respaldo desde el teléfono; el respaldo lo
+  hace `node herramientas/firestore.mjs panel bajar`, y **se hace siempre antes
+  de escribir**.
+- **Lo que Mauro tiene que mirar va en «Lo primero»**, arriba del tablero, y en
+  ese orden: reglas sin publicar, preguntas sin responder, pendientes que lo
+  esperan. El orden está justificado en `pintarTeToca()` y no es estético — las
+  reglas van primero porque son lo único que deja una base abierta mientras
+  espera. Si entra una cuarta cosa, se argumenta dónde va.
 - **La historia de un pendiente se suma, nunca se pisa.** Es lo único que no se
   puede reconstruir.
 - **Acá no se sube ningún dato**, ni de ejemplo. Este repositorio es público.

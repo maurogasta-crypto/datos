@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-7">
+<link rel="stylesheet" href="estilos.css?v=estilos-8">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
@@ -73,12 +73,21 @@
 
       <!-- 1b · la ficha técnica de la app elegida.
            Con qué está hecha, dónde corre, quién la administra. Sale de
-           `proyectos/<id>.tecnica`, que es la zona NO sensible: la genero yo
-           y la aplicás vos con el parte.
+           `proyectos/<id>.tecnica`, que es la zona NO sensible: la escribo yo
+           directo en la base.
            El botón «ver» de cada renglón busca en `fichas/` lo que hayas
            registrado para ese servicio y lo muestra ACÁ, en pantalla. No hay
            —ni va a haber— un botón que junte todo: ver PROTOCOLO-GENERAL § 5,
            «La excepción, que no es una inconsistencia». -->
+      <!-- 1a bis · LO PRIMERO. Qué depende de Mauro, y en qué orden.
+           Pedido del 2026-09-11: el panel sabía todo esto y lo tenía repartido
+           en tres pantallas — las reglas sin publicar en «Sitios», las
+           preguntas detrás de un filtro, los pendientes detrás de otro—, así
+           que para saber qué hacer primero había que recorrerlas y sumar de
+           cabeza. Acá van las tres, ordenadas, y cada una lleva a su lugar.
+           El orden NO es discutible y está explicado en `pintarTeToca()`. -->
+      <div id="te-toca"></div>
+
       <div id="ficha-tecnica" class="hide"></div>
 
       <div class="cuadro">
@@ -113,7 +122,7 @@
         <p class="duro" id="t-pregunta"></p>
         <label for="t-respuesta">Tu respuesta</label>
         <textarea id="t-respuesta" class="libre"
-          placeholder="Contestá acá. Sale en el JSON que me pasás."></textarea>
+          placeholder="Contestá acá. Lo leo directo de la base."></textarea>
       </div>
 
       <div id="t-trabas" class="hide"></div>
@@ -145,45 +154,8 @@
         <button class="btn" id="btnPendCancelar">Cancelar</button>
         <button class="btn p" id="btnPendGuardar">Guardar</button>
       </div>
-      <p class="gris">Lo que guardes acá sale en «Sacar lo que hay», en la solapa
-        «El parte». Ése es el paquete que me pasás.</p>
-    </div>
-  </section>
-
-  <!-- 2 · el parte: entra y sale -->
-  <section id="v-pegar" class="hide">
-    <h1>El parte</h1>
-    <p class="gris">El estado de los proyectos, que te paso yo y aplicás vos.
-      <b>Nada de esto es sensible.</b> Lo sensible se escribe en «Fichas», y por ahí
-      no pasa nunca.</p>
-
-    <h2>Meter lo que te pasé</h2>
-    <div class="fila-btn">
-      <button class="btn p" id="btnArchivo">Elegir el archivo que te pasé</button>
-    </div>
-    <input type="file" id="archivo" class="hide">
-    <p class="gris" style="margin-top:0;">O pegalo a mano, si lo tenés en el portapapeles:</p>
-    <textarea id="entrada" placeholder='{ "panel": "pendientes", "pendientes": [ … ] }'></textarea>
-    <div class="fila-btn">
-      <button class="btn" id="btnRevisar">Revisar</button>
-      <button class="btn p" id="btnAplicar" disabled>Nada para aplicar</button>
-    </div>
-    <p class="gris" id="cual-archivo"></p>
-    <p class="gris" id="estadoPegar"></p>
-    <div id="revision"></div>
-
-    <h2>Sacar lo que hay</h2>
-    <p class="gris">El estado completo tal como está en la base, en el mismo formato
-      que entra. Sirve para respaldarlo, para mirarlo, y sobre todo para dármelo al
-      empezar un chat nuevo: así arranco sabiendo dónde quedó todo en vez de
-      adivinar.</p>
-    <div class="fila-btn">
-      <button class="btn" id="btnVerEstado">Ver el estado</button>
-      <button class="btn" id="btnBajarEstado">Bajar el archivo</button>
-    </div>
-    <div id="caja-salida" class="hide">
-      <textarea id="salida" readonly></textarea>
-      <div class="fila-btn"><button class="btn" id="btnCopiarEstado">Copiar todo</button></div>
+      <p class="gris">Lo que guardes acá queda en la base, y lo leo de ahí. Ya no
+        hay que pasarme ningún archivo.</p>
     </div>
   </section>
 
@@ -351,7 +323,6 @@
 <div id="nav" role="group" aria-label="Secciones">
   <button data-v="tablero" aria-pressed="true">Pendientes</button>
   <button data-v="sitios" aria-pressed="false">Sitios</button>
-  <button data-v="pegar" aria-pressed="false">Parte</button>
   <button data-v="reglas" aria-pressed="false">Reglas</button>
   <button data-v="fichas" aria-pressed="false">Fichas</button>
   <button data-v="puerta" aria-pressed="false">Puerta</button>
@@ -359,11 +330,13 @@
 
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-4";
+/* `writeBatch` se fue con el parte: era lo único que escribía de a cientos.
+   Lo que queda escribe de a un documento. */
 import {
-  doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
+  doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-15";
+P.PANEL = "panel-16";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -388,7 +361,6 @@ const QUIEN = { mauro: "te espera", claude: "lo hago yo", ambos: "los dos" };
 
 let PROYECTOS = [];     // [{ id, nombre, orden }]
 let PENDIENTES = [];    // [{ id, proyecto, clave, titulo, porQue, estado, quien, historia[] }]
-let CAMBIOS = [];       // lo que trajo el JSON y todavía no se escribió
 let filtro = "abiertos";
 let yo = null;
 
@@ -453,28 +425,44 @@ $("btnSalir").addEventListener("click", async () => {
 });
 
 /* ---------- navegación ---------- */
-const VISTAS = ["tablero", "sitios", "pegar", "reglas", "fichas", "puerta"];
+const VISTAS = ["tablero", "sitios", "reglas", "fichas", "puerta"];
+
+/* Cambiar de solapa es una función y no sólo el cuerpo del listener, porque
+   hay botones adentro de las pantallas que también llevan a otra: el de las
+   reglas propias, en «Sitios», manda a «La puerta». Un botón que lleva a otro
+   lado tiene que dejar la barra de abajo marcando dónde estás; si no, quedás
+   en una pantalla que la navegación dice que no estás mirando. */
+function irA(vista) {
+  VISTAS.forEach((v) => $("v-" + v).classList.toggle("hide", v !== vista));
+  if (vista === "fichas" && !fichasLeidas) leerFichas();
+  if (vista === "reglas" && !reglasLeidas) leerProtocolos();
+  /* Los sitios se repintan CADA vez que se entra, no sólo la primera: sus
+     números salen de `pendientes`, y marcar un pendiente como hecho en el
+     medio los cambia. Repintar es barato — no hay lectura nueva, es el mismo
+     arreglo que ya tiene el tablero. */
+  if (vista === "sitios") pintarSitios();
+  $("nav").querySelectorAll("button").forEach((x) =>
+    x.setAttribute("aria-pressed", String(x.dataset.v === vista)));
+}
+
 $("nav").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
-  VISTAS.forEach((v) => $("v-" + v).classList.toggle("hide", v !== b.dataset.v));
-  if (b.dataset.v === "fichas" && !fichasLeidas) leerFichas();
-  if (b.dataset.v === "reglas" && !reglasLeidas) leerProtocolos();
-  /* Los sitios se repintan CADA vez que se entra, no sólo la primera: sus
-     números salen de `pendientes`, y un parte aplicado en el medio los
-     cambia. Repintar es barato — no hay lectura nueva, es el mismo arreglo
-     que ya tiene el tablero. */
-  if (b.dataset.v === "sitios") pintarSitios();
-  $("nav").querySelectorAll("button").forEach((x) =>
-    x.setAttribute("aria-pressed", String(x.dataset.v === b.dataset.v)));
+  irA(b.dataset.v);
   window.scrollTo(0, 0);
 });
 
-$("filtro").addEventListener("click", (e) => {
-  const b = e.target.closest("button"); if (!b) return;
-  filtro = b.dataset.v;
+/* Igual que `irA()`: el bloque «Lo primero» tiene filas que llevan a un
+   filtro, y el filtro tiene que quedar marcado o la pantalla miente. */
+function verFiltro(v) {
+  filtro = v;
   $("filtro").querySelectorAll("button").forEach((x) =>
     x.setAttribute("aria-pressed", String(x.dataset.v === filtro)));
   pintar();
+}
+
+$("filtro").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  verFiltro(b.dataset.v);
 });
 
 /* ---------- leer ---------- */
@@ -504,8 +492,8 @@ async function leer() {
 /* Dos cosas que la lista plana no podía decir:
 
    · CUÁL PRIMERO. Veinte pendientes sin orden son veinte decisiones cada vez
-     que se abre el panel. La prioridad la pongo yo en el parte y Mauro la
-     corrige si no coincide con lo que le urge.
+     que se abre el panel. La prioridad la pongo yo al escribir el pendiente,
+     y Mauro la corrige acá si no coincide con lo que le urge.
 
    · QUÉ TRABA QUÉ. Un pendiente puede estar esperando a otro. Si eso no se
      ve, se avanza en lo de abajo y lo de arriba queda olvidado —que es
@@ -626,8 +614,88 @@ function bloque(titulo, lista, vacio) {
     + lista.slice().sort(porUrgencia).map(tarjeta).join("");
 }
 
+/* ---------- LO PRIMERO: qué depende de Mauro, y en qué orden ----------
+   La pregunta que este panel existe para contestar, y que hasta `panel-15`
+   contestaba a medias: los datos estaban todos, repartidos en tres pantallas.
+
+   EL ORDEN, que es la parte que importa y no es una preferencia estética:
+
+     1 · LAS REGLAS SIN PUBLICAR. Van primero porque son lo único de esta
+         lista que deja una base abierta mientras espera, y porque nadie más
+         que Mauro puede hacerlas: publicar reglas es entrar a la consola de
+         Firebase con su cuenta. Un pendiente que espera una semana es un
+         pendiente; una base con las reglas viejas una semana es otra cosa.
+     2 · LAS PREGUNTAS SIN RESPONDER. Segundas porque cada una tiene a un
+         agente parado esperando: mientras no se contesten, el trabajo que
+         depende de ellas no avanza, y el que lo espera no es Mauro.
+     3 · LOS PENDIENTES QUE LO ESPERAN. Últimos porque son trabajo suyo que
+         no bloquea a nadie más, y porque ya tienen su propia prioridad
+         adentro.
+
+   Las trabas NO entran acá: tienen su propio aviso, van arriba de la lista y
+   no dependen del filtro. Repetirlas sería ruido.
+
+   Cuando no hay nada, se dice. Un bloque vacío deja la duda de si no hay nada
+   o si no cargó. */
+function pintarTeToca() {
+  const caja = $("te-toca");
+  if (!caja) return;
+  const deLaApp = (p) => !APP || p.proyecto === APP;
+  const mios = PENDIENTES.filter(deLaApp);
+
+  /* Las reglas salen de `proyectos/`, no de los pendientes: es el estado real
+     de cada base, escrito al revisarla, y no depende de que alguien se haya
+     acordado de abrir un pendiente por eso. */
+  const sinPublicar = PROYECTOS.filter((p) => {
+    if (APP && p.id !== APP) return false;
+    const a = p.acceso || {};
+    return a.estado && /pendiente|falta|sin publicar/i.test(a.estado);
+  });
+  const preguntas = mios.filter(sinResponder).length;
+  const esperan = mios.filter((p) => abierto(p) && p.quien !== "claude").length;
+
+  if (!PENDIENTES.length && !PROYECTOS.length) { caja.innerHTML = ""; return; }
+  if (!sinPublicar.length && !preguntas && !esperan) {
+    caja.innerHTML = '<div class="tarj"><p class="gris" style="margin:0">'
+      + "<b>Nada te está esperando.</b> Lo que queda abierto lo hago yo.</p></div>";
+    return;
+  }
+
+  let h = '<div class="tarj"><h2 style="margin:.1rem 0 .6rem">Lo primero</h2>';
+
+  if (sinPublicar.length) {
+    h += '<div class="tt-fila tt-mal"><div class="tt-que"><b>'
+      + sinPublicar.length + (sinPublicar.length === 1 ? " base tiene" : " bases tienen")
+      + " las reglas sin publicar</b><span>"
+      + sinPublicar.map((p) => P.esc(p.nombre || p.id)).join(" · ")
+      + "</span></div>"
+      + '<button class="btn" data-tt="sitios">Ir</button></div>';
+  }
+  if (preguntas) {
+    h += '<div class="tt-fila"><div class="tt-que"><b>'
+      + preguntas + (preguntas === 1 ? " pregunta espera" : " preguntas esperan")
+      + " tu respuesta</b><span>Hasta que las contestes, eso no avanza.</span></div>"
+      + '<button class="btn" data-tt="preguntas">Ver</button></div>';
+  }
+  if (esperan) {
+    h += '<div class="tt-fila"><div class="tt-que"><b>'
+      + esperan + (esperan === 1 ? " pendiente te espera" : " pendientes te esperan")
+      + "</b><span>Ordenados por urgencia.</span></div>"
+      + '<button class="btn" data-tt="abiertos">Ver</button></div>';
+  }
+  caja.innerHTML = h + "</div>";
+}
+
+$("te-toca").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tt]"); if (!b) return;
+  if (b.dataset.tt === "sitios") { irA("sitios"); window.scrollTo(0, 0); return; }
+  verFiltro(b.dataset.tt);
+  $("lista").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
 function pintar() {
   llenarApps();
+  pintarTeToca();
   pintarFichaTecnica();
   /* Las fichas se leen cuando hacen falta, no al arrancar: el tablero abre sin
      tocar la zona sensible. Pero el botón «ver» necesita saber CUÁNTAS hay para
@@ -656,7 +724,7 @@ function pintar() {
   }
 
   $("resumen").textContent = !PENDIENTES.length
-    ? "Todavía no hay nada. Cargá el primer parte en la solapa «Parte»."
+    ? "Todavía no hay nada acá. En cuanto abra un pendiente, aparece solo."
     : (APP ? nombreProy(APP) : "Los " + PROYECTOS.length + " proyectos")
       + " · " + mios.filter(abierto).length + " sin terminar de " + mios.length;
 
@@ -690,8 +758,8 @@ function pintar() {
    justo donde las cosas se pierden — se avanza en un tema y el anterior queda
    enterrado quince renglones más abajo.
 
-   Ahora el panel es el canal: yo pregunto en el parte, Mauro contesta acá
-   cuando puede, y la exportación se lleva las respuestas. El chat sigue
+   Ahora el panel es el canal: yo escribo la pregunta en la base, Mauro
+   contesta acá cuando puede, y la leo de ahí. El chat sigue
    abierto para lo que se resuelva al vuelo; son dos caminos, no uno que
    reemplaza al otro. */
 
@@ -732,7 +800,7 @@ function abrirPendiente(p) {
   marcarSeg("t-quien", p.quien || "mauro");
   marcarSeg("t-prioridad", p.prioridad || "media");
 
-  /* Las trabas se muestran y no se editan: las declaro yo en el parte, porque
+  /* Las trabas se muestran y no se editan: las declaro yo al escribir, porque
      salen de mirar el conjunto. Pero tienen que estar A LA VISTA al decidir,
      no escondidas en la lista. */
   const frena = frenadoPor(p), traba = trabaA(p);
@@ -796,7 +864,7 @@ $("btnPendGuardar").addEventListener("click", async () => {
       /* La historia SE SUMA. Vale igual cuando el que escribe es Mauro. */
       historia: (Array.isArray(p.historia) ? p.historia : []).concat(lineas),
       /* La marca del apretón de manos: esto lo tocó Mauro y yo todavía no lo vi.
-         Se apaga sola cuando yo mando un parte que incluya este pendiente. */
+         Se apaga sola cuando yo vuelvo a escribir este pendiente. */
       tocado: true,
       respondidoEn: P.hoy(),
       actualizadoEn: serverTimestamp()
@@ -807,329 +875,6 @@ $("btnPendGuardar").addEventListener("click", async () => {
   } catch (e) {
     P.aviso(P.explicar(e), "error");
   } finally { b.disabled = false; b.textContent = "Guardar"; }
-});
-
-/* ---------- pegar el parte ---------- */
-/* Mismo flujo que la pantalla de traducción de CasaYourte: se pega, se
-   REVISA con todo a la vista, y recién entonces se escribe. Nada se
-   escribe sin que lo hayas mirado. */
-const ESTADOS = ["abierto", "hecho", "retirado"];
-const QUIENES = ["mauro", "claude", "ambos"];
-// Los campos que se comparan para saber si una pieza cambió. La historia va
-// aparte: se suma, no se compara.
-/* «respuesta» está adentro a propósito: si yo mandara una distinta a la que
-   escribió Mauro, tiene que aparecer como cambio en la revisión y no colarse.
-   Lo normal es que yo NO la mande —abajo se preserva la que ya está—, pero
-   «normal» no es una garantía y esto sí. */
-const CAMPOS = ["proyecto", "clave", "titulo", "porQue", "estado", "quien",
-                "pregunta", "respuesta", "prioridad", "esperaA"];
-
-$("btnRevisar").addEventListener("click", () => {
-  const txt = $("entrada").value.trim();
-  CAMBIOS = [];
-  $("revision").innerHTML = "";
-  $("btnAplicar").disabled = true;
-  $("btnAplicar").textContent = "Nada para aplicar";
-  if (!txt) return P.aviso("Pegá primero el JSON.", "error");
-
-  let j;
-  try { j = JSON.parse(txt); }
-  catch (e) {
-    // A veces vuelve envuelto en ```json … ```
-    const m = /\{[\s\S]*\}/.exec(txt);
-    if (!m) return P.aviso("Eso no es un JSON válido.", "error");
-    try { j = JSON.parse(m[0]); } catch (e2) { return P.aviso("Eso no es un JSON válido.", "error"); }
-  }
-
-  const problemas = [];
-  const porId = {};
-  PENDIENTES.forEach((p) => (porId[p.id] = p));
-
-  (Array.isArray(j.proyectos) ? j.proyectos : []).forEach((p) => {
-    if (!p || !p.id) return problemas.push("un proyecto sin id");
-    const antes = PROYECTOS.find((x) => x.id === p.id);
-    /* La ficha técnica del proyecto: con qué está hecho. Si el parte no la
-       trae, se conserva la que ya estaba — un parte que sólo renombra un
-       proyecto no tiene por qué borrarle la ficha. */
-    const tecnica = Array.isArray(p.tecnica) ? p.tecnica.filter((f) => f && f.clave)
-                  : ((antes && Array.isArray(antes.tecnica)) ? antes.tecnica : []);
-    const datos = { nombre: p.nombre || p.id, orden: Number(p.orden) || 99, tecnica };
-    // Sólo si cambia algo. Sin esto, pegar dos veces el mismo parte listaba
-    // los cinco proyectos como si fueran cambios, y «no hay nada nuevo» —que
-    // es la respuesta correcta— no aparecía nunca.
-    const igual = antes && antes.nombre === datos.nombre
-      && (antes.orden || 99) === datos.orden
-      && JSON.stringify(antes.tecnica || []) === JSON.stringify(tecnica);
-    if (igual) return;
-    CAMBIOS.push({ tipo: "proyecto", id: p.id, datos });
-  });
-
-  /* Las reglas viajan igual que todo lo demás: yo las propongo en un parte,
-     Mauro las revisa con todo a la vista y las aplica. Nada se escribe sin que
-     lo haya mirado, tampoco cuando lo que se escribe es cómo trabajamos. */
-  (Array.isArray(j.protocolos) ? j.protocolos : []).forEach((r) => {
-    if (!r || !r.id) return problemas.push("una regla sin id");
-    if (r.vigencia && !VIGENCIAS.includes(r.vigencia))
-      return problemas.push(r.id + ": vigencia «" + r.vigencia + "» no existe");
-    const antes = PROTOCOLOS.find((x) => x.id === r.id);
-    const datos = {
-      titulo: r.titulo !== undefined ? r.titulo : (antes ? antes.titulo : ""),
-      ambito: r.ambito || (antes && antes.ambito) || "general",
-      regla: r.regla !== undefined ? r.regla : (antes ? (antes.regla || "") : ""),
-      porQue: r.porQue !== undefined ? r.porQue : (antes ? (antes.porQue || "") : ""),
-      origen: r.origen !== undefined ? r.origen : (antes ? (antes.origen || "") : ""),
-      vigencia: r.vigencia || (antes && antes.vigencia) || "vigente",
-      orden: Number(r.orden) || (antes && Number(antes.orden)) || 99
-    };
-    const CR = ["titulo", "ambito", "regla", "porQue", "origen", "vigencia", "orden"];
-    if (antes && CR.every((k) => String(antes[k] ?? "") === String(datos[k] ?? ""))) return;
-    CAMBIOS.push({ tipo: "protocolo", id: r.id, datos, antes });
-  });
-
-  (Array.isArray(j.pendientes) ? j.pendientes : []).forEach((p) => {
-    if (!p || !p.id) return problemas.push("un pendiente sin id");
-    if (p.estado && !ESTADOS.includes(p.estado))
-      return problemas.push(p.id + ": estado «" + p.estado + "» no existe");
-    if (p.quien && !QUIENES.includes(p.quien))
-      return problemas.push(p.id + ": quien «" + p.quien + "» no existe");
-    if (p.prioridad && !PRIORIDADES.includes(p.prioridad))
-      return problemas.push(p.id + ": prioridad «" + p.prioridad + "» no existe");
-    const antes = porId[p.id];
-    const datos = {
-      proyecto: p.proyecto || (antes && antes.proyecto) || "",
-      clave: p.clave !== undefined ? p.clave : (antes ? antes.clave : ""),
-      titulo: p.titulo !== undefined ? p.titulo : (antes ? antes.titulo : ""),
-      porQue: p.porQue !== undefined ? p.porQue : (antes ? antes.porQue : ""),
-      estado: p.estado || (antes && antes.estado) || "abierto",
-      quien: p.quien || (antes && antes.quien) || "mauro",
-      pregunta: p.pregunta !== undefined ? p.pregunta : (antes ? (antes.pregunta || "") : ""),
-      /* Lo que contestó Mauro NO se pisa por omisión. Si mi parte no trae
-         respuesta, queda la suya: perder una respuesta por no haberla
-         repetido sería exactamente lo que este circuito viene a evitar. */
-      respuesta: p.respuesta !== undefined ? p.respuesta : (antes ? (antes.respuesta || "") : ""),
-      prioridad: p.prioridad || (antes && antes.prioridad) || "media",
-      /* Lista, no texto: se compara como cadena en CAMPOS y eso alcanza,
-         porque el orden con que la escribo es el orden con que vuelve. */
-      esperaA: Array.isArray(p.esperaA) ? p.esperaA
-             : (antes && Array.isArray(antes.esperaA) ? antes.esperaA : [])
-    };
-    /* La historia SE SUMA, nunca se reemplaza. Es lo único que no se puede
-       reconstruir: si una tanda la pisara, se perdería cómo llegó cada cosa
-       hasta acá, que es justamente lo que este tablero existe para guardar. */
-    const previa = (antes && Array.isArray(antes.historia)) ? antes.historia : [];
-    const nuevas = (Array.isArray(p.historia) ? p.historia : [])
-      .filter((x) => x && x.texto)
-      .filter((x) => !previa.some((y) => y.texto === x.texto && y.fecha === x.fecha))
-      .map((x) => ({ fecha: x.fecha || P.hoy(), texto: String(x.texto) }));
-    datos.historia = previa.concat(nuevas);
-    const cambia = !antes || nuevas.length > 0
-      || CAMPOS.some((k) => String(antes[k] ?? "") !== String(datos[k] ?? ""));
-    if (!cambia) return;
-    CAMBIOS.push({ tipo: "pendiente", id: p.id, datos, antes, nuevas: nuevas.length });
-  });
-
-  pintarRevision(problemas);
-});
-
-function pintarRevision(problemas) {
-  let h = "";
-  if (problemas.length) {
-    h += '<div class="rev"><span class="que">se descartaron</span><div>'
-       + P.esc(problemas.join(" · ")) + "</div></div>";
-  }
-  CAMBIOS.forEach((c) => {
-    if (c.tipo === "protocolo") {
-      h += '<div class="rev"><span class="que">'
-        + (c.antes ? '<span class="cambia">cambia</span>' : '<span class="nuevo">nueva</span>')
-        + ' regla · ' + P.esc(nombreAmbito(c.datos.ambito)) + "</span>"
-        + "<div><b>" + P.esc(c.datos.titulo) + "</b></div>"
-        + (c.datos.regla ? '<div style="color:var(--gris)">' + P.esc(c.datos.regla) + "</div>" : "")
-        + "</div>";
-      return;
-    }
-    if (c.tipo === "proyecto") {
-      h += '<div class="rev"><span class="que">proyecto</span><div>'
-         + P.esc(c.datos.nombre) + " <span class=\"mono\" style=\"color:var(--gris2)\">"
-         + P.esc(c.id) + "</span></div></div>";
-      return;
-    }
-    const nuevo = !c.antes;
-    h += '<div class="rev"><span class="que">'
-      + (nuevo ? '<span class="nuevo">nuevo</span>' : '<span class="cambia">cambia</span>')
-      + " · " + P.esc(c.id) + "</span>"
-      + "<div><b>" + P.esc(c.datos.titulo) + "</b></div>";
-    if (!nuevo) {
-      const dif = [];
-      ["estado", "quien", "titulo", "porQue", "proyecto", "clave"].forEach((k) => {
-        if (String(c.antes[k] ?? "") !== String(c.datos[k] ?? ""))
-          dif.push(k + ": «" + (c.antes[k] ?? "") + "» → «" + (c.datos[k] ?? "") + "»");
-      });
-      if (dif.length) h += "<div style=\"color:var(--gris)\">" + P.esc(dif.join(" · ")) + "</div>";
-    }
-    if (c.nuevas) h += "<div style=\"color:var(--gris)\">+" + c.nuevas + " línea(s) de historia</div>";
-    h += "</div>";
-  });
-  $("revision").innerHTML = h;
-  $("estadoPegar").textContent = CAMBIOS.length
-    ? CAMBIOS.length + " para escribir" + (problemas.length ? " · " + problemas.length + " descartados" : "")
-    : (problemas.length ? "Nada para escribir · " + problemas.length + " descartados" : "No hay nada nuevo.");
-  $("btnAplicar").disabled = CAMBIOS.length === 0;
-  $("btnAplicar").textContent = CAMBIOS.length ? "Aplicar " + CAMBIOS.length : "Nada para aplicar";
-}
-
-$("btnAplicar").addEventListener("click", async () => {
-  if (!CAMBIOS.length) return;
-  if (!(await P.preguntar("Se van a escribir " + CAMBIOS.length + " cambios en la base.\n\n"
-      + "La historia se suma, no se pisa."))) return;
-  const b = $("btnAplicar"); b.disabled = true; b.textContent = "…";
-  try {
-    // De a lotes: writeBatch acepta hasta 500 y así son pocas escrituras.
-    for (let i = 0; i < CAMBIOS.length; i += 400) {
-      const lote = writeBatch(db);
-      CAMBIOS.slice(i, i + 400).forEach((c) => {
-        const COLECCION = { proyecto: "proyectos", pendiente: "pendientes", protocolo: "protocolos" };
-        const ref = doc(db, COLECCION[c.tipo], c.id);
-        /* El otro lado del apretón de manos: si este parte lo incluye, es que
-           ya lo vi, así que la marca se apaga. Lo que Mauro tocó y yo todavía
-           no contesté sigue marcado. Vale para todo lo que él puede tocar. */
-        const extra = (c.tipo === "pendiente" || c.tipo === "protocolo")
-          ? { tocado: false } : {};
-        lote.set(ref, { ...c.datos, ...extra, actualizadoEn: serverTimestamp() },
-                 { merge: true });
-      });
-      await lote.commit();
-    }
-    /* Qué tocó el parte, antes de vaciar la lista: si traía reglas hay que
-       releerlas, porque `leer()` sólo trae el tablero. Sin esto, aplicar un
-       parte con reglas dejaba la solapa mostrando las viejas hasta recargar
-       —y peor: la exportación siguiente salía con las viejas también. */
-    const huboReglas = CAMBIOS.some((c) => c.tipo === "protocolo");
-    CAMBIOS = [];
-    $("entrada").value = "";
-    $("revision").innerHTML = "";
-    $("estadoPegar").textContent = "";
-    await leer();
-    if (huboReglas) await leerProtocolos();
-    P.aviso("Escrito. Ya está en el tablero.");
-  } catch (e) {
-    P.aviso(P.explicar(e), "error");
-    $("estadoPegar").textContent = P.explicar(e);
-  } finally { b.disabled = false; b.textContent = "Nada para aplicar"; }
-});
-
-/* ---------- el archivo entra ---------- */
-/* Pegar un JSON largo en un teléfono es pelear con el portapapeles y con el
-   teclado. El archivo evita las dos cosas: se elige, se lee y se revisa solo.
-   El textarea sigue estando para cuando el dato ya está en el portapapeles. */
-$("btnArchivo").addEventListener("click", () => $("archivo").click());
-$("archivo").addEventListener("change", async (e) => {
-  const f = e.target.files && e.target.files[0];
-  if (!f) return;
-  try {
-    $("entrada").value = await f.text();
-    $("btnRevisar").click();
-    $("cual-archivo").textContent = "Archivo leído: " + f.name;
-    P.aviso("Leído: " + f.name);
-  } catch (err) {
-    P.aviso("No se pudo leer ese archivo.", "error");
-  } finally {
-    /* Sin esto, elegir DOS VECES el mismo archivo no dispara nada: el valor no
-       cambió, así que no hay evento. Y elegir el mismo archivo otra vez es
-       justo lo que uno hace cuando algo salió mal. */
-    e.target.value = "";
-  }
-});
-
-/* ---------- el estado sale ---------- */
-/* La vuelta completa: lo que entró tiene que poder volver a salir, en el mismo
-   formato, sin pérdida. Sirve para respaldar, para mirar qué hay, y sobre todo
-   para dárselo a un chat nuevo — que es lo único que evita que cada
-   conversación empiece adivinando en qué quedó cada proyecto.
-
-   Es del estado de los proyectos y de nada más. Las fichas no salen por acá ni
-   por ningún lado: son la otra zona. */
-function estadoActual() {
-  return {
-    panel: "pendientes",
-    generado: P.hoy(),
-    /* La ficha técnica sale con el estado: es de la zona NO sensible —la
-       genera Claude— y si no saliera, la vuelta perdería lo que entró.
-       Lo que NO sale por acá son las fichas, que son la otra zona. */
-    proyectos: PROYECTOS.map((p) => ({
-      id: p.id, nombre: p.nombre || p.id, orden: Number(p.orden) || 99,
-      tecnica: Array.isArray(p.tecnica) ? p.tecnica : []
-    })),
-    pendientes: PENDIENTES.map((p) => ({
-      id: p.id,
-      proyecto: p.proyecto || "",
-      clave: p.clave || "",
-      titulo: p.titulo || "",
-      porQue: p.porQue || "",
-      estado: p.estado || "abierto",
-      quien: p.quien || "mauro",
-      pregunta: p.pregunta || "",
-      respuesta: p.respuesta || "",
-      prioridad: p.prioridad || "media",
-      esperaA: Array.isArray(p.esperaA) ? p.esperaA : [],
-      historia: (Array.isArray(p.historia) ? p.historia : [])
-        .map((h) => ({ fecha: h.fecha || "", texto: h.texto || "" }))
-    })),
-    /* Lo primero que tengo que mirar al recibir esto: qué tocó Mauro desde el
-       parte anterior. Sin esta lista habría que comparar a ojo contra lo que
-       mandé, que es justamente el trabajo que se olvida hacer. */
-    protocolos: PROTOCOLOS.map((r) => ({
-      id: r.id,
-      titulo: r.titulo || "",
-      ambito: r.ambito || "general",
-      regla: r.regla || "",
-      porQue: r.porQue || "",
-      origen: r.origen || "",
-      vigencia: r.vigencia || "vigente",
-      orden: Number(r.orden) || 99,
-      ...(r.ultima ? { ultima: r.ultima } : {})
-    })),
-    tocados: PENDIENTES.filter((p) => p.tocado).map((p) => p.id),
-    reglasTocadas: PROTOCOLOS.filter((r) => r.tocado).map((r) => r.id),
-    sinResponder: PENDIENTES.filter(sinResponder).map((p) => p.id),
-    /* Lo que hay que mirar antes que nada: qué está frenando a qué. Se calcula
-       al salir, no se guarda: es derivado de `esperaA` y de los estados, y un
-       derivado guardado se desactualiza en silencio. */
-    trabando: PENDIENTES.filter((p) => abierto(p) && trabaA(p).length)
-      .map((p) => ({ id: p.id, traba: trabaA(p).map((x) => x.id) }))
-  };
-}
-const textoDelEstado = () => JSON.stringify(estadoActual(), null, 2);
-
-/* Si nunca se abrió la solapa de reglas, PROTOCOLOS está vacío y el paquete
-   saldría sin ellas — silenciosamente, que es la peor forma. Se leen antes. */
-async function antesDeSacar() { if (!reglasLeidas) await leerProtocolos(); }
-
-$("btnVerEstado").addEventListener("click", async () => {
-  await antesDeSacar();
-  if (!PENDIENTES.length && !PROYECTOS.length)
-    return P.aviso("La base está vacía: todavía no hay nada que sacar.", "error");
-  $("salida").value = textoDelEstado();
-  $("caja-salida").classList.remove("hide");
-  $("salida").scrollIntoView({ block: "nearest" });
-});
-
-$("btnCopiarEstado").addEventListener("click", () => copiar($("salida").value, "Copiado entero."));
-
-$("btnBajarEstado").addEventListener("click", async () => {
-  await antesDeSacar();
-  if (!PENDIENTES.length && !PROYECTOS.length)
-    return P.aviso("La base está vacía: todavía no hay nada que sacar.", "error");
-  const url = URL.createObjectURL(new Blob([textoDelEstado()], { type: "application/json" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "estado-" + P.hoy() + ".json";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  /* El revoke no va en el mismo tick: en Android el navegador todavía no
-     empezó a bajarlo y el archivo sale vacío. */
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-  P.aviso("Bajando estado-" + P.hoy() + ".json");
 });
 
 /* ---------- las reglas: los protocolos, donde se trabaja ---------- */
@@ -1180,7 +925,7 @@ async function leerProtocolos() {
   }
 }
 
-/* Se rehacen siempre, no sólo la primera vez: si entra un proyecto en un parte,
+/* Se rehacen siempre, no sólo la primera vez: si entra un proyecto nuevo,
    su ámbito tiene que aparecer sin recargar. `extra` agrega el ámbito de una
    regla cuyo proyecto ya no está en el catálogo — perder el dato en silencio
    por un desplegable incompleto es peor que mostrar un nombre suelto. */
@@ -1204,7 +949,7 @@ function pintarProtocolos() {
   const visibles = PROTOCOLOS.filter(entra);
   $("r-estado").textContent = PROTOCOLOS.length
     ? visibles.length + " de " + PROTOCOLOS.length
-    : "Todavía no hay ninguna. Te las paso en un parte, o escribí la primera acá.";
+    : "Todavía no hay ninguna. Las escribo yo en la base, o escribí la primera acá.";
 
   const orden = AMBITOS().map((a) => a[0]);
   const grupos = {};
@@ -1346,7 +1091,7 @@ $("btnAuditoria").addEventListener("click", async () => {
 
      · lo NO sensible —el nombre del repositorio, la dirección pública, el
        identificador de un proyecto de Firebase— vive en `proyectos/<id>.tecnica`.
-       Lo genero yo y lo aplicás vos con el parte, como todo lo demás;
+       Lo escribo yo directo en la base, como todo lo demás de esta zona;
      · lo sensible —con qué cuenta se entra, a qué correo llega la recuperación,
        un identificador que no querés publicar— vive en `fichas/`, lo escribís
        sólo vos, y NO viaja.
@@ -1394,7 +1139,7 @@ function pintarFichaTecnica() {
 
   if (!filas.length) {
     caja.innerHTML = '<div class="tarj"><p class="gris">Todavía no cargué la ficha '
-      + 'técnica de ' + P.esc(pr.nombre || pr.id) + '. Pedímela y entra en el próximo parte: '
+      + 'técnica de ' + P.esc(pr.nombre || pr.id) + '. Pedímela y la escribo: '
       + 'repositorio, quién lo administra, enlace público, base de datos, y lo que use.</p></div>';
     return;
   }
@@ -1700,6 +1445,57 @@ const fuera = (href, texto, clase) =>
   '<a class="' + (clase || "sit-link") + '" href="' + P.esc(href) + '"'
   + ' target="_blank" rel="noopener noreferrer">' + P.esc(texto) + "</a>";
 
+/* La dirección de GitHub que guarda `proyectos/` es la de MIRAR el archivo,
+   que devuelve una página entera de HTML. La de bajar el texto pelado es otra,
+   y encima es la única que manda `Access-Control-Allow-Origin`, así que es la
+   única que este panel puede leer desde otro dominio.
+
+   Devuelve "" si la dirección no tiene esa forma —un enlace a un repositorio
+   privado, a un `.md`, a cualquier otra cosa—, y quien llama usa eso para no
+   ofrecer un botón que no va a funcionar. */
+function crudoDeGithub(url) {
+  const m = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/.exec(String(url || ""));
+  return m ? "https://raw.githubusercontent.com/" + m[1] + "/" + m[2] + "/" + m[3] + "/" + m[4] : "";
+}
+
+/* La consola de Firebase, parada en las reglas de esa base. Es la otra mitad
+   del viaje: sin esto hay que acordarse de cuál de los cuatro proyectos era. */
+const consolaDeReglas = (base) =>
+  "https://console.firebase.google.com/project/" + encodeURIComponent(base) + "/firestore/rules";
+
+/* Baja el texto de las reglas de un sitio y lo deja en el portapapeles.
+
+   Se baja en el momento del toque y no al pintar la pantalla: son cuatro
+   archivos de varios kilobytes cada uno, y en un teléfono con datos móviles
+   bajarlos todos para que Mauro copie uno es regalar la conexión. */
+async function copiarReglasDe(url, boton) {
+  const crudo = crudoDeGithub(url);
+  if (!crudo) return;
+  const antes = boton.textContent;
+  boton.disabled = true; boton.textContent = "Bajando…";
+  try {
+    const r = await fetch(crudo, { cache: "no-cache" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const texto = await r.text();
+    /* Una plantilla con marcadores NO se copia: publicarla dejaría afuera a
+       todo el mundo, porque ningún usuario tiene un uid que se llame
+       TU-UID-ACA. Es el caso del propio panel, y el botón de arriba ya lleva
+       a «La puerta»; esto es el cinturón por si un día otro proyecto adopta
+       la misma forma y nadie se acuerda de este detalle. */
+    if (texto.includes(MARCA_MIA) || texto.includes(MARCA_AGENTE)) {
+      P.aviso("Ese archivo es una plantilla: los UID se ponen en «La puerta».", "error");
+      return;
+    }
+    await copiar(texto, "Reglas copiadas. Pegalas enteras en la consola.");
+  } catch (e) {
+    /* El motivo importa: sin señal se arregla solo, y un 404 significa que el
+       archivo se movió y hay que corregir `reglasUrl` en la base. */
+    P.aviso("No se pudieron bajar: " + P.explicar(e), "error");
+  } finally {
+    boton.disabled = false; boton.textContent = antes;
+  }
+}
+
 /* ---------- las pestañas ---------- */
 function pintarTabsSitios() {
   const tabs = [{ id: "*", nombre: "Todos" }].concat(
@@ -1743,7 +1539,7 @@ function pintarUnSitio(pr) {
   h += "</div>";
   if (!s.url && !s.repo) {
     h += '<p class="gris" style="margin:.4rem 0 0;font-size:.78rem">Todavía no cargué '
-      + 'los enlaces de este proyecto. Pedímelos y entran en el próximo parte.</p>';
+      + 'los enlaces de este proyecto. Pedímelos y los escribo.</p>';
   }
   h += "</div>";
 
@@ -1791,6 +1587,39 @@ function pintarUnSitio(pr) {
       h += '<div class="sit-fila"><div class="ft-k">Publicadas</div>'
         + '<div class="ft-v"><span class="sit-chip ' + (mal ? "mal" : "ok") + '">'
         + P.esc(a.estado) + "</span></div></div>";
+    }
+
+    /* ── PUBLICARLAS, DESDE ACÁ ────────────────────────────────────────
+       Pedido de Mauro el 2026-09-11: el panel decía «pendiente de publicar»
+       y ahí se terminaba. Para publicarlas había que acordarse de en qué
+       repositorio vive el archivo, abrirlo en GitHub, seleccionar todo en un
+       teléfono —que es lo peor de todo—, y recién después ir a la consola.
+       Cuatro pasos para una tarea que el panel ya sabía que estaba pendiente.
+
+       Ahora el panel baja el texto y lo deja en el portapapeles. Los cuatro
+       repositorios son públicos, así que `raw.githubusercontent.com` los
+       sirve con CORS y esto no necesita ningún servidor.
+
+       LA EXCEPCIÓN ES EL PANEL MISMO. Su `reglas.txt` es una plantilla con
+       marcadores, no un archivo para pegar: los UID se los pone «La puerta»,
+       que además se acuerda del UID del agente. Copiar el crudo de acá sería
+       publicar unas reglas que no dejan entrar a nadie. Así que para su
+       propia base el botón lleva allá, y no copia. */
+    if (a.reglasUrl && crudoDeGithub(a.reglasUrl)) {
+      const propia = a.base && a.base === firebaseConfig.projectId;
+      h += '<div class="fila-btn">'
+        + (propia
+          ? '<button class="btn p" data-puerta="1">Armarlas en «La puerta»</button>'
+          : '<button class="btn p" data-reglas="' + P.esc(a.reglasUrl) + '">Copiar las reglas</button>')
+        + (a.base ? '<a class="btn" target="_blank" rel="noopener" href="'
+            + P.esc(consolaDeReglas(a.base)) + '">Abrir la consola</a>' : "")
+        + "</div>"
+        + '<p class="gris" style="margin:.2rem 0 0;font-size:.78rem">'
+        + (propia
+          ? 'Las suyas llevan tu UID y el del agente adentro, así que se arman allá.'
+          : 'Se copian enteras, como están en el repositorio. En la consola: '
+            + 'Reglas → seleccionar todo, pegar y <b>Publicar</b>.')
+        + "</p>";
     }
     /* La bóveda se muestra SIEMPRE que haya lista, y en rojo. Que se vea qué
        no lee el agente es la mitad del acuerdo; la otra mitad la aplican las
@@ -1885,7 +1714,7 @@ function pintarSitios() {
   pintarTabsSitios();
   if (SITIO === "*") { $("s-cuerpo").innerHTML = pintarTodosLosSitios(); return; }
   const pr = PROYECTOS.find((x) => x.id === SITIO);
-  /* Si el proyecto elegido ya no está (lo borró un parte), se vuelve a la
+  /* Si el proyecto elegido ya no está (lo borré), se vuelve a la
      vista global en vez de dejar la pantalla vacía sin decir por qué. */
   if (!pr) { SITIO = "*"; pintarSitios(); return; }
   $("s-cuerpo").innerHTML = pintarUnSitio(pr);
@@ -1904,6 +1733,10 @@ $("s-tabs").addEventListener("click", (e) => {
 $("s-cuerpo").addEventListener("click", (e) => {
   const ir = e.target.closest("[data-ir]");
   if (ir) { SITIO = ir.dataset.ir; pintarSitios(); window.scrollTo(0, 0); return; }
+  const rg = e.target.closest("[data-reglas]");
+  if (rg) { copiarReglasDe(rg.dataset.reglas, rg); return; }
+  const pu = e.target.closest("[data-puerta]");
+  if (pu) { irA("puerta"); window.scrollTo(0, 0); return; }
   const pv = e.target.closest("[data-previa]");
   if (pv) {
     const caja = $("s-previa"); if (!caja) return;

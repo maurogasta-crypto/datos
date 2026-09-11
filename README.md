@@ -55,14 +55,32 @@ Es la idea de fondo de todo el panel:
 
 | | Quién lo escribe | ¿Pasa por el chat? | Dónde |
 |---|---|---|---|
-| **El estado de los proyectos** — pendientes, tandas, historia | lo genera Claude, lo aplica Mauro de un toque | **sí**, y está bien: no es sensible | `proyectos/`, `pendientes/`, `tandas/` |
-| **Las fichas** — titularidad de cuentas, contactos, números | **sólo Mauro**, escribiendo en el panel | **nunca** | `fichas/` |
+| **El estado de los proyectos** — pendientes, tandas, historia, reglamento | Claude, directo, desde el 2026-09-11 | **sí**, y está bien: no es sensible | `proyectos/`, `pendientes/`, `tandas/`, `protocolos/` |
+| **La bóveda** — titularidad de cuentas, contactos, números, contraseñas | **sólo Mauro**, escribiendo en el panel | **nunca** | `fichas/`, `claves/` |
 
-**Claude no tiene —ni debe tener— credenciales de `datos-830f8`.** No puede
-escribir en esta base, y eso no es una limitación a resolver: es el motivo por
-el que lo de la segunda fila está a salvo. El flujo es el mismo que la pantalla
-de traducción de CasaYourte: Claude genera un JSON, Mauro lo carga, lo mira y lo
-aplica. Nada se escribe sin que lo hayas visto.
+**Esto cambió el 2026-09-11, y conviene saber exactamente cuánto.**
+
+Hasta esa mañana Claude no tenía credenciales de `datos-830f8`: generaba un
+JSON, Mauro lo pegaba y lo aplicaba. Eso costaba un toque suyo por tanda, y era
+la fricción que pidió sacar. Ahora el agente escribe la primera fila directo.
+
+Lo que **no** cambió es la segunda fila, y ahí está todo lo que importa: la
+bóveda le está negada, de lectura y de escritura, por las reglas publicadas —
+no por la buena voluntad de ningún archivo. Entra con un usuario común de
+Authentication, así que todo lo que hace pasa por las mismas reglas que
+cualquiera.
+
+**Y `fichas/` entró a la bóveda esa misma tarde.** La v2 de las reglas se la
+había dado al agente, confiando en que ahí no fueran contraseñas. La primera
+verificación del acceso encontró adentro de una ficha un usuario y una
+contraseña reales de un servicio. Las reglas hicieron exactamente lo que decían
+hacer; el dato estaba en el lugar equivocado. **El sello es por lugar, no por
+contenido:** ninguna regla puede adivinar que un campo llamado `valor` es una
+clave, así que la colección donde una credencial *puede* aparecer es una bóveda,
+se llame como se llame.
+
+Se perdió que el agente mantuviera las fichas técnicas solo. Se ganó que no
+quede ninguna colección abierta donde una contraseña pueda caer por descuido.
 
 ### El tablero: en qué app, qué primero, y qué traba qué
 
@@ -239,16 +257,16 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-13` |
-| `estilos.css` | (en el comentario) | `estilos-6` |
+| `index.html` | `P.PANEL` | `panel-14` |
+| `estilos.css` | (en el comentario) | `estilos-7` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v4` |
+| `sw.js` | `VERSION` | `panel-shell-v5` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-6` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-7` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 
@@ -282,16 +300,23 @@ Desde el **2026-09-11** hay **dos identidades** en `datos-830f8`:
 | | Qué puede |
 |---|---|
 | **Mauro** | todo, sin excepción |
-| **El agente** (Claude Code) | todo **menos `claves/`** — lectura y escritura |
+| **El agente** (Claude Code) | `proyectos/`, `pendientes/`, `tandas/`, `protocolos/` — lectura y escritura. Nada más |
 
 La solapa «La puerta» tiene un campo para pegar el **UID del agente**. Si está
 vacío, las reglas salen como antes: una sola persona. Si lo completás, el texto
 se reescribe solo y agrega `esAgente()` y `equipo()`.
 
-**`claves/` es la bóveda:** contraseñas, códigos de recuperación, segundos
-factores — cualquier cosa que **abra** algo. Sólo vos, y sólo desde el panel. Es
-la única línea de las reglas que no se negocia, y el bloque 33 del banco lo
-verifica en cada corrida.
+**La bóveda son dos colecciones, desde la v3 (11-sep-2026):**
+
+- **`claves/`** — contraseñas, códigos de recuperación, segundos factores:
+  cualquier cosa que **abra** algo. Lo fue desde el día uno.
+- **`fichas/`** — titularidad de cuentas, contactos, números. Entró después de
+  que la primera verificación encontrara una contraseña real adentro de una
+  ficha. Ver «Las dos zonas».
+
+Sólo vos, y sólo desde el panel. Son las dos líneas de las reglas que no se
+negocian, y el bloque 33 del banco lo verifica en cada corrida — incluido que
+ninguna de las dos quede cerca de `equipo()` en el texto.
 
 > **Por qué un usuario común y no una cuenta de servicio.** Una cuenta de
 > servicio (Admin SDK) **saltea todas las reglas**: con ella la bóveda dejaría de
@@ -301,6 +326,57 @@ verifica en cada corrida.
 
 La contraseña del agente vive en las variables de entorno del entorno de Claude
 Code, cargadas a mano. No está en este repositorio ni en ningún chat.
+
+**Lo mismo está escrito en dos lugares, a propósito.** La herramienta que el
+agente usa para hablar con la base —`herramientas/firestore.mjs` del repo
+privado `datos`— tiene su propia lista de colecciones selladas, y corta antes
+de salir a la red. Ese archivo da el mensaje claro; **estas reglas dan la
+garantía**. Si cambia uno, cambia el otro en la misma tanda.
+
+## Los sitios
+
+Una **pestaña por proyecto** (solapa «Sitios»), y una más, «Todos», con el
+panorama. Nace de un problema concreto: para contestar «¿cómo está casayourte?»
+había que abrir cuatro cosas que nunca se miran juntas — la ficha técnica
+adentro del tablero, el enlace público de memoria, las reglas en la consola de
+Firebase y la explicación en el README de su repositorio.
+
+Cada pestaña tiene, de arriba abajo:
+
+| | Qué muestra |
+|---|---|
+| **Quién es y dónde se ve** | un resumen de una línea y tres botones: ver el sitio, el repositorio, y el documento que explica cómo funciona |
+| **Previsualización** | el sitio real, adentro del panel, detrás de un botón |
+| **Con qué está hecha** | la ficha técnica de siempre, sin los botones de fichas |
+| **Quién entra a su base** | el proyecto de Firebase, dónde vive el texto de las reglas, si están publicadas, y **qué colecciones NO lee el agente** |
+| **Qué falta** | los contadores de ese proyecto y los cuatro pendientes más urgentes |
+
+**La previsualización va detrás de un botón, no puesta.** Cuatro `iframe` son
+cuatro sitios enteros bajando en un teléfono cada vez que se abre la pantalla.
+Y puede quedar en blanco sin que sea un error del panel: hay servidores que
+prohíben que su página se muestre metida adentro de otra. Para eso el botón
+«Ver el sitio» sigue estando, y es el camino que siempre funciona. El marco va
+con `sandbox` y sin `allow-same-origin`: la página de adentro se muestra, pero
+no puede tocar el almacenamiento ni la sesión del panel.
+
+Todo lo que se pinta ahí sale de `proyectos/`, que **no es sensible**: los
+campos `sitio` y `acceso` los escribe el agente. Las fichas siguen en su
+pantalla y no se mezclan — es la regla de fondo del panel, y esta pantalla no
+la toca.
+
+Los campos nuevos son **todos opcionales**, y falta cualquiera sin romper nada:
+un proyecto recién dado de alta tiene nombre y poco más, y la pantalla tiene
+que servir igual desde ese día.
+
+```
+sitio  { url, repo, readme, resumen, sinPrevia }
+acceso { base, reglas, reglasUrl, estado, selladas[], nota }
+```
+
+**La vista «Todos»** ordena los proyectos por lo que queda abierto, con una
+barra de cuánto está hecho, y marca en rojo los que tienen **reglas sin
+publicar**. La pregunta que contesta es «¿por dónde sigo?», y por eso lo
+primero de cada fila es el número y no el nombre.
 
 ## La ficha técnica de cada app
 

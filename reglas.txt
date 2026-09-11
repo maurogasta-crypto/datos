@@ -2,7 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
-//  v2 · 2026-09-11 · entra el usuario del agente
+//  v3 · 2026-09-11 · `fichas/` entra a la bóveda
 //
 //  ⚠ ESTE ARCHIVO ES UNA COPIA. La autoridad es lo que está publicado en
 //  la consola de Firebase. Una copia en el repositorio se desactualiza en
@@ -11,40 +11,57 @@ rules_version = '2';
 //  FALLAR. Esa negativa es lo único que demuestra que lo publicado es esto.
 //
 //  ⚠ DOS UID VAN COMPLETADOS. Acá abajo dicen TU-UID-ACA y UID-DEL-AGENTE
-//  a propósito. El tuyo lo arma el panel (solapa «La puerta»), con un botón
-//  para copiarlo. El del agente lo imprime
+//  a propósito: este repositorio es público. El tuyo lo arma el panel
+//  (solapa «La puerta»), con un botón para copiarlo, y el mismo botón te da
+//  el texto entero ya completado. El del agente lo imprime
 //  `node herramientas/firestore.mjs panel quien` del repo `datos` privado.
 //
 //  ⚠ LAS REGLAS SE SUMAN: basta con que UN bloque permita para que el
 //  acceso quede abierto. Por eso esto se pega SIEMPRE completo, nunca por
-//  fragmentos. Y hay un cierre explícito abajo en vez de confiar en el
-//  deny por defecto: una colección nueva no entra sola.
+//  fragmentos.
 // ═══════════════════════════════════════════════════════════════
 //
-//  EL MODELO CAMBIÓ EL 2026-09-11, y conviene entender qué cambió.
+//  QUÉ CAMBIÓ EN LA v3, Y POR QUÉ IMPORTA MÁS QUE LA v2.
 //
-//  ANTES: una sola persona. O eras Mauro, o no entrabas. Un agente no tenía
-//  credenciales y no las pedía; generaba un JSON, Mauro lo pegaba.
+//  La v2, del 2026-09-11 a la mañana, le dio acceso al agente a todo menos
+//  `claves/`, y decía de `fichas/`: «NO van contraseñas acá — para eso está
+//  `claves/`». Esa frase era un deseo, no una regla.
 //
-//  AHORA: dos identidades, con alcances distintos.
+//  La primera verificación del acceso, esa misma tarde, encontró adentro de
+//  una ficha un usuario y una contraseña reales de un servicio. Las reglas
+//  hicieron exactamente lo que decían hacer. El dato estaba en el lugar
+//  equivocado, y ninguna regla puede adivinar que un campo llamado `valor`
+//  es una contraseña.
+//
+//  Así que `fichas/` pasa a la bóveda. No porque las fichas sean secretas
+//  en sí, sino porque es la colección donde una credencial PUEDE aparecer,
+//  y ése es el criterio que se puede sostener. El sello es por lugar, no
+//  por contenido.
+//
+//  Lo que se pierde: el agente ya no mantiene las fichas técnicas solo. Lo
+//  que se gana: no hay ninguna colección abierta donde una contraseña pueda
+//  caer por descuido. Vale la pena.
+// ═══════════════════════════════════════════════════════════════
+//
+//  EL MODELO, EN DOS LÍNEAS.
 //
 //    · MAURO  — todo, sin excepción.
-//    · AGENTE — todo MENOS la información de autenticación.
+//    · AGENTE — el estado de los proyectos y el reglamento. Nada más.
 //
-//  Decisión de Mauro: «la única restricción que quiero mantener es que no
-//  maneje las informaciones de autenticación». Lo demás lo escribe el agente
-//  directo, para que mantener su información no dependa de que él pegue algo.
-//
-//  LO QUE HACE QUE ESTO SIGA SIENDO SEGURO, y es la parte que no se toca:
+//  LO QUE HACE QUE ESTO SEA SEGURO, y es la parte que no se toca:
 //
 //  1. El agente entra con un usuario COMÚN de Authentication, así que todo
 //     lo que hace pasa por estas reglas. NO se usa una cuenta de servicio:
-//     ésa saltearía las reglas por completo y `claves/` dejaría de estar
+//     ésa saltearía las reglas por completo y la bóveda dejaría de estar
 //     sellada. Es la diferencia entre una puerta cerrada y no tener puerta.
-//  2. `claves/` le está negada de lectura Y de escritura. No es que le
+//  2. La bóveda le está negada de lectura Y de escritura. No es que le
 //     cueste leerla: la base le dice que no.
 //  3. La contraseña del propio agente vive en las variables de entorno del
 //     entorno de Claude Code. No está en ningún repositorio ni en ningún chat.
+//  4. Lo mismo está escrito en `selladas` del proyecto `panel` en
+//     `datos/herramientas/firestore.mjs`, que corta antes de salir a la red.
+//     Ese archivo da el mensaje claro; esta regla da la garantía. Si cambia
+//     uno, cambia el otro en la misma tanda.
 // ═══════════════════════════════════════════════════════════════
 
 service cloud.firestore {
@@ -63,31 +80,26 @@ service cloud.firestore {
     }
 
     // ── El estado de los proyectos y el reglamento ──
-    // No es sensible. Lo genera el agente y ahora también lo escribe.
+    // No es sensible. Lo genera el agente y también lo escribe: es lo que
+    // saca de encima el toque de Mauro por tanda.
     match /proyectos/{id}  { allow read, write: if equipo(); }
     match /pendientes/{id} { allow read, write: if equipo(); }
     match /tandas/{id}     { allow read, write: if equipo(); }
     match /protocolos/{id} { allow read, write: if equipo(); }
 
-    // ── Las fichas ──
-    // Titularidad de cuentas, contactos, identificadores, números. El agente
-    // las lee y las escribe: es justamente lo que Mauro quiere que se
-    // mantenga solo. NO van contraseñas acá — para eso está `claves/`.
-    match /fichas/{id}     { allow read, write: if equipo(); }
-
     // ── LA BÓVEDA ──
-    // Información de autenticación: contraseñas, códigos de recuperación,
-    // segundos factores, cualquier cosa que ABRA algo.
-    //
-    // Sólo Mauro, y sólo desde el panel. El agente no la lee ni la escribe,
-    // y ésta es la única línea de todo el archivo que no se negocia. Si un
-    // día un agente pide que se le abra: la respuesta es no, y este
-    // comentario es el motivo.
+    // Sólo Mauro, y sólo desde el panel. Son las dos líneas de todo el
+    // archivo que no se negocian. Si un día un agente pide que se le abra
+    // alguna de las dos: la respuesta es no, y la cabecera es el motivo.
     match /claves/{id}     { allow read, write: if soyYo(); }
+    match /fichas/{id}     { allow read, write: if soyYo(); }
 
-    // ── El cierre ──
-    // Lo que no tiene bloque propio arriba, queda negado. Una colección
-    // nueva se agrega a propósito, no por olvido.
+    // ── El cierre, que NO cierra ──
+    // Ojo con leerlo como un candado: en Firestore los permisos se SUMAN y
+    // un `if false` no le resta nada a lo de arriba. Lo que niega de verdad
+    // es el deny por defecto — una colección sin bloque propio es
+    // inaccesible aunque esta línea no existiera. Se deja escrita como
+    // recordatorio de que una colección nueva se agrega a propósito.
     match /{document=**} { allow read, write: if false; }
   }
 }

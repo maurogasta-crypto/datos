@@ -299,7 +299,17 @@
       <div class="fila-btn"><button class="btn" id="btnCopiarUid">Copiar el UID</button></div>
     </div>
     <div class="tarj">
-      <label>Las reglas, con tu UID adentro</label>
+      <label for="uidAgente">UID del agente <span class="gris">(opcional)</span></label>
+      <input id="uidAgente" class="mono" style="font-size:.8rem;" autocomplete="off"
+             placeholder="pegalo acá y las reglas de abajo se completan solas">
+      <p class="gris" style="margin-bottom:0;font-size:.78rem;">Lo imprime
+        <code>node herramientas/firestore.mjs panel quien</code> en el repo privado
+        <code>datos</code>. <b>Vacío, las reglas salen como antes:</b> sólo vos.
+        Con él, el agente puede leer y escribir todo <b>menos <code>claves/</code></b>,
+        que es donde van las contraseñas y no las toca nadie más que vos.</p>
+    </div>
+    <div class="tarj">
+      <label>Las reglas, con los UID adentro</label>
       <textarea id="reglas" readonly style="min-height:14rem;"></textarea>
       <div class="fila-btn"><button class="btn p" id="btnCopiarReglas">Copiar las reglas</button></div>
       <p class="gris" style="margin-bottom:0;">Firebase → proyecto <b>datos-830f8</b> →
@@ -331,7 +341,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-12";
+P.PANEL = "panel-13";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -394,7 +404,7 @@ async function entrarAlPanel() {
   if (!yo) { $("puerta").classList.remove("hide"); return; }
   $("app").classList.remove("hide");
   $("miUid").value = yo.uid;
-  $("reglas").value = textoDeReglas(yo.uid);
+  $("reglas").value = textoDeReglas(yo.uid, $("uidAgente").value);
   await leer();
 }
 
@@ -1631,10 +1641,23 @@ if ("serviceWorker" in navigator) {
 }
 
 /* ---------- la puerta, comprobada ---------- */
-function textoDeReglas(uid) {
+/* El texto exacto de las reglas, con los UID adentro. Es la MISMA v2 que
+   `reglas.txt` del repositorio — si divergen, manda lo publicado en la consola,
+   y este botón es lo que se pega. Por eso los dos se tocan en la misma tanda.
+
+   Sin UID de agente el texto sale como antes: una sola persona. Es a propósito
+   — que el panel siga sirviendo aunque nunca se configure un agente. */
+function textoDeReglas(uid, uidAgente) {
+  const a = String(uidAgente || "").trim();
+  const quien = a ? "equipo()" : "soyYo()";
   return "rules_version = '2';\n\n"
-    + "// Panel de datos — datos-830f8\n"
-    + "// UNA sola persona. No hay roles ni permisos: o sos ese uid, o no entrás.\n"
+    + "// Panel de datos — datos-830f8" + (a ? " · v2, con el usuario del agente" : "") + "\n"
+    + (a
+      ? "// DOS identidades: vos, todo. El agente, todo MENOS `claves/`.\n"
+        + "// El agente entra con un usuario COMÚN de Authentication, así que todo lo\n"
+        + "// que hace pasa por estas reglas. NO se usa una cuenta de servicio: ésa\n"
+        + "// saltearía las reglas y `claves/` dejaría de estar sellada.\n"
+      : "// UNA sola persona. No hay roles ni permisos: o sos ese uid, o no entrás.\n")
     + "// Deny por defecto y SIN catch-all permisivo: cada colección tiene su\n"
     + "// bloque, y lo que no está declarado queda negado por el cierre de abajo.\n"
     + "service cloud.firestore {\n"
@@ -1642,17 +1665,36 @@ function textoDeReglas(uid) {
     + "    function soyYo() {\n"
     + "      return request.auth != null && request.auth.uid == '" + uid + "';\n"
     + "    }\n\n"
-    + "    match /proyectos/{id}  { allow read, write: if soyYo(); }\n"
-    + "    match /pendientes/{id} { allow read, write: if soyYo(); }\n"
-    + "    match /tandas/{id}     { allow read, write: if soyYo(); }\n"
-    + "    match /protocolos/{id} { allow read, write: if soyYo(); }\n"
-    + "    match /fichas/{id}     { allow read, write: if soyYo(); }\n\n"
+    + (a
+      ? "    function esAgente() {\n"
+        + "      return request.auth != null && request.auth.uid == '" + a + "';\n"
+        + "    }\n\n"
+        + "    function equipo() { return soyYo() || esAgente(); }\n\n"
+      : "")
+    + "    match /proyectos/{id}  { allow read, write: if " + quien + "; }\n"
+    + "    match /pendientes/{id} { allow read, write: if " + quien + "; }\n"
+    + "    match /tandas/{id}     { allow read, write: if " + quien + "; }\n"
+    + "    match /protocolos/{id} { allow read, write: if " + quien + "; }\n"
+    + "    match /fichas/{id}     { allow read, write: if " + quien + "; }\n\n"
+    + (a
+      ? "    // LA BÓVEDA. Contraseñas, códigos de recuperación, segundos factores:\n"
+        + "    // cualquier cosa que ABRA algo. Sólo vos, y sólo desde el panel. Es la\n"
+        + "    // única línea del archivo que no se negocia.\n"
+        + "    match /claves/{id}     { allow read, write: if soyYo(); }\n\n"
+      : "    // La bóveda de contraseñas, para cuando exista. Sólo vos.\n"
+        + "    match /claves/{id}     { allow read, write: if soyYo(); }\n\n")
     + "    // El cierre. Una colección nueva no entra sola: hay que darle su\n"
     + "    // bloque arriba, a propósito.\n"
     + "    match /{document=**} { allow read, write: if false; }\n"
     + "  }\n"
     + "}\n";
 }
+
+/* Se reescriben al tipear el UID del agente: si hubiera que tocar un botón
+   para actualizarlas, alguien iba a copiar el texto viejo. */
+$("uidAgente").addEventListener("input", () => {
+  if (yo) $("reglas").value = textoDeReglas(yo.uid, $("uidAgente").value);
+});
 
 const copiar = async (texto, ok) => {
   try { await navigator.clipboard.writeText(texto); P.aviso(ok); }

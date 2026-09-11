@@ -239,7 +239,7 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-12` |
+| `index.html` | `P.PANEL` | `panel-13` |
 | `estilos.css` | (en el comentario) | `estilos-6` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
 | `sw.js` | `VERSION` | `panel-shell-v4` |
@@ -274,6 +274,33 @@ Y una trampa que ya casi pasa: `index.html` y `nucleo.js` piden
 - **Acá no se sube ningún dato.** Ni de ejemplo. Este repositorio es público.
   Ojo con el repositorio homónimo: ver el recuadro del principio.
 - Sigue los protocolos del repo **privado** `casaverdecanas-blip/datos`.
+
+## Las reglas, y el usuario del agente
+
+Desde el **2026-09-11** hay **dos identidades** en `datos-830f8`:
+
+| | Qué puede |
+|---|---|
+| **Mauro** | todo, sin excepción |
+| **El agente** (Claude Code) | todo **menos `claves/`** — lectura y escritura |
+
+La solapa «La puerta» tiene un campo para pegar el **UID del agente**. Si está
+vacío, las reglas salen como antes: una sola persona. Si lo completás, el texto
+se reescribe solo y agrega `esAgente()` y `equipo()`.
+
+**`claves/` es la bóveda:** contraseñas, códigos de recuperación, segundos
+factores — cualquier cosa que **abra** algo. Sólo vos, y sólo desde el panel. Es
+la única línea de las reglas que no se negocia, y el bloque 33 del banco lo
+verifica en cada corrida.
+
+> **Por qué un usuario común y no una cuenta de servicio.** Una cuenta de
+> servicio (Admin SDK) **saltea todas las reglas**: con ella la bóveda dejaría de
+> estar sellada, no por una decisión sino porque las reglas ya no se aplicarían.
+> El agente entra con un usuario de Authentication como cualquiera, para quedar
+> adentro del mismo sistema de permisos que todo lo demás.
+
+La contraseña del agente vive en las variables de entorno del entorno de Claude
+Code, cargadas a mano. No está en este repositorio ni en ningún chat.
 
 ## La ficha técnica de cada app
 

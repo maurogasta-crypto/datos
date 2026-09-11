@@ -2,6 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
+//  v2 · 2026-09-11 · entra el usuario del agente
 //
 //  ⚠ ESTE ARCHIVO ES UNA COPIA. La autoridad es lo que está publicado en
 //  la consola de Firebase. Una copia en el repositorio se desactualiza en
@@ -9,19 +10,41 @@ rules_version = '2';
 //  intenta leer una colección que estas reglas no declaran: tiene que
 //  FALLAR. Esa negativa es lo único que demuestra que lo publicado es esto.
 //
-//  ⚠ EL UID VA COMPLETADO. Acá abajo dice TU-UID-ACA a propósito: el texto
-//  con tu UID adentro lo arma el panel (solapa «La puerta»), con un botón
-//  para copiarlo. Este archivo es la referencia, no el que se pega.
-//
-//  MODELO: una sola persona. No hay roles, no hay permisos, no hay
-//  invitaciones. O sos ese uid, o no entrás. Cada camino de entrada que se
-//  agregue es superficie que hay que revisar, y acá no hay nadie más a
-//  quien darle acceso.
+//  ⚠ DOS UID VAN COMPLETADOS. Acá abajo dicen TU-UID-ACA y UID-DEL-AGENTE
+//  a propósito. El tuyo lo arma el panel (solapa «La puerta»), con un botón
+//  para copiarlo. El del agente lo imprime
+//  `node herramientas/firestore.mjs panel quien` del repo `datos` privado.
 //
 //  ⚠ LAS REGLAS SE SUMAN: basta con que UN bloque permita para que el
 //  acceso quede abierto. Por eso esto se pega SIEMPRE completo, nunca por
 //  fragmentos. Y hay un cierre explícito abajo en vez de confiar en el
 //  deny por defecto: una colección nueva no entra sola.
+// ═══════════════════════════════════════════════════════════════
+//
+//  EL MODELO CAMBIÓ EL 2026-09-11, y conviene entender qué cambió.
+//
+//  ANTES: una sola persona. O eras Mauro, o no entrabas. Un agente no tenía
+//  credenciales y no las pedía; generaba un JSON, Mauro lo pegaba.
+//
+//  AHORA: dos identidades, con alcances distintos.
+//
+//    · MAURO  — todo, sin excepción.
+//    · AGENTE — todo MENOS la información de autenticación.
+//
+//  Decisión de Mauro: «la única restricción que quiero mantener es que no
+//  maneje las informaciones de autenticación». Lo demás lo escribe el agente
+//  directo, para que mantener su información no dependa de que él pegue algo.
+//
+//  LO QUE HACE QUE ESTO SIGA SIENDO SEGURO, y es la parte que no se toca:
+//
+//  1. El agente entra con un usuario COMÚN de Authentication, así que todo
+//     lo que hace pasa por estas reglas. NO se usa una cuenta de servicio:
+//     ésa saltearía las reglas por completo y `claves/` dejaría de estar
+//     sellada. Es la diferencia entre una puerta cerrada y no tener puerta.
+//  2. `claves/` le está negada de lectura Y de escritura. No es que le
+//     cueste leerla: la base le dice que no.
+//  3. La contraseña del propio agente vive en las variables de entorno del
+//     entorno de Claude Code. No está en ningún repositorio ni en ningún chat.
 // ═══════════════════════════════════════════════════════════════
 
 service cloud.firestore {
@@ -31,17 +54,36 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == 'TU-UID-ACA';
     }
 
-    // ── Lo que el panel genera y Mauro aplica de un toque ──
-    // No es sensible: es el estado de los proyectos. Viaja por el chat.
-    match /proyectos/{id}  { allow read, write: if soyYo(); }
-    match /pendientes/{id} { allow read, write: if soyYo(); }
-    match /tandas/{id}     { allow read, write: if soyYo(); }
-    match /protocolos/{id} { allow read, write: if soyYo(); }
+    function esAgente() {
+      return request.auth != null && request.auth.uid == 'UID-DEL-AGENTE';
+    }
 
-    // ── Lo que sólo escribe Mauro, en el panel ──
-    // Titularidad de cuentas, contactos, números. NO pasa por el chat, no
-    // va a ningún repositorio, y ningún agente lo lee nunca.
-    match /fichas/{id}     { allow read, write: if soyYo(); }
+    function equipo() {
+      return soyYo() || esAgente();
+    }
+
+    // ── El estado de los proyectos y el reglamento ──
+    // No es sensible. Lo genera el agente y ahora también lo escribe.
+    match /proyectos/{id}  { allow read, write: if equipo(); }
+    match /pendientes/{id} { allow read, write: if equipo(); }
+    match /tandas/{id}     { allow read, write: if equipo(); }
+    match /protocolos/{id} { allow read, write: if equipo(); }
+
+    // ── Las fichas ──
+    // Titularidad de cuentas, contactos, identificadores, números. El agente
+    // las lee y las escribe: es justamente lo que Mauro quiere que se
+    // mantenga solo. NO van contraseñas acá — para eso está `claves/`.
+    match /fichas/{id}     { allow read, write: if equipo(); }
+
+    // ── LA BÓVEDA ──
+    // Información de autenticación: contraseñas, códigos de recuperación,
+    // segundos factores, cualquier cosa que ABRA algo.
+    //
+    // Sólo Mauro, y sólo desde el panel. El agente no la lee ni la escribe,
+    // y ésta es la única línea de todo el archivo que no se negocia. Si un
+    // día un agente pide que se le abra: la respuesta es no, y este
+    // comentario es el motivo.
+    match /claves/{id}     { allow read, write: if soyYo(); }
 
     // ── El cierre ──
     // Lo que no tiene bloque propio arriba, queda negado. Una colección

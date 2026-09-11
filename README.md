@@ -10,7 +10,7 @@ pueden estar en ningún repositorio ni en ningún chat.
 | Repositorio | `maurogasta-crypto/datos` — **público a propósito** |
 | Despliegue | GitHub Pages con *Source: GitHub Actions* — ver abajo |
 | Base de datos | Firebase **`datos-830f8`** (Firestore + Authentication) |
-| Reglas | [`reglas.txt`](reglas.txt) — copia; la autoridad es la consola |
+| Reglas | [`reglas.txt`](reglas.txt) — la **plantilla**; el panel le pone los UID y la autoridad es la consola |
 
 ## ⚠ Dos repositorios se llaman `datos`. No son el mismo
 
@@ -242,7 +242,8 @@ vuelve.
 | `nucleo.js` | el núcleo: la puerta, avisos, errores con causa, fechas locales |
 | `firebase-init.js` | **el único contacto con el SDK de Firebase**, que baja diferido: ver «El SDK no viene puesto» |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
-| `reglas.txt` | copia de las reglas de Firestore, para referencia |
+| `reglas.txt` | **la plantilla de las reglas de Firestore**, con marcadores en vez de UID. La lee el panel |
+| `pruebas-reglas.mjs` | el banco de pruebas de «La puerta»: `node pruebas-reglas.mjs`, sin npm |
 | `sw.js` | el service worker: hace que se instale y abra sin señal |
 | `manifest.json` | nombre, colores e iconos de la app instalada |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | el icono del tablero |
@@ -257,10 +258,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-14` |
+| `index.html` | `P.PANEL` | `panel-15` |
 | `estilos.css` | (en el comentario) | `estilos-7` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v5` |
+| `sw.js` | `VERSION` | `panel-shell-v6` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
@@ -302,9 +303,43 @@ Desde el **2026-09-11** hay **dos identidades** en `datos-830f8`:
 | **Mauro** | todo, sin excepción |
 | **El agente** (Claude Code) | `proyectos/`, `pendientes/`, `tandas/`, `protocolos/` — lectura y escritura. Nada más |
 
-La solapa «La puerta» tiene un campo para pegar el **UID del agente**. Si está
-vacío, las reglas salen como antes: una sola persona. Si lo completás, el texto
-se reescribe solo y agrega `esAgente()` y `equipo()`.
+La solapa «La puerta» tiene un campo para pegar el **UID del agente**. Se pega
+**una sola vez**: queda guardado en ese teléfono y las reglas salen completas
+cada vez que entrás. Si está vacío, salen igual, pero sólo para vos: el lugar
+del agente queda con un valor que ningún usuario de Firebase puede tener.
+
+### De dónde sale el texto que se pega (cambió en `panel-15`)
+
+**`reglas.txt` es la plantilla, y es la única copia del texto.** Los dos UID
+están puestos como marcadores —`TU-UID-ACA` y `UID-DEL-AGENTE`— porque este
+repositorio es público y **un UID real no entra nunca**. El panel baja ese
+mismo archivo, le pone los valores adentro y muestra el resultado en la
+solapa. Esa versión completa existe en pantalla y en ningún otro lado: ni en un
+archivo, ni en un commit, ni en un chat.
+
+Hasta `panel-14` las reglas estaban escritas **dos veces**: en `reglas.txt` y,
+otra vez a mano, adentro de `index.html`. Dos copias del mismo texto que había
+que acordarse de tocar juntas — el error que este ecosistema ya cometió cuatro
+veces con los sellos. Ahora si cambiás una línea de `reglas.txt`, cambia sola
+la que el panel ofrece copiar.
+
+Dos detalles que hacen que esto no muerda:
+
+- El párrafo de `reglas.txt` que dice «esto es una plantilla, no se pega tal
+  cual» está entre dos marcas `--8<--`, y **el panel lo reemplaza** por el que
+  corresponde. Pegar en la consola un texto que dice «esto no se pega» es pedir
+  que alguien —vos, en seis meses— dude de lo que está viendo. Si borrás las
+  marcas no se rompe nada: sale el texto entero.
+- Si `reglas.txt` no baja, el panel lo **dice** y apaga el botón de copiar.
+  Entregar medias reglas es peor que no entregar ninguna, porque se pegan igual
+  y el que pega no se entera.
+
+**Se prueba con `node pruebas-reglas.mjs`** (17 casos, sin npm y sin navegador).
+No prueba la mecánica de reemplazar texto, que es trivial: prueba que
+`reglas.txt`, **tal como está hoy en el repositorio**, produce reglas correctas
+—que no quedan marcadores sueltos, que no se coló un UID real, que la bóveda
+sigue siendo de una sola persona— y los casos límite de las marcas. Es la red
+que reemplaza a la segunda copia.
 
 **La bóveda son dos colecciones, desde la v3 (11-sep-2026):**
 

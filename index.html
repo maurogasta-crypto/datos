@@ -312,23 +312,30 @@
       <div class="fila-btn"><button class="btn" id="btnCopiarUid">Copiar el UID</button></div>
     </div>
     <div class="tarj">
-      <label for="uidAgente">UID del agente <span class="gris">(opcional)</span></label>
+      <label for="uidAgente">UID del agente <span class="gris">(se recuerda en este teléfono)</span></label>
       <input id="uidAgente" class="mono" style="font-size:.8rem;" autocomplete="off"
-             placeholder="pegalo acá y las reglas de abajo se completan solas">
-      <p class="gris" style="margin-bottom:0;font-size:.78rem;">Lo imprime
-        <code>node herramientas/firestore.mjs panel quien</code> en el repo privado
-        <code>datos</code>. <b>Vacío, las reglas salen como antes:</b> sólo vos.
-        Con él, el agente puede leer y escribir todo <b>menos <code>claves/</code> y
-        <code>fichas/</code></b> — la bóveda y las fichas, que es donde van las
-        contraseñas y la titularidad de las cuentas, y no las toca nadie más que vos.</p>
+             placeholder="pegalo una vez y queda guardado acá">
+      <p class="gris" style="margin-bottom:0;font-size:.78rem;">Se pega <b>una sola
+        vez</b>: queda guardado en este teléfono y las reglas de abajo salen completas
+        cada vez que entrás. Lo imprime <code>node herramientas/firestore.mjs panel
+        quien</code> en el repo privado <code>datos</code>, o te lo pasa el chat.
+        <b>Vacío, las reglas salen sólo para vos.</b> Con él, el agente puede leer y
+        escribir todo <b>menos <code>claves/</code> y <code>fichas/</code></b> — la
+        bóveda y las fichas, que es donde van las contraseñas y la titularidad de las
+        cuentas, y no las toca nadie más que vos.</p>
     </div>
     <div class="tarj">
-      <label>Las reglas, con los UID adentro</label>
+      <label>Las reglas, prontas para pegar</label>
+      <p class="gris" id="reglasEstado" style="margin-top:.2rem;font-size:.78rem;">Leyendo…</p>
       <textarea id="reglas" readonly style="min-height:14rem;"></textarea>
       <div class="fila-btn"><button class="btn p" id="btnCopiarReglas">Copiar las reglas</button></div>
       <p class="gris" style="margin-bottom:0;">Firebase → proyecto <b>datos-830f8</b> →
         Firestore Database → Reglas → seleccionar todo, pegar y <b>Publicar</b>.
         Completo, nunca un pedazo: las reglas se suman.</p>
+      <p class="gris" style="margin-bottom:0;font-size:.78rem;">Este texto sale de
+        <code>reglas.txt</code> con los dos UID puestos adentro. <b>En el repositorio
+        esa plantilla tiene los marcadores, no los UID</b> — es público, y la versión
+        completa no existe en ningún archivo: sólo acá, en pantalla.</p>
     </div>
     <div class="tarj">
       <label>Probar que están vivas</label>
@@ -356,7 +363,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, writeBatch
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-14";
+P.PANEL = "panel-15";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -419,7 +426,9 @@ async function entrarAlPanel() {
   if (!yo) { $("puerta").classList.remove("hide"); return; }
   $("app").classList.remove("hide");
   $("miUid").value = yo.uid;
-  $("reglas").value = textoDeReglas(yo.uid, $("uidAgente").value);
+  /* Sin `await`: baja `reglas.txt` por su cuenta y no tiene por qué demorar la
+     lista de pendientes, que es lo que se mira al entrar. */
+  pintarReglas();
   await leer();
 }
 
@@ -1911,71 +1920,114 @@ $("s-cuerpo").addEventListener("click", (e) => {
 });
 
 /* ---------- la puerta, comprobada ---------- */
-/* El texto exacto de las reglas, con los UID adentro. Es la MISMA v3 que
-   `reglas.txt` del repositorio — si divergen, manda lo publicado en la consola,
-   y este botón es lo que se pega. Por eso los dos se tocan en la misma tanda.
+/* EL TEXTO DE LAS REGLAS SALE DE `reglas.txt`, Y NO HAY UNA SEGUNDA COPIA.
 
-   Sin UID de agente el texto sale como antes: una sola persona. Es a propósito
-   — que el panel siga sirviendo aunque nunca se configure un agente. */
-function textoDeReglas(uid, uidAgente) {
-  const a = String(uidAgente || "").trim();
-  const quien = a ? "equipo()" : "soyYo()";
-  return "rules_version = '2';\n\n"
-    + "// Panel de datos — datos-830f8" + (a ? " · v3, con el usuario del agente" : "") + "\n"
-    + (a
-      ? "// DOS identidades: vos, todo. El agente, todo MENOS `claves/` y `fichas/`.\n"
-        + "// El agente entra con un usuario COMÚN de Authentication, así que todo lo\n"
-        + "// que hace pasa por estas reglas. NO se usa una cuenta de servicio: ésa\n"
-        + "// saltearía las reglas y la bóveda dejaría de estar sellada.\n"
-      : "// UNA sola persona. No hay roles ni permisos: o sos ese uid, o no entrás.\n")
-    + "// Deny por defecto y SIN catch-all permisivo: cada colección tiene su\n"
-    + "// bloque, y lo que no está declarado queda negado por el cierre de abajo.\n"
-    + "service cloud.firestore {\n"
-    + "  match /databases/{database}/documents {\n\n"
-    + "    function soyYo() {\n"
-    + "      return request.auth != null && request.auth.uid == '" + uid + "';\n"
-    + "    }\n\n"
-    + (a
-      ? "    function esAgente() {\n"
-        + "      return request.auth != null && request.auth.uid == '" + a + "';\n"
-        + "    }\n\n"
-        + "    function equipo() { return soyYo() || esAgente(); }\n\n"
-      : "")
-    + "    match /proyectos/{id}  { allow read, write: if " + quien + "; }\n"
-    + "    match /pendientes/{id} { allow read, write: if " + quien + "; }\n"
-    + "    match /tandas/{id}     { allow read, write: if " + quien + "; }\n"
-    + "    match /protocolos/{id} { allow read, write: if " + quien + "; }\n\n"
-    + (a
-      ? "    // LA BÓVEDA. Sólo vos, y sólo desde el panel. Son las dos líneas del\n"
-        + "    // archivo que no se negocian.\n"
-        + "    //\n"
-        + "    // `claves` es la bóveda desde el día uno: contraseñas, códigos de\n"
-        + "    // recuperación, segundos factores — cualquier cosa que ABRA algo.\n"
-        + "    //\n"
-        + "    // `fichas` entra el 2026-09-11. Nació como fichas técnicas, pero ahí\n"
-        + "    // guardás titularidad de cuentas, contactos y contraseñas de\n"
-        + "    // servicios. Una colección donde puede aparecer una credencial es una\n"
-        + "    // bóveda, se llame como se llame. Se descubrió el mismo día que el\n"
-        + "    // agente estrenó el acceso: la primera verificación encontró un\n"
-        + "    // usuario y una contraseña reales adentro de una ficha.\n"
-        + "    match /claves/{id}     { allow read, write: if soyYo(); }\n"
-        + "    match /fichas/{id}     { allow read, write: if soyYo(); }\n\n"
-      : "    // La bóveda, para cuando haya un agente. Sólo vos, siempre.\n"
-        + "    match /claves/{id}     { allow read, write: if soyYo(); }\n"
-        + "    match /fichas/{id}     { allow read, write: if soyYo(); }\n\n")
-    + "    // El cierre, que NO cierra: en Firestore los permisos se suman y un\n"
-    + "    // `if false` no le resta nada a lo de arriba. Lo que niega de verdad es\n"
-    + "    // el deny por defecto. Se deja escrito como recordatorio de que una\n"
-    + "    // colección nueva no entra sola: hay que darle su bloque, a propósito.\n"
-    + "    match /{document=**} { allow read, write: if false; }\n"
-    + "  }\n"
-    + "}\n";
+   Hasta `panel-14` esta función traía las reglas enteras escritas de nuevo, a
+   mano, pegoteando strings: el mismo texto dos veces, en dos archivos, que
+   había que acordarse de tocar juntos. Es el error que este ecosistema ya
+   cometió cuatro veces con los sellos, y acá se cortó de raíz — el panel baja
+   la plantilla y sólo le pone los UID adentro.
+
+   Lo que eso compra, y era el pedido: el repositorio (que es PÚBLICO) guarda
+   siempre la versión con los marcadores, nunca una con UID reales, y el texto
+   que se pega en la consola existe únicamente acá, en pantalla. */
+
+const MARCA_MIA = "TU-UID-ACA";
+const MARCA_AGENTE = "UID-DEL-AGENTE";
+
+/* Con el campo vacío, `esAgente()` queda escrito pero no le abre la puerta a
+   nadie: ningún UID de Firebase se parece a esto —son 28 caracteres
+   alfanuméricos—, así que la comparación no da verdadera nunca. Las reglas se
+   pueden publicar igual, y el panel sigue sirviendo aunque no haya agente. */
+const SIN_AGENTE = "SIN-AGENTE-CONFIGURADO";
+
+/* `reglas.txt` trae un párrafo que explica que es una PLANTILLA y que no se
+   pega tal cual. Es cierto allá y es falso acá, así que se cambia por el que
+   corresponde: pegar en la consola un texto que dice «esto no se pega» es
+   pedir que alguien —vos, dentro de seis meses— dude de lo que está viendo.
+
+   Si los marcadores no están, no pasa nada: sale el texto entero. Un archivo
+   sin marcar tiene que seguir funcionando, porque el que edita las reglas no
+   tiene por qué acordarse de esta mecánica. */
+const INI_PLANTILLA = "// --8<-- PLANTILLA";
+const FIN_PLANTILLA = "// --8<-- FIN PLANTILLA";
+const NOTA_PEGADA = [
+  "//  ⚠ ESTE TEXTO LO ARMÓ EL PANEL, con los dos UID ya adentro, y es el que",
+  "//  se pega acá. La plantilla vive en `reglas.txt` del repositorio, y allá",
+  "//  los UID son marcadores: ese repositorio es público. Si hay que cambiar",
+  "//  una regla se cambia allá, y el panel la vuelve a armar sola."
+].join("\n");
+
+function sacarNotaDePlantilla(t) {
+  const i = t.indexOf(INI_PLANTILLA);
+  const j = t.indexOf(FIN_PLANTILLA);
+  if (i === -1 || j === -1 || j < i) return t;
+  return t.slice(0, i) + NOTA_PEGADA + t.slice(j + FIN_PLANTILLA.length);
 }
 
-/* Se reescriben al tipear el UID del agente: si hubiera que tocar un botón
-   para actualizarlas, alguien iba a copiar el texto viejo. */
+/* El UID del agente se recuerda EN ESTE TELÉFONO. No es un secreto —está
+   publicado en las reglas de la consola—, pero guardarlo en Firestore pediría
+   una colección nueva con su regla, y la regla se publica justamente con este
+   texto: el huevo antes que la gallina. En otro dispositivo se pega una vez
+   más y listo. */
+const LLAVE_AGENTE = "panel:uidAgente";
+
+let plantillaReglas = null;
+
+/* Una sola vez por sesión. Con `?v=` para que una tanda nueva no quede servida
+   por la copia vieja: `reglas.txt` está en el `SHELL` del service worker. */
+async function bajarPlantilla() {
+  if (plantillaReglas) return plantillaReglas;
+  const r = await fetch("./reglas.txt?v=reglas-4", { cache: "no-cache" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const t = await r.text();
+  if (!t.includes(MARCA_MIA)) throw new Error("la plantilla no trae " + MARCA_MIA);
+  plantillaReglas = t;
+  return t;
+}
+
+/* Se llama al entrar y en cada tecla del UID del agente. Si el archivo no baja
+   se dice, y se APAGA el botón de copiar: entregar medias reglas es peor que no
+   entregar ninguna, porque se pegan igual y el que pega no se entera. */
+async function pintarReglas() {
+  if (!yo) return;
+  const ta = $("reglas"), btn = $("btnCopiarReglas"), est = $("reglasEstado");
+  const a = String($("uidAgente").value || "").trim();
+  let t;
+  try {
+    t = await bajarPlantilla();
+  } catch (e) {
+    ta.value = "";
+    btn.disabled = true;
+    est.innerHTML = '<b style="color:var(--mal)">No se pudo leer <code>reglas.txt</code></b> ('
+      + String(e && e.message ? e.message : e) + '). Sin la plantilla no hay nada que copiar: '
+      + 'abrila en el repositorio y completá los dos UID a mano.';
+    return;
+  }
+  ta.value = sacarNotaDePlantilla(t)
+              .split(MARCA_MIA).join(yo.uid)
+              .split(MARCA_AGENTE).join(a || SIN_AGENTE);
+  btn.disabled = false;
+  est.innerHTML = a
+    ? '<b style="color:var(--ok)">Listas para pegar</b>, con los dos UID adentro.'
+    : '<b>Falta el UID del agente.</b> Se pueden publicar igual —quedan sólo para '
+      + 'vos—, pero el agente no va a poder leer ni escribir nada.';
+}
+
+/* Se restaura antes de que haya sesión, así que cuando `entrarAlPanel()` llame
+   a `pintarReglas()` el campo ya está puesto y las reglas salen completas de
+   entrada. Sin esto habría que tocar la solapa para que se completaran. */
+try {
+  const guardado = localStorage.getItem(LLAVE_AGENTE);
+  if (guardado) $("uidAgente").value = guardado;
+} catch (e) { /* ventana privada o almacenamiento bloqueado: se sigue sin recordar */ }
+
+/* Se reescriben al tipear: si hubiera que tocar un botón para actualizarlas,
+   alguien iba a copiar el texto viejo. */
 $("uidAgente").addEventListener("input", () => {
-  if (yo) $("reglas").value = textoDeReglas(yo.uid, $("uidAgente").value);
+  try { localStorage.setItem(LLAVE_AGENTE, String($("uidAgente").value || "").trim()); }
+  catch (e) { /* ídem */ }
+  pintarReglas();
 });
 
 const copiar = async (texto, ok) => {

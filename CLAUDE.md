@@ -79,7 +79,7 @@ Un workflow propio sí corre con esos push: cada tanda se publica sola. Ver `REA
 | Contenido de `fichas/` y `claves/` | Titularidad de cuentas, contactos, números, contraseñas | **sensible** | Firestore, protegido por las reglas. **Ningún agente las lee**: se lo niega la base | sólo el panel, en pantalla | `fichas/` sellada el 2026-09-11 |
 | UID del usuario del agente | Es lo que compara `esAgente()` en las reglas | dato de configuración | Publicado en las reglas de la consola. Lo imprime `node herramientas/firestore.mjs panel quien` del repo privado `datos` | Firestore | verificado contra la base, 2026-09-11 |
 | Contraseña del usuario del agente | Entrar a `datos-830f8` desde una sesión de Claude Code | dato en runtime | Variables de entorno del entorno de Claude Code, cargadas por Mauro en la web | `herramientas/firestore.mjs` del repo privado `datos` | — |
-| Reglas de Firestore | Autoridad real de acceso | configuración (copia en repo, autoridad en consola) | Consola de Firebase. La copia está en `reglas.txt` (**v3**) con los UID sin completar | Firestore | v3 escrita el 2026-09-11 — **falta publicarla** |
+| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v3**) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | v3 escrita el 2026-09-11 — **falta publicarla** |
 
 Lo que NO está acá y no tiene que estar: el UID real, la contraseña, y cualquier
 contenido de `fichas/`.
@@ -140,6 +140,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
+- **`reglas.txt` es la plantilla, y es la ÚNICA copia del texto de las reglas.**
+  Los dos UID van como marcadores (`TU-UID-ACA`, `UID-DEL-AGENTE`) porque este
+  repositorio es público: **un UID real no entra nunca, en ningún archivo.** El
+  panel baja ese mismo archivo y arma la versión completa en pantalla — no la
+  escribe en ningún lado. Si tocás `reglas.txt`, corré `node
+  pruebas-reglas.mjs` antes de subir: ahí está la red que antes era la segunda
+  copia.
 - **La solapa «Sitios» sale de `proyectos/`**, de los campos `sitio` y
   `acceso`. Son todos opcionales a propósito: un proyecto recién dado de alta
   tiene nombre y poco más, y la pantalla tiene que servir igual desde ese día.

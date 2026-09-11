@@ -10,11 +10,25 @@ rules_version = '2';
 //  intenta leer una colección que estas reglas no declaran: tiene que
 //  FALLAR. Esa negativa es lo único que demuestra que lo publicado es esto.
 //
-//  ⚠ DOS UID VAN COMPLETADOS. Acá abajo dicen TU-UID-ACA y UID-DEL-AGENTE
-//  a propósito: este repositorio es público. El tuyo lo arma el panel
-//  (solapa «La puerta»), con un botón para copiarlo, y el mismo botón te da
-//  el texto entero ya completado. El del agente lo imprime
-//  `node herramientas/firestore.mjs panel quien` del repo `datos` privado.
+// --8<-- PLANTILLA
+//  ⚠ ESTE ARCHIVO ES LA PLANTILLA, Y NO SE PEGA TAL CUAL. Los dos UID de acá
+//  abajo dicen TU-UID-ACA y UID-DEL-AGENTE a propósito: este repositorio es
+//  público y un UID real no entra nunca. La versión que SÍ se pega la arma el
+//  panel —solapa «La puerta»—, que baja ESTE MISMO archivo, reemplaza este
+//  párrafo por el que corresponde y pone los UID adentro. Esa versión existe
+//  en pantalla y en ningún otro lado: ni en un archivo, ni en un chat.
+//
+//  Y por eso el texto vive una sola vez. Hasta `panel-14` el panel traía las
+//  reglas escritas de nuevo, a mano, adentro de `index.html`: dos copias del
+//  mismo texto que había que acordarse de tocar juntas, que es exactamente
+//  el error que este ecosistema ya cometió cuatro veces con los sellos. Si
+//  acá cambia una línea, cambia sola la que el panel ofrece copiar. No queda
+//  nada que sincronizar.
+//
+//  Los dos marcadores `--8<--` de arriba y de abajo los usa el panel para
+//  encontrar este párrafo. Se pueden borrar: si no están, el texto sale
+//  igual, con este párrafo adentro y todo. Nada se rompe.
+// --8<-- FIN PLANTILLA
 //
 //  ⚠ LAS REGLAS SE SUMAN: basta con que UN bloque permita para que el
 //  acceso quede abierto. Por eso esto se pega SIEMPRE completo, nunca por

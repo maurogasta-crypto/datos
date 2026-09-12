@@ -205,6 +205,23 @@
     </div>
   </section>
 
+  <!-- 3a bis · LAS TANDAS: cómo fue cambiando.
+       El panel se describe desde el día uno como «qué está pendiente, quién lo
+       tiene que hacer Y CÓMO FUE CAMBIANDO». Las dos primeras tenían pantalla;
+       la tercera no, y por eso `tandas/` estaba declarada en las reglas y vacía
+       desde que se creó.
+
+       Es de LECTURA, a propósito. Es el registro de lo que hizo un agente: si
+       Mauro pudiera editarlo dejaría de ser un registro y pasaría a ser otra
+       lista de cosas que mantener. Lo escribe quien hizo el trabajo. -->
+  <section id="v-tandas" class="hide">
+    <h1>Las tandas</h1>
+    <p class="gris">Qué se hizo, cuándo y en qué proyecto. Sigue al selector de
+      arriba: si estás mirando un sitio, son las suyas.</p>
+    <p class="gris" id="td-estado">Leyendo…</p>
+    <div id="td-tandas"></div>
+  </section>
+
   <!-- 3b · las reglas: los protocolos, acá y no sólo en un repositorio -->
   <section id="v-reglas" class="hide">
 
@@ -323,6 +340,7 @@
 <div id="nav" role="group" aria-label="Secciones">
   <button data-v="tablero" aria-pressed="true">Pendientes</button>
   <button data-v="sitios" aria-pressed="false">Sitios</button>
+  <button data-v="tandas" aria-pressed="false">Tandas</button>
   <button data-v="reglas" aria-pressed="false">Reglas</button>
   <button data-v="fichas" aria-pressed="false">Fichas</button>
   <button data-v="puerta" aria-pressed="false">Puerta</button>
@@ -336,7 +354,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-16";
+P.PANEL = "panel-17";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -425,7 +443,7 @@ $("btnSalir").addEventListener("click", async () => {
 });
 
 /* ---------- navegación ---------- */
-const VISTAS = ["tablero", "sitios", "reglas", "fichas", "puerta"];
+const VISTAS = ["tablero", "sitios", "tandas", "reglas", "fichas", "puerta"];
 
 /* Cambiar de solapa es una función y no sólo el cuerpo del listener, porque
    hay botones adentro de las pantallas que también llevan a otra: el de las
@@ -435,6 +453,7 @@ const VISTAS = ["tablero", "sitios", "reglas", "fichas", "puerta"];
 function irA(vista) {
   VISTAS.forEach((v) => $("v-" + v).classList.toggle("hide", v !== vista));
   if (vista === "fichas" && !fichasLeidas) leerFichas();
+  if (vista === "tandas" && !tandasLeidas) leerTandas();
   if (vista === "reglas" && !reglasLeidas) leerProtocolos();
   /* Los sitios se repintan CADA vez que se entra, no sólo la primera: sus
      números salen de `pendientes`, y marcar un pendiente como hecho en el
@@ -902,6 +921,62 @@ const nombreAmbito = (id) => (AMBITOS().find((a) => a[0] === id) || [id, id])[1]
 const VIGENCIAS = ["vigente", "propuesta", "retirada"];
 
 let PROTOCOLOS = [];
+/* ---------- las tandas: cómo fue cambiando ----------
+   De LECTURA. Es el registro de lo que hizo un agente, y si Mauro pudiera
+   editarlo dejaría de ser un registro para pasar a ser otra lista que mantener.
+   Lo escribe quien hizo el trabajo, con la herramienta, en la misma tanda. */
+let TANDAS = [];
+let tandasLeidas = false;
+
+async function leerTandas() {
+  try {
+    const q = await getDocs(collection(db, "tandas"));
+    TANDAS = [];
+    q.forEach((d) => TANDAS.push({ id: d.id, ...d.data() }));
+    tandasLeidas = true;
+    pintarTandas();
+  } catch (e) {
+    /* Que diga el motivo. Si las reglas publicadas no dejan leer `tandas`
+       —pasó el 2026-09-12, con el UID del agente sin completar— esto es lo
+       único que lo explica sin abrir la consola. */
+    $("td-estado").textContent = P.explicar(e);
+    $("td-tandas").innerHTML = "";
+  }
+}
+
+function pintarTandas() {
+  const caja = $("td-tandas");
+  /* Sigue al selector de app, como todo lo demás. Una tanda puede tocar varios
+     proyectos, así que se mira si el elegido está entre los suyos. */
+  const mias = TANDAS.filter((t) => !APP
+    || (Array.isArray(t.proyectos) ? t.proyectos.includes(APP) : t.proyecto === APP));
+  /* Más nueva primero: lo que se quiere ver al abrir es qué pasó último. */
+  mias.sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")));
+
+  $("td-estado").textContent = TANDAS.length
+    ? mias.length + " de " + TANDAS.length
+    : "Todavía no hay ninguna. Las escribo yo al cerrar cada tanda.";
+
+  caja.innerHTML = mias.map((t) => {
+    const proys = Array.isArray(t.proyectos) ? t.proyectos : (t.proyecto ? [t.proyecto] : []);
+    return '<div class="tarj">'
+      + '<div class="sit-res-t"><b>' + P.esc(t.titulo || t.id) + "</b>"
+      + '<span class="gris mono">' + P.esc(t.fecha || "") + "</span></div>"
+      + (proys.length
+        ? '<div style="margin:.35rem 0">' + proys.map((x) =>
+            '<span class="sit-chip">' + P.esc(nombreProy(x)) + "</span>").join(" ") + "</div>"
+        : "")
+      + (t.entrega ? '<p class="gris" style="margin:.35rem 0 0">' + P.esc(t.entrega) + "</p>" : "")
+      + (t.porQue ? '<p class="gris" style="margin:.35rem 0 0"><b>Por qué:</b> '
+          + P.esc(t.porQue) + "</p>" : "")
+      + (Array.isArray(t.sellos) && t.sellos.length
+        ? '<p class="gris mono" style="margin:.35rem 0 0;font-size:.72rem">'
+          + t.sellos.map((x) => P.esc(x)).join(" · ") + "</p>"
+        : "")
+      + "</div>";
+  }).join("") || (TANDAS.length ? '<p class="gris">Ninguna en este proyecto.</p>' : "");
+}
+
 let reglasLeidas = false;
 let editandoRegla = null;
 

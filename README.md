@@ -193,6 +193,23 @@ dependen del filtro. Repetirlas sería ruido.
 Cuando no hay nada, lo dice. Un bloque vacío deja la duda de si no hay nada o si
 no cargó.
 
+### Las tandas: cómo fue cambiando
+
+Desde `panel-17`. El panel se describe desde el día uno como «qué está
+pendiente, quién lo tiene que hacer **y cómo fue cambiando**». Las dos primeras
+tenían pantalla; la tercera no — por eso `tandas/` estaba declarada en las
+reglas y vacía desde que se creó.
+
+Es una solapa de **lectura**, y a propósito: es el registro de lo que hizo un
+agente. Si se pudiera editar dejaría de ser un registro para pasar a ser otra
+lista que mantener. Lo escribe quien hizo el trabajo, con la herramienta, en la
+misma tanda.
+
+Cada tanda lleva `fecha`, `titulo`, `proyectos` (puede tocar varios), `entrega`,
+`porQue` y opcionalmente los `sellos` que subieron. Sigue al selector de app
+como todo lo demás, y se ordena de la más nueva a la más vieja: lo que se quiere
+ver al abrir es qué pasó último.
+
 ### Las reglas
 
 Los protocolos vivían sólo en `casaverdecanas-blip/datos`, que se lee desde una
@@ -308,10 +325,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-16` |
+| `index.html` | `P.PANEL` | `panel-17` |
 | `estilos.css` | (en el comentario) | `estilos-8` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v7` |
+| `sw.js` | `VERSION` | `panel-shell-v8` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

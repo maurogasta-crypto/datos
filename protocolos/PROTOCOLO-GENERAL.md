@@ -619,6 +619,27 @@ sea, cuando ya lo vio—. La exportación publica arriba las listas `tocados` y
 **Lo primero que hace un agente al recibir un paquete es mirar `tocados`.**
 Comparar a ojo contra lo que mandó es el trabajo que se olvida hacer.
 
+### Leer el panel es parte de leerlo a él
+
+**Lo que Mauro escribe en el panel es un mensaje directo suyo, con el mismo peso
+que uno del chat.** No es un archivo de datos que se consulta si hace falta: es
+la otra mitad de la conversación. Una sesión que no lo abre no está leyendo la
+mitad de lo que él dijo, y encima no lo sabe.
+
+Eso tiene dos consecuencias que conviene tener escritas:
+
+1. **Se lee al abrir, antes de tocar código** (§ 8, «Al abrir»). No al final, no
+   «si hace falta», no cuando aparece una duda.
+2. **Se le contesta ahí, no sólo acá.** Si él preguntó algo en un pendiente, la
+   respuesta va al pendiente. Contestarla sólo en el chat la pierde: el chat se
+   cierra, el pendiente queda.
+
+Y la vuelta: **lo que se hizo se escribe en `tandas/` al cerrar**. Esa colección
+tuvo pantalla recién desde `panel-17`, y hasta entonces estuvo vacía justamente
+porque nadie la llenaba. Si una tanda no queda anotada ahí, la próxima sesión no
+tiene cómo saber qué pasó en ésta — y la memoria vuelve a depender de que
+alguien se acuerde, que es lo que este panel existe para evitar.
+
 ### Reglas que no se negocian
 
 - **La respuesta de Mauro no se pisa.** Si el parte del agente no menciona la
@@ -706,11 +727,36 @@ sin haberla cumplido no terminó la tanda.
    `ESTADO-DE-LOS-TRES.md`— y el `CLAUDE.md` del repo en el que se va a
    trabajar. Si la sesión no puede leer este repositorio, pedirlo antes de
    escribir código.
-2. **Pedirle a Mauro el paquete exportado del panel** si no lo trajo. Sin él se
-   arranca adivinando en qué quedó cada proyecto.
-3. **Mirar primero `tocados` y `sinResponder`** del paquete. Eso es lo que él
-   respondió y lo que sigue esperando; leerlo después de trabajar es leerlo
-   tarde.
+2. **LEER EL PANEL. No es opcional y no se pide: se lee.**
+
+   ```
+   node herramientas/firestore.mjs panel leer proyectos
+   node herramientas/firestore.mjs panel leer pendientes
+   ```
+
+   Hasta el 2026-09-11 esto decía «pedirle a Mauro el paquete exportado», porque
+   un agente no tenía credenciales. Ahora las tiene. **Pedirle que traiga algo
+   que se puede leer solo es hacerle hacer trabajo a él.**
+
+3. **Mirar primero lo que Mauro tocó y lo que sigue esperando.** En los
+   pendientes leídos:
+
+   - los que tienen **`tocado: true`** son los que él editó desde la última vez
+     que yo escribí. Es lo primero que se mira, siempre.
+   - los que tienen **`pregunta` y no `respuesta`** son los que lo están
+     esperando a él.
+   - los que tienen **`respuesta` y `tocado: true`** son los que me están
+     esperando a mí: contestó y todavía no lo vi.
+
+   Leerlo después de trabajar es leerlo tarde: se hace media tanda sin saber que
+   él ya había contestado que no.
+
+4. **Si la base contesta que no, eso es un bloqueo, no un detalle.** Un
+   `permission-denied` en `pendientes` significa que se está trabajando a ciegas
+   sobre la mitad de la conversación: sus respuestas, sus correcciones y sus
+   cambios de prioridad están ahí y no se ven. **Se para y se le dice**, con el
+   motivo — lo más probable es que las reglas publicadas no tengan el UID del
+   agente. No se sigue como si nada: se sigue sabiendo qué se está perdiendo.
 
 ### Al cerrar — las cinco cosas
 
@@ -738,9 +784,24 @@ Ninguna es opcional y ninguna espera a que Mauro la pida.
    - las reglas del panel, si una regla nueva contradice o generaliza otra;
    - los sellos de versión y los `?v=` con los que se piden los archivos.
 
-4. **Generar el parte para el panel** y entregarlo como archivo: pendientes
-   nuevos y cerrados, **las preguntas** que necesitan una decisión de Mauro, y
-   las reglas nuevas o cambiadas. Es lo que cierra el circuito de la sección 6.
+4. **ESCRIBIR EN EL PANEL. Se escribe, no se entrega como archivo.**
+
+   Hasta el 2026-09-11 esto decía «generar el parte y entregarlo». Ya no: se
+   escribe directo, y son tres cosas distintas que se hacen siempre.
+
+   - **Los pendientes**: los nuevos, los que se cerraron, y **las preguntas**
+     que necesitan una decisión de Mauro. Una pregunta que queda sólo en el chat
+     se pierde cuando el chat se cierra.
+   - **Las reglas** nuevas o cambiadas, en `protocolos/` de la base.
+   - **La tanda**, en `tandas/`: `fecha`, `titulo`, `proyectos` tocados,
+     `entrega`, `porQue` y los `sellos` que subieron. Es lo único que le dice a
+     la próxima sesión qué pasó en ésta.
+
+   **Y antes de escribir, se lee lo que ya está** (§ 8, «Al abrir»):
+   `escribir()` REEMPLAZA el documento entero, así que escribir un pendiente sin
+   haberlo leído primero borra la respuesta que Mauro dejó ahí. Eso no lo
+   protege ningún mecanismo — lo protege leer antes de escribir, y por eso está
+   dicho dos veces.
 
 5. **No declarar entregado nada que no se haya entregado.** Si algo quedó a
    medias, se dice cuál y por qué, y entra al parte como pendiente abierto.

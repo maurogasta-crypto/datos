@@ -182,6 +182,15 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   esperan. El orden está justificado en `pintarTeToca()` y no es estético — las
   reglas van primero porque son lo único que deja una base abierta mientras
   espera. Si entra una cuarta cosa, se argumenta dónde va.
+- **Antes de tocar código se LEE el panel, y al cerrar se ESCRIBE en él.** Es la
+  otra mitad de la conversación con Mauro, no un archivo de datos que se
+  consulta si hace falta: sus respuestas, sus correcciones y sus cambios de
+  prioridad viven ahí. `node herramientas/firestore.mjs panel leer pendientes`,
+  y lo primero que se mira son los `tocado: true` y los que tienen `pregunta`
+  sin `respuesta`. **Si la base contesta que no, es un bloqueo y se dice** — se
+  estaría trabajando a ciegas sobre la mitad de lo que él dijo. Al cerrar se
+  escriben los pendientes, las reglas y **la tanda**, que es lo único que le
+  cuenta a la próxima sesión qué pasó en ésta.
 - **La historia de un pendiente se suma, nunca se pisa.** Es lo único que no se
   puede reconstruir.
 - **Acá no se sube ningún dato**, ni de ejemplo. Este repositorio es público.

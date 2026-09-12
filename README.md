@@ -11,6 +11,7 @@ pueden estar en ningún repositorio ni en ningún chat.
 | Despliegue | GitHub Pages con *Source: GitHub Actions* — ver abajo |
 | Base de datos | Firebase **`datos-830f8`** (Firestore + Authentication) |
 | Reglas | [`reglas.txt`](reglas.txt) — la **plantilla**; el panel le pone los UID y la autoridad es la consola |
+| Reglamento | [`protocolos/`](protocolos/) — el de los cuatro proyectos, acá desde el 2026-09-12 |
 
 ## ⚠ Dos repositorios se llaman `datos`. No son el mismo
 
@@ -19,12 +20,20 @@ subir nada:
 
 | Repositorio | Qué es | Visibilidad | Qué va adentro |
 |---|---|---|---|
-| **`maurogasta-crypto/datos`** — *éste* | el panel: HTML, CSS y JavaScript | **público** | un cascarón, cero datos |
-| `casaverdecanas-blip/datos` | los protocolos y el índice de secretos | privado | reglas de trabajo y *dónde* vive cada credencial, nunca su valor |
+| **`maurogasta-crypto/datos`** — *éste* | el panel **y el reglamento**: HTML, CSS, JavaScript, `protocolos/` y `herramientas/` | **público** | un cascarón y reglas de trabajo. Cero datos |
+| `casaverdecanas-blip/datos` | lo que no puede ser público | privado | `secretos/` (hasta que esté en `fichas/`), los partes viejos y los fixtures del banco |
 
-Que se llamen igual no los vuelve intercambiables: **acá no entra nada que no
-sea código del panel.** Ni fichas, ni titularidades, ni contactos, ni números,
-ni partes de ejemplo. Este repositorio lo lee cualquiera.
+**Esto cambió el 2026-09-12**, y vale saber qué cambió y qué no. Los protocolos
+se mudaron acá: tenerlos en un repositorio privado de otro dueño costaba, en cada
+sesión nueva, acordarse de agregarlo — y una regla que sólo llega si alguien se
+acordó de algo no es una regla. Antes de traerlos se auditó el repo privado
+entero: tres archivos traían titularidad de cuentas o los UID del agente, y eso
+se reemplazó por un puntero a la bóveda.
+
+Lo que **no** cambió: **acá no entra un solo dato.** Ni fichas, ni
+titularidades, ni contactos, ni números, ni partes. Este repositorio lo lee
+cualquiera, y los `.md` se sirven en texto plano por Pages. La diferencia es que
+ahora «dato» y «regla» son cosas distintas: la regla es pública, el dato no.
 
 ## Por qué este repositorio es público
 
@@ -46,8 +55,8 @@ contraseña, Firestore le contesta `permission-denied` a todo.
 > La configuración de Firebase que está en `firebase-init.js` **no es un
 > secreto**: identifica el proyecto ante la API web y no da un solo permiso.
 > Está a la vista a propósito, para que nadie la confunda con una credencial y
-> la "proteja" rompiendo el panel. Ver `PROTOCOLO-SECRETOS.md` en el repo
-> privado `datos`.
+> la "proteja" rompiendo el panel. Ver
+> [`protocolos/PROTOCOLO-SECRETOS.md`](protocolos/PROTOCOLO-SECRETOS.md).
 
 ## Las dos zonas, que nunca se mezclan
 
@@ -143,7 +152,7 @@ que reemplaza al otro.
 >
 > **Lo único que se perdió con ella es la exportación**, que era la única forma
 > de sacar un respaldo desde el teléfono. Hoy el respaldo lo hace el agente con
-> `node herramientas/firestore.mjs panel bajar`, desde el repo privado. Si algún
+> `node herramientas/firestore.mjs panel bajar`, que vive acá. Si algún
 > día hace falta un botón para bajarlo sin agente, se agrega — pero como un
 > volcado de la base, no como el formato de intercambio que era.
 
@@ -283,6 +292,8 @@ vuelve.
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
 | `reglas.txt` | **la plantilla de las reglas de Firestore**, con marcadores en vez de UID. La lee el panel |
 | `pruebas-reglas.mjs` | el banco de pruebas de «La puerta»: `node pruebas-reglas.mjs`, sin npm |
+| `protocolos/` | **el reglamento del ecosistema**, desde el 2026-09-12. Los cuatro protocolos y `ESTADO-DE-LOS-TRES.md` |
+| `herramientas/` | `firestore.mjs`, con lo que una sesión de Claude lee y escribe las cuatro bases, y cómo darle de alta en una nueva |
 | `sw.js` | el service worker: hace que se instale y abra sin señal |
 | `manifest.json` | nombre, colores e iconos de la app instalada |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | el icono del tablero |

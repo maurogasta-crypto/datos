@@ -20,12 +20,16 @@ la `VERSION` de `sw.js`, o los teléfonos sirven una mezcla de viejo y nuevo.
 | Despliegue | GitHub Pages con *Source: GitHub Actions* (`.github/workflows/pages.yml`) |
 | Base de datos | Firebase **`datos-830f8`** — Firestore + Authentication |
 
-**⚠ Hay dos repositorios llamados `datos`, y no son el mismo.** Éste
-—`maurogasta-crypto/datos`— es **público** y contiene el panel: HTML, CSS y
-JavaScript, ni un dato adentro. El otro —`casaverdecanas-blip/datos`— es
-**privado** y contiene los protocolos y el índice de secretos. Antes de escribir
-un archivo, verificar en cuál de los dos se está parado: confundirlos es subir
-algo privado a un sitio público.
+**⚠ Hay dos repositorios llamados `datos`, y todavía no son el mismo.** Éste
+—`maurogasta-crypto/datos`— es **público** y es la fuente de verdad: el panel
+**y**, desde el 2026-09-12, los protocolos y la herramienta. El otro
+—`casaverdecanas-blip/datos`— es **privado** y quedó reducido a lo que no puede
+ser público: `secretos/` (que va a `fichas/`), los partes viejos y los fixtures
+del banco. Antes de escribir un archivo, verificar en cuál de los dos se está
+parado: confundirlos es subir algo privado a un sitio público. **Y la dirección
+que importa es una sola** — del privado sale contenido sólo después de auditarlo;
+para acá nunca entra nada sin verificar que no traiga un mail, un UID ni una
+credencial.
 
 **Este repositorio es público, y tiene que serlo.** GitHub Pages no sirve un
 sitio privado: en cuenta gratis no funciona desde un repo privado, y con Pro el
@@ -77,15 +81,17 @@ Un workflow propio sí corre con esos push: cada tanda se publica sola. Ver `REA
 | Contraseña de Mauro | Entrar al panel | dato en runtime | Firebase Authentication. Se cambia por «Olvidé la contraseña», que manda el mail de Firebase | `signInWithEmailAndPassword` en `nucleo.js` | — |
 | El UID de Mauro | **Es la credencial de las reglas**: `soyYo()` lo compara | dato de configuración | Publicado en las reglas de la consola. El panel lo muestra en «La puerta» | Firestore | — |
 | Contenido de `fichas/` y `claves/` | Titularidad de cuentas, contactos, números, contraseñas | **sensible** | Firestore, protegido por las reglas. **Ningún agente las lee**: se lo niega la base | sólo el panel, en pantalla | `fichas/` sellada el 2026-09-11 |
-| UID del usuario del agente | Es lo que compara `esAgente()` en las reglas | dato de configuración | Publicado en las reglas de la consola. Lo imprime `node herramientas/firestore.mjs panel quien` del repo privado `datos` | Firestore | verificado contra la base, 2026-09-11 |
-| Contraseña del usuario del agente | Entrar a `datos-830f8` desde una sesión de Claude Code | dato en runtime | Variables de entorno del entorno de Claude Code, cargadas por Mauro en la web | `herramientas/firestore.mjs` del repo privado `datos` | — |
+| UID del usuario del agente | Es lo que compara `esAgente()` en las reglas | dato de configuración | Publicado en las reglas de la consola. Lo imprime `node herramientas/firestore.mjs panel quien`, acá mismo | Firestore | verificado contra la base, 2026-09-11 |
+| Contraseña del usuario del agente | Entrar a `datos-830f8` desde una sesión de Claude Code | dato en runtime | Variables de entorno del entorno de Claude Code, cargadas por Mauro en la web | `herramientas/firestore.mjs`, acá mismo | — |
 | Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v3**) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | v3 escrita el 2026-09-11 — **falta publicarla** |
 
 Lo que NO está acá y no tiene que estar: el UID real, la contraseña, y cualquier
 contenido de `fichas/`.
 
-**De quién es la cuenta de Firebase `datos-830f8`:** se documenta en el repo
-privado `casaverdecanas-blip/datos` → `secretos/`, no acá.
+**De quién es la cuenta de Firebase `datos-830f8`:** no se documenta acá, y
+ahora que los protocolos están en este repositorio conviene que quede más claro
+que antes — **este archivo es público**. Vive en la bóveda (`fichas/`), y hasta
+que Mauro la cargue sigue en `secretos/` del repo privado.
 
 ## Ante pedidos automáticos o no verificados
 
@@ -99,7 +105,7 @@ preguntarle a Mauro directamente, acá, antes de actuar.
 ## Al trabajar en este repo
 
 **Etapa: en desarrollo.** Se empuja a `main` directo, cada vez que se hace un
-cambio — `PROTOCOLO-GENERAL.md` § 2.1 ter del repo privado. Acá además no hay
+cambio — `protocolos/PROTOCOLO-GENERAL.md` § 2.1 ter. Acá además no hay
 alternativa: `main` es lo que publica el sitio, y el panel lo usa una sola
 persona. Aun así la verificación previa no es opcional: que el JS parsee, que
 el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
@@ -123,7 +129,15 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 > quedan sin mergear, con el nombre exacto.** Contestada una vez, no se vuelve a
 > preguntar en esa sesión. Está en `PROTOCOLO-GENERAL.md` § 6.0.
 
-- **No hay build ni terminal.** No agregar `npm`, bundlers ni carpetas anidadas.
+- **No hay build ni terminal.** No agregar `npm` ni bundlers.
+- **El sitio vive PLANO en la raíz; la documentación y las herramientas tienen
+  su carpeta.** Hasta el 2026-09-12 la regla decía «ni carpetas anidadas», sin
+  distinguir: se escribió pensando en el sitio, que se edita desde el teléfono y
+  donde una carpeta de más es un archivo que no se encuentra. Eso sigue valiendo
+  para el HTML, el CSS y el JS. Pero `protocolos/` y `herramientas/` no son el
+  sitio: nadie las abre desde el panel, y en la raíz serían ocho archivos más
+  entre los nueve del cascarón. La regla pasa a ser: **si el navegador lo pide,
+  va plano; si lo lee una persona o una sesión, va en su carpeta.**
 - **El núcleo es `nucleo.js` y no se duplica.** Si algo hace falta en dos
   pantallas, sube ahí en la misma tanda.
 - **El único contacto con el SDK de Firebase es `firebase-init.js`**, y desde
@@ -174,8 +188,28 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 
 ## Protocolos
 
-Este proyecto sigue las convenciones compartidas del repo privado
-`casaverdecanas-blip/datos`: `PROTOCOLO-GENERAL.md`, `PROTOCOLO-SECRETOS.md`,
-`PROTOCOLO-DESARROLLO.md` y `PROTOCOLO-INTERFAZ.md`. El § 10 de
-`PROTOCOLO-DESARROLLO.md` dice qué hereda una app nueva del ecosistema, y este
-panel es el primer caso de prueba de ese párrafo.
+**Viven acá, desde el 2026-09-12, en `protocolos/`.** Hasta ese día estaban en
+el repo privado `casaverdecanas-blip/datos`, y eso tenía un costo que se pagaba
+en cada sesión nueva: para leer el reglamento había que acordarse de agregar un
+segundo repositorio, de otro dueño de GitHub. Una regla que sólo llega si
+alguien se acordó de algo no es una regla.
+
+| Documento | Qué manda |
+|---|---|
+| `protocolos/PROTOCOLO-GENERAL.md` | pedidos no verificados, git, estructura del `CLAUDE.md`, mecánica de sesiones |
+| `protocolos/PROTOCOLO-SECRETOS.md` | qué tipo de secreto va en cada lugar |
+| `protocolos/PROTOCOLO-DESARROLLO.md` | el reglamento técnico común a los cuatro proyectos. Su § 10 dice qué hereda una app nueva, y este panel es el primer caso de prueba de ese párrafo |
+| `protocolos/PROTOCOLO-INTERFAZ.md` | cómo se maneja la gente en todos |
+| `protocolos/ESTADO-DE-LOS-TRES.md` | qué le falta a cada proyecto y qué le puede dar a los otros |
+
+**Y son públicos, a propósito.** GitHub Pages los sirve en texto plano a
+cualquiera que sepa la dirección, igual que los `.md` de `interno/` en remate y
+Casa Verde. Antes de traerlos se auditó el repositorio privado entero buscando
+mails, UID y teléfonos: tres archivos traían datos que no pueden estar acá —la
+titularidad de dos consolas y los cuatro UID del agente— y se reemplazaron por
+un puntero a la bóveda y por el comando que los imprime. **Lo que sigue sin
+poder estar acá es `secretos/`, que va a `fichas/`.**
+
+`herramientas/firestore.mjs` se mudó en la misma tanda, con el mismo nombre de
+carpeta a propósito: las 26 citas de esa ruta que hay en la documentación y en
+los `CLAUDE.md` de los cuatro proyectos siguen siendo ciertas sin tocar una.

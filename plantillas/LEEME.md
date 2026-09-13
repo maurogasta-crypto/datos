@@ -9,12 +9,25 @@ autentica como `casaverdecanas-blip`, y esa es una cuenta de usuario, no una
 organización.
 
 Y aunque Mauro cree el repositorio, **la sesión que ya está abierta no puede
-empujar ahí**. El motivo NO es un permiso: el alcance de repositorios se fija al
-crear la sesión, y uno creado después no se puede agregar. Ver
-`PROTOCOLO-GENERAL.md` § 4.1.
+empujar ahí de entrada**.
 
-> **No mandes a Mauro a revisar permisos.** El 2026-09-10 lo hice y fue un
-> desvío: la app de GitHub de Claude en su cuenta ya tenía **«All
+> **⚠ Este párrafo decía otra cosa hasta el 2026-09-13, y era falso.** Decía:
+> «el motivo NO es un permiso: el alcance de repositorios se fija al crear la
+> sesión, y uno creado después no se puede agregar». Se probó ese día y es al
+> revés en las dos mitades.
+>
+> - **Leerlo entra solo**, sin hacer nada: el repositorio es público y la sesión
+>   clona repositorios públicos de GitHub sin credenciales.
+> - **Escribirlo SÍ es un permiso**, y es el mismo que Mauro ya había resuelto
+>   una vez para el panel. La sesión se autentica como **`casaverdecanas-blip`**,
+>   así que hay que sumar esa cuenta como **colaborador con permiso de escritura**
+>   en el repositorio nuevo: Settings → Collaborators → Add people → Write.
+>   Hecho eso, se agrega a la sesión abierta y se empuja, sin abrir un chat nuevo.
+>
+> Costó dos rondas averiguarlo. Que quede escrito el camino y no la teoría.
+
+> **Ojo: eso es un permiso CONCRETO, no «revisá los permisos».** El 2026-09-10
+> se mandó a Mauro a revisar permisos en general y fue un desvío: la app de GitHub de Claude en su cuenta ya tenía **«All
 > repositories»** desde días antes. Los mensajes de error —«necesitás acceso de
 > push», «no está configurado para esta sesión»— suenan a permiso faltante y no
 > lo son. El camino es un chat nuevo, y es de un minuto.

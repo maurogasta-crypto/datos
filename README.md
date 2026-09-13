@@ -125,6 +125,34 @@ todo lo demás **solo**:
 Se declara en una sola dirección a propósito. Escribir las dos puntas es
 garantizar que un día una quede sin la otra.
 
+### La fila de preguntas, desde `panel-18`
+
+El filtro **«Preguntas»** ya no muestra una lista: muestra **una fila**. Una
+pregunta a la vez, una caja de texto, un botón.
+
+**Por qué cambió, con el diagnóstico de Mauro:** *«la dinámica de respuesta en su
+ideal es buena pero en la práctica no funciona muy bien»*. Y era verdad. Para
+contestar **una** pregunta había que abrir el panel, tocar el filtro, tocar la
+tarjeta, buscar la pregunta entre los campos, escribir, y tener delante **tres
+selectores** —prioridad, estado, quién— que no son su trabajo. Seis toques y tres
+decisiones ajenas, por pregunta. Con cinco esperando, eso no se hace nunca.
+
+**El orden lo definió él:**
+
+- las **sin responder primero**, por relevancia — la prioridad que puso Claude;
+- **una respondida pasa al FINAL de la fila**, no desaparece: deja lugar a la
+  siguiente y se puede volver a ella sin buscarla;
+- **siempre** filtrada por el selector de sitio de arriba.
+
+**Y contestar es pasarle la pelota a Claude.** Al guardar, el pendiente queda en
+`quien: "claude"` solo. Antes eso había que tildarlo a mano en un selector, y por
+eso quedaban pendientes respondidos que seguían figurando como «te espera a vos».
+
+Dos detalles que evitan ensuciar la historia: si el texto no cambió **no se
+escribe nada** —escribir lo mismo sumaría una línea falsa a lo único que no se
+puede reconstruir— y al responder **no se avanza el índice**, porque la pregunta
+se va sola al final de la fila y la posición actual ya es la siguiente.
+
 ### El panel es el canal, y desde `panel-16` es el canal entero
 
 Es el motivo de existir de todo esto. Ahora funciona así:
@@ -325,16 +353,16 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-17` |
-| `estilos.css` | (en el comentario) | `estilos-8` |
+| `index.html` | `P.PANEL` | `panel-18` |
+| `estilos.css` | (en el comentario) | `estilos-9` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v8` |
+| `sw.js` | `VERSION` | `panel-shell-v9` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-8` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-9` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

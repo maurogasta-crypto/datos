@@ -191,6 +191,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   estaría trabajando a ciegas sobre la mitad de lo que él dijo. Al cerrar se
   escriben los pendientes, las reglas y **la tanda**, que es lo único que le
   cuenta a la próxima sesión qué pasó en ésta.
+- **El filtro «Preguntas» es una FILA, no una lista** (`panel-18`). Una pregunta
+  a la vez, una caja, un botón. Las sin responder primero por relevancia; una
+  respondida pasa al final y no desaparece; siempre filtrada por el selector de
+  sitio. **Responder pone `quien: "claude"` solo** — era lo que antes había que
+  tildar a mano, y por eso quedaban respondidos figurando como «te espera».
+  **Y no se le vuelve a pedir a Mauro que toque prioridad, estado o quién para
+  contestar:** ésa era la razón por la que en la práctica no contestaba.
 - **La historia de un pendiente se suma, nunca se pisa.** Es lo único que no se
   puede reconstruir.
 - **Acá no se sube ningún dato**, ni de ejemplo. Este repositorio es público.

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-8">
+<link rel="stylesheet" href="estilos.css?v=estilos-9">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
@@ -354,7 +354,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-17";
+P.PANEL = "panel-18";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -473,6 +473,9 @@ $("nav").addEventListener("click", (e) => {
 /* Igual que `irA()`: el bloque «Lo primero» tiene filas que llevan a un
    filtro, y el filtro tiene que quedar marcado o la pantalla miente. */
 function verFiltro(v) {
+  /* Entrar a «Preguntas» arranca la fila desde el principio, siempre. Si
+     quedara donde estaba, volver al filtro mostraría una del medio. */
+  if (v !== filtro) reiniciarCola();
   filtro = v;
   $("filtro").querySelectorAll("button").forEach((x) =>
     x.setAttribute("aria-pressed", String(x.dataset.v === filtro)));
@@ -561,6 +564,7 @@ function llenarApps() {
 
 $("cual-app").addEventListener("change", () => {
   APP = $("cual-app").value;
+  reiniciarCola();
   try { localStorage.setItem("panel.app", APP); } catch (e) {}
   /* La solapa de reglas sigue al selector: si estoy trabajando en un sitio,
      las reglas que importan son las suyas y las generales. */
@@ -570,12 +574,146 @@ $("cual-app").addEventListener("change", () => {
 
 /* ---------- pintar ---------- */
 const nombreProy = (id) => (PROYECTOS.find((p) => p.id === id) || {}).nombre || id;
+
+/* Al cambiar de sitio la fila es OTRA fila, así que vuelve al principio. Sin
+   esto, pasar de un proyecto con 5 preguntas a uno con 1 dejaba el índice en 4
+   y mostraba la última en vez de la primera. */
+const reiniciarCola = () => { colaIdx = 0; };
 const abierto = (p) => p.estado !== "hecho" && p.estado !== "retirado";
+
+/* ---------- LA FILA DE PREGUNTAS ----------
+   Pedido de Mauro el 2026-09-13, y el diagnóstico es suyo: «la dinámica de
+   respuesta en su ideal es buena pero en la práctica no funciona muy bien».
+
+   POR QUÉ NO FUNCIONABA. Para contestar UNA pregunta había que: abrir el panel,
+   tocar el filtro, tocar la tarjeta, buscar la pregunta entre los campos,
+   escribir, y tener delante TRES selectores —prioridad, estado, quién— que no
+   son su trabajo. Seis toques y tres decisiones ajenas, por pregunta. Con cinco
+   preguntas esperando, eso no se hace nunca.
+
+   QUÉ ES AHORA. Una fila. Una pregunta a la vez, una caja de texto, un botón.
+   La prioridad y el estado los pone Claude: que Mauro los tenga que tocar para
+   contestar era el error.
+
+   EL ORDEN, que lo definió él:
+     · las sin responder primero, por relevancia (la prioridad que puse yo);
+     · **una respondida pasa al FINAL de la fila**, no desaparece — así deja
+       lugar a la siguiente y se puede volver a ella sin buscarla;
+     · siempre filtrada por el selector de sitio de arriba.
+
+   Y AL RESPONDER, LA PELOTA PASA A MI LADO: se escribe `quien: "claude"`. Era
+   lo que antes había que acordarse de tildar a mano, y es lo que significa
+   contestar. */
+let colaIdx = 0;
+
+/* Una pregunta que ya tuvo respuesta sigue en la fila, atrás. Se ordena por
+   cuándo se respondió: la más vieja primero, así el final de la fila es lo
+   último que tocó. */
+const respondida = (p) => !!(p.pregunta || "").trim()
+  && !!(p.respuesta || "").trim();
+
+function colaDePreguntas() {
+  const conPregunta = PENDIENTES.filter((p) =>
+    (!APP || p.proyecto === APP) && (p.pregunta || "").trim());
+  const falta = conPregunta.filter(sinResponder)
+    .sort((a, b) => pesoPrio(a) - pesoPrio(b));
+  const hechas = conPregunta.filter((p) => !sinResponder(p))
+    .sort((a, b) => String(a.respondidoEn || "").localeCompare(String(b.respondidoEn || "")));
+  return falta.concat(hechas);
+}
 /* Una pregunta cuenta como pendiente mientras no tenga respuesta. Es el punto
    de todo esto: que no quede una pregunta enterrada abajo de otras quince
    cosas mientras se avanza en un tema y se olvida el anterior. */
 const sinResponder = (p) => !!(p.pregunta || "").trim()
   && !(p.respuesta || "").trim() && abierto(p);
+
+/* Se pinta adentro de `#lista`, donde va la lista normal: el filtro
+   «Preguntas» ya existe y Mauro ya lo toca. Una solapa nueva sería un lugar
+   más que aprender para algo que ya tenía su puerta. */
+function pintarCola() {
+  const cola = colaDePreguntas();
+  if (!cola.length) {
+    $("lista").innerHTML = '<div class="tarj"><p class="gris" style="margin:0">'
+      + "<b>No hay preguntas" + (APP ? " en este proyecto" : "") + ".</b> "
+      + "Cuando te pregunte algo, aparece acá.</p></div>";
+    return;
+  }
+  if (colaIdx >= cola.length || colaIdx < 0) colaIdx = 0;
+  const p = cola[colaIdx];
+  const faltan = cola.filter(sinResponder).length;
+  const ya = respondida(p);
+
+  $("lista").innerHTML = '<div class="tarj cola">'
+    + '<div class="cola-cab">'
+      + '<span class="sit-chip">' + P.esc(nombreProy(p.proyecto)) + "</span>"
+      + (ya ? '<span class="sit-chip ok">ya respondida</span>'
+            : '<span class="prio ' + P.esc(p.prioridad || "media") + '">'
+              + P.esc(NOMBRE_PRIO[p.prioridad] || "después") + "</span>")
+      + '<span class="gris cola-n">' + (colaIdx + 1) + " de " + cola.length + "</span>"
+    + "</div>"
+    /* El título y el por qué son el contexto mínimo: sin ellos una pregunta
+       suelta no se entiende tres días después de haberla escrito. */
+    + '<p class="cola-de">' + P.esc(p.titulo || p.id) + "</p>"
+    + (p.porQue ? '<p class="gris cola-pq">' + P.esc(p.porQue) + "</p>" : "")
+    + '<p class="duro cola-q">' + P.esc(p.pregunta) + "</p>"
+    + '<textarea id="cola-resp" class="libre" placeholder="Contestá acá.">'
+      + P.esc(p.respuesta || "") + "</textarea>"
+    + '<div class="fila-btn">'
+      + '<button class="btn" data-cola="salta">Saltar</button>'
+      + '<button class="btn p" data-cola="guarda">'
+        + (ya ? "Guardar y siguiente" : "Responder y siguiente") + "</button>"
+    + "</div>"
+    + '<p class="gris cola-pie">' + (faltan
+        ? "<b>" + faltan + (faltan === 1 ? " sin responder.</b>" : " sin responder.</b>")
+          + " Las respondidas quedan al final de la fila."
+        : "<b>Todas respondidas.</b> Las de atrás se pueden volver a tocar.")
+      + "</p>"
+    + "</div>";
+}
+
+/* Un solo listener, delegado: `#lista` se repinta entero en cada paso. */
+$("lista").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-cola]"); if (!b) return;
+  const cola = colaDePreguntas();
+  if (!cola.length) return;
+  if (b.dataset.cola === "salta") {
+    colaIdx = (colaIdx + 1) % cola.length;
+    pintarCola(); window.scrollTo(0, 0); return;
+  }
+  const p = cola[colaIdx];
+  const texto = $("cola-resp").value.trim();
+  if (!texto) return P.aviso("Escribí la respuesta, o tocá «Saltar».", "error");
+  if (texto === (p.respuesta || "").trim()) {
+    /* Sin cambio no se escribe: escribir lo mismo sumaría una línea falsa a la
+       historia, que es lo único que no se puede reconstruir. */
+    colaIdx = (colaIdx + 1) % cola.length;
+    pintarCola(); window.scrollTo(0, 0); return;
+  }
+  b.disabled = true; b.textContent = "…";
+  try {
+    await setDoc(doc(db, "pendientes", p.id), {
+      respuesta: texto,
+      /* CONTESTAR ES PASARME LA PELOTA. Antes había que tildarlo a mano en un
+         selector, y por eso quedaban respondidos que seguían figurando como
+         «te espera a vos». */
+      quien: "claude",
+      historia: (Array.isArray(p.historia) ? p.historia : [])
+        .concat([{ fecha: P.hoy(), por: "mauro", texto: "Mauro: respondido" }]),
+      tocado: true,
+      respondidoEn: P.hoy(),
+      actualizadoEn: serverTimestamp()
+    }, { merge: true });
+    await leer();
+    /* No se avanza el índice: al quedar respondida se va al final de la fila
+       sola, así que la posición actual YA es la siguiente sin responder. */
+    pintarCola();
+    window.scrollTo(0, 0);
+    P.aviso("Respondido. Lo leo de la base.");
+  } catch (e2) {
+    P.aviso(P.explicar(e2), "error");
+    b.disabled = false; b.textContent = "Responder y siguiente";
+  }
+});
 
 function tarjeta(p) {
   const clase = p.estado === "hecho" ? "hecho"
@@ -747,11 +885,12 @@ function pintar() {
     : (APP ? nombreProy(APP) : "Los " + PROYECTOS.length + " proyectos")
       + " · " + mios.filter(abierto).length + " sin terminar de " + mios.length;
 
+  /* El filtro «Preguntas» ya no muestra una lista de tarjetas: muestra LA FILA,
+     una pregunta a la vez. Corta acá porque no hay nada más que armar. */
+  if (filtro === "preguntas") { pintarCola(); return; }
+
   let h = "";
-  if (filtro === "preguntas") {
-    h = bloque("Preguntas sin responder", mios.filter(sinResponder),
-               "Ninguna. Cuando te pregunte algo, aparece acá.");
-  } else if (filtro === "trabas") {
+  if (filtro === "trabas") {
     h = bloque("Traban a otras", trabando, "Nada está trabando nada.")
       + bloque("Frenadas por otra", mios.filter((p) => abierto(p) && frenadoPor(p).length), "");
   } else {
@@ -890,7 +1029,7 @@ $("btnPendGuardar").addEventListener("click", async () => {
     }, { merge: true });
     await leer();
     cerrarPendiente();
-    P.aviso("Guardado. Sale en el próximo «Sacar lo que hay».");
+    P.aviso("Guardado. Lo leo de la base.");
   } catch (e) {
     P.aviso(P.explicar(e), "error");
   } finally { b.disabled = false; b.textContent = "Guardar"; }

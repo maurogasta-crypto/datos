@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-8
+   Sello: estilos-9
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -70,6 +70,21 @@ textarea { min-height:7rem; font-family:var(--mono); font-size:.78rem;
 /* ── tarjetas ── */
 .tarj { background:var(--tinta2); border:1px solid var(--linea);
   border-radius:var(--r); padding:.9rem; margin:.7rem 0; }
+
+/* ── LA FILA DE PREGUNTAS ──
+   Una pregunta a la vez, y el texto de la pregunta es lo más grande de la
+   pantalla. Todo lo demás es contexto: de qué proyecto es, de qué pendiente
+   sale y por qué existe. */
+.cola { padding:1rem; }
+.cola-cab { display:flex; align-items:center; gap:.4rem; flex-wrap:wrap;
+  margin-bottom:.6rem; }
+.cola-n { margin-left:auto; font-family:var(--mono); font-size:.7rem; }
+.cola-de { margin:0; font-weight:600; font-size:.95rem; }
+.cola-pq { margin:.3rem 0 0; font-size:.78rem; }
+.cola-q { margin:.8rem 0 .2rem; font-size:1.05rem; line-height:1.45; }
+.cola textarea { min-height:8rem; font-family:inherit; font-size:1rem;
+  white-space:pre-wrap; }
+.cola-pie { margin:.2rem 0 0; font-size:.76rem; }
 
 /* ── «Lo primero»: qué depende de Mauro ──
    Una fila por cosa, el texto a la izquierda y el botón que lleva allá a la

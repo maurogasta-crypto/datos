@@ -122,17 +122,30 @@ caso("es un archivo de reglas entero, no un pedazo", () => {
   trae(r, "match /{document=**} { allow read, write: if false; }");
 });
 
-caso("LA BÓVEDA sigue siendo de una sola persona", () => {
+caso("LA BÓVEDA es `claves` y es de una sola persona", () => {
   /* La prueba que importa más que todas las otras juntas. Si un día alguien
-     cambia `soyYo()` por `equipo()` en estas dos líneas, el agente pasa a leer
-     contraseñas. Que falle acá, ruidosamente, y no en producción. */
+     cambia `soyYo()` por `equipo()` en esta línea, el agente pasa a leer
+     contraseñas. Que falle acá, ruidosamente, y no en producción.
+
+     Hasta la v3 esto exigía lo mismo de `fichas`. La v4 se la devolvió al
+     equipo, y el criterio pasó del RIESGO («donde una credencial PUEDE
+     aparecer», inaplicable: con eso todo termina sellado) al PROPÓSITO: si
+     abre algo va en `claves`. Lo que NO cambió, y es lo que se prueba acá, es
+     que `claves` no se negocia. */
   trae(r, "match /claves/{id}     { allow read, write: if soyYo(); }");
-  trae(r, "match /fichas/{id}     { allow read, write: if soyYo(); }");
   for (const linea of r.split("\n")) {
-    if (/match \/(claves|fichas)\//.test(linea) && !/if soyYo\(\);/.test(linea)) {
-      throw new Error("la bóveda quedó abierta a alguien más: " + linea.trim());
+    if (/match \/claves\//.test(linea) && !/if soyYo\(\);/.test(linea)) {
+      throw new Error("`claves` quedó abierta a alguien más: " + linea.trim());
     }
   }
+});
+
+caso("`fichas` la administra el equipo, desde la v4", () => {
+  trae(r, "match /fichas/{id}     { allow read, write: if equipo(); }");
+  /* Y que el motivo esté escrito al lado. Un cambio de permisos sin su porqué
+     es lo que la próxima sesión va a «corregir» creyendo que es un descuido. */
+  trae(r, "¿abre algo?", "falta el criterio que decide dónde va cada dato");
+  trae(r, "panel:R4", "falta la advertencia de mover la contraseña antes de publicar");
 });
 
 caso("el equipo llega a las cuatro colecciones del estado, y a ninguna más", () => {
@@ -157,10 +170,13 @@ caso("sin UID de agente: sale un valor que ningún usuario puede tener", () => {
   }
 });
 
-caso("sin UID de agente tampoco: la bóveda sigue cerrada", () => {
+caso("sin UID de agente tampoco: `claves` sigue cerrada", () => {
   const s = armar(MIO, "");
   trae(s, "match /claves/{id}     { allow read, write: if soyYo(); }");
-  trae(s, "match /fichas/{id}     { allow read, write: if soyYo(); }");
+  /* `fichas` sale con `equipo()` igual, y no abre nada: `esAgente()` compara
+     contra un valor que ningún usuario de Firebase puede tener. */
+  trae(s, "match /fichas/{id}     { allow read, write: if equipo(); }");
+  trae(s, SIN_AGENTE);
 });
 
 caso("con espacios alrededor del UID: se usan igual (los limpia el panel)", () => {

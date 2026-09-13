@@ -77,13 +77,19 @@ const PROYECTOS = {
     apiKey: "AIzaSyAxWOM9ZEHt6CXh8Nf1qU6FvL2uh1wFbug",
     mail: "FB_PANEL_MAIL",
     clave: "FB_PANEL_CLAVE",
-    colecciones: ["proyectos", "pendientes", "protocolos", "tandas"],
-    /* `claves` es la bóveda desde el día uno. `fichas` se suma el 2026-09-11:
-       nació como fichas técnicas de cada proyecto, pero Mauro guarda ahí
-       usuarios y contraseñas de servicios, y dijo que va a seguir haciéndolo.
-       Una colección donde puede aparecer una credencial es una bóveda,
-       se llame como se llame. */
-    selladas: ["claves", "fichas"]
+    colecciones: ["proyectos", "pendientes", "protocolos", "tandas", "fichas"],
+    /* `claves` es la bóveda, desde el día uno y para siempre: es lo que ABRE
+       algo — contraseñas, códigos de recuperación, segundos factores.
+
+       `fichas` estuvo sellada del 2026-09-11 al 2026-09-13 y volvió al equipo
+       con las reglas v4. No es que se aflojara: cambió el criterio. La v3
+       sellaba «la colección donde una credencial PUEDE aparecer», que suena
+       prudente y es inaplicable —con eso cualquier colección termina sellada—
+       y en nueve días dejó las fichas sin que nadie las mantuviera. La v4
+       sella por PROPÓSITO: si abre algo va en `claves`, si no va en `fichas`.
+       Esa pregunta se contesta sin pensar, y es lo único que de verdad evita
+       que una contraseña caiga en el lugar equivocado. */
+    selladas: ["claves"]
   },
 
   remate: {

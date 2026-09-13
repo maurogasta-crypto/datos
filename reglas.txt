@@ -2,7 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
-//  v3 · 2026-09-11 · `fichas/` entra a la bóveda
+//  v4 · 2026-09-13 · la bóveda se define por PROPÓSITO, y `fichas/` sale
 //
 //  ⚠ ESTE ARCHIVO ES UNA COPIA. La autoridad es lo que está publicado en
 //  la consola de Firebase. Una copia en el repositorio se desactualiza en
@@ -35,7 +35,33 @@ rules_version = '2';
 //  fragmentos.
 // ═══════════════════════════════════════════════════════════════
 //
-//  QUÉ CAMBIÓ EN LA v3, Y POR QUÉ IMPORTA MÁS QUE LA v2.
+//  QUÉ CAMBIÓ EN LA v4, Y POR QUÉ NO ES VOLVER ATRÁS.
+//
+//  La v4 le devuelve `fichas/` al equipo. Leído rápido parece desandar la v3,
+//  y no lo es: lo que cambió es el CRITERIO con el que se decide qué va en la
+//  bóveda, y ése es el que estaba mal desde el principio.
+//
+//  La v3 la definió por el RIESGO: «la colección donde una credencial PUEDE
+//  aparecer». Suena prudente y es inaplicable — con ese criterio cualquier
+//  colección termina sellada, porque en cualquiera PUEDE caer una contraseña.
+//  Mauro lo dijo mejor que nadie el 2026-09-13: no encontraba claridad sobre
+//  qué poner en una ficha. No la había.
+//
+//  La v4 la define por PROPÓSITO, y la pregunta se contesta sin pensar:
+//
+//      ¿abre algo?  →  `claves/`, sellada, de Mauro y de nadie más.
+//      ¿no abre?    →  `fichas/`, del equipo.
+//
+//  Lo que se gana no es comodidad: es que ahora hay un criterio que se puede
+//  aplicar. Un sello que nadie sabe cuándo aplicar no protege nada, y además
+//  dejó las fichas sin mantener nueve días.
+//
+//  ⚠ LO QUE NO SE SALTEA. Publicar la v4 con la contraseña del 2026-09-11
+//  todavía adentro de una ficha significa que un agente la leyó. Es el
+//  pendiente `panel:R4`: primero se mueve a `claves/`, después se publica.
+// ═══════════════════════════════════════════════════════════════
+//
+//  QUÉ CAMBIÓ EN LA v3, QUE LA v4 CORRIGE.
 //
 //  La v2, del 2026-09-11 a la mañana, le dio acceso al agente a todo menos
 //  `claves/`, y decía de `fichas/`: «NO van contraseñas acá — para eso está
@@ -47,20 +73,24 @@ rules_version = '2';
 //  equivocado, y ninguna regla puede adivinar que un campo llamado `valor`
 //  es una contraseña.
 //
-//  Así que `fichas/` pasa a la bóveda. No porque las fichas sean secretas
-//  en sí, sino porque es la colección donde una credencial PUEDE aparecer,
-//  y ése es el criterio que se puede sostener. El sello es por lugar, no
-//  por contenido.
+//  Así que `fichas/` pasó a la bóveda, con este criterio: es la colección
+//  donde una credencial PUEDE aparecer. El sello es por lugar, no por
+//  contenido — eso sigue siendo cierto y es lo que la v4 conserva.
 //
-//  Lo que se pierde: el agente ya no mantiene las fichas técnicas solo. Lo
-//  que se gana: no hay ninguna colección abierta donde una contraseña pueda
-//  caer por descuido. Vale la pena.
+//  Lo que se escribió entonces: «lo que se pierde es que el agente ya no
+//  mantiene las fichas solo; lo que se gana es que no hay ninguna colección
+//  abierta donde una contraseña pueda caer por descuido. Vale la pena.»
+//
+//  A los nueve días se vio que no valía la pena, y por un motivo que no se
+//  había previsto: **lo que se perdió no era una comodidad del agente, era el
+//  mantenimiento.** Nadie mantuvo las fichas. Y el criterio «donde PUEDE
+//  aparecer» nunca le dijo a Mauro qué poner adentro. La v4 lo reemplaza.
 // ═══════════════════════════════════════════════════════════════
 //
 //  EL MODELO, EN DOS LÍNEAS.
 //
 //    · MAURO  — todo, sin excepción.
-//    · AGENTE — el estado de los proyectos y el reglamento. Nada más.
+//    · AGENTE — todo MENOS lo que abre algo. O sea: todo menos `claves/`.
 //
 //  LO QUE HACE QUE ESTO SEA SEGURO, y es la parte que no se toca:
 //
@@ -68,8 +98,9 @@ rules_version = '2';
 //     lo que hace pasa por estas reglas. NO se usa una cuenta de servicio:
 //     ésa saltearía las reglas por completo y la bóveda dejaría de estar
 //     sellada. Es la diferencia entre una puerta cerrada y no tener puerta.
-//  2. La bóveda le está negada de lectura Y de escritura. No es que le
-//     cueste leerla: la base le dice que no.
+//  2. `claves/` le está negada de lectura Y de escritura. No es que le cueste
+//     leerla: la base le dice que no. Es UNA colección, y esa línea no se
+//     negocia nunca.
 //  3. La contraseña del propio agente vive en las variables de entorno del
 //     entorno de Claude Code. No está en ningún repositorio ni en ningún chat.
 //  4. Lo mismo está escrito en `selladas` del proyecto `panel` en
@@ -101,12 +132,50 @@ service cloud.firestore {
     match /tandas/{id}     { allow read, write: if equipo(); }
     match /protocolos/{id} { allow read, write: if equipo(); }
 
-    // ── LA BÓVEDA ──
-    // Sólo Mauro, y sólo desde el panel. Son las dos líneas de todo el
-    // archivo que no se negocian. Si un día un agente pide que se le abra
-    // alguna de las dos: la respuesta es no, y la cabecera es el motivo.
+    // ── LA BÓVEDA, QUE AHORA ES UNA SOLA COLECCIÓN ──
+    //
+    // `claves` es lo que ABRE algo: contraseñas, códigos de recuperación,
+    // segundos factores. Sólo Mauro, y sólo desde el panel. Es LA línea del
+    // archivo que no se negocia, y si un día un agente pide que se le abra:
+    // la respuesta es no, y la cabecera es el motivo.
     match /claves/{id}     { allow read, write: if soyYo(); }
-    match /fichas/{id}     { allow read, write: if soyYo(); }
+
+    // ── FICHAS AL EQUIPO: `fichas` la administra el agente, desde la v4 ──
+    //
+    // Esa línea de arriba la busca el panel —por la frase «FICHAS AL EQUIPO»—
+    // para avisar, al lado del botón de copiar, que estas reglas le dan las
+    // fichas al agente. Se busca una FRASE y no la línea de la regla a
+    // propósito: `index.html` no puede contener una línea de reglas, o sería la
+    // segunda copia del texto que todo este diseño existe para que no haya. Y
+    // tampoco usa los marcadores de tijera de la cabecera, que el panel BORRA al
+    // armar el texto y que en la consola no significarían nada. El banco
+    // verifica las dos cosas, y de hecho cazó los dos errores en el primer
+    // armado: primero la línea de reglas, después el marcador.
+    //
+    // Pedido de Mauro el 2026-09-13: «quiero que las fichas las administres
+    // tú». Y tenía razón en el fondo: al sellarlas, la v3 se quedó sin nadie
+    // que las mantuviera, y eso era justo para lo que existían.
+    //
+    // LO QUE CAMBIÓ NO ES LA CONFIANZA, ES LA DEFINICIÓN. La v3 definió la
+    // bóveda por el RIESGO —«la colección donde una credencial PUEDE
+    // aparecer»—, y una categoría definida por lo que podría salir mal no le
+    // dice a nadie qué poner adentro. Por eso Mauro no encontraba claridad: no
+    // la había. La v4 la define por PROPÓSITO:
+    //
+    //     ¿abre algo?  →  `claves`, sellada, de Mauro y de nadie más.
+    //     ¿no abre?    →  `fichas`, del equipo, la administra Claude.
+    //
+    // Así la pregunta «¿dónde va esto?» se contesta sola, que es lo único que
+    // de verdad evita que una contraseña caiga en el lugar equivocado. El sello
+    // sigue siendo por LUGAR — lo que cambió es que el lugar ahora tiene un
+    // criterio que se puede aplicar sin pensar.
+    //
+    // ⚠ ANTES DE PUBLICAR ESTO HAY UN PASO QUE NO SE SALTEA. El 2026-09-11 la
+    // primera verificación del acceso encontró un usuario y una contraseña
+    // REALES adentro de una ficha — es el pendiente `panel:R4`. Si estas reglas
+    // se publican con esa contraseña todavía ahí, la leyó un agente y hay que
+    // rotarla. El orden es: PRIMERO se mueve a `claves`, DESPUÉS se publica.
+    match /fichas/{id}     { allow read, write: if equipo(); }
 
     // ── El cierre, que NO cierra ──
     // Ojo con leerlo como un candado: en Firestore los permisos se SUMAN y

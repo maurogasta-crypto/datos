@@ -43,8 +43,14 @@ Es la regla de fondo de este proyecto, y la razón por la que existe:
 
 | | Quién escribe | ¿Pasa por el chat? | Colecciones |
 |---|---|---|---|
-| **El estado de los proyectos y el reglamento** | Claude, directo | **sí** — no es sensible | `proyectos/`, `pendientes/`, `tandas/`, `protocolos/` |
-| **La bóveda** | **sólo Mauro**, en el panel | **nunca** | `fichas/`, `claves/` |
+| **El estado, el reglamento y las fichas** | Claude, directo | **sí** — no es sensible | `proyectos/`, `pendientes/`, `tandas/`, `protocolos/`, `fichas/` |
+| **La bóveda** | **sólo Mauro**, en el panel | **nunca** | `claves/` |
+
+**La pregunta se contesta sin pensar, y es la regla entera: ¿abre algo?** Si
+abre algo —una contraseña, un código de recuperación, un segundo factor— va a
+`claves/` y no la ve nadie más que Mauro. Si no abre nada —de quién es una
+cuenta, a qué mail llega la recuperación, qué servicio usa un proyecto— va a
+`fichas/`, y **las administra Claude**.
 
 **Ojo: esto cambió el 2026-09-11 y la mitad de lo que decía acá era distinto.**
 Hasta esa mañana un agente no tenía credenciales de `datos-830f8` y generaba un
@@ -52,12 +58,24 @@ JSON para que Mauro lo pegara. Ahora **escribe la primera fila directo**, con un
 usuario común de Authentication — nunca una cuenta de servicio, que saltearía
 las reglas enteras.
 
-**La segunda fila es la que no se toca.** La bóveda le está negada de lectura y
+**La segunda fila es la que no se toca.** `claves/` le está negada de lectura y
 de escritura por las reglas publicadas, no por la buena voluntad de un archivo.
-`fichas/` entró ahí la tarde del 2026-09-11: la primera verificación del acceso
-encontró adentro de una ficha un usuario y una contraseña reales. El sello es
-por **lugar**, no por contenido — ninguna regla puede adivinar que un campo
-llamado `valor` es una clave.
+
+**Y `fichas/` estuvo ahí nueve días, del 2026-09-11 al 13.** Vale saber por qué
+entró y por qué salió, porque es el tipo de cambio que alguien deshace de buena
+fe creyendo que fue un descuido:
+
+- **Entró** porque la primera verificación del acceso encontró adentro de una
+  ficha un usuario y una contraseña reales. El criterio pasó a ser «la colección
+  donde una credencial **puede** aparecer».
+- **Salió** porque ese criterio es inaplicable —con él cualquier colección
+  termina sellada— y en nueve días dejó las fichas sin que nadie las mantuviera.
+  Mauro lo dijo así: *no encontraba claridad sobre qué poner en una ficha.* No
+  la había.
+
+El sello sigue siendo por **lugar**, no por contenido — ninguna regla puede
+adivinar que un campo llamado `valor` es una clave. Lo que cambió es que **el
+lugar ahora tiene un criterio que se puede aplicar**: ¿abre algo?
 
 **Y no se le pide a Mauro que pegue en el chat nada de la bóveda.** Si para
 avanzar hiciera falta un dato de ahí, se para y se pregunta cómo seguir sin él.
@@ -80,10 +98,11 @@ Un workflow propio sí corre con esos push: cada tanda se publica sola. Ver `REA
 | `firebaseConfig.*` (`apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`) | Identifican el proyecto Firebase ante la API web; **no dan permisos** — eso lo hacen las reglas | público por diseño | `firebase-init.js` (única copia) | todo el panel | escrito el 2026-09-08 |
 | Contraseña de Mauro | Entrar al panel | dato en runtime | Firebase Authentication. Se cambia por «Olvidé la contraseña», que manda el mail de Firebase | `signInWithEmailAndPassword` en `nucleo.js` | — |
 | El UID de Mauro | **Es la credencial de las reglas**: `soyYo()` lo compara | dato de configuración | Publicado en las reglas de la consola. El panel lo muestra en «La puerta» | Firestore | — |
-| Contenido de `fichas/` y `claves/` | Titularidad de cuentas, contactos, números, contraseñas | **sensible** | Firestore, protegido por las reglas. **Ningún agente las lee**: se lo niega la base | sólo el panel, en pantalla | `fichas/` sellada el 2026-09-11 |
+| Contenido de `claves/` | **Lo que abre algo**: contraseñas, códigos de recuperación, segundos factores | **sensible** | Firestore, protegido por las reglas. **Ningún agente la lee**: se lo niega la base | sólo el panel, en pantalla | verificado contra la base, 2026-09-12 |
+| Contenido de `fichas/` | De quién es cada cuenta, a qué mail llega la recuperación, qué servicio usa cada proyecto. **No abre nada** | dato de configuración | Firestore. Las administra Claude desde la **v4** | el panel y el agente | v4 escrita el 2026-09-13 |
 | UID del usuario del agente | Es lo que compara `esAgente()` en las reglas | dato de configuración | Publicado en las reglas de la consola. Lo imprime `node herramientas/firestore.mjs panel quien`, acá mismo | Firestore | verificado contra la base, 2026-09-11 |
 | Contraseña del usuario del agente | Entrar a `datos-830f8` desde una sesión de Claude Code | dato en runtime | Variables de entorno del entorno de Claude Code, cargadas por Mauro en la web | `herramientas/firestore.mjs`, acá mismo | — |
-| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v3**) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | v3 escrita el 2026-09-11 — **falta publicarla** |
+| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v4**) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | v3 publicada y verificada el 2026-09-12. **v4 escrita el 2026-09-13 — falta publicarla, y antes hay que mover la contraseña de `panel:R4`** |
 
 Lo que NO está acá y no tiene que estar: el UID real, la contraseña, y cualquier
 contenido de `fichas/`.
@@ -149,6 +168,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   motivo entero está en el `README.md`, § «El SDK no viene puesto».
 - **Una colección nueva entra con su regla, en la misma tanda.** Rige el cierre
   `match /{document=**} { allow read, write: if false; }`.
+- **`fichas/` las administra Claude, desde las reglas v4 (2026-09-13).** Lo pidió
+  Mauro y el criterio es el de arriba: si abre algo va a `claves/`. **Y no se
+  vuelve a sellar `fichas/` «por precaución»** — ya se probó, y el resultado fue
+  nueve días sin que nadie las mantuviera. Si aparece una credencial adentro de
+  una ficha, lo que se mueve es la credencial, no el sello.
 - **Las reglas se editan completas, nunca por fragmentos:** se suman. Y lo que
   el agente no toca está escrito **en dos lugares**: `reglas.txt` acá y
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El

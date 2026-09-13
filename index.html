@@ -354,7 +354,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-18";
+P.PANEL = "panel-19";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2055,10 +2055,25 @@ async function pintarReglas() {
               .split(MARCA_MIA).join(yo.uid)
               .split(MARCA_AGENTE).join(a || SIN_AGENTE);
   btn.disabled = false;
-  est.innerHTML = a
+  /* EL AVISO DE LA v4, Y NO ES DECORATIVO. Estas reglas le dan `fichas/` al
+     agente. Si se publican con una contraseña todavía adentro de una ficha, la
+     leyó un agente y hay que rotarla. El recordatorio va ACÁ, pegado al botón
+     de copiar, porque es el único momento en que alguien lo va a leer. */
+  /* Se busca un MARCADOR, no la línea de la regla: `index.html` no puede
+     contener una línea de reglas o sería la segunda copia del texto que
+     todo esto existe para evitar. El banco lo verifica — y fue lo que cazó
+     este error en el primer armado. */
+  const v4 = t.includes("FICHAS AL EQUIPO");
+  est.innerHTML = (v4
+      ? '<b style="color:var(--ojo)">⚠ Estas reglas me dan las fichas.</b> '
+        + 'Antes de publicarlas, que no quede ninguna contraseña adentro de una '
+        + 'ficha: lo que abre algo va en «claves». Ver el pendiente '
+        + '<code>panel:R4</code>.<br>'
+      : "")
+    + (a
     ? '<b style="color:var(--ok)">Listas para pegar</b>, con los dos UID adentro.'
     : '<b>Falta el UID del agente.</b> Se pueden publicar igual —quedan sólo para '
-      + 'vos—, pero el agente no va a poder leer ni escribir nada.';
+      + 'vos—, pero el agente no va a poder leer ni escribir nada.');
 }
 
 /* Se restaura antes de que haya sesión, así que cuando `entrarAlPanel()` llame

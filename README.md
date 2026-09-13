@@ -10,7 +10,7 @@ pueden estar en ningún repositorio ni en ningún chat.
 | Repositorio | `maurogasta-crypto/datos` — **público a propósito** |
 | Despliegue | GitHub Pages con *Source: GitHub Actions* — ver abajo |
 | Base de datos | Firebase **`datos-830f8`** (Firestore + Authentication) |
-| Reglas | [`reglas.txt`](reglas.txt) — la **plantilla**; el panel le pone los UID y la autoridad es la consola |
+| Reglas | [`reglas.txt`](reglas.txt) — la **plantilla** (**v4**); el panel le pone los UID y la autoridad es la consola |
 | Reglamento | [`protocolos/`](protocolos/) — el de los cuatro proyectos, acá desde el 2026-09-12 |
 
 ## ⚠ Dos repositorios se llaman `datos`. No son el mismo
@@ -64,8 +64,18 @@ Es la idea de fondo de todo el panel:
 
 | | Quién lo escribe | ¿Pasa por el chat? | Dónde |
 |---|---|---|---|
-| **El estado de los proyectos** — pendientes, tandas, historia, reglamento | Claude, directo, desde el 2026-09-11 | **sí**, y está bien: no es sensible | `proyectos/`, `pendientes/`, `tandas/`, `protocolos/` |
-| **La bóveda** — titularidad de cuentas, contactos, números, contraseñas | **sólo Mauro**, escribiendo en el panel | **nunca** | `fichas/`, `claves/` |
+| **El estado, el reglamento y las fichas** | Claude, directo | **sí**, y está bien: no es sensible | `proyectos/`, `pendientes/`, `tandas/`, `protocolos/`, `fichas/` |
+| **La bóveda** — lo que abre algo | **sólo Mauro**, en el panel | **nunca** | `claves/` |
+
+**Y la regla entera es una pregunta: ¿abre algo?**
+
+| Si… | Va a | La administra |
+|---|---|---|
+| **abre algo** — contraseña, código de recuperación, segundo factor | `claves/` | **sólo Mauro**. Sellada, y esa línea no se negocia |
+| **no abre nada** — de quién es una cuenta, a qué mail llega la recuperación, qué servicio usa un proyecto | `fichas/` | **Claude** |
+
+Eso es lo que cambió el 2026-09-13 con las reglas **v4**, y es el cambio más
+importante del modelo desde que existe.
 
 **Esto cambió el 2026-09-11, y conviene saber exactamente cuánto.**
 
@@ -88,8 +98,32 @@ contenido:** ninguna regla puede adivinar que un campo llamado `valor` es una
 clave, así que la colección donde una credencial *puede* aparecer es una bóveda,
 se llame como se llame.
 
-Se perdió que el agente mantuviera las fichas técnicas solo. Se ganó que no
-quede ninguna colección abierta donde una contraseña pueda caer por descuido.
+Se escribió entonces: *«se pierde que el agente mantenga las fichas solo; se
+gana que no quede ninguna colección abierta donde una contraseña pueda caer por
+descuido. Vale la pena.»*
+
+### Y a los nueve días se vio que no valía la pena
+
+El 2026-09-13 Mauro lo planteó así: **no encontraba claridad sobre qué poner en
+una ficha.** Y tenía razón — no la había. El criterio de la v3 era *«la colección
+donde una credencial **puede** aparecer»*, o sea definido **por el riesgo**. Suena
+prudente y es inaplicable: con ese criterio cualquier colección termina sellada,
+porque en cualquiera *puede* caer una contraseña.
+
+Lo que no se había previsto es lo que de verdad se perdía. No era una comodidad
+del agente: era **el mantenimiento**. Nueve días sin que nadie mantuviera las
+fichas, que es justo para lo que existían.
+
+La **v4** las devuelve al equipo y cambia el criterio al único que se puede
+aplicar sin pensar: **¿abre algo?** El sello sigue siendo por **lugar** —eso de la
+v3 era correcto y se conserva—, pero ahora el lugar tiene una pregunta que lo
+decide.
+
+> **Y el orden no se saltea.** Publicar la v4 con la contraseña del 2026-09-11
+> todavía adentro de una ficha significa que un agente la leyó, y obliga a
+> rotarla. Primero se mueve a `claves/` (pendiente `panel:R4`), después se
+> publica. «La puerta» lo avisa al lado del botón de copiar, que es el único
+> momento en que alguien lo va a leer.
 
 ### El tablero: en qué app, qué primero, y qué traba qué
 
@@ -353,10 +387,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-18` |
+| `index.html` | `P.PANEL` | `panel-19` |
 | `estilos.css` | (en el comentario) | `estilos-9` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v9` |
+| `sw.js` | `VERSION` | `panel-shell-v10` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

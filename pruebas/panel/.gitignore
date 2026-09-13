@@ -1,0 +1,5 @@
+node_modules
+
+# El lockfile de este banco no se commitea, por lo mismo que el de Harmonía:
+# la decisión está en PROTOCOLO-DESARROLLO.md § 12 y sigue abierta.
+package-lock.json

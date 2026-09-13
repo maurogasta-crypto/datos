@@ -21,14 +21,17 @@ subir nada:
 | Repositorio | Qué es | Visibilidad | Qué va adentro |
 |---|---|---|---|
 | **`maurogasta-crypto/datos`** — *éste* | el panel **y el reglamento**: HTML, CSS, JavaScript, `protocolos/` y `herramientas/` | **público** | un cascarón y reglas de trabajo. Cero datos |
-| `casaverdecanas-blip/datos` | lo que no puede ser público | privado | `secretos/` (hasta que esté en `fichas/`), los partes viejos y los fixtures del banco |
+| ~~`casaverdecanas-blip/datos`~~ | lo que no podía ser público | privado | **borrado el 2026-09-13.** Lo que tenía está en `fichas/` del panel (la titularidad), en `tandas/` (las rondas viejas) y acá (los bancos, la auditoría, `plantillas/`) |
 
 **Esto cambió el 2026-09-12**, y vale saber qué cambió y qué no. Los protocolos
 se mudaron acá: tenerlos en un repositorio privado de otro dueño costaba, en cada
 sesión nueva, acordarse de agregarlo — y una regla que sólo llega si alguien se
 acordó de algo no es una regla. Antes de traerlos se auditó el repo privado
 entero: tres archivos traían titularidad de cuentas o los UID del agente, y eso
-se reemplazó por un puntero a la bóveda.
+se reemplazó por un puntero a la bóveda. **El 2026-09-13 se terminó la mudanza y
+el privado se borró** — lo que quedaba viajó a `fichas/`, a `tandas/` y a este
+repositorio, archivo por archivo y verificando que no viniera un mail, un UID ni
+una credencial.
 
 Lo que **no** cambió: **acá no entra un solo dato.** Ni fichas, ni
 titularidades, ni contactos, ni números, ni partes. Este repositorio lo lee
@@ -274,8 +277,8 @@ ver al abrir es qué pasó último.
 
 ### Las reglas
 
-Los protocolos vivían sólo en `casaverdecanas-blip/datos`, que se lee desde una
-computadora. Acá se trabaja desde el teléfono, así que en la práctica no se
+Los protocolos vivían sólo en `casaverdecanas-blip/datos` —privado, y de otro
+dueño de GitHub—, que se lee desde una computadora. Acá se trabaja desde el teléfono, así que en la práctica no se
 leían — y **una regla que nadie lee no es una regla**. Ahora están en la solapa
 «Reglas», y se pueden tocar.
 
@@ -387,10 +390,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-19` |
+| `index.html` | `P.PANEL` | `panel-20` |
 | `estilos.css` | (en el comentario) | `estilos-9` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v10` |
+| `sw.js` | `VERSION` | `panel-shell-v11` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
@@ -409,11 +412,22 @@ Y una trampa que ya casi pasa: `index.html` y `nucleo.js` piden
 
 - **No hay build ni terminal.** HTML/CSS/JS servido tal cual, y se edita desde
   el celular por la web de GitHub. Nada de `npm`.
-- **Hay un banco de pruebas, y no está acá.** Corre este código contra un DOM de
-  verdad y un Firestore de mentira: 41 comprobaciones, entre ellas que el estado
-  exportado se pueda volver a importar sin pérdida y que ninguna ficha asome en
-  él. Vive en el repo privado `casaverdecanas-blip/datos` → `pruebas/panel/`,
-  justamente para no traerle `npm` a este repositorio. Si tocás el panel, corrélo.
+- **Hay tres bancos de pruebas, y desde el 2026-09-13 están acá.** Vivían en el
+  repo privado, que se borró.
+
+  | Banco | Qué prueba | Hace falta |
+  |---|---|---|
+  | `pruebas-reglas.mjs` | que `reglas.txt`, tal como está hoy, produzca reglas correctas — y que `claves` siga siendo de una sola persona | `node` a secas |
+  | `pruebas/herramientas/firestore.mjs` | la herramienta de Firestore contra una nube de mentira: que la traducción de tipos no pierda datos, que un documento se pueda ACHICAR, y que lo sellado se frene antes de salir a la red, en las cuatro bases | `node` a secas |
+  | `pruebas/panel/banco.mjs` | este código, contra un DOM de verdad y un Firestore de mentira | `npm install` una vez, por `jsdom` |
+
+  Y en `pruebas/casayourte/` hay dos que comparan los cuatro proyectos entre sí:
+  que las cuatro funciones de escape hagan lo mismo, y los permisos del menú.
+
+  **El único que necesita `npm` es el del panel, y es la única excepción de todo
+  el repositorio.** No se publica, el navegador no le pide nada, y `node_modules`
+  está ignorado: el sitio sigue sin build. La alternativa era perder doscientas
+  comprobaciones al borrar el repo privado.
 - **El núcleo es `nucleo.js` y no se duplica.** Si algo hace falta en dos
   pantallas, sube ahí en la misma tanda.
 - **Una colección nueva entra con su regla, en la misma tanda.** Rige el cierre
@@ -421,7 +435,7 @@ Y una trampa que ya casi pasa: `index.html` y `nucleo.js` piden
 - **Las reglas se editan completas, nunca por fragmentos.**
 - **Acá no se sube ningún dato.** Ni de ejemplo. Este repositorio es público.
   Ojo con el repositorio homónimo: ver el recuadro del principio.
-- Sigue los protocolos del repo **privado** `casaverdecanas-blip/datos`.
+- Sigue los protocolos de `protocolos/`, en este mismo repositorio.
 
 ## Las reglas, y el usuario del agente
 

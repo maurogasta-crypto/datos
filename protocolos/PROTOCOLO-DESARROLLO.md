@@ -52,7 +52,7 @@ rompe la restricción 1 y no se hace por iniciativa de un agente.
 > ni los datos ni la gente con los otros. **Este documento no le aplica entero**
 > — le aplican § 4.9, § 7 y § 8, que son sobre cómo se trabaja, no sobre con qué.
 > Está en el ecosistema porque comparte las reglas de secretos, de documentación
-> y de entrega, y porque su índice vive en `secretos/harmonia.md` como el de
+> y de entrega, y porque tiene su ficha de titularidad en el panel como el de
 > todos.
 >
 > La lección que dejó, y vale para cualquier app futura: **la línea que importa
@@ -816,7 +816,7 @@ después cuesta diez veces más agregarla.
 | **Sellos de versión visibles en la interfaz** (§ 6) | Sin sello, un archivo viejo subido se diagnostica como problema de configuración. Se pierde más tiempo buscándolo que el que cuesta ponerlo |
 | **Errores que muestran la causa** (§ 2.10) | Un problema de dos minutos convertido en tres días |
 | **`CLAUDE.md` con la estructura de `PROTOCOLO-GENERAL.md` § 3** | Es lo primero que lee cualquier agente. Sin él, cada sesión reconstruye el proyecto de cero y adivina |
-| **`.gitignore` de la plantilla, e índice en `datos/secretos/<proyecto>.md` con su tabla de titularidad** | Barato el primer día. Después es un incidente |
+| **`.gitignore` de la plantilla, tabla de secretos en su `CLAUDE.md` y ficha de titularidad en `fichas/` del panel** | Barato el primer día. Después es un incidente |
 | **Una pantalla de diagnóstico** (§11.2) | Se escribe una vez y sirve para siempre. Escribirla el día que hace falta es escribirla tarde, y sin ella el tercer intento a ciegas se paga en horas |
 | **Si habla con un tercero que exige firmar, la forma del puente** (§ 4.9) | Un secreto en el navegador no es un secreto, y una contraseña compartida crea un modelo de acceso paralelo al que la app ya tiene |
 | **Rioplatense, voseo, interfaz y documentación** | |
@@ -879,7 +879,7 @@ de recuperación perdido — y eso se arregla documentando, no consolidando.
 1. **Una cuenta por proyecto, dueña de todos sus servicios.** Es lo que ya se
    hace, funciona, y mantiene el radio de daño de un compromiso acotado a un
    sitio. Un proyecto nuevo abre la suya.
-2. **Esa cuenta se documenta el día uno** en `secretos/<proyecto>.md`
+2. **Esa cuenta se documenta el día uno** en la ficha de titularidad de `fichas/`
    (`PROTOCOLO-SECRETOS.md` § "Titularidad"), con 2FA y su camino de recuperación.
    Sin eso, la separación es una fantasía prolija.
 3. **Los proyectos de base de datos no se unifican nunca** — es el ❌ del cuadro

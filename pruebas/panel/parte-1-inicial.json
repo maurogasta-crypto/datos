@@ -1,0 +1,59 @@
+{
+  "panel": "pendientes",
+  "generado": "2026-09-08",
+  "proyectos": [
+    { "id": "remate",     "nombre": "Rematetaller", "orden": 1 },
+    { "id": "casaverde",  "nombre": "Casa Verde",   "orden": 2 },
+    { "id": "casayourte", "nombre": "CasaYourte",   "orden": 3 },
+    { "id": "datos",      "nombre": "datos · protocolos", "orden": 4 },
+    { "id": "panel",      "nombre": "Panel",        "orden": 5 }
+  ],
+  "pendientes": [
+    { "id": "remate:A6", "proyecto": "remate", "clave": "A6", "quien": "mauro", "estado": "abierto",
+      "titulo": "Cargar config/publico desde el panel",
+      "porQue": "Sin ese documento la puerta pública dice «escribile por WhatsApp a Florencia» y esconde el botón, porque el teléfono viene vacío. Quien llega con la llave vencida lee a quién escribirle y no tiene con qué.",
+      "historia": [
+        { "fecha": "2026-09-08", "texto": "Lo encontró la pantalla de diagnóstico en su primera corrida." },
+        { "fecha": "2026-09-08", "texto": "El campo pasa a pedir el teléfono con «+» (tanda 24)." }
+      ] },
+    { "id": "remate:D8", "proyecto": "remate", "clave": "D8", "quien": "claude", "estado": "abierto",
+      "titulo": "El sw.js sin contador que no se pueda saltear",
+      "porQue": "CACHE_NAME está clavado en «ratetaller-cache-v1» desde que existe, y sin lista SHELL nada obliga a moverlo. La prueba del shell del diagnóstico da ✅ sin poder fallar nunca.",
+      "historia": [ { "fecha": "2026-09-08", "texto": "Anotado al escribir la prueba del shell (tanda 23)." } ] },
+    { "id": "casaverde:A7", "proyecto": "casaverde", "clave": "A7", "quien": "mauro", "estado": "abierto",
+      "titulo": "Publicar firestore.rules en la consola",
+      "porQue": "El archivo del repositorio ya impide que un admin se desactive, pero la autoridad es lo publicado. Hasta que se publique, el archivo dice una cosa y la base hace otra.",
+      "historia": [
+        { "fecha": "2026-09-08", "texto": "Regla corregida y subida (T11.60). Falta publicarla." },
+        { "fecha": "2026-09-08", "texto": "El diagnóstico corrió con cuenta colaborador: la cláusula todavía no se comprobó." }
+      ] },
+    { "id": "casaverde:D9", "proyecto": "casaverde", "clave": "D9", "quien": "mauro", "estado": "abierto",
+      "titulo": "Unificar el campo que lee verItem: it.permiso o it.perm",
+      "porQue": "Mismo nombre, misma idea, campo distinto entre Casa Verde y CasaYourte. Copiar un ítem de la barra de un proyecto al otro lo rompe en silencio. Hoy es uno y uno: no hay mayoría, lo elegís vos.",
+      "historia": [ { "fecha": "2026-09-08", "texto": "Lo hizo visible la tabla del §3.2." } ] },
+    { "id": "casayourte:D10", "proyecto": "casayourte", "clave": "D10", "quien": "claude", "estado": "abierto",
+      "titulo": "Que CY.esc escape también la comilla simple",
+      "porQue": "Dos funciones que se llaman igual tienen que hacer lo mismo. Hoy no rompe nada —verificado— pero el día que se escriba title='${esc(x)}', el apóstrofo de un nombre se sale del atributo.",
+      "historia": [ { "fecha": "2026-09-08", "texto": "Arreglo de una línea, sin urgencia." } ] },
+    { "id": "casayourte:en", "proyecto": "casayourte", "clave": "EN", "quien": "mauro", "estado": "abierto",
+      "titulo": "Aplicar la traducción al inglés y decidir si sale",
+      "porQue": "Las 267 piezas están traducidas y el archivo probado. El inglés está en el catálogo con publico:false, así que no se ve en el sitio hasta que le saques esa línea.",
+      "historia": [
+        { "fecha": "2026-09-08", "texto": "Tanda 4: el inglés entra en preparación." },
+        { "fecha": "2026-09-08", "texto": "Entregado el archivo con 267 piezas y 49 correcciones de español." },
+        { "fecha": "2026-09-08", "texto": "Entregado el archivo del francés al día: 8 con texto nuevo, 41 que se confirman." }
+      ] },
+    { "id": "panel:reglas", "proyecto": "panel", "clave": "P1", "quien": "mauro", "estado": "abierto",
+      "titulo": "Publicar las reglas de datos-830f8",
+      "porQue": "Hasta que estén publicadas con tu UID, la base está como la dejó Firebase al crearla. No guardes nada sensible antes de que la prueba de «La puerta» dé denegado.",
+      "historia": [ { "fecha": "2026-09-08", "texto": "El panel arma el texto con tu UID adentro." } ] },
+    { "id": "panel:fichas", "proyecto": "panel", "clave": "P2", "quien": "claude", "estado": "abierto",
+      "titulo": "Las fichas sensibles (tanda 2)",
+      "porQue": "Titularidad de cuentas, contactos, números. Se escriben en el panel y no salen de ahí.",
+      "historia": [ { "fecha": "2026-09-08", "texto": "Queda para después de probar la puerta." } ] },
+    { "id": "casayourte:D13", "proyecto": "casayourte", "clave": "D13", "quien": "claude", "estado": "hecho",
+      "titulo": "Que el diagnóstico no dependa del núcleo",
+      "porQue": "Al rehacerlo apareció que estaba roto desde que nació: usaba firebaseConfig sin importarlo y eso dejaba sin correr todas las pruebas siguientes.",
+      "historia": [ { "fecha": "2026-09-08", "texto": "Hecho. De ahí salió el §11.4." } ] }
+  ]
+}

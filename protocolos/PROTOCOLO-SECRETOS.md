@@ -7,9 +7,25 @@ repositorio de git, un chat, ni la memoria de Claude.
 ## Regla de oro
 
 **Ningún valor real de secreto entra jamás a un repositorio, sea público o
-privado, ni a un chat — de Mauro o de un agente.** Este archivo y los de
-`secretos/*.md` documentan *nombres, propósito y ubicación* — nunca el
-valor.
+privado, ni a un chat — de Mauro o de un agente.** Este archivo, la tabla de
+«Secretos» del `CLAUDE.md` de cada proyecto y las fichas de titularidad del panel
+documentan *nombres, propósito y ubicación* — nunca el valor.
+
+> **Dónde vive el índice, desde el 2026-09-13.** Hasta esa fecha había un archivo
+> `secretos/<proyecto>.md` por proyecto, en el repo privado `casaverdecanas-blip/datos`.
+> Ese repositorio se borró y el índice quedó partido en dos, cada mitad donde
+> corresponde:
+>
+> | Qué | Dónde |
+> |---|---|
+> | La tabla de variables: nombre, qué hace, tipo, dónde vive el valor, quién la consume | la sección «Secretos» del `CLAUDE.md` **de cada proyecto**, que ya la tenía copiada — ahora es la única |
+> | La **titularidad de las consolas**: de quién es cada cuenta, a qué dirección se pide una recuperación | la **bóveda del panel**, `fichas/`, una ficha por proyecto |
+>
+> El motivo del corte es el de siempre: la tabla de variables no es sensible y
+> tiene que estar al lado del código que la consume; la titularidad es un dato de
+> contacto y los cinco repositorios son públicos. Cuando este documento dice
+> `secretos/<proyecto>.md`, leer «el índice del proyecto», que hoy son esos dos
+> lugares.
 
 **Corolario para cualquier agente:** nunca pedís el valor de un secreto, por
 ningún medio, y nunca lo cargás por API aunque exista la herramienta para
@@ -140,8 +156,8 @@ pedir que se levante: es estructural, por dos razones.
 2. Mauro carga el valor él mismo: `github.com/<owner>/<repo>` → Settings →
    Secrets and variables → Actions → New repository secret.
 3. Mauro confirma "ya está" en el chat (sin pegar el valor).
-4. El chat actualiza `secretos/<proyecto>.md` para que diga "vive en GitHub
-   Secrets de este repo" — nunca el valor.
+4. El chat actualiza la tabla de «Secretos» del `CLAUDE.md` del proyecto para
+   que diga "vive en GitHub Secrets de este repo" — nunca el valor.
 
 **Antes de recomendar GitHub Secrets como destino, verificar que aplica.**
 GitHub Secrets solo sirve si el repo efectivamente **despliega o corre algo
@@ -157,7 +173,7 @@ formato del índice) en vez de "no hay".
 
 ## Formato del índice por proyecto
 
-Cada archivo `secretos/<proyecto>.md` es una tabla:
+La tabla vive en la sección «Secretos» del `CLAUDE.md` del proyecto:
 
 | Variable | Qué hace | Tipo | Dónde vive el valor real | Consumida por | Verificado |
 |---|---|---|---|---|---|

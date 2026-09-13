@@ -1,0 +1,7 @@
+{
+  "name": "banco-del-panel",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node banco.mjs" },
+  "devDependencies": { "jsdom": "^26.0.0" }
+}

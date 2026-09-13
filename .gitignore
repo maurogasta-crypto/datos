@@ -10,3 +10,20 @@
 firebase-adminsdk*.json
 .firebase/
 .firebaserc
+
+# ── Lo que sale de la base y NO puede entrar acá ─────────────────────────────
+# `respaldos/` lo escribe `node herramientas/firestore.mjs <proyecto> bajar`, y
+# sale de la base tal cual: hoy trae las fichas de titularidad, con direcciones
+# de correo reales adentro. Este repositorio es PÚBLICO y el historial de git es
+# permanente — un `git add -A` distraído lo deja ahí para siempre, y borrar el
+# archivo después no alcanza.
+#
+# La línea venía del `.gitignore` del repo privado y se perdió al mudar la
+# herramienta acá el 2026-09-12: durante un día `respaldos/` quedó sin cubrir en
+# el repositorio equivocado. Lo cazó el `git status` de la tanda del 13.
+respaldos/
+
+# ── El banco del panel ───────────────────────────────────────────────────────
+# `pruebas/panel/` tiene el suyo, que además ignora el lockfile. Esta línea es
+# el cinturón por si alguien corre `npm install` desde otro lado.
+node_modules/

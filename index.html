@@ -307,11 +307,12 @@
       <p class="gris" style="margin-bottom:0;font-size:.78rem;">Se pega <b>una sola
         vez</b>: queda guardado en este teléfono y las reglas de abajo salen completas
         cada vez que entrás. Lo imprime <code>node herramientas/firestore.mjs panel
-        quien</code> en el repo privado <code>datos</code>, o te lo pasa el chat.
+        quien</code> en este mismo repositorio, o te lo pasa el chat.
         <b>Vacío, las reglas salen sólo para vos.</b> Con él, el agente puede leer y
-        escribir todo <b>menos <code>claves/</code> y <code>fichas/</code></b> — la
-        bóveda y las fichas, que es donde van las contraseñas y la titularidad de las
-        cuentas, y no las toca nadie más que vos.</p>
+        escribir todo <b>menos <code>claves/</code></b>, que es la bóveda: lo que
+        <b>abre algo</b> —contraseñas, códigos de recuperación, segundos factores— y
+        no lo toca nadie más que vos. Las <b>fichas</b> sí las administra él desde la
+        <b>v4</b>: ahí va de quién es cada cuenta, que no abre nada.</p>
     </div>
     <div class="tarj">
       <label>Las reglas, prontas para pegar</label>
@@ -354,7 +355,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-19";
+P.PANEL = "panel-20";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -1036,9 +1037,11 @@ $("btnPendGuardar").addEventListener("click", async () => {
 });
 
 /* ---------- las reglas: los protocolos, donde se trabaja ---------- */
-/* Los protocolos vivían sólo en `casaverdecanas-blip/datos`, que se lee desde
-   una computadora. Acá se trabaja desde el teléfono, así que en la práctica no
-   se leían nunca — y una regla que nadie lee no es una regla.
+/* Los protocolos vivían sólo en `casaverdecanas-blip/datos` —privado, y de otro
+   dueño de GitHub—, que se lee desde una computadora. Acá se trabaja desde el
+   teléfono, así que en la práctica no se leían nunca, y una regla que nadie lee
+   no es una regla. Desde el 2026-09-12 viven en `protocolos/` de este mismo
+   repositorio; el privado se borró el 2026-09-13.
 
    Dos ámbitos, y la distinción es el punto:
      · «general» — vale para todos los sitios;

@@ -167,7 +167,7 @@ que Mauro la apruebe** (`PROTOCOLO-DESARROLLO.md` § 2.14).
 | C2 | Rematetaller | Sellos de versión visibles en las páginas HTML (su propia documentación lo tiene anotado como pendiente) |
 | C3 | Rematetaller | Sacar el SDK de Firebase a un `firebase-init.js` propio, y evaluar subir de 10.12.0 |
 | C4 | los tres | Que cada sistema de diseño declare qué variable suya cumple cada rol de `PROTOCOLO-DESARROLLO.md` § 3.1 |
-| C5 | casaverdecanas | Confirmar si la variable global de CallMeBot sigue existiendo o ya se retiró (ver `secretos/casaverdecanas.md`) |
+| C5 | casaverdecanas | Confirmar si la variable global de CallMeBot sigue existiendo o ya se retiró (ver la ficha «Titularidad de las consolas · Casa Verde Canas» en el panel) |
 
 
 ### Tanda D — el lenguaje, el procedimiento y el registro (relevamiento en § 5)
@@ -409,7 +409,7 @@ Lo que sí comparte, y por lo que está en el ecosistema:
 
 | | |
 |---|---|
-| Reglas de secretos | índice en `secretos/harmonia.md`, `.gitignore` de la plantilla. Hoy sin ninguna variable que cargar: las cinco del puente a Tuya se fueron con él (`harmonia:H3`) |
+| Reglas de secretos | ficha de titularidad en el panel, `.gitignore` de la plantilla. Hoy sin ninguna variable que cargar: las cinco del puente a Tuya se fueron con él (`harmonia:H3`) |
 | Documentación | `CLAUDE.md` con la estructura de `PROTOCOLO-GENERAL.md` § 3 — **no lo tenía**, se le escribió en la misma tanda |
 | Entrega | la documentación sube con el código, y no se declara entregado lo que no se entregó |
 | El banco de pruebas sin dependencias | § 11.7, en las dos direcciones: lo estrenaron el mismo día `remate` y `harmonia` |

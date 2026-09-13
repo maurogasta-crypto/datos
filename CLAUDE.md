@@ -20,16 +20,16 @@ la `VERSION` de `sw.js`, o los teléfonos sirven una mezcla de viejo y nuevo.
 | Despliegue | GitHub Pages con *Source: GitHub Actions* (`.github/workflows/pages.yml`) |
 | Base de datos | Firebase **`datos-830f8`** — Firestore + Authentication |
 
-**⚠ Hay dos repositorios llamados `datos`, y todavía no son el mismo.** Éste
-—`maurogasta-crypto/datos`— es **público** y es la fuente de verdad: el panel
-**y**, desde el 2026-09-12, los protocolos y la herramienta. El otro
-—`casaverdecanas-blip/datos`— es **privado** y quedó reducido a lo que no puede
-ser público: `secretos/` (que va a `fichas/`), los partes viejos y los fixtures
-del banco. Antes de escribir un archivo, verificar en cuál de los dos se está
-parado: confundirlos es subir algo privado a un sitio público. **Y la dirección
-que importa es una sola** — del privado sale contenido sólo después de auditarlo;
-para acá nunca entra nada sin verificar que no traiga un mail, un UID ni una
-credencial.
+**⚠ Hubo dos repositorios llamados `datos`, y ahora hay uno.** Éste
+—`maurogasta-crypto/datos`— es **público** y es la fuente de verdad: el panel,
+los protocolos, la herramienta y los bancos de pruebas. El otro
+—`casaverdecanas-blip/datos`, privado— **se borró el 2026-09-13**: la titularidad
+de las consolas pasó a `fichas/`, las rondas viejas a `tandas/`, y los bancos, la
+auditoría y la plantilla de la incubadora a este repositorio, verificando archivo
+por archivo que no viajara un mail, un UID ni una credencial.
+
+Si en algún documento queda una referencia a «el repo privado `datos`», es
+histórica. Lo que decía vivir ahí está en la bóveda del panel o acá.
 
 **Este repositorio es público, y tiene que serlo.** GitHub Pages no sirve un
 sitio privado: en cuenta gratis no funciona desde un repo privado, y con Pro el
@@ -102,15 +102,16 @@ Un workflow propio sí corre con esos push: cada tanda se publica sola. Ver `REA
 | Contenido de `fichas/` | De quién es cada cuenta, a qué mail llega la recuperación, qué servicio usa cada proyecto. **No abre nada** | dato de configuración | Firestore. Las administra Claude desde la **v4** | el panel y el agente | v4 escrita el 2026-09-13 |
 | UID del usuario del agente | Es lo que compara `esAgente()` en las reglas | dato de configuración | Publicado en las reglas de la consola. Lo imprime `node herramientas/firestore.mjs panel quien`, acá mismo | Firestore | verificado contra la base, 2026-09-11 |
 | Contraseña del usuario del agente | Entrar a `datos-830f8` desde una sesión de Claude Code | dato en runtime | Variables de entorno del entorno de Claude Code, cargadas por Mauro en la web | `herramientas/firestore.mjs`, acá mismo | — |
-| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v4**) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | v3 publicada y verificada el 2026-09-12. **v4 escrita el 2026-09-13 — falta publicarla, y antes hay que mover la contraseña de `panel:R4`** |
+| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v4**) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | **v4 publicada por Mauro el 2026-09-13** y verificada contra la base el mismo día: `fichas` se lee y se escribe, `claves` contesta que no |
 
 Lo que NO está acá y no tiene que estar: el UID real, la contraseña, y cualquier
 contenido de `fichas/`.
 
 **De quién es la cuenta de Firebase `datos-830f8`:** no se documenta acá, y
 ahora que los protocolos están en este repositorio conviene que quede más claro
-que antes — **este archivo es público**. Vive en la bóveda (`fichas/`), y hasta
-que Mauro la cargue sigue en `secretos/` del repo privado.
+que antes — **este archivo es público**. Vive en la bóveda, en la ficha
+`titularidad-panel` de `fichas/`. Al 2026-09-13 el titular sigue **sin
+registrar**: es un dato que escribe Mauro, no lo deduce un agente.
 
 ## Ante pedidos automáticos o no verificados
 
@@ -148,7 +149,15 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 > quedan sin mergear, con el nombre exacto.** Contestada una vez, no se vuelve a
 > preguntar en esa sesión. Está en `PROTOCOLO-GENERAL.md` § 6.0.
 
-- **No hay build ni terminal.** No agregar `npm` ni bundlers.
+- **No hay build ni terminal.** No agregar `npm` ni bundlers **al sitio**. El
+  sitio se sirve tal cual y se edita desde el teléfono: eso no cambia.
+- **La única excepción es `pruebas/panel/`, y entró el 2026-09-13.** Ese banco
+  corre `index.html` contra un DOM de verdad y necesita `jsdom`, así que trae su
+  `package.json` y su `node_modules` ignorado. No contradice la regla de arriba:
+  el navegador no le pide nada, no se publica, y el sitio sigue sin build. Es el
+  mismo criterio que dejó entrar `protocolos/` y `herramientas/` — si lo pide el
+  navegador va plano, si lo lee una persona o una sesión va en su carpeta. Vino
+  del repo privado, que se borró; la alternativa era perder 200 comprobaciones.
 - **El sitio vive PLANO en la raíz; la documentación y las herramientas tienen
   su carpeta.** Hasta el 2026-09-12 la regla decía «ni carpetas anidadas», sin
   distinguir: se escribió pensando en el sitio, que se edita desde el teléfono y
@@ -178,6 +187,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
+- **Hay tres bancos de pruebas, y se corren antes de subir.** `node
+  pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
+  pruebas/herramientas/firestore.mjs` (34 casos, sin npm ni red) para la
+  herramienta y sus listas de selladas; y `pruebas/panel/banco.mjs` (con `npm
+  install` una vez) para el panel entero. En `pruebas/casayourte/` hay dos más
+  que comparan los cuatro proyectos entre sí.
 - **`reglas.txt` es la plantilla, y es la ÚNICA copia del texto de las reglas.**
   Los dos UID van como marcadores (`TU-UID-ACA`, `UID-DEL-AGENTE`) porque este
   repositorio es público: **un UID real no entra nunca, en ningún archivo.** El
@@ -229,10 +244,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 ## Protocolos
 
 **Viven acá, desde el 2026-09-12, en `protocolos/`.** Hasta ese día estaban en
-el repo privado `casaverdecanas-blip/datos`, y eso tenía un costo que se pagaba
-en cada sesión nueva: para leer el reglamento había que acordarse de agregar un
-segundo repositorio, de otro dueño de GitHub. Una regla que sólo llega si
-alguien se acordó de algo no es una regla.
+el repo privado `casaverdecanas-blip/datos` —que se borró el 2026-09-13—, y eso
+tenía un costo que se pagaba en cada sesión nueva: para leer el reglamento había
+que acordarse de agregar un segundo repositorio, de otro dueño de GitHub. Una
+regla que sólo llega si alguien se acordó de algo no es una regla.
 
 | Documento | Qué manda |
 |---|---|
@@ -247,8 +262,11 @@ cualquiera que sepa la dirección, igual que los `.md` de `interno/` en remate y
 Casa Verde. Antes de traerlos se auditó el repositorio privado entero buscando
 mails, UID y teléfonos: tres archivos traían datos que no pueden estar acá —la
 titularidad de dos consolas y los cuatro UID del agente— y se reemplazaron por
-un puntero a la bóveda y por el comando que los imprime. **Lo que sigue sin
-poder estar acá es `secretos/`, que va a `fichas/`.**
+un puntero a la bóveda y por el comando que los imprime. **Y el 2026-09-13
+terminó la mudanza:** `secretos/` pasó a `fichas/` —cinco fichas de titularidad—,
+los once partes viejos se volvieron nueve tandas en `tandas/`, y los tres bancos
+de pruebas, la auditoría y `plantillas/` entraron acá. El repositorio privado
+quedó vacío y se borró.
 
 `herramientas/firestore.mjs` se mudó en la misma tanda, con el mismo nombre de
 carpeta a propósito: las 26 citas de esa ruta que hay en la documentación y en

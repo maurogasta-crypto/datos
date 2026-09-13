@@ -97,8 +97,13 @@ const PROYECTOS = {
     apiKey: "AIzaSyB2ZT8nLzhcejyqdOA1Ipuwaipm3KTAaRU",
     mail: "FB_REMATE_MAIL",
     clave: "FB_REMATE_CLAVE",
+    /* `reportes` entra el 2026-09-13, con las reglas v0.9 publicadas: es donde
+       un administrador de remate deja una falla vista desde donde la vio. El
+       agente la LEE y no la escribe —lo dice el CLAUDE.md del proyecto y lo
+       aplica la regla—, y para saber qué reporte ya trajo se mira el campo
+       `origen` del pendiente que creó en el panel. */
     colecciones: ["config", "categorias", "productos", "pedidos", "ventas",
-                  "metodosPago", "lucesRegistro", "usuarios"],
+                  "metodosPago", "lucesRegistro", "usuarios", "reportes"],
     /* `llaves`: el código ES la credencial del comprador — lo dice la regla.
        `documentos`: datos de terceros, que por decisión del proyecto no salen
        ni al catálogo público. */

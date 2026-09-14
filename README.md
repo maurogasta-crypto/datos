@@ -375,7 +375,8 @@ vuelve.
 | `reglas.txt` | **la plantilla de las reglas de Firestore**, con marcadores en vez de UID. La lee el panel |
 | `pruebas-reglas.mjs` | el banco de pruebas de «La puerta»: `node pruebas-reglas.mjs`, sin npm |
 | `protocolos/` | **el reglamento del ecosistema**, desde el 2026-09-12. Los cuatro protocolos y `ESTADO-DE-LOS-TRES.md` |
-| `herramientas/` | `firestore.mjs`, con lo que una sesión de Claude lee y escribe las cuatro bases, y cómo darle de alta en una nueva |
+| `herramientas/` | `firestore.mjs`, con lo que una sesión de Claude lee y escribe las cuatro bases, y cómo darle de alta en una nueva; y `ronda.mjs`, que junta el panel y los reportes de los sitios para abrir una tanda |
+| `RUTINA-AUTOMATICA.md` | la ronda que corre **sola una vez por día** como *routine* de Claude Code: qué hace, qué no hace y por qué, los límites de cuota, y el prompt exacto. Con una suscripción Pro no cuesta nada aparte |
 | `sw.js` | el service worker: hace que se instale y abra sin señal |
 | `manifest.json` | nombre, colores e iconos de la app instalada |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | el icono del tablero |
@@ -412,13 +413,14 @@ Y una trampa que ya casi pasa: `index.html` y `nucleo.js` piden
 
 - **No hay build ni terminal.** HTML/CSS/JS servido tal cual, y se edita desde
   el celular por la web de GitHub. Nada de `npm`.
-- **Hay tres bancos de pruebas, y desde el 2026-09-13 están acá.** Vivían en el
+- **Hay cuatro bancos de pruebas, y desde el 2026-09-13 están acá.** Vivían en el
   repo privado, que se borró.
 
   | Banco | Qué prueba | Hace falta |
   |---|---|---|
   | `pruebas-reglas.mjs` | que `reglas.txt`, tal como está hoy, produzca reglas correctas — y que `claves` siga siendo de una sola persona | `node` a secas |
   | `pruebas/herramientas/firestore.mjs` | la herramienta de Firestore contra una nube de mentira: que la traducción de tipos no pierda datos, que un documento se pueda ACHICAR, y que lo sellado se frene antes de salir a la red, en las cuatro bases | `node` a secas |
+  | `pruebas/herramientas/ronda.mjs` | la ronda de apertura: que un reporte ya traído no vuelva, que dos bases con el mismo id no se confundan, y que el orden ponga lo trabado después y lo que no declaró prioridad al fondo | `node` a secas |
   | `pruebas/panel/banco.mjs` | este código, contra un DOM de verdad y un Firestore de mentira | `npm install` una vez, por `jsdom` |
 
   Y en `pruebas/casayourte/` hay dos que comparan los cuatro proyectos entre sí:

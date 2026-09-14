@@ -765,6 +765,35 @@ sin haberla cumplido no terminó la tanda.
    motivo — lo más probable es que las reglas publicadas no tengan el UID del
    agente. No se sigue como si nada: se sigue sabiendo qué se está perdiendo.
 
+5. **Traer los reportes de falla de los sitios.** La gente que trabaja en un
+   panel reporta desde ahí, en `reportes/` de la base de SU sitio, y el agente
+   los convierte en pendientes del panel (`REPORTES.md` de remate). Un reporte
+   que nadie trae es un reporte perdido.
+
+### Los puntos 2 a 5 se corren con un comando
+
+Desde el 14-sep-2026:
+
+```
+node herramientas/ronda.mjs abrir
+```
+
+Lee el panel y los `reportes/` de las tres bases de sitio, los cruza y los
+imprime en este mismo orden: tocados, sin responder, reportes nuevos, abiertos
+por proyecto y prioridad, y de qué fuente salió cada cosa. **No escribe nada**:
+junta y ordena, y el que decide sigue siendo quien lee.
+
+Que exista el comando no reemplaza el punto 1 —los protocolos se leen igual— ni
+el punto 0, que es lo único que no se resuelve leyendo un archivo. Y no
+reemplaza el punto 4: la sección FUENTES es la que lo hace visible, porque un
+`permission-denied` callado parece una corrida que anduvo bien.
+
+**Y desde el 14-sep-2026 esta ronda también corre sola, una vez por día**, como
+una *routine* de Claude Code — gasta de la suscripción y no cuesta aparte. Lee y
+escribe en el panel; **no toca código**. El porqué de cada una de esas dos
+decisiones, los límites de cuota y el prompt exacto están en
+`RUTINA-AUTOMATICA.md`, en la raíz de este repositorio.
+
 ### Al cerrar — las cinco cosas
 
 Ninguna es opcional y ninguna espera a que Mauro la pida.

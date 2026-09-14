@@ -92,6 +92,53 @@ lo sellado se frenen —incluidas las subcolecciones y los documentos sueltos—
 que cada base selle lo suyo y no lo de la otra, y que ninguna colección de
 `bajar` esté sellada, que dejaría el respaldo a mitad de camino.
 
+## `ronda.mjs`
+
+Junta en una pantalla lo que hay que mirar al abrir una tanda, y **no escribe
+nada**.
+
+```
+node herramientas/ronda.mjs abrir [--json]
+node herramientas/ronda.mjs claves <proyecto>
+```
+
+`abrir` lee los `pendientes` del panel y los `reportes/` de las tres bases de
+sitio, los cruza y los ordena en cinco secciones: **tocados**, **sin
+responder**, **reportes nuevos**, **abiertos** por proyecto y prioridad, y
+**fuentes**. Ese orden sale del § 8 «Al abrir» y del § 6 «El apretón de manos»
+del `protocolos/PROTOCOLO-GENERAL.md`, no de una preferencia.
+
+Un reporte es «nuevo» mientras ningún pendiente del panel lleve su `origen`
+(`remate:reportes/<id>`). Se mira de este lado a propósito: el agente **no
+escribe** en las bases de los sitios, así que no puede marcar allá lo que ya
+trajo. Lo fijó `REPORTES.md` de remate.
+
+`claves` no inventa la letra de una clave nueva: devuelve las que ya existen en
+ese proyecto con su número más alto. La letra es temática —en remate conviven
+`A`, `D` y `L`— y adivinarla sería inventar un tema.
+
+**Lee tolerante, al revés que `firestore.mjs`.** Aquélla corta el proceso ante
+un 403, que es lo correcto cuando una persona pidió algo y la base dijo que no.
+Acá no sirve: una ronda que se muere porque UNA base todavía no publicó sus
+reglas deja de contar lo que sí pudo leer. El motivo sale en FUENTES, y que
+salga no es opcional — un `permission-denied` callado parece una corrida que
+anduvo bien.
+
+### Quién lo corre
+
+Una persona, al abrir una tanda; y desde el 14-sep-2026 también una **routine**
+de Claude Code, una vez por día, sola. Eso está en `RUTINA-AUTOMATICA.md`: qué
+hace, qué no hace y por qué, y por qué no cuesta nada aparte de la suscripción.
+
+### El banco
+
+`node pruebas/herramientas/ronda.mjs` — 25 casos, sin red ni dependencias.
+Prueba lo que rompe el circuito sin que nadie lo vea: que un reporte ya traído
+no vuelva (tampoco si su pendiente está cerrado), que dos bases con el mismo id
+de reporte no se confundan, que una clave con nombre no genere un número
+inventado, y que el orden de los abiertos ponga lo trabado después y lo que no
+declaró prioridad al fondo y no al tope.
+
 ## `ACCESO-A-LAS-BASES.md`
 
 El paso a paso para dar de alta al agente en una base, hecho para seguirse

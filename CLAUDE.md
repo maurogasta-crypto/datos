@@ -187,11 +187,14 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay tres bancos de pruebas, y se corren antes de subir.** `node
+- **Hay cuatro bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (34 casos, sin npm ni red) para la
-  herramienta y sus listas de selladas; y `pruebas/panel/banco.mjs` (con `npm
-  install` una vez) para el panel entero. En `pruebas/casayourte/` hay dos más
+  herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
+  (25 casos, sin npm ni red) para la ronda de apertura, que desde el
+  14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
+  silencio; y `pruebas/panel/banco.mjs` (con `npm install` una vez) para el
+  panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.
 - **`reglas.txt` es la plantilla, y es la ÚNICA copia del texto de las reglas.**
   Los dos UID van como marcadores (`TU-UID-ACA`, `UID-DEL-AGENTE`) porque este
@@ -224,9 +227,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 - **Antes de tocar código se LEE el panel, y al cerrar se ESCRIBE en él.** Es la
   otra mitad de la conversación con Mauro, no un archivo de datos que se
   consulta si hace falta: sus respuestas, sus correcciones y sus cambios de
-  prioridad viven ahí. `node herramientas/firestore.mjs panel leer pendientes`,
-  y lo primero que se mira son los `tocado: true` y los que tienen `pregunta`
-  sin `respuesta`. **Si la base contesta que no, es un bloqueo y se dice** — se
+  prioridad viven ahí. Desde el 14-sep-2026 se abre con `node
+  herramientas/ronda.mjs abrir`, que trae eso **y** los reportes de falla de los
+  sitios, cruzados y ordenados; `node herramientas/firestore.mjs panel leer
+  pendientes` sigue andando y se queda corto. Lo primero que se mira son los
+  `tocado: true` y los que tienen `pregunta` sin `respuesta`. **Si la base contesta que no, es un bloqueo y se dice** — se
   estaría trabajando a ciegas sobre la mitad de lo que él dijo. Al cerrar se
   escriben los pendientes, las reglas y **la tanda**, que es lo único que le
   cuenta a la próxima sesión qué pasó en ésta.

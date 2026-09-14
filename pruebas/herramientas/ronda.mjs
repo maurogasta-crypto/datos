@@ -1,0 +1,191 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// pruebas/herramientas/ronda.mjs — Banco de la ronda de apertura.
+//
+//   node pruebas/herramientas/ronda.mjs
+//
+// Sin dependencias y sin red: se prueban las funciones puras de `ronda.mjs`,
+// que son las que deciden qué se trae y en qué orden. Lo que toca Firestore no
+// entra acá — eso ya lo cubre `pruebas/herramientas/firestore.mjs`.
+//
+// Por qué vale la pena probar esto y no sólo mirarlo: lo corre una routine sin
+// nadie delante (`RUTINA-AUTOMATICA.md`). Un reporte que se trae dos veces, o
+// uno que no se trae nunca, ahí no lo ve nadie hasta que Mauro abre el panel y
+// encuentra basura o un vacío.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import assert from "node:assert/strict";
+import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
+         tocados, sinResponder, porProyecto } from "../../herramientas/ronda.mjs";
+
+let pasadas = 0, fallidas = 0;
+const prueba = (n, f) => {
+  try { f(); pasadas++; console.log("  ✓ " + n); }
+  catch (e) { fallidas++; console.log("  ✗ " + n + "\n      " + e.message); }
+};
+const titulo = (t) => console.log("\n" + t);
+
+/* ── Cruzar reportes con pendientes ──────────────────────────────────────── */
+titulo("Qué reporte es nuevo");
+
+prueba("un reporte sin pendiente que lo declare es nuevo", () => {
+  const { nuevos } = cruzar("remate", [{ id: "r1", texto: "no guarda" }], []);
+  assert.equal(nuevos.length, 1);
+  assert.equal(nuevos[0].id, "r1");
+});
+
+prueba("con un pendiente que lo declara, deja de ser nuevo", () => {
+  const pend = [{ id: "remate:L9", origen: "remate:reportes/r1" }];
+  const { nuevos, yaTraidos } = cruzar("remate", [{ id: "r1" }], pend);
+  assert.equal(nuevos.length, 0);
+  assert.equal(yaTraidos.length, 1);
+});
+
+prueba("un pendiente CERRADO también lo trajo: no vuelve", () => {
+  /* El campo `origen` dice que ya pasó por acá, no que siga abierto. Mirar el
+     estado haría que cada reporte resuelto volviera a entrar como nuevo. */
+  const pend = [{ id: "remate:L9", estado: "hecho", origen: "remate:reportes/r1" }];
+  assert.equal(cruzar("remate", [{ id: "r1" }], pend).nuevos.length, 0);
+});
+
+prueba("el origen lleva el proyecto: mismo id en dos bases no se confunde", () => {
+  const pend = [{ id: "remate:L9", origen: "remate:reportes/r1" }];
+  assert.equal(cruzar("remate", [{ id: "r1" }], pend).nuevos.length, 0);
+  assert.equal(cruzar("casayourte", [{ id: "r1" }], pend).nuevos.length, 1);
+});
+
+prueba("un pendiente sin `origen` no tapa nada", () => {
+  const pend = [{ id: "remate:L1" }, { id: "remate:L2", origen: "" }];
+  assert.equal(cruzar("remate", [{ id: "r1" }], pend).nuevos.length, 1);
+});
+
+prueba("sin reportes y sin pendientes no se rompe", () => {
+  const r = cruzar("remate", undefined, undefined);
+  assert.deepEqual(r, { nuevos: [], yaTraidos: [] });
+});
+
+prueba("el origen se escribe siempre igual", () => {
+  assert.equal(origenDe("remate", "abc"), "remate:reportes/abc");
+});
+
+/* ── Las claves ──────────────────────────────────────────────────────────── */
+titulo("La próxima clave libre");
+
+const PEND_CLAVES = [
+  { proyecto: "remate", clave: "L1" }, { proyecto: "remate", clave: "L5" },
+  { proyecto: "remate", clave: "A6" }, { proyecto: "remate", clave: "D1" },
+  { proyecto: "casayourte", clave: "T3" },
+  { proyecto: "remate", clave: "reportes-2" }
+];
+
+prueba("devuelve una entrada por letra, con la próxima libre", () => {
+  const l = letrasEnUso(PEND_CLAVES, "remate");
+  assert.deepEqual(l.map((x) => x.proxima), ["A7", "D2", "L6"]);
+});
+
+prueba("toma el número más alto, no el último de la lista", () => {
+  const l = letrasEnUso([{ proyecto: "p", clave: "L9" }, { proyecto: "p", clave: "L2" }], "p");
+  assert.equal(l[0].proxima, "L10");
+});
+
+prueba("no mezcla proyectos", () => {
+  assert.deepEqual(letrasEnUso(PEND_CLAVES, "casayourte").map((x) => x.proxima), ["T4"]);
+});
+
+prueba("una clave con nombre no aporta letra — no se inventa un número", () => {
+  const l = letrasEnUso([{ proyecto: "p", clave: "secretos-boveda" }], "p");
+  assert.equal(l.length, 0);
+});
+
+prueba("un proyecto sin pendientes devuelve lista vacía, no un error", () => {
+  assert.deepEqual(letrasEnUso(PEND_CLAVES, "harmonia"), []);
+});
+
+/* ── El orden ────────────────────────────────────────────────────────────── */
+titulo("El orden de los abiertos");
+
+prueba("lo hecho y lo retirado no son abiertos", () => {
+  const p = [{ id: "a", estado: "hecho" }, { id: "b", estado: "retirado" },
+             { id: "c", estado: "abierto" }, { id: "d", estado: "listo" }];
+  assert.deepEqual(ordenarAbiertos(p).map((x) => x.id), ["c", "d"]);
+});
+
+prueba("alta antes que media, media antes que baja", () => {
+  const p = [{ id: "c", prioridad: "baja" }, { id: "a", prioridad: "alta" },
+             { id: "b", prioridad: "media" }];
+  assert.deepEqual(ordenarAbiertos(p).map((x) => x.id), ["a", "b", "c"]);
+});
+
+prueba("sin prioridad cae al fondo, no al tope", () => {
+  /* No declarar prioridad no es declararla alta. Si esto se invirtiera, un
+     pendiente escrito a las apuradas encabezaría la lista de Mauro. */
+  const p = [{ id: "sin" }, { id: "baja", prioridad: "baja" }];
+  assert.deepEqual(ordenarAbiertos(p).map((x) => x.id), ["baja", "sin"]);
+});
+
+prueba("a igual prioridad, lo trabado va después", () => {
+  const p = [{ id: "trabado", prioridad: "alta", esperaA: ["x:Y1"] },
+             { id: "libre", prioridad: "alta", esperaA: [] }];
+  assert.deepEqual(ordenarAbiertos(p).map((x) => x.id), ["libre", "trabado"]);
+});
+
+prueba("una traba no adelanta a una prioridad más alta", () => {
+  const p = [{ id: "media-libre", prioridad: "media" },
+             { id: "alta-trabada", prioridad: "alta", esperaA: ["x:Y1"] }];
+  assert.deepEqual(ordenarAbiertos(p).map((x) => x.id), ["alta-trabada", "media-libre"]);
+});
+
+prueba("el orden es estable: mismo peso, por id", () => {
+  const p = [{ id: "b", prioridad: "alta" }, { id: "a", prioridad: "alta" }];
+  assert.deepEqual(ordenarAbiertos(p).map((x) => x.id), ["a", "b"]);
+});
+
+prueba("no modifica la lista que recibe", () => {
+  const p = [{ id: "b", prioridad: "baja" }, { id: "a", prioridad: "alta" }];
+  ordenarAbiertos(p);
+  assert.equal(p[0].id, "b");
+});
+
+/* ── Tocados y sin responder ─────────────────────────────────────────────── */
+titulo("El apretón de manos");
+
+prueba("tocado true es lo único que cuenta como tocado", () => {
+  const p = [{ id: "a", tocado: true }, { id: "b", tocado: false }, { id: "c" }];
+  assert.deepEqual(tocados(p).map((x) => x.id), ["a"]);
+});
+
+prueba("pregunta con respuesta vacía está sin responder", () => {
+  const p = [{ id: "a", pregunta: "¿?", respuesta: "" },
+             { id: "b", pregunta: "¿?", respuesta: "sí" },
+             { id: "c", pregunta: "", respuesta: "" }];
+  assert.deepEqual(sinResponder(p).map((x) => x.id), ["a"]);
+});
+
+prueba("una pregunta sin responder cuenta aunque el pendiente esté hecho", () => {
+  /* § 6: «Una pregunta sin responder cuenta como pendiente abierto, aunque el
+     pendiente esté marcado hecho». Por eso `sinResponder` no filtra estado. */
+  const p = [{ id: "a", estado: "hecho", pregunta: "¿?", respuesta: "" }];
+  assert.equal(sinResponder(p).length, 1);
+});
+
+/* ── Agrupar por proyecto ────────────────────────────────────────────────── */
+titulo("Por proyecto, como en el panel");
+
+prueba("respeta el `orden` de la ficha del proyecto", () => {
+  const p = [{ id: "1", proyecto: "casayourte" }, { id: "2", proyecto: "casaverde" }];
+  const fichas = [{ id: "casaverde", orden: 2 }, { id: "casayourte", orden: 1 }];
+  assert.deepEqual(porProyecto(p, fichas).map((g) => g.proyecto), ["casayourte", "casaverde"]);
+});
+
+prueba("un proyecto sin ficha va al final, no adelante", () => {
+  const p = [{ id: "1", proyecto: "nuevo" }, { id: "2", proyecto: "casaverde" }];
+  const fichas = [{ id: "casaverde", orden: 2 }];
+  assert.deepEqual(porProyecto(p, fichas).map((g) => g.proyecto), ["casaverde", "nuevo"]);
+});
+
+prueba("sin fichas no se rompe: alfabético", () => {
+  const p = [{ id: "1", proyecto: "remate" }, { id: "2", proyecto: "casaverde" }];
+  assert.deepEqual(porProyecto(p, []).map((g) => g.proyecto), ["casaverde", "remate"]);
+});
+
+console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);
+process.exit(fallidas ? 1 : 0);

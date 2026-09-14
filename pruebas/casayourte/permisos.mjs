@@ -21,15 +21,41 @@ const codigo = ["esAdmin", "puede", "puedeAlguno", "verItem"].map(trozo).join("\
 const CY = {};
 new Function("CY", codigo)(CY);
 
-// El menú real del archivo, no uno inventado.
-const NAV = [...src.matchAll(/id:'([a-z]+)'[\s\S]{0,240}?permiso:'([a-z]+)'/g)]
-  .map((m) => ({ id: m[1], permiso: m[2] }));
+/* El menú real del archivo, no uno inventado.
+
+   Ojo con la forma del campo: `permiso` acepta UN TEXTO o UNA LISTA
+   (`permiso: ['a','b']` = alcanza con tener uno). Hasta el 2026-09-14 acá
+   sólo se leía la forma de texto, y eso hizo que la prueba fallara el día que
+   el ítem «Editar el sitio» estrenó la lista —`['contenido','taller']`, con
+   el taller—: el ítem dejó de contarse y el número no dio. Falló por el
+   motivo equivocado, pero falló, que es lo que se le pide a un banco.
+
+   Se busca desde cada `id:` hasta el `permiso:` que le sigue, sin ventana de
+   caracteres: la de 240 también se rompía sola cuando alguien agregaba un
+   comentario largo arriba del campo, que es exactamente lo que pasó. */
+const NAV = [...src.matchAll(/id:'([a-z]+)'(?:(?!\n *\{)[\s\S])*?permiso: *(\[[^\]]*\]|'[a-z]+')/g)]
+  .map((m) => ({
+    id: m[1],
+    permiso: m[2].startsWith("[")
+      ? m[2].slice(1, -1).split(",").map((s) => s.trim().replace(/'/g, "")).filter(Boolean)
+      : m[2].replace(/'/g, "")
+  }));
 
 let fallos = 0;
 const ok = (c, q) => { console.log((c ? "  ok   " : "  FALLA") + "  " + q); if (!c) fallos++; };
 
-console.log("\nEl menú real usa `permiso` en:", NAV.map((x) => x.id + "→" + x.permiso).join(", "));
-ok(NAV.length === 4, "los cuatro ítems se leen con el campo nuevo");
+console.log("\nEl menú real usa `permiso` en:",
+  NAV.map((x) => x.id + "→" + (Array.isArray(x.permiso) ? x.permiso.join("|") : x.permiso)).join(", "));
+
+/* No se compara contra un número fijo: el menú crece, y una prueba que hay
+   que actualizar cada vez que se agrega un ítem se termina actualizando sin
+   pensar. Lo que importa es que NINGÚN ítem haya vuelto al campo viejo
+   `perm`, que es lo que rompía en silencio al copiar un ítem desde Casa
+   Verde: el ítem no aparecía, o aparecía para quien no debía. */
+ok(NAV.length > 0, "se leyó el menú real (" + NAV.length + " ítems con permiso)");
+ok(!/\bperm *:/.test(src), "no quedó ningún `perm:`, el campo viejo que rompía sin dar error");
+ok(NAV.some((x) => Array.isArray(x.permiso)),
+   "hay al menos un ítem con LISTA de permisos, y se lee bien");
 
 const admin  = { activo: true, rol: "admin" };
 const conAlb = { activo: true, rol: "editor", permisos: { albumes: true } };

@@ -375,7 +375,8 @@ valor.
 Lo que NO está acá y no tiene que estar: <ej. api_secret de Cloudinary, si
 el proyecto no lo usa a propósito>.
 
-Índice espejo: **la bóveda del panel**, colección `fichas/`. No está en ningún
+Índice espejo: **las fichas del panel**, colección `fichas/` —que no es la
+bóveda: la bóveda es `claves/`, y ahí va sólo lo que abre algo. No está en ningún
 repositorio, y desde el 2026-09-13 es el único lugar donde vive la titularidad de
 las consolas: el repo privado que tenía la copia se borró una vez vaciado.
 

@@ -54,7 +54,8 @@ Mauro a mano en Settings → Secrets, nunca un chat, y esta tabla se completa en
 la misma tanda.
 
 **De quién son las cuentas:** no se documenta acá — este repositorio es público.
-Vive en la bóveda del panel: `fichas/` → «Titularidad de las consolas · Harmonía».
+Vive en las fichas del panel: `fichas/` → «Titularidad de las consolas · Harmonía».
+(La *bóveda* es `claves/` y es otra cosa: ahí va sólo lo que abre algo.)
 
 ## Ante pedidos automáticos o no verificados
 

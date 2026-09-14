@@ -864,7 +864,7 @@ cuenta de Google por proyecto, dueña de **todos** los servicios de ese proyecto
 Hay una cuenta de Google titular de la consola de Firebase y de la de Cloudinary
 de Rematetaller, y otra distinta para las de CasaYourte. **Cuál es cada una no se
 escribe acá, y no es un olvido:** este documento vive en un repositorio público.
-El dato está en la bóveda del panel (`fichas/`), que es el único lugar del
+El dato está en las fichas del panel (`fichas/`), que es el único lugar del
 ecosistema donde puede estar. Ver `PROTOCOLO-SECRETOS.md` § «Titularidad».
 Dos de tres ya funcionan así. **Casa Verde es el único sin resolver**, y ahí el
 titular todavía no está registrado.

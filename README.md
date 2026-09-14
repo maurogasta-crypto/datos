@@ -376,7 +376,7 @@ vuelve.
 | `pruebas-reglas.mjs` | el banco de pruebas de «La puerta»: `node pruebas-reglas.mjs`, sin npm |
 | `protocolos/` | **el reglamento del ecosistema**, desde el 2026-09-12. Los cuatro protocolos y `ESTADO-DE-LOS-TRES.md` |
 | `herramientas/` | `firestore.mjs`, con lo que una sesión de Claude lee y escribe las cuatro bases, y cómo darle de alta en una nueva; y `ronda.mjs`, que junta el panel y los reportes de los sitios para abrir una tanda |
-| `RUTINA-AUTOMATICA.md` | la ronda que corre **sola una vez por día** como *routine* de Claude Code: qué hace, qué no hace y por qué, los límites de cuota, y el prompt exacto. Con una suscripción Pro no cuesta nada aparte |
+| `RUTINA-AUTOMATICA.md` | **el proceso de las rutinas de control**: la ronda que corre sola una vez por día, qué puede tocar y qué no, los límites de cuota medidos, cómo avisa y cómo se aprueba desde el teléfono, y cómo se arma la próxima. Con una suscripción Pro no cuesta nada aparte |
 | `sw.js` | el service worker: hace que se instale y abra sin señal |
 | `manifest.json` | nombre, colores e iconos de la app instalada |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | el icono del tablero |

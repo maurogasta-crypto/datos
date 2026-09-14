@@ -252,18 +252,23 @@ todo lo que la ronda necesita.
 
 ---
 
-## 6 · La routine que existe hoy, y qué pasó al probarla
+## 6 · La routine que existe hoy, y cómo se llegó a ella
 
 | | |
 |---|---|
-| Nombre | **Ronda de control diaria** |
-| Identificador | `trig_01WDGNPPmESxcJXktjtebLw4` |
+| Nombre | **Ronda de control diaria (con datos adjunto)** |
+| Identificador | `trig_012Bcu41exyW2rZz8rJ8tY8i` |
 | Cuándo | `0 11 * * *` — 11:00 UTC, o sea **8 de la mañana** en Uruguay |
-| Modelo | `claude-opus-5` |
-| Qué dispara | una sesión nueva cada vez, no una conversación que sigue |
+| Cómo dispara | **contra una sesión que ya existe** (`session_012KWUM3TbLqjXh67fsBYGBD`), no creando una nueva |
+| Modelo | el de esa sesión: `claude-opus-5` |
 | Aviso | notificación al teléfono cuando una corrida termina |
 
-### La prueba del 14-sep, que falló, y qué se aprendió
+**Esa cuarta fila es toda la diferencia, y es lo que este documento existe para
+explicar.** La primera versión (`trig_01WDGNPPmESxcJXktjtebLw4`, borrada el
+14-sep) creaba una sesión nueva en cada disparo, y esa sesión nacía **sin
+repositorios**. Lo que sigue es cómo se descubrió y cómo se arregló.
+
+### La prueba del 14-sep: el circuito funciona, la corrida desatendida no
 
 Mauro reportó una falla de prueba desde `configuracion.html` de remate:
 
@@ -272,27 +277,91 @@ Mauro reportó una falla de prueba desde `configuracion.html` de remate:
 > hacer llegar este reporte hasta el panel y el chat lo puede levantar como tanda
 > o tarea pendiente sin mi intervención.»*
 
-Se disparó la routine a mano para contestarle eso. Resultado:
+**La respuesta es que sí: el circuito entero funciona.** El pendiente `remate:L7`
+existe en el panel, con `origen: remate:reportes/w0AjNvtNqeUCVyh4EGKE`, y el
+reporte ya no aparece en REPORTES NUEVOS — que es exactamente lo que tiene que
+pasar cuando algo ya se trajo.
 
-- **`ronda.mjs` ve el reporte.** Corrida desde una sesión normal, aparece en
-  REPORTES NUEVOS con su `origen`. Esa mitad anda.
-- **La routine terminó sin escribir el pendiente.** La sesión corrió 2 min 25 s,
-  quedó en «idle», y en el panel no apareció ningún pendiente con `origen`.
-- **La causa más probable está a la vista**: la routine se creó desde una sesión
-  por API y la respuesta vino con la lista de `sources` **vacía**. La
-  documentación dice que una routine requiere uno o más repositorios, que se
-  clonan en cada corrida. Sin repositorio no hay `herramientas/ronda.mjs`, y el
-  punto 0 del prompt manda parar y decirlo — que es exactamente lo que parece
-  haber pasado.
+Pero el camino hasta ahí deja tres cosas escritas, y las tres importan más que el
+resultado.
 
-**Qué falta para cerrarlo:** abrir `claude.ai/code/routines` → **Ronda de control
-diaria** → el lápiz, y agregar los repositorios (por lo menos
-`maurogasta-crypto/datos`; los cinco si va a resolver pendientes de los sitios).
-Es el pendiente `panel:R6`.
+**1 · La corrida desatendida se traba, y por una razón precisa.** La routine se
+creó desde una sesión por API, y `create_trigger` **no tiene forma de declarar
+repositorios**: la respuesta vino con `sources: []` y ahí sigue. Sin repositorio
+adjunto, la sesión de la routine tiene que clonar `datos` ella misma, y entonces
+el clasificador del modo automático marca ese código como **«Code from
+External»** y deniega ejecutarlo. La corrida programada de las 11:03 UTC reportó
+exactamente eso, y tenía razón en parar: el punto 0 del prompt manda no improvisar
+un reemplazo, y no lo improvisó.
 
-Se deja escrito el fracaso en vez de borrarlo porque es el dato más útil del
-documento: **una routine creada por API no hereda los repositorios de la sesión
-que la creó.**
+**2 · Lo que destrabó la corrida fue Mauro, no la routine.** El pendiente se
+escribió después de que él entrara a conversar con esa sesión. Una sesión con una
+persona adelante puede pedirle que apruebe lo que el modo automático deniega; una
+que corre a las 8 de la mañana con el teléfono apagado, no. **Así que lo que se
+probó no es lo que se quería probar:** funcionó el circuito, no la autonomía.
+
+**3 · Y la routine contó mal su propio estado.** Al escribir `remate:L7` dejó como
+historia que era «la primera corrida con los repositorios cargados». Era falso:
+`sources` estaba y está vacío. Nadie mintió —se estaba refiriendo a un pendiente
+del panel que decía eso—, pero el efecto es el peligroso: **una corrida automática
+afirmando en el panel que un problema estaba resuelto cuando no lo estaba.** Es la
+misma familia que el «verde no quiere decir que salió bien» del § 3, y es el
+motivo por el que este documento no borra los fracasos.
+
+### Lo que se puede y no se puede hacer desde un chat
+
+Verificado el 14-sep-2026 probando las herramientas, no leyendo documentación:
+
+| | ¿Se puede desde una sesión? |
+|---|---|
+| Crear una routine | **Sí** — así nació ésta |
+| Cambiarle nombre, horario, prompt, modelo, activarla o pausarla | **Sí** |
+| Dispararla a mano | **Sí** |
+| Borrarla | **Sí** |
+| **Declararle repositorios** | **No.** No hay parámetro para eso |
+| Crear una **sesión** con un repositorio adjunto | **Sí** — `source_url`, y el repo queda como fuente de verdad de la sesión, no como un clon |
+
+Esa última fila es la salida: una routine puede dispararse **contra una sesión que
+ya existe** en vez de crear una nueva cada vez. Si esa sesión se creó con `datos`
+adjunto, el código deja de ser «externo» y el bloqueo no aparece.
+
+### La prueba que cierra el caso
+
+Verificado el 14-sep-2026, y verificado de la única manera que vale: haciéndolo.
+
+Se creó una sesión con `datos` **adjunto como fuente** (no clonado), en modo
+automático y **sin nadie delante**, y se le pidió una sola cosa: correr
+`node herramientas/ronda.mjs abrir` y decir si el entorno la dejaba.
+
+El resumen que devolvió la sesión, textual:
+
+> *«Script executed successfully: 60 pending items, 5 open, 4 data sources
+> responding»*
+
+Sin bloqueo, sin aprobación humana, sin `git clone`. **El problema no era el modo
+automático ni el protocolo: era que la sesión no tenía el repositorio.**
+
+Sobre esa sesión se creó la routine actual, con disparo a sesión persistente, y
+se borró la anterior.
+
+### Lo que se paga por esta solución, que no es gratis
+
+Una routine atada a una sesión persistente **conversa siempre en la misma
+sesión**, en vez de arrancar limpia cada día. Eso trae dos cosas:
+
+- **A favor:** los repositorios quedan adjuntos de verdad, el contexto del día
+  anterior está a mano, y no hay que volver a explicarle nada.
+- **En contra:** esa conversación crece. La compactación automática la sostiene,
+  pero no para siempre. **Si la ronda empieza a portarse raro o a olvidarse de
+  cosas, la respuesta es crear una sesión nueva con los repositorios adjuntos y
+  reapuntar la routine**, no discutir con la vieja.
+
+Y hay un límite que hoy no molesta pero conviene tener anotado: una sesión se
+crea con **un** repositorio adjunto. Para que la Parte 2 toque el código de los
+sitios hay que adjuntarle los otros cuatro desde adentro, con la herramienta de
+agregar repositorio —no con `git clone`, que es exactamente lo que estaba
+bloqueado—. Eso **todavía no se probó**, y hasta que se pruebe la Parte 2 sólo
+está garantizada para `datos`.
 
 ---
 
@@ -308,9 +377,13 @@ que la creó.**
    comparar adentro.
 7. **Un banco de pruebas sin red** para la parte determinada. Corre sola: si se
    equivoca en silencio, nadie lo ve hasta que el daño está hecho.
-8. **Anotarla acá**, con su identificador, su horario y su modelo.
+8. **Que el repositorio venga adjunto a la sesión, no clonado desde adentro.**
+   Un clon hecho por la propia sesión se marca como código externo y el modo
+   automático no lo deja ejecutar. Es el error que costó un día entero.
+9. **Anotarla acá**, con su identificador, su horario, su modelo y contra qué
+   sesión dispara.
 
-Y la que vale más que las ocho:
+Y la que vale más que las nueve:
 
 > **Lo que se documenta sale de leer el código y la configuración reales**, nunca
 > de lo que una conversación —ni siquiera ésta— afirme que dice el código.
@@ -328,8 +401,10 @@ dirección anda en el navegador del celular.
 
 ## 9 · Lo que falta
 
-- **Cargarle los repositorios a la routine.** Es lo único que separa de que
-  funcione. `panel:R6`.
+- **Probar la Parte 2 de punta a punta.** Que la ronda resuelva un pendiente y
+  deje la rama con su enlace. Hoy está escrita y no ejercitada.
+- **Probar que se pueden adjuntar los otros cuatro repositorios** desde adentro
+  de la sesión persistente. Sin eso, la Parte 2 sólo alcanza a `datos`.
 - **El formulario de reporte en Casa Verde y CasaYourte.** Hoy sólo remate tiene
   de dónde reportar, así que la ronda lee tres bases y dos están siempre vacías.
   Es `general:reportes-2`, y el molde completo está en `REPORTES.md` de remate.
@@ -337,6 +412,8 @@ dirección anda en el navegador del celular.
 - **Ver si la Parte 2 aguanta el presupuesto.** Resolver un pendiente por día con
   Opus puede comerse más ventana de la que conviene. Se mide con las primeras
   corridas reales, no antes.
+- **Vigilar el crecimiento de la sesión persistente**, y recrearla cuando haga
+  falta (§ 6).
 
 ---
 

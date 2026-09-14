@@ -212,6 +212,53 @@ documento hace es **registrar** una decisión que Mauro tomó en el chat; no
 crearla. La distinción es la misma que separa un índice de secretos de un
 secreto.
 
+### 2.1 quater · Las ramas que la plataforma abre igual, y cómo se cierran
+
+Decidido por Mauro el **2026-09-14**: *«haz el empuje hacia el main en forma
+final para limpiar cualquier rama que se pueda haber abierto»*.
+
+El § 2.1 ter resuelve **a dónde va el trabajo**, y no puede resolver lo otro:
+la plataforma le asigna una rama a cada sesión igual, esté o no el permiso. Con
+el permiso, esa rama queda **vacía o vieja** — y una rama vieja en un
+repositorio no es neutral. Dos motivos, y los dos ya pasaron acá:
+
+1. **Parece trabajo pendiente y no lo es.** Quien la encuentra dentro de seis
+   meses no puede distinguir «esto quedó sin mergear» de «esto se hizo por otro
+   lado». Cuesta una sesión averiguarlo, cada vez.
+2. **Puede publicar lo que `main` ya dejó afuera.** El 2026-09-14 una rama de
+   `maurogasta-crypto/datos` —repositorio **público**— seguía sirviendo los
+   cinco `secretos/<proyecto>.md` del viejo repo privado, con la titularidad de
+   las consolas adentro. En `main` esos archivos nunca entraron: la auditoría
+   del 2026-09-12 los dejó afuera a propósito. La rama los publicaba igual.
+   **Borrar un archivo de `main` no lo borra de una rama**, y una rama se lee
+   desde la web de GitHub con la misma facilidad que `main`.
+
+**Antes de borrar una rama se hace el censo, y no se borra nada sin él.** No es
+burocracia: es lo único que distingue una rama residual de una que todavía tiene
+algo adentro.
+
+```
+git fetch --prune origin
+# ¿su contenido ya está en main?
+git merge-base --is-ancestor origin/<rama> origin/main && echo "ya está en main"
+# si no: qué trae de distinto, archivo por archivo
+git diff --stat origin/main origin/<rama>
+```
+
+Lo que el censo tiene que contestar, **en este orden**:
+
+| Pregunta | Dónde se contesta |
+|---|---|
+| ¿Está su contenido en `main`? | `git merge-base --is-ancestor` |
+| ¿Lo que no está en `main` está **en el panel**? | `pendientes/`, `tandas/`, `fichas/`, `protocolos/` |
+| ¿Queda algo que no esté en ninguno de los dos? | se pasa al lugar que le corresponde **antes** de borrar |
+
+Una rama se borra cuando las tres están contestadas, **y con Mauro diciéndolo**:
+borrar una rama del remoto es irreversible y un agente no lo decide solo.
+
+**Y el orden importa: primero se empuja a `main`, después se borra.** Al revés
+se pierde el trabajo si el empuje falla.
+
 **Sobre el alcance del permiso:** lo que hace falta es «empujá a `main`», no «a
 cualquier rama». Un permiso general no compra nada extra y apaga una señal útil:
 si una sesión empuja a otro lado, conviene enterarse.

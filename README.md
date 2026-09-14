@@ -28,7 +28,7 @@ se mudaron acá: tenerlos en un repositorio privado de otro dueño costaba, en c
 sesión nueva, acordarse de agregarlo — y una regla que sólo llega si alguien se
 acordó de algo no es una regla. Antes de traerlos se auditó el repo privado
 entero: tres archivos traían titularidad de cuentas o los UID del agente, y eso
-se reemplazó por un puntero a la bóveda. **El 2026-09-13 se terminó la mudanza y
+se reemplazó por un puntero a las fichas del panel. **El 2026-09-13 se terminó la mudanza y
 el privado se borró** — lo que quedaba viajó a `fichas/`, a `tandas/` y a este
 repositorio, archivo por archivo y verificando que no viniera un mail, un UID ni
 una credencial.
@@ -37,6 +37,26 @@ Lo que **no** cambió: **acá no entra un solo dato.** Ni fichas, ni
 titularidades, ni contactos, ni números, ni partes. Este repositorio lo lee
 cualquiera, y los `.md` se sirven en texto plano por Pages. La diferencia es que
 ahora «dato» y «regla» son cosas distintas: la regla es pública, el dato no.
+
+### Y una rama también se lee (2026-09-14)
+
+**`main` no era el único lugar donde mirar, y eso costó descubrirlo.** Los
+`secretos/<proyecto>.md` del viejo repo privado —con la titularidad de las
+consolas adentro— nunca entraron a `main`: la auditoría del 12-sep los dejó
+afuera a propósito. Pero **seguían publicados en una rama de este repositorio**,
+que es público, y una rama se abre desde la web de GitHub con un clic.
+
+De ahí salió el **§ 2.1 quater** del `PROTOCOLO-GENERAL.md`: una rama vieja no
+es neutral, y antes de borrarla va un censo que contesta tres preguntas —¿está
+en `main`?, ¿está en el panel?, ¿queda algo sin lugar?—. El censo del 14-sep dio
+que **no quedaba nada sin lugar**: la titularidad estaba en las cinco fichas, los
+177 pendientes de los partes en `pendientes/`, las once rondas en `tandas/`, la
+clave de Cloudinary sin rotar en `general:cloudinary-filtrada`, el patrón de la
+lista blanca en la regla `general:puente-tercero`, y el código de la plantilla de
+gestos acá, idéntico, en `gestos/`.
+
+Lo que se aprende y vale más que el caso: **borrar un archivo de `main` no lo
+borra del repositorio.** Mientras exista una rama que lo tenga, sigue servido.
 
 ## Por qué este repositorio es público
 

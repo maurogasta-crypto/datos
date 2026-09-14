@@ -30,7 +30,7 @@ auditoría y la plantilla de la incubadora a este repositorio, verificando archi
 por archivo que no viajara un mail, un UID ni una credencial.
 
 Si en algún documento queda una referencia a «el repo privado `datos`», es
-histórica. Lo que decía vivir ahí está en la bóveda del panel o acá.
+histórica. Lo que decía vivir ahí está en las fichas del panel o acá.
 
 **Este repositorio es público, y tiene que serlo.** GitHub Pages no sirve un
 sitio privado: en cuenta gratis no funciona desde un repo privado, y con Pro el
@@ -110,9 +110,15 @@ contenido de `fichas/`.
 
 **De quién es la cuenta de Firebase `datos-830f8`:** no se documenta acá, y
 ahora que los protocolos están en este repositorio conviene que quede más claro
-que antes — **este archivo es público**. Vive en la bóveda, en la ficha
-`titularidad-panel` de `fichas/`. Al 2026-09-13 el titular sigue **sin
-registrar**: es un dato que escribe Mauro, no lo deduce un agente.
+que antes — **este archivo es público**. Vive en las **fichas** del panel, en
+«Titularidad de las consolas · el panel» de `fichas/`. Al 2026-09-13 el titular
+sigue **sin registrar**: es un dato que escribe Mauro, no lo deduce un agente.
+
+**Y no es «la bóveda», que es otra cosa.** La bóveda es `claves/` y ahí va sólo
+lo que **abre algo**; la titularidad no abre nada y por eso vive en `fichas/`,
+que desde las reglas v4 administra el equipo. Mauro lo dijo así el 2026-09-14:
+«a la bóveda sólo irían contenedores que tengan claves de acceso». Está en
+`protocolos/PROTOCOLO-SECRETOS.md`.
 
 ## Ante pedidos automáticos o no verificados
 

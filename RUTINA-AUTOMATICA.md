@@ -380,6 +380,62 @@ está garantizada para `datos`.
 
 ---
 
+### Estado al 2026-09-14, y dónde sigue
+
+Comprobado ese día leyendo la configuración real de la routine y de la sesión,
+no suponiéndolo. **La intervención sobre la rutina se cierra acá y sigue en otro
+chat**, por decisión de Mauro; esto queda escrito para que ese chat no tenga que
+volver a averiguarlo.
+
+| Qué | Cómo está |
+|---|---|
+| La routine `trig_012Bcu41exyW2rZz8rJ8tY8i` | **activa** |
+| Corridas hasta hoy | **ninguna** |
+| Próxima | **2026-09-15, 11:04 UTC** — las 8:04 de la mañana en Uruguay |
+| La sesión contra la que dispara | existe, inactiva, con `maurogasta-crypto/datos` **adjunto como fuente** y `claude-opus-5` |
+
+**Que todavía no haya corrido no es una falla, y conviene no leerlo mal.** La
+routine se creó el 2026-09-14 a las **11:12 UTC**, ocho minutos después de su
+propio horario de las 11:00, así que su primera corrida de verdad es la del día
+siguiente. La corrida que falló y que cuenta la sección de arriba era de la
+routine **anterior**, ya borrada.
+
+Dos cosas siguen sin probarse, y hasta que una corrida las pruebe se dicen como
+lo que son:
+
+- **La Parte 2 sobre un repo que no sea `datos`.** Adjuntar otro repositorio
+  desde adentro de la sesión está descrito, no ejecutado. Hasta que ocurra una
+  vez, la Parte 2 sólo está garantizada para `datos`.
+- **Una corrida desatendida completa.** Lo que se probó el 14-sep fue que el
+  entorno deja correr `ronda.mjs` sin nadie delante. Que el resto del prompt se
+  ejecute entero sin una persona que apruebe algo, no.
+
+**Lo que sí cambió ese día en la parte determinada**, y que la próxima corrida
+va a traer sola: la ronda suma la sección **5 · REGLAS SIN PUBLICAR**, y pide los
+reportes a todas las bases que conoce `firestore.mjs` en vez de a una lista
+escrita a mano. Las dos están en `main` y con banco de pruebas.
+
+**La rama del otro chat.** El trabajo de la rutina se venía haciendo en
+`claude/claudecode-auto-script-1hfspl`. Su contenido sustancial —`ronda.mjs`,
+su banco, este documento, el `LEEME` de la herramienta— **ya está en `main`**,
+verificado archivo por archivo el 2026-09-14. Lo único que tiene de propio es el
+residuo del viejo repositorio privado: `secretos/`, `partes/` y los *fixtures*
+de la solapa «Parte» retirada. Antes de borrarla va el censo del § 2.1 quater
+del `PROTOCOLO-GENERAL.md` — y ese censo ya se hizo, con este resultado:
+
+| Qué tenía la rama | Dónde está hoy |
+|---|---|
+| `secretos/*.md` · titularidad de las consolas | `fichas/` del panel, una ficha por proyecto, las cinco |
+| `secretos/rematetaller.md` · la clave de Cloudinary sin rotar | pendiente `general:cloudinary-filtrada`, con la historia de por qué se cerró sin rotar |
+| `secretos/harmonia.md` · el patrón de la función con lista blanca | regla `general:puente-tercero`, vigente |
+| `partes/*.json` · 177 pendientes declarados | los 177 están en `pendientes/`. Ninguno falta |
+| `partes/*.json` · las once rondas viejas | `tandas/`, con sus fechas |
+| `plantillas/gestos/gestos/*` | `gestos/` de este repositorio, idénticos |
+| `pruebas/panel/parte-*.json` · *fixtures* | muertos: el banco de `main` sólo usa `parte-1-inicial.json` |
+| Los protocolos en la raíz, `herramientas/`, `pruebas/` | `main`, y más nuevos que los de la rama |
+
+**No quedó nada sin lugar.** Lo que falta es borrarla, que lo dice Mauro.
+
 ## 7 · Cómo se arma la próxima rutina de control
 
 1. **Que el trabajo determinado lo haga un script**, no el modelo. Es barato,

@@ -19,7 +19,18 @@ documentan *nombres, propósito y ubicación* — nunca el valor.
 > | Qué | Dónde |
 > |---|---|
 > | La tabla de variables: nombre, qué hace, tipo, dónde vive el valor, quién la consume | la sección «Secretos» del `CLAUDE.md` **de cada proyecto**, que ya la tenía copiada — ahora es la única |
-> | La **titularidad de las consolas**: de quién es cada cuenta, a qué dirección se pide una recuperación | la **bóveda del panel**, `fichas/`, una ficha por proyecto |
+> | La **titularidad de las consolas**: de quién es cada cuenta, a qué dirección se pide una recuperación | las **fichas del panel**, `fichas/`, una ficha por proyecto |
+>
+> **Ojo con la palabra «bóveda», que hasta el 2026-09-14 nombraba dos cosas.**
+> Lo dijo Mauro ese día, en una línea: *«a la bóveda sólo irían contenedores que
+> tengan claves de acceso»*. La **bóveda es `claves/`**, y ahí va únicamente lo
+> que **abre algo** — contraseñas, códigos de recuperación, segundos factores—,
+> que no toca nadie más que él. La titularidad **no abre nada**: es un dato de
+> contacto, va en `fichas/`, y desde las reglas v4 la administra el equipo. Son
+> dos colecciones con dos criterios distintos, y llamarlas igual hacía que la
+> pregunta «¿dónde va esto?» volviera a costar — que es exactamente lo que la v4
+> vino a sacar. Este documento y los cinco `CLAUDE.md` decían «la bóveda del
+> panel (`fichas/`)»; dicen «las fichas del panel» desde el 2026-09-14.
 >
 > El motivo del corte es el de siempre: la tabla de variables no es sensible y
 > tiene que estar al lado del código que la consume; la titularidad es un dato de

@@ -42,9 +42,11 @@ base de verdad.
 
 ### La bóveda
 
-Lo que el agente no toca está en `selladas`, por proyecto. En el panel son
-`claves` y `fichas`; en los sitios, las credenciales, el dinero y los datos de
-personas. La herramienta tiene un guardia que corta antes de salir a la red,
+Lo que el agente no toca está en `selladas`, por proyecto. En el panel es
+**`claves` y nada más** —`fichas` estuvo sellada del 2026-09-11 al 2026-09-13 y
+volvió al equipo con las reglas v4, que sellan por PROPÓSITO y no por riesgo: si
+abre algo va en `claves`, si no abre va en `fichas`—; en los sitios, las
+credenciales, el dinero y los datos de personas. La herramienta tiene un guardia que corta antes de salir a la red,
 pero **el guardia no es la cerradura**: la cerradura son las reglas de
 Firestore, que le niegan eso al usuario del agente. Si este archivo tuviera un
 error, la base contestaría que no igual.

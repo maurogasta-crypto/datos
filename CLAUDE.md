@@ -23,7 +23,8 @@ la `VERSION` de `sw.js`, o los teléfonos sirven una mezcla de viejo y nuevo.
 **⚠ Hubo dos repositorios llamados `datos`, y ahora hay uno.** Éste
 —`maurogasta-crypto/datos`— es **público** y es la fuente de verdad: el panel,
 los protocolos, la herramienta y los bancos de pruebas. El otro
-—`casaverdecanas-blip/datos`, privado— **se borró el 2026-09-13**: la titularidad
+—`casaverdecanas-blip/datos`, privado— **se vació el 2026-09-13 y Mauro lo borró
+el 2026-09-14**: la titularidad
 de las consolas pasó a `fichas/`, las rondas viejas a `tandas/`, y los bancos, la
 auditoría y la plantilla de la incubadora a este repositorio, verificando archivo
 por archivo que no viajara un mail, un UID ni una credencial.
@@ -249,7 +250,8 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 ## Protocolos
 
 **Viven acá, desde el 2026-09-12, en `protocolos/`.** Hasta ese día estaban en
-el repo privado `casaverdecanas-blip/datos` —que se borró el 2026-09-13—, y eso
+el repo privado `casaverdecanas-blip/datos` —que se vació el 2026-09-13 y se
+borró el 2026-09-14—, y eso
 tenía un costo que se pagaba en cada sesión nueva: para leer el reglamento había
 que acordarse de agregar un segundo repositorio, de otro dueño de GitHub. Una
 regla que sólo llega si alguien se acordó de algo no es una regla.

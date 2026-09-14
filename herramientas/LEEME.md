@@ -72,9 +72,16 @@ regla puede adivinar que un campo llamado `valor` es una contraseña.
 ### El respaldo no entra al repositorio
 
 `bajar` escribe la base **tal cual está**. Si un documento tiene adentro una
-contraseña, el respaldo la tiene también, y este repositorio es privado pero su
-historial es permanente. Por eso `respaldos/` está en el `.gitignore` desde el
-2026-09-11: el respaldo se hace siempre, y siempre se queda afuera de git.
+contraseña, el respaldo la tiene también. Por eso `respaldos/` está en el
+`.gitignore` desde el 2026-09-11: el respaldo se hace siempre, y siempre se
+queda afuera de git.
+
+**Y desde el 2026-09-14 esto pesa más que antes, no menos.** Esta línea decía
+«este repositorio es privado pero su historial es permanente», y para entonces
+ya era falsa: la herramienta se mudó acá el 2026-09-12 y **este repositorio es
+público**. Un respaldo que se cuele en un `git add -A` no queda en un historial
+privado y permanente: queda publicado. El `.gitignore` es lo único que hay entre
+una cosa y la otra.
 
 ### Por qué un usuario común y no una cuenta de servicio
 

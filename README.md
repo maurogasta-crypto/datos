@@ -21,7 +21,7 @@ subir nada:
 | Repositorio | Qué es | Visibilidad | Qué va adentro |
 |---|---|---|---|
 | **`maurogasta-crypto/datos`** — *éste* | el panel **y el reglamento**: HTML, CSS, JavaScript, `protocolos/` y `herramientas/` | **público** | un cascarón y reglas de trabajo. Cero datos |
-| ~~`casaverdecanas-blip/datos`~~ | lo que no podía ser público | privado | **borrado el 2026-09-13.** Lo que tenía está en `fichas/` del panel (la titularidad), en `tandas/` (las rondas viejas) y acá (los bancos, la auditoría, `plantillas/`) |
+| ~~`casaverdecanas-blip/datos`~~ | lo que no podía ser público | privado | **vaciado el 2026-09-13, borrado por Mauro el 2026-09-14.** Lo que tenía está en `fichas/` del panel (la titularidad), en `tandas/` (las rondas viejas) y acá (los bancos, la auditoría, `plantillas/`) |
 
 **Esto cambió el 2026-09-12**, y vale saber qué cambió y qué no. Los protocolos
 se mudaron acá: tenerlos en un repositorio privado de otro dueño costaba, en cada

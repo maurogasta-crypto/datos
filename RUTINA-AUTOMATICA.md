@@ -1,19 +1,21 @@
-# La ronda automática
+# Rutinas de control
 
-Desde el **14-sep-2026**. Una vez por día, sin que nadie la pida, una sesión de
-Claude Code se despierta sola, lee los reportes de falla de los tres sitios y el
-panel de Mauro, los cruza, y deja en el panel lo que encontró.
+Desde el **14-sep-2026**. Una *rutina de control* es una sesión de Claude Code
+que se despierta sola, mira el estado del ecosistema, hace una cosa acotada y
+**deja el trabajo listo para que Mauro lo apruebe desde el teléfono**. No decide
+por él: le baja el costo de decidir.
 
-Es la mitad que faltaba del circuito de `REPORTES.md` de remate — «que una
-sesión lea `reportes/` de las bases y abra el pendiente» — y el pendiente
-`general:reportes-panel` del panel.
+Hoy hay una, la **Ronda de control diaria**. Este documento describe el proceso
+entero para que la siguiente se arme igual y no haya que volver a razonarlo.
 
-## Lo primero, porque es lo que motivó todo: no cuesta nada
+---
+
+## 1 · Lo primero, porque es lo que motivó todo: no cuesta nada aparte
 
 Pregunta de Mauro, 14-sep-2026: *¿con mi suscripción a Claude Pro tengo un costo
 adicional por ejecutar ese cron?*
 
-**No.** Se usa **routines** de Claude Code, que corren en la nube de Anthropic y
+**No.** Se usan **routines** de Claude Code, que corren en la nube de Anthropic y
 gastan de la cuota de la suscripción igual que una sesión de chat. La
 documentación oficial lo dice en las dos puntas:
 
@@ -26,217 +28,312 @@ documentación oficial lo dice en las dos puntas:
 Y están disponibles en Pro: *«Routines are available on Pro, Max, Team, and
 Enterprise plans.»*
 
-**El camino que se descartó, y por qué.** La primera respuesta de esta misma
-sesión fue GitHub Actions con `schedule`. Está mal para este caso: un workflow
-que llama a Claude necesita un `ANTHROPIC_API_KEY`, que se paga aparte de la
-suscripción y sería **el primer secreto de Actions de todo el ecosistema** —
-los cuatro `CLAUDE.md` dicen hoy que no hay ninguno, y remate lo dice con
-nombre y apellido. Routines no necesita ni el secreto ni el workflow.
+**El camino que se descartó, y por qué.** La primera respuesta de esa
+conversación fue GitHub Actions con `schedule`. Está mal para este caso: un
+workflow que llama a Claude necesita un `ANTHROPIC_API_KEY`, que se paga aparte
+de la suscripción y sería **el primer secreto de Actions de todo el ecosistema**
+— los cuatro `CLAUDE.md` dicen hoy que no hay ninguno, y remate lo dice con
+nombre y apellido. Una routine no necesita ni el secreto ni el workflow.
 
-## Lo que sí cuesta: la cuota, que es el límite real
+### El modelo: el más potente que el plan incluye
+
+Mauro pidió «el modelo más potente disponible». Se probó `claude-fable-5-1` y la
+API lo **aceptó** — pero Mauro avisó que **Fable no está incluido en Pro: se paga
+aparte**. Así que la routine corre con **`claude-opus-5`**, el más potente de los
+incluidos.
+
+Vale dejarlo escrito porque es una trampa cara: **que la API acepte un modelo no
+quiere decir que el plan lo cubra.** El selector está en `claude.ai/code/routines`
+→ la routine → el lápiz, y también se cambia desde un chat.
+
+---
+
+## 2 · Los límites reales, que son de cuota y no de plata
 
 | Qué | Cuánto | De dónde sale |
 |---|---|---|
 | Corridas de routine por día, en Pro | **5** | anuncio de Anthropic. El número vivo está en `claude.ai/code/routines` |
-| Intervalo mínimo entre corridas | **1 hora** | doc: *«The minimum interval is one hour; expressions that run more frequently are rejected»* |
+| Intervalo mínimo | **1 hora** | doc: *«The minimum interval is one hour; expressions that run more frequently are rejected»* |
 | Consumo | de la ventana de 5 horas, como cualquier sesión | doc de routines, § *Usage and limits* |
 | Si se acaba la cuota | la corrida **se rechaza**, no se encola | doc: *«Without usage credits, additional runs are rejected until the window resets»* |
 
 **Por eso la ronda corre una vez por día y no cada hora.** Con cinco corridas
-diarias, una ronda por hora se comería la cuota antes del mediodía y además le
-sacaría a Mauro la ventana de 5 horas que usa para trabajar. Una corrida diaria
-deja cuatro libres y casi toda la ventana.
+diarias, una por hora se comería la cuota antes del mediodía y además le sacaría
+a Mauro la ventana de 5 horas que usa para trabajar. Una corrida diaria deja
+cuatro libres y casi toda la ventana.
 
-**Y por eso lo que se puede juntar con código, se junta con código.** Esa es la
+**Y por eso lo que se puede juntar con código, se junta con código.** Ésa es la
 razón de `herramientas/ronda.mjs`: cruzar reportes contra pendientes es trabajo
 determinado, y cada dato que junta el script es un dato que el modelo no tiene
-que leer. El modelo queda para lo único que no se automatiza — entender qué
-quiso decir la persona que reportó la falla, y escribirlo como pendiente.
+que leer. El modelo queda para lo que no se automatiza — entender qué quiso decir
+la persona que reportó la falla, y resolver el pendiente.
 
-**Cuando no hay saldo, no se pierde nada.** La corrida rechazada simplemente no
-pasa; la del día siguiente encuentra los mismos reportes sin traer, porque lo
-que decide qué es nuevo no es «cuándo corrí» sino el campo `origen` del panel.
-Es la misma propiedad que hace que un reporte no se traiga dos veces.
+**Cuando no hay saldo, no se pierde nada.** La corrida rechazada no pasa; la del
+día siguiente encuentra los mismos reportes sin traer, porque lo que decide qué
+es nuevo no es «cuándo corrí» sino el campo `origen` del panel. Es la misma
+propiedad que evita traer un reporte dos veces.
 
-## Qué hace, en orden
+### Un costo medido, para tener referencia
 
-El orden no es decoración: es el del § 8 «Al abrir» y el § 6 «El apretón de
-manos» del `protocolos/PROTOCOLO-GENERAL.md`, y lo aplica `ronda.mjs` al imprimir.
+La corrida de prueba del 14-sep (que **falló**, ver § 6) gastó:
+
+| | |
+|---|---|
+| Duración | 2 min 25 s |
+| Contexto usado | 88.360 de 1.000.000 |
+| Equivalente en dólares | US$ 0,39 — **no facturados**: salieron de la suscripción |
+| Modelo servido | `claude-sonnet-5` (fue antes de fijar el modelo) |
+| Estado de la cuota | `allowed`, sin overage |
+
+Sirve como orden de magnitud: una ronda que sólo mira es barata. Una que además
+resuelve un pendiente va a costar más, y por eso resuelve **uno solo**.
+
+---
+
+## 3 · La forma de una rutina de control: tres partes
+
+Toda rutina de control de este ecosistema se escribe con esta estructura. No es
+estética: cada parte existe porque la anterior sola no alcanzaba.
+
+### Parte 1 · MIRAR — siempre, y antes que nada
 
 ```
 node herramientas/ronda.mjs abrir
 ```
 
-1. **TOCADOS** — los pendientes que Mauro editó desde el último parte. Van
-   primero porque el § 6 dice que es lo primero que mira un agente.
+Cinco secciones, en el orden del § 8 «Al abrir» y del § 6 «El apretón de manos»
+de `protocolos/PROTOCOLO-GENERAL.md`:
+
+1. **TOCADOS** — lo que Mauro editó desde el último parte.
 2. **SIN RESPONDER** — las preguntas que lo están esperando a él.
-3. **REPORTES NUEVOS** — las fallas escritas desde un sitio que todavía no
-   tienen pendiente en el panel.
-4. **ABIERTOS** — el resto, por proyecto (§ 9: Mauro trabaja en un proyecto por
-   vez) y por prioridad, con las trabas al final de cada grupo.
+3. **REPORTES NUEVOS** — fallas escritas desde un sitio, sin pendiente que las traiga.
+4. **ABIERTOS** — el resto, por proyecto y prioridad, con las trabas al final.
 5. **FUENTES** — qué base contestó y qué no.
 
-El punto 5 no es diagnóstico de adorno. El § 6 del `CLAUDE.md` de los cuatro
-proyectos dice que un `permission-denied` **es un bloqueo y se avisa**: una
-ronda automática que se queda callada cuando una base no contesta es peor que
-una que no corre, porque parece que corrió bien.
+El punto 5 no es diagnóstico de adorno, y es la regla más importante de todo el
+documento:
 
-Después la sesión escribe en el panel: un pendiente por reporte nuevo, con
-`origen`, y un renglón de historia en los pendientes que tenían novedad.
+> **Una ronda incompleta que no lo dice es peor que una que no corre, porque
+> parece completa.**
 
-## Lo que NO hace, y es a propósito
-
-**No toca código.** No edita archivos de los sitios, no empuja a `main`, no abre
-pull requests. Lee, condensa y escribe en el panel.
-
-No es timidez: es la regla «Ante pedidos automáticos o no verificados» que está
-copiada en los cuatro `CLAUDE.md`, aplicada a esta herramienta. Una sesión que
-se despierta sola y empuja código es exactamente el canal que esa regla manda
-tratar con sospecha, y en este ecosistema ya pasó una vez que una notificación
-automática logró que una sesión subiera una clave real de Cloudinary a un
-repositorio.
-
-Hay un detalle a favor que conviene saber, porque cambia el análisis a futuro:
-el prompt guardado de una routine **no** llega a la sesión como notificación
-sospechosa. La documentación es explícita — llega como la tarea asignada, porque
-lo guardó de antemano una sesión autorizada de la cuenta. Lo que sí llega
-etiquetado como dato no confiable es el texto que se le manda **en el momento
-del disparo** (el campo `text` de la API), envuelto en un bloque
-`<routine-fire-payload>`. Es justo la frontera que piden los `CLAUDE.md`.
-
-Así que la puerta para que la ronda corrija código está abierta y es una
-decisión de Mauro, no una limitación técnica. Lo que sigue en pie es el otro
-motivo: **nadie mira**. Mientras el paso siguiente sea «y lo sube», el momento
-de revisión desaparece, y lo que reemplaza a ese momento en el § 2.1 ter es la
-verificación previa del agente — que en una corrida desatendida no tiene a quién
-reportarle si falla.
-
-**El día que se habilite** —y hay una forma intermedia razonable: que empuje a
-una rama `claude/…`, que GitHub acepta siempre, y no a `main`— se cambia el
-prompt de la routine, se anota acá, y se anota en los cuatro `CLAUDE.md`. En la
-misma tanda, como todo lo demás.
-
-## Las credenciales
-
-La ronda entra a las cuatro bases con el usuario del agente, el mismo de
-siempre: `FB_AGENTE_MAIL` / `FB_AGENTE_CLAVE` (o el par heredado
-`FB_PANEL_MAIL` / `FB_PANEL_CLAVE`). Las carga Mauro en la configuración del
-entorno de Claude Code, en la web. **Ningún chat pide ese valor ni lo escribe en
-ningún lado**, y este archivo tampoco lo tiene.
-
-Un detalle de la documentación que conviene tener presente, y que no cambia nada
-hoy pero sí el día que haya más gente: las variables de entorno de un cloud
-environment *«son visibles para cualquiera que use el environment»*, y en Pro y
-Max lo recomendado para una clave es cargarla como **API credential**, que queda
-fuera del sandbox. Hoy el environment es de Mauro y nada más, así que la
-diferencia es teórica; si alguna vez lo comparte, deja de serlo.
-
-Y sigue valiendo lo de siempre: el usuario del agente **es un usuario común de
-Authentication**, no una cuenta de servicio. Todo lo que hace pasa por las
-reglas publicadas, y lo sellado se le niega — la bóveda (`claves`, `fichas`), el
-dinero y los datos de personas. Una cuenta de servicio saltearía las reglas
-enteras.
-
-## La red
-
-El environment por defecto de una routine sólo deja salir a una lista blanca.
-Verificado desde una sesión de este mismo entorno el 14-sep-2026:
-`identitytoolkit.googleapis.com` y `firestore.googleapis.com` contestan, que es
-todo lo que la ronda necesita.
-
-**Ojo con el falso verde.** La documentación lo dice y vale repetirlo acá:
+La documentación de Anthropic dice lo mismo desde el otro lado:
 
 > *«A green status in the run list means the session started and exited without
 > an infrastructure error. It does not mean the task in your prompt succeeded.»*
 
-Un 403 de red se ve como una corrida verde que no hizo nada. Por eso la sección
-FUENTES de `ronda.mjs` existe y por eso el prompt de la routine obliga a
-copiarla al panel cuando alguna fuente falla.
+Un 403 de red o un `permission-denied` de Firestore se ven, desde afuera, como
+una corrida verde que no hizo nada.
 
-## El prompt de la routine
+**Y la ronda se corre UNA sola vez por corrida.** Cada `abrir` hace login en las
+cuatro bases; polearlo agota la cuota de Firebase Authentication y la base
+empieza a contestar `QUOTA_EXCEEDED: Exceeded quota for verifying passwords`.
+Pasó el 14-sep, verificando esto mismo. No es un límite de Claude: es de Firebase,
+y se levanta solo con el tiempo.
 
-Es lo único que hay que pegar si algún día se recrea a mano, en
-`claude.ai/code/routines`. Se guarda acá porque el texto de una routine vive en
-la cuenta de Mauro y no en ningún repositorio: si se pierde, se pierde el
-criterio con el que fue escrita.
+### Parte 2 · TRABAJAR — como máximo UN pendiente por corrida
 
-```text
-Sos la ronda diaria del ecosistema de Mauro. Corrés sola, sin nadie delante.
+Se elige uno: `quien: "claude"`, abierto, sin trabas sin resolver, la prioridad
+más alta. **Uno y no más**, y el motivo es el de siempre en este ecosistema: se
+trabaja desde el teléfono.
 
-0. Si `herramientas/ronda.mjs` no existe en el repo `maurogasta-crypto/datos`,
-   pará acá y decilo en una línea: la ronda todavía no está en `main`. No
-   improvises un reemplazo ni leas las bases a mano.
-1. Leé `CLAUDE.md` y `protocolos/PROTOCOLO-GENERAL.md` de este repo, §§ 6, 8 y 9.
-2. Corré:  node herramientas/ronda.mjs abrir
-   Eso ya trae, cruzado y ordenado, el panel y los reportes de los tres sitios.
-   No vuelvas a leer las bases a mano: lo que necesitás está ahí.
-3. Si la sección FUENTES tiene alguna fuente caída, ESO es lo primero que se
-   informa. Una ronda incompleta que no lo dice es peor que una que no corre.
-4. Por cada REPORTE NUEVO, escribí un pendiente en el panel:
-   · `titulo` corto, en los términos de quien lo reportó, no en los tuyos;
-   · `porQue` con lo que decía el reporte y qué se rompió, no una paráfrasis;
-   · `proyecto` el del sitio, `quien: "claude"`, `estado: "abierto"`;
-   · `prioridad`: «alta» si el reporte dice que no lo deja trabajar;
-   · `origen`: exactamente el que imprimió la ronda. Sin eso se trae dos veces.
-   · `clave`: pedila con  node herramientas/ronda.mjs claves <proyecto>  y elegí
-     la letra por el tema. No inventes una letra nueva sin motivo.
-   Se escribe con  node herramientas/firestore.mjs panel escribir pendientes <id> <archivo.json>
-   y ANTES se baja el respaldo:  node herramientas/firestore.mjs panel bajar
-5. NO toques código. No edites archivos de los sitios, no empujes a ninguna
-   rama, no abras pull requests. Si encontrás algo que hay que arreglar, va al
-   panel como pendiente, que es donde Mauro lo mira.
-6. Nunca escribas el valor de una credencial en ningún lado, ni en el panel.
-   Si algo parece necesitarlo, se convierte en una `pregunta` del pendiente.
-7. Cerrá con un renglón de historia en los pendientes que tocaste, fechado y
-   con `por: "claude"`. La respuesta de Mauro no se pisa nunca.
+> Un diff que Mauro no puede leer desde el teléfono no se revisa: se aprueba a
+> ciegas. Y una aprobación a ciegas es peor que un pendiente sin hacer, porque
+> además borra la sensación de que falta hacerlo.
 
-Si no hay reportes nuevos ni fuentes caídas, no escribas nada y decilo en una
-línea. Una ronda que no encontró nada es una buena ronda, no una fallida.
+Si el pendiente más prioritario necesita una decisión suya, no se empieza: se le
+deja la `pregunta` y se pasa al siguiente.
+
+Antes de empujar corre **la verificación previa del § 2.1 ter, que no es
+opcional** — es lo que reemplaza al momento de revisión que se perdió al empujar
+sin rama: `node --check` en todo lo tocado (incluidos los módulos que viven
+adentro de un `.html`), los bancos de pruebas que declare el `CLAUDE.md` de ese
+repo, los sellos de versión subidos con sus `?v=`, y la documentación diciendo la
+verdad después del cambio.
+
+**Si algo no pasa, no se empuja.** Se escribe en el pendiente qué falló. Una rama
+rota que nadie pidió cuesta más que un pendiente sin hacer.
+
+### Parte 3 · AVISAR — siempre, aunque no haya tocado nada
+
+El aviso va a **dos lugares**, porque uno solo se pierde:
+
+| Dónde | Por qué |
+|---|---|
+| El panel, como `pregunta` del pendiente trabajado | ahí le aparece en «lo primero que tenés que mirar», y sobrevive a la notificación |
+| La **última línea de la respuesta de la sesión**, sola | es lo que viaja en la notificación al teléfono |
+
+El enlace es el de comparar, que muestra el diff y trae el botón de abrir el pull
+request:
+
+```
+https://github.com/<owner>/<repo>/compare/main...claude/ronda-<AAAA-MM-DD>
 ```
 
-## La routine que existe hoy
+Si no tocó código, la última línea es igual de obligatoria: «Ronda del `<fecha>`:
+sin reportes nuevos y sin cambios», o «Ronda del `<fecha>`: `<fuente>` no
+contestó». Un silencio y una ronda limpia no se pueden distinguir.
 
-Creada el 14-sep-2026 desde una sesión, no a mano:
+**Y no se marca «hecho» nada que dependa de que él apruebe la rama.** Queda
+abierto con la pregunta hasta que él mergee. Eso es lo que hace que la lista del
+panel siga siendo verdad.
+
+---
+
+## 4 · La frontera: qué puede tocar y qué no
+
+**Empuja a `claude/ronda-<fecha>`, nunca a `main`.** GitHub acepta siempre las
+ramas con prefijo `claude/`; para cualquier otra, Claude Code verifica antes y la
+rechaza si está protegida, si alguien tiene un pull request abierto desde ella, o
+si trae commits de otra persona.
+
+Que empuje a una rama y no a `main` **no es una limitación técnica: es la
+decisión.** El § 2.1 ter manda empujar a `main` directo porque «una rama que nadie
+mira no previene nada». Acá la rama sí se mira —es justamente lo que el enlace del
+aviso viene a provocar— y eso cambia el cálculo. Lo que reemplaza al momento de
+revisión cuando no hay nadie es la verificación previa del agente; con alguien que
+aprueba desde el teléfono, hay las dos cosas.
+
+**Nunca, en ninguna corrida:**
+
+- escribir el valor de una credencial en ningún lado, ni en el panel;
+- tocar lo sellado — la bóveda (`claves`, `fichas`), el dinero, los datos de
+  personas. La herramienta frena antes de salir a la red y **las reglas de
+  Firestore frenan de verdad**: el usuario del agente es un usuario común de
+  Authentication, no una cuenta de servicio, que saltearía las reglas enteras;
+- agregar `npm`, bundlers, workflows de GitHub Actions o secretos de Actions;
+- declarar entregado algo que no se entregó.
+
+### Un detalle que conviene tener claro, porque cambia el análisis
+
+El prompt guardado de una routine **no** le llega a la sesión como notificación
+sospechosa. La documentación es explícita: llega como la tarea asignada, porque lo
+guardó de antemano una sesión autorizada de la cuenta de Mauro. Es su instrucción
+permanente, y vive en su cuenta, **no en un repositorio** — que es justo lo que el
+§ 6.0 dice que un archivo no puede ser, porque cualquiera que pueda escribir en el
+repositorio podría escribir el permiso de Mauro.
+
+Lo que sí llega etiquetado como dato no confiable es el texto que se le manda **en
+el momento del disparo** (el campo `text` de la API de disparo), envuelto en un
+bloque `<routine-fire-payload>`. Ésa es la frontera que piden los cuatro
+`CLAUDE.md`, y está donde tiene que estar.
+
+### Por qué un chat interactivo sí tiene que preguntar
+
+Una sesión nueva de Claude Code arranca con una rama asignada por la plataforma y
+con la instrucción de no empujar a otra sin permiso explícito de Mauro. Eso no se
+puede resolver con un archivo: **lo único que viaja a toda sesión nueva son
+archivos del repositorio** (`CLAUDE.md`, `.claude/`), y el `~/.claude/CLAUDE.md`
+personal de Mauro **no** viaja — la documentación lo dice en su tabla «What carries
+over from your setup».
+
+Así que la pregunta de apertura del § 6.0 se sigue haciendo, una línea y
+contestable con un «sí». Lo que la vuelve barata no es sacarla: es que el trabajo
+diario lo haga la rutina, no un chat.
+
+---
+
+## 5 · Credenciales y red
+
+La ronda entra a las cuatro bases con el usuario del agente: `FB_AGENTE_MAIL` /
+`FB_AGENTE_CLAVE`, o el par heredado `FB_PANEL_MAIL` / `FB_PANEL_CLAVE`. Las carga
+Mauro en la configuración del entorno de Claude Code, en la web. **Ningún chat
+pide ese valor ni lo escribe en ningún lado**, y este archivo tampoco lo tiene.
+
+Un detalle de la documentación que no cambia nada hoy pero sí el día que haya más
+gente: las variables de entorno de un cloud environment *«son visibles para
+cualquiera que use el environment»*, y en Pro y Max lo recomendado para una clave
+es cargarla como **API credential**, que queda fuera del sandbox. Hoy el
+environment es de Mauro y nada más, así que la diferencia es teórica.
+
+**La red.** El environment por defecto sólo deja salir a una lista blanca.
+Verificado el 14-sep-2026 desde una sesión de este mismo entorno:
+`identitytoolkit.googleapis.com` y `firestore.googleapis.com` contestan, que es
+todo lo que la ronda necesita.
+
+---
+
+## 6 · La routine que existe hoy, y qué pasó al probarla
 
 | | |
 |---|---|
-| Nombre | **Ronda diaria · panel y reportes** |
+| Nombre | **Ronda de control diaria** |
 | Identificador | `trig_01WDGNPPmESxcJXktjtebLw4` |
 | Cuándo | `0 11 * * *` — 11:00 UTC, o sea **8 de la mañana** en Uruguay |
+| Modelo | `claude-opus-5` |
 | Qué dispara | una sesión nueva cada vez, no una conversación que sigue |
-| Aviso | notificación al teléfono cuando una corrida termina con algo que contar |
+| Aviso | notificación al teléfono cuando una corrida termina |
 
-**Dos cosas quedan por confirmar en la primera corrida**, y se dicen acá en vez
-de darlas por buenas:
+### La prueba del 14-sep, que falló, y qué se aprendió
 
-1. **Que el código esté en `main`.** La routine clona la rama principal de
-   `maurogasta-crypto/datos`, y al crearla `herramientas/ronda.mjs` estaba en la
-   rama `claude/claudecode-auto-script-1hfspl`, sin mergear. Por eso el prompt
-   arranca con el punto 0: si el archivo no está, para y lo dice, en vez de
-   improvisar un reemplazo.
-2. **Que la routine tenga declarados los repositorios.** La respuesta de la API
-   al crearla vino con la lista de `sources` **vacía**, y la documentación dice
-   que una routine requiere uno o más repositorios. Puede ser que los herede del
-   entorno; puede que haya que agregarlos a mano en `claude.ai/code/routines` →
-   la routine → el lápiz. Se sabe mirando la primera corrida.
+Mauro reportó una falla de prueba desde `configuracion.html` de remate:
 
-También vino sin conectores MCP, y está bien: la ronda no usa ninguno. Entra a
-las bases con `fetch` y las credenciales del entorno, no con un conector.
+> *«Intento reportar una falla como prueba. Espero saber a partir de éste reporte
+> si al momento de correr los controles que pretendemos Automatizar logramos
+> hacer llegar este reporte hasta el panel y el chat lo puede levantar como tanda
+> o tarea pendiente sin mi intervención.»*
 
-## Cómo se para
+Se disparó la routine a mano para contestarle eso. Resultado:
+
+- **`ronda.mjs` ve el reporte.** Corrida desde una sesión normal, aparece en
+  REPORTES NUEVOS con su `origen`. Esa mitad anda.
+- **La routine terminó sin escribir el pendiente.** La sesión corrió 2 min 25 s,
+  quedó en «idle», y en el panel no apareció ningún pendiente con `origen`.
+- **La causa más probable está a la vista**: la routine se creó desde una sesión
+  por API y la respuesta vino con la lista de `sources` **vacía**. La
+  documentación dice que una routine requiere uno o más repositorios, que se
+  clonan en cada corrida. Sin repositorio no hay `herramientas/ronda.mjs`, y el
+  punto 0 del prompt manda parar y decirlo — que es exactamente lo que parece
+  haber pasado.
+
+**Qué falta para cerrarlo:** abrir `claude.ai/code/routines` → **Ronda de control
+diaria** → el lápiz, y agregar los repositorios (por lo menos
+`maurogasta-crypto/datos`; los cinco si va a resolver pendientes de los sitios).
+Es el pendiente `panel:R6`.
+
+Se deja escrito el fracaso en vez de borrarlo porque es el dato más útil del
+documento: **una routine creada por API no hereda los repositorios de la sesión
+que la creó.**
+
+---
+
+## 7 · Cómo se arma la próxima rutina de control
+
+1. **Que el trabajo determinado lo haga un script**, no el modelo. Es barato,
+   se prueba con `node` a secas, y el modelo queda para el juicio.
+2. **Que el script no escriba.** Junta y ordena; quien decide es quien lee.
+3. **Que declare sus fuentes**, y que una fuente caída sea lo primero que informa.
+4. **Una cosa por corrida**, del tamaño que se revisa en un teléfono.
+5. **Que empuje a `claude/…`**, nunca a `main`.
+6. **Que el aviso vaya al panel y a la última línea**, los dos, con el enlace de
+   comparar adentro.
+7. **Un banco de pruebas sin red** para la parte determinada. Corre sola: si se
+   equivoca en silencio, nadie lo ve hasta que el daño está hecho.
+8. **Anotarla acá**, con su identificador, su horario y su modelo.
+
+Y la que vale más que las ocho:
+
+> **Lo que se documenta sale de leer el código y la configuración reales**, nunca
+> de lo que una conversación —ni siquiera ésta— afirme que dice el código.
+
+---
+
+## 8 · Cómo se para
 
 En `claude.ai/code/routines`: la routine tiene un interruptor en la sección
 **Repeats** para pausarla sin perder la configuración, y un ícono para borrarla.
-Las sesiones que ya creó quedan en la lista de sesiones igual.
+Las sesiones que ya creó quedan en la lista igual. Desde el teléfono también: esa
+dirección anda en el navegador del celular.
 
-Desde el teléfono también: `claude.ai/code/routines` anda en el navegador del
-celular, que es como se trabaja acá.
+---
 
-## Lo que falta
+## 9 · Lo que falta
 
-- **El formulario de reporte en Casa Verde y CasaYourte.** Hoy sólo remate
-  tiene de dónde reportar, así que la ronda lee tres bases y dos están siempre
-  vacías. Es el pendiente `general:reportes-2` del panel, y el molde completo
-  está en `REPORTES.md` de remate. La ronda ya las lee: cuando la colección
-  exista, entra sola sin tocar este archivo.
-- **Decidir si la ronda corrige código**, y con qué frontera. Ver arriba.
+- **Cargarle los repositorios a la routine.** Es lo único que separa de que
+  funcione. `panel:R6`.
+- **El formulario de reporte en Casa Verde y CasaYourte.** Hoy sólo remate tiene
+  de dónde reportar, así que la ronda lee tres bases y dos están siempre vacías.
+  Es `general:reportes-2`, y el molde completo está en `REPORTES.md` de remate.
+  La ronda ya las lee: cuando la colección exista, entra sola.
+- **Ver si la Parte 2 aguanta el presupuesto.** Resolver un pendiente por día con
+  Opus puede comerse más ventana de la que conviene. Se mide con las primeras
+  corridas reales, no antes.

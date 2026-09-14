@@ -15,7 +15,9 @@
 
 import assert from "node:assert/strict";
 import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
-         tocados, sinResponder, porProyecto } from "../../herramientas/ronda.mjs";
+         tocados, sinResponder, porProyecto, reglasSinPublicar,
+         CON_REPORTES } from "../../herramientas/ronda.mjs";
+import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => {
@@ -185,6 +187,44 @@ prueba("un proyecto sin ficha va al final, no adelante", () => {
 prueba("sin fichas no se rompe: alfabético", () => {
   const p = [{ id: "1", proyecto: "remate" }, { id: "2", proyecto: "casaverde" }];
   assert.deepEqual(porProyecto(p, []).map((g) => g.proyecto), ["casaverde", "remate"]);
+});
+
+/* ── Las reglas sin publicar, y el sitio nuevo ───────────────────────────── */
+titulo("Las reglas sin publicar");
+
+prueba("trae la base que dice «sin publicar»", () => {
+  const p = [{ id: "a", acceso: { estado: "publicada" } },
+             { id: "b", acceso: { estado: "sin publicar" } }];
+  assert.deepEqual(reglasSinPublicar(p).map((x) => x.id), ["b"]);
+});
+
+prueba("también «pendiente de publicar» y «falta publicar»", () => {
+  /* Las tres redacciones existen en la base desde antes de `panel-21`. La que
+     escribe el panel hoy es una sola, pero las viejas siguen siendo verdad. */
+  const p = [{ id: "a", acceso: { estado: "pendiente de publicar" } },
+             { id: "b", acceso: { estado: "falta publicar" } }];
+  assert.equal(reglasSinPublicar(p).length, 2);
+});
+
+prueba("un proyecto sin `acceso` no rompe ni cuenta", () => {
+  assert.deepEqual(reglasSinPublicar([{ id: "a" }, { id: "b", acceso: {} }, null]), []);
+});
+
+prueba("sin lista de proyectos devuelve vacío, no explota", () => {
+  assert.deepEqual(reglasSinPublicar(undefined), []);
+});
+
+titulo("Un sitio nuevo entra solo");
+
+prueba("los reportes se piden a TODAS las bases menos el panel", () => {
+  /* Era una lista escrita a mano hasta el 2026-09-14, y era el último lugar
+     donde dar de alta un sitio pedía acordarse de tocar un archivo. */
+  assert.deepEqual([...CON_REPORTES].sort(),
+    Object.keys(PROYECTOS).filter((x) => x !== "panel").sort());
+});
+
+prueba("y el panel nunca está: es contra quien se cruzan", () => {
+  assert.ok(!CON_REPORTES.includes("panel"));
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

@@ -355,7 +355,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-20";
+P.PANEL = "panel-21";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -733,6 +733,30 @@ function tarjeta(p) {
     + "</div>";
   if (!APP && p.proyecto) h += '<div class="deque">' + P.esc(nombreProy(p.proyecto)) + "</div>";
   if (p.porQue) h += '<div class="porque">' + P.esc(p.porQue) + "</div>";
+  /* ── LOS DOS BOTONES, ADENTRO DEL PENDIENTE ──────────────────────────
+     Pedido de Mauro, 2026-09-14: «que al momento de establecerse los
+     pendientes en los que haya una aclaración de que tengo que actualizar las
+     reglas me dé ya esos mismos botones en el pendiente, para poder desde la
+     lista resolver esos dos clics sin salir de esa ventana».
+
+     Van en la TARJETA y no en el editor a propósito: el editor es un paso más,
+     y con el tercer botón el pendiente se cierra solo, así que abrirlo dejaría
+     de tener sentido justo para esto. Son los mismos botones de la ficha del
+     sitio, armados por la misma función. */
+  /* Y se muestran cuando SIRVEN: el pendiente sigue abierto, o las reglas de
+     ese proyecto todavía no están publicadas. Los ocho pendientes de publicar
+     que había el 2026-09-14 estaban los ocho marcados «hecho», y seis de ellos
+     con las reglas al día: repetirles los botones sería ruido en una lista que
+     existe para que se vea lo que falta. El de CasaYourte sí los muestra, y es
+     el caso que importa — cerrado a mano, con las reglas sin publicar. */
+  const prReglas = abierto(p) || estadoReglas(reglasDelPendiente(p) || {}).mal
+    ? reglasDelPendiente(p) : null;
+  if (prReglas) {
+    const er = estadoReglas(prReglas);
+    h += '<div class="porque"><span class="sit-chip ' + (er.mal ? "mal" : "ok") + '">'
+      + P.esc(er.chip) + "</span> " + P.esc(queEspera(er)) + "</div>"
+      + botonesDeReglas(prReglas, p.id);
+  }
   if (traba.length) {
     h += '<div class="traba"><span class="k">traba ' + traba.length
       + (traba.length === 1 ? " cosa" : " cosas") + "</span>"
@@ -802,12 +826,16 @@ function pintarTeToca() {
   const mios = PENDIENTES.filter(deLaApp);
 
   /* Las reglas salen de `proyectos/`, no de los pendientes: es el estado real
-     de cada base, escrito al revisarla, y no depende de que alguien se haya
-     acordado de abrir un pendiente por eso. */
+     de cada base y no depende de que alguien se haya acordado de abrir un
+     pendiente por eso.
+
+     Desde `panel-21` ese estado lo DERIVA `estadoReglas()` de dos huellas que
+     escribe el panel, en vez de leer una frase que alguien tecleó al revisar.
+     El día que se escribían a mano, el 2026-09-14, esta lista y el tablero
+     dijeron cosas distintas del mismo hecho. */
   const sinPublicar = PROYECTOS.filter((p) => {
     if (APP && p.id !== APP) return false;
-    const a = p.acceso || {};
-    return a.estado && /pendiente|falta|sin publicar/i.test(a.estado);
+    return estadoReglas(p).mal;
   });
   const preguntas = mios.filter(sinResponder).length;
   const esperan = mios.filter((p) => abierto(p) && p.quien !== "claude").length;
@@ -985,11 +1013,36 @@ function cerrarPendiente() {
 }
 
 $("lista").addEventListener("click", (e) => {
+  /* Un botón o un enlace ADENTRO de la tarjeta hace lo suyo y no abre el
+     pendiente. Sin esto, tocar «Copiar para publicar» copiaba y además te
+     sacaba de la lista, que es exactamente lo contrario de «sin salir de esa
+     ventana». Vale para cualquier botón que se agregue mañana. */
+  if (e.target.closest("button, a")) return;
   const caja = e.target.closest("[data-abrir]");
   if (!caja) return;
   const p = PENDIENTES.find((x) => x.id === caja.dataset.abrir);
   if (p) abrirPendiente(p);
 });
+/* Los botones de reglas de la lista. Un solo listener para toda la lista, que
+   se repinta entera: enganchar botón por botón dejaría listeners colgados. Es
+   la misma razón que en «Sitios» y en las fichas. */
+$("lista").addEventListener("click", (e) => {
+  const cp = e.target.closest("[data-reglas]");
+  if (cp) {
+    const pr = PROYECTOS.find((x) => x.id === cp.dataset.reglas);
+    if (pr) copiarReglasDe(pr, cp);
+    return;
+  }
+  const pu = e.target.closest("[data-publicadas]");
+  if (pu) {
+    const pr = PROYECTOS.find((x) => x.id === pu.dataset.publicadas);
+    if (pr) marcarPublicadas(pr, pu.dataset.pend || "", pu);
+    return;
+  }
+  const pt = e.target.closest("[data-puerta]");
+  if (pt) { irA("puerta"); window.scrollTo(0, 0); }
+});
+
 $("btnPendCancelar").addEventListener("click", cerrarPendiente);
 $("t-volver").addEventListener("click", (e) => { e.preventDefault(); cerrarPendiente(); });
 
@@ -1680,30 +1733,182 @@ function crudoDeGithub(url) {
 const consolaDeReglas = (base) =>
   "https://console.firebase.google.com/project/" + encodeURIComponent(base) + "/firestore/rules";
 
-/* Baja el texto de las reglas de un sitio y lo deja en el portapapeles.
+/* ═══ LAS REGLAS DE UN SITIO, DE PUNTA A PUNTA ═══════════════════════════
+   Pedido de Mauro, 2026-09-14, con sus palabras: «entro ahí, toco el botón
+   amarillo grande, eso me copia al portapapeles todas las reglas, tengo el
+   botón para abrir la consola y ahí pego». Lo mismo en los cinco proyectos y
+   en el que aparezca mañana — «siempre el mismo mecanismo para todos los
+   sitios», sin excepciones que haya que recordar.
 
-   Se baja en el momento del toque y no al pintar la pantalla: son cuatro
-   archivos de varios kilobytes cada uno, y en un teléfono con datos móviles
-   bajarlos todos para que Mauro copie uno es regalar la conexión. */
-async function copiarReglasDe(url, boton) {
-  const crudo = crudoDeGithub(url);
-  if (!crudo) return;
+   Hasta `panel-20` faltaban dos cosas para eso.
+
+     · EL PANEL ERA LA EXCEPCIÓN. Su `reglas.txt` es una plantilla con
+       marcadores en vez de UID —ese repositorio es público—, así que su botón
+       no copiaba: mandaba a «La puerta» a armarlas. Un mecanismo distinto en
+       uno de cinco es un mecanismo que hay que tener en la cabeza. Ahora el
+       botón arma el texto ahí mismo, con los dos UID puestos, y copia.
+
+     · EL ESTADO SE ESCRIBÍA A MANO. `acceso.estado` era una frase que alguien
+       tecleaba al revisar, y el 2026-09-14 pasó lo que tenía que pasar: Mauro
+       marcó `casayourte:T1` como hecho y la ficha del sitio siguió diciendo
+       «sin publicar». El mismo hecho en dos lugares y escrito por dos manos
+       distintas — el quinto caso del ecosistema, después de los sellos. Ahora
+       sale de comparar dos huellas que escribe el panel solo.
+
+   LO QUE NO SE PUEDE, Y CONVIENE TENERLO PRESENTE: leer las reglas
+   PUBLICADAS. Firebase no se las muestra al navegador sin credenciales de
+   administrador. Todo lo que este panel muestra y copia es el archivo del
+   repositorio —el que HAY QUE publicar—, nunca lo que está publicado. Por eso
+   la única forma de saber si coinciden es registrar el momento en que Mauro
+   las pegó, y ése es el tercer botón. No es un trámite: es el único dato que
+   nadie más puede aportar.
+
+   Y POR ESO EL TEXTO NO SE DUPLICA EN NINGÚN LADO. La autoridad sigue siendo
+   el archivo de cada repositorio; el panel guarda su HUELLA y dos medidas, no
+   su contenido. Copiar las reglas a esta base sería la sexta copia de lo
+   mismo. */
+
+/* La huella de un texto. NO es criptográfica, y no tiene por qué serlo: la
+   pregunta que contesta es «¿es el mismo texto que publiqué?», no «¿me lo
+   falsificaron?». Se eligió una función pura y síncrona —dos hashes de 32 bits
+   más el largo— en vez de `crypto.subtle`, que es asíncrono y no existe fuera
+   de un contexto seguro: el banco de pruebas tiene que poder correrla con
+   `node` a secas, como todo lo demás de este ecosistema. */
+function huella(texto) {
+  const s = String(texto == null ? "" : texto);
+  let a = 0x811c9dc5, b = 5381;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    a = Math.imul(a ^ c, 16777619) >>> 0;        // FNV-1a
+    b = (Math.imul(b, 33) + c) >>> 0;            // djb2
+  }
+  const hex = (n) => (n >>> 0).toString(16).padStart(8, "0");
+  return s.length + "-" + hex(a) + hex(b);
+}
+
+/* Lo que se guarda de un texto de reglas: la huella para comparar, y el largo
+   en renglones y en bytes para poder DECIR qué está esperando. «Sin publicar»
+   a secas no le dice a nadie qué cambió; «205 renglones contra los 188 que
+   publicaste el 13-sep» sí, y es la diferencia entre un cartel y una tarea. */
+const medirReglas = (t) => ({
+  huella: huella(t),
+  lineas: String(t).split("\n").length,
+  bytes: new TextEncoder().encode(String(t)).length
+});
+
+/* El estado de las reglas de un proyecto, DERIVADO y no tecleado.
+
+   Los dos datos salen de actos y no de opiniones: `acceso.repo` lo escribe el
+   panel cada vez que baja el archivo, y `acceso.publicado` cuando Mauro toca
+   «Ya las publiqué». Mientras falte alguno de los dos se cae al `acceso.estado`
+   viejo, que sigue siendo verdad hasta que el flujo nuevo lo reemplace: un
+   proyecto cargado antes de esta tanda no tiene por qué empezar a mentir. */
+function estadoReglas(pr) {
+  const a = (pr && pr.acceso) || {};
+  const pub = a.publicado || {}, rep = a.repo || {};
+  if (pub.huella && rep.huella) {
+    const igual = pub.huella === rep.huella;
+    return { chip: igual ? "al día" : "falta publicar", mal: !igual,
+             comprobado: true, pub, rep };
+  }
+  if (a.estado) {
+    return { chip: a.estado, mal: /pendiente|falta|sin publicar/i.test(a.estado),
+             comprobado: false, pub, rep };
+  }
+  return { chip: "sin comprobar", mal: false, comprobado: false, pub, rep };
+}
+
+/* La frase que se guarda en `acceso.estado`. Es la SALIDA de `estadoReglas()`,
+   no una segunda regla escrita aparte: se guarda para que lo que lee la ronda
+   —o una sesión, o un chat— sea exactamente lo que se ve en esta pantalla. Ése
+   fue el problema del 2026-09-14 y no se arregla sincronizando dos lugares a
+   mano, se arregla teniendo un solo cálculo y un solo escritor.
+
+   Cuando todavía no se puede saber, devuelve null y NO se escribe nada:
+   inventar un «publicada» es peor que no decir nada. */
+function estadoGuardable(acceso) {
+  const e = estadoReglas({ acceso });
+  return e.comprobado ? (e.mal ? "sin publicar" : "publicada") : null;
+}
+
+/* Qué está esperando, en un renglón. Sólo se dice cuando hay con qué: sin las
+   dos huellas no se sabe, y decirlo igual sería inventar. */
+function queEspera(e) {
+  if (!e.comprobado) return "";
+  if (!e.mal) return "Igual a lo que publicaste el " + (e.pub.fecha || "—") + ".";
+  return "Lo que publicaste el " + (e.pub.fecha || "—") + " tenía " + e.pub.lineas
+    + " renglones; el archivo de ahora tiene " + e.rep.lineas + ".";
+}
+
+/* ¿Es la base del propio panel? Es el único proyecto cuyo archivo de reglas es
+   una plantilla, porque lleva el UID de Mauro adentro y su repositorio es
+   público. Se compara contra `firebaseConfig.projectId` y no contra el texto
+   «panel»: el id del documento lo elige quien carga el proyecto, la base no. */
+const esPropia = (pr) => !!(pr && pr.acceso && pr.acceso.base
+  && pr.acceso.base === firebaseConfig.projectId);
+
+/* ¿Este proyecto tiene reglas que el panel pueda traer? Es la ÚNICA condición
+   para que aparezcan los botones, acá y adentro de un pendiente. Un proyecto
+   nuevo que cargue `acceso.base` y `acceso.reglasUrl` los tiene sin que haya
+   que tocar una línea de este archivo — que es justamente lo que se pidió. */
+const tieneReglas = (pr) => !!(pr && pr.acceso
+  && (esPropia(pr) || crudoDeGithub(pr.acceso.reglasUrl)));
+
+/* Baja el texto y lo deja LISTO PARA PEGAR. Se baja en el momento del toque y
+   no al pintar la pantalla: son cinco archivos de varios kilobytes cada uno, y
+   en un teléfono con datos móviles bajarlos todos para que Mauro copie uno es
+   regalar la conexión. */
+async function bajarReglasDe(pr) {
+  const a = pr.acceso || {};
+  /* La propia sale del repositorio del panel, que el service worker ya tiene
+     guardado en el teléfono: sin señal también se puede copiar. */
+  if (esPropia(pr)) return { texto: armarPlantilla(await bajarPlantilla()), propia: true };
+  const crudo = crudoDeGithub(a.reglasUrl);
+  if (!crudo) throw new Error("este proyecto no declara un `reglasUrl` de GitHub.");
+  const r = await fetch(crudo, { cache: "no-cache" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const texto = await r.text();
+  /* Una plantilla de OTRA base no se completa desde acá, y no se copia a
+     medias: Firebase le da a Mauro un UID DISTINTO en cada proyecto, así que
+     el único que el panel conoce —el suyo, en esta base— no sirve para otra.
+     Si algún día un sitio adopta esta forma, hay que enseñarle al panel de
+     dónde sacar ese UID; adivinarlo publicaría unas reglas que no dejan entrar
+     a nadie, y el que pega no se entera hasta que ya no puede entrar. */
+  if (texto.includes(MARCA_MIA) || texto.includes(MARCA_AGENTE)) {
+    throw new Error("ese archivo es una plantilla con marcadores de UID, y los UID "
+      + "de Firebase son distintos en cada proyecto: el panel no puede completarlos.");
+  }
+  return { texto, propia: false };
+}
+
+/* Guarda lo que se acaba de bajar, para que el chip del sitio pueda decir la
+   verdad sin volver a bajar el archivo cada vez que se pinta la pantalla.
+
+   Que COPIAR escriba en la base no es un efecto de más: bajar es el único
+   momento en que el panel tiene el texto verdadero en la mano, y si no lo
+   anota ahí, no lo anota nunca. */
+async function anotarRepo(pr, m) {
+  const acceso = { ...(pr.acceso || {}), repo: { ...m, visto: P.hoy() } };
+  const e = estadoGuardable(acceso);
+  if (e) acceso.estado = e;
+  await setDoc(doc(db, "proyectos", pr.id), { acceso }, { merge: true });
+  pr.acceso = acceso;
+}
+
+/* EL BOTÓN AMARILLO, uno solo para los cinco proyectos. */
+async function copiarReglasDe(pr, boton) {
   const antes = boton.textContent;
   boton.disabled = true; boton.textContent = "Bajando…";
   try {
-    const r = await fetch(crudo, { cache: "no-cache" });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const texto = await r.text();
-    /* Una plantilla con marcadores NO se copia: publicarla dejaría afuera a
-       todo el mundo, porque ningún usuario tiene un uid que se llame
-       TU-UID-ACA. Es el caso del propio panel, y el botón de arriba ya lleva
-       a «La puerta»; esto es el cinturón por si un día otro proyecto adopta
-       la misma forma y nadie se acuerda de este detalle. */
-    if (texto.includes(MARCA_MIA) || texto.includes(MARCA_AGENTE)) {
-      P.aviso("Ese archivo es una plantilla: los UID se ponen en «La puerta».", "error");
-      return;
+    const { texto } = await bajarReglasDe(pr);
+    await copiar(texto, "Copiadas enteras. En la consola: pegar y Publicar.");
+    try { await anotarRepo(pr, medirReglas(texto)); }
+    catch (e) {
+      /* El copiado ya salió bien: que no se haya podido anotar el estado no se
+         cuenta como que falló, pero tampoco se calla. */
+      P.aviso("Copiadas, pero no pude anotar el estado: " + P.explicar(e), "error");
     }
-    await copiar(texto, "Reglas copiadas. Pegalas enteras en la consola.");
+    repintarReglas();
   } catch (e) {
     /* El motivo importa: sin señal se arregla solo, y un 404 significa que el
        archivo se movió y hay que corregir `reglasUrl` en la base. */
@@ -1711,6 +1916,119 @@ async function copiarReglasDe(url, boton) {
   } finally {
     boton.disabled = false; boton.textContent = antes;
   }
+}
+
+/* «YA LAS PUBLIQUÉ»: el registro y el acto, en el mismo toque.
+
+   Es lo que pidió Mauro el 2026-09-14: «tener una acción en una sola línea de
+   tiempo que me permita dar por realizada la tarea, y que guarde con coherencia
+   el momento en el que yo la realizo y el momento en el que se registra». Por
+   eso esto escribe las DOS cosas juntas —el proyecto y, si el toque vino de un
+   pendiente, ese pendiente— y no hay forma de que quede una sin la otra.
+
+   No pregunta antes. Es a propósito: un toque de más es exactamente lo que se
+   vino a sacar, y esto no borra nada — si se toca por error, la próxima vez que
+   se copie el archivo la comparación vuelve a contar la verdad. */
+async function marcarPublicadas(pr, pendienteId, boton) {
+  const antes = boton.textContent;
+  boton.disabled = true; boton.textContent = "…";
+  try {
+    /* Si todavía no se bajó nada, se baja: un registro sin huella no sirve para
+       comparar después, que es lo único que este botón existe para dejar. */
+    const r = (pr.acceso || {}).repo;
+    const m = (r && r.huella)
+      ? { huella: r.huella, lineas: r.lineas, bytes: r.bytes }
+      : medirReglas((await bajarReglasDe(pr)).texto);
+    const acceso = { ...(pr.acceso || {}),
+      repo: { ...m, visto: P.hoy() },
+      publicado: { ...m, fecha: P.hoy() } };
+    /* El campo viejo se sigue escribiendo para que nada de lo que lo lea —la
+       ronda, una sesión, un chat— vea una cosa distinta de la que ve esta
+       pantalla. Y sale del MISMO cálculo, no de una frase puesta acá a mano. */
+    acceso.estado = estadoGuardable(acceso) || acceso.estado;
+    await setDoc(doc(db, "proyectos", pr.id), { acceso }, { merge: true });
+
+    const p = pendienteId ? PENDIENTES.find((x) => x.id === pendienteId) : null;
+    if (p) {
+      await setDoc(doc(db, "pendientes", p.id), {
+        estado: "hecho",
+        /* La historia SE SUMA, y guarda la huella: dentro de seis meses, «lo
+           publicó» sin decir QUÉ publicó no se puede comprobar. */
+        historia: (Array.isArray(p.historia) ? p.historia : []).concat([{
+          fecha: P.hoy(), por: "mauro",
+          texto: "Mauro: publicadas en la consola desde el panel · huella " + m.huella
+        }]),
+        tocado: true,
+        respondidoEn: P.hoy(),
+        actualizadoEn: serverTimestamp()
+      }, { merge: true });
+    }
+    await leer();
+    repintarReglas();
+    P.aviso(p ? "Anotado, y el pendiente queda hecho." : "Anotado: publicadas hoy.");
+  } catch (e) {
+    P.aviso(P.explicar(e), "error");
+  } finally { boton.disabled = false; boton.textContent = antes; }
+}
+
+/* Las dos pantallas que muestran esto se repintan juntas. Repintar una sola
+   dejaría el mismo hecho viejo en una y nuevo en la otra, que es el problema
+   que esta tanda vino a cerrar. */
+function repintarReglas() { pintar(); pintarSitios(); }
+
+/* LOS BOTONES, uno solo para las dos pantallas que los muestran: la ficha del
+   sitio y el pendiente que pide publicar. Que sean los MISMOS es el pedido
+   entero — dos juegos de botones iguales en dos lugares se desincronizan, y
+   este ecosistema ya sabe cómo termina eso. */
+function botonesDeReglas(pr, pendienteId) {
+  if (!tieneReglas(pr)) return "";
+  const a = pr.acceso || {};
+  const pend = P.esc(pendienteId || "");
+  const faltaAgente = esPropia(pr) && !String($("uidAgente").value || "").trim();
+  return '<div class="fila-btn">'
+    + '<button class="btn p" data-reglas="' + P.esc(pr.id) + '" data-pend="' + pend + '">'
+    + "Copiar para publicar</button>"
+    + (a.base ? '<a class="btn" target="_blank" rel="noopener" href="'
+        + P.esc(consolaDeReglas(a.base)) + '">Abrir la consola</a>' : "")
+    + "</div>"
+    + '<div class="fila-btn"><button class="btn" data-publicadas="' + P.esc(pr.id)
+    + '" data-pend="' + pend + '">Ya las publiqué</button></div>'
+    + (faltaAgente
+      ? '<p class="duro" style="margin:.2rem 0 0;font-size:.78rem">'
+        + "<b>Falta el UID del agente.</b> Se pueden publicar igual —quedan sólo para "
+        + 'vos—, pero el agente no va a poder leer nada. Se pega una vez en '
+        + '<button class="btn" data-puerta="1" style="min-height:32px;padding:.2rem .6rem;'
+        + 'font-size:.76rem">«La puerta»</button>.</p>'
+      : "")
+    + '<p class="gris" style="margin:.2rem 0 0;font-size:.78rem">'
+    + "Copia el <b>texto que hay que publicar</b>, entero"
+    + (esPropia(pr) ? " y con los dos UID ya adentro" : "")
+    + ". Lo que está publicado no se puede leer desde acá — por eso el tercer "
+    + "botón, que es el que deja registrado que ya lo pegaste.</p>";
+}
+
+/* ¿Este pendiente es de los que piden publicar reglas? Dos caminos, y el
+   segundo existe porque el primero no puede alcanzar a lo que ya está escrito:
+
+     · `accion: "publicar-reglas"` — explícito, y es como se escriben de ahora
+       en adelante, desde la ronda o desde un chat;
+     · el título — los tres que había el 2026-09-14 («Publicar REGLAS.txt otra
+       vez…», «Publicar las reglas v0.9 de remate», «Publicar
+       interno/firestore.rules en la consola de casaverde-20») no tienen el
+       campo, y reescribirlos a mano para estrenar esto sería empezar pidiendo
+       justo el trabajo manual que se vino a sacar.
+
+   Y en los dos casos el proyecto tiene que tener de dónde bajar las reglas: un
+   botón que no va a poder hacer nada es peor que no tener botón. */
+const RX_PUBLICAR = /public/i;
+const RX_REGLAS = /regla|\.rules\b|reglas\.txt/i;
+function reglasDelPendiente(p) {
+  if (!p || !p.proyecto) return null;
+  const pr = PROYECTOS.find((x) => x.id === p.proyecto);
+  if (!tieneReglas(pr)) return null;
+  if (p.accion === "publicar-reglas") return pr;
+  const t = String(p.titulo || "");
+  return (RX_PUBLICAR.test(t) && RX_REGLAS.test(t)) ? pr : null;
 }
 
 /* ---------- las pestañas ---------- */
@@ -1791,7 +2109,12 @@ function pintarUnSitio(pr) {
   /* 4 · Quién entra a su base. Es lo que más cuesta recordar y lo que peor
         se recupera si se olvida: qué proyecto de Firebase es, dónde vive el
         texto de las reglas, y qué NO puede leer el agente. */
-  if (a.base || a.reglas || (a.selladas && a.selladas.length)) {
+  /* `tieneReglas` entra en la condición para que un proyecto cargado con lo
+     mínimo —la base y la dirección de sus reglas— muestre igual esta tarjeta,
+     que es donde viven los botones. Sin eso, un sitio nuevo tendría que
+     esperar a que alguien le escribiera además el texto de `acceso.reglas`
+     para poder publicar, y ése es justo el trabajo a mano que se vino a sacar. */
+  if (a.base || a.reglas || tieneReglas(pr) || (a.selladas && a.selladas.length)) {
     h += '<div class="tarj"><h2 style="margin:.1rem 0 .5rem">Quién entra a su base</h2>';
     if (a.base) h += '<div class="sit-fila"><div class="ft-k">Base</div>'
       + '<div class="ft-v mono">' + P.esc(a.base) + "</div></div>";
@@ -1799,12 +2122,19 @@ function pintarUnSitio(pr) {
       + '<div class="ft-v">' + P.esc(a.reglas)
       + (a.reglasUrl ? '<div class="ft-nota">' + fuera(a.reglasUrl, "ver el texto completo") + "</div>" : "")
       + "</div></div>";
-    if (a.estado) {
-      const mal = /pendiente|falta|sin publicar/i.test(a.estado);
-      h += '<div class="sit-fila"><div class="ft-k">Publicadas</div>'
-        + '<div class="ft-v"><span class="sit-chip ' + (mal ? "mal" : "ok") + '">'
-        + P.esc(a.estado) + "</span></div></div>";
-    }
+    /* ── PUBLICADAS: EL CHIP YA NO ES UNA FRASE TECLEADA ───────────────
+       Sale de `estadoReglas()`: compara la huella de lo último que el panel
+       bajó del repositorio contra la de lo último que Mauro confirmó haber
+       publicado. Mientras falte alguna de las dos, cae al `acceso.estado`
+       viejo y lo dice —«sin comprobar» no es lo mismo que «al día»—. */
+    const er = estadoReglas(pr);
+    h += '<div class="sit-fila"><div class="ft-k">Publicadas</div>'
+      + '<div class="ft-v"><span class="sit-chip ' + (er.mal ? "mal" : "ok") + '">'
+      + P.esc(er.chip) + "</span>"
+      + (queEspera(er) ? '<div class="ft-nota">' + P.esc(queEspera(er)) + "</div>" : "")
+      + (er.comprobado ? "" : '<div class="ft-nota">Todavía no comparé el archivo con lo '
+          + "publicado. Tocá «Copiar para publicar» y queda comparado.</div>")
+      + "</div></div>";
 
     /* ── PUBLICARLAS, DESDE ACÁ ────────────────────────────────────────
        Pedido de Mauro el 2026-09-11: el panel decía «pendiente de publicar»
@@ -1813,31 +2143,11 @@ function pintarUnSitio(pr) {
        teléfono —que es lo peor de todo—, y recién después ir a la consola.
        Cuatro pasos para una tarea que el panel ya sabía que estaba pendiente.
 
-       Ahora el panel baja el texto y lo deja en el portapapeles. Los cuatro
-       repositorios son públicos, así que `raw.githubusercontent.com` los
-       sirve con CORS y esto no necesita ningún servidor.
-
-       LA EXCEPCIÓN ES EL PANEL MISMO. Su `reglas.txt` es una plantilla con
-       marcadores, no un archivo para pegar: los UID se los pone «La puerta»,
-       que además se acuerda del UID del agente. Copiar el crudo de acá sería
-       publicar unas reglas que no dejan entrar a nadie. Así que para su
-       propia base el botón lleva allá, y no copia. */
-    if (a.reglasUrl && crudoDeGithub(a.reglasUrl)) {
-      const propia = a.base && a.base === firebaseConfig.projectId;
-      h += '<div class="fila-btn">'
-        + (propia
-          ? '<button class="btn p" data-puerta="1">Armarlas en «La puerta»</button>'
-          : '<button class="btn p" data-reglas="' + P.esc(a.reglasUrl) + '">Copiar las reglas</button>')
-        + (a.base ? '<a class="btn" target="_blank" rel="noopener" href="'
-            + P.esc(consolaDeReglas(a.base)) + '">Abrir la consola</a>' : "")
-        + "</div>"
-        + '<p class="gris" style="margin:.2rem 0 0;font-size:.78rem">'
-        + (propia
-          ? 'Las suyas llevan tu UID y el del agente adentro, así que se arman allá.'
-          : 'Se copian enteras, como están en el repositorio. En la consola: '
-            + 'Reglas → seleccionar todo, pegar y <b>Publicar</b>.')
-        + "</p>";
-    }
+       Y el 2026-09-14 terminó de emparejarse: los botones los arma
+       `botonesDeReglas()`, que es el MISMO código que usa un pendiente. El
+       panel dejó de ser la excepción —su plantilla se completa acá— y el
+       tercer botón registra la publicación, que es el dato que faltaba. */
+    h += botonesDeReglas(pr, "");
     /* La bóveda se muestra SIEMPRE que haya lista, y en rojo. Que se vea qué
        no lee el agente es la mitad del acuerdo; la otra mitad la aplican las
        reglas publicadas, no esta pantalla. */
@@ -1906,8 +2216,7 @@ function pintarTodosLosSitios() {
   h += filas.map(({ p, c }) => {
     const hechos = c.hechos, total = c.hechos + c.abiertos;
     const pct = total ? Math.round((hechos / total) * 100) : 0;
-    const a = p.acceso || {};
-    const reglasMal = a.estado && /pendiente|falta|sin publicar/i.test(a.estado);
+    const reglasMal = estadoReglas(p).mal;
     return '<div class="sit-res" data-ir="' + P.esc(p.id) + '">'
       + '<div class="sit-res-t"><b>' + P.esc(p.nombre || p.id) + "</b>"
       + '<span class="gris">' + c.abiertos + " abiertos</span></div>"
@@ -1951,7 +2260,17 @@ $("s-cuerpo").addEventListener("click", (e) => {
   const ir = e.target.closest("[data-ir]");
   if (ir) { SITIO = ir.dataset.ir; pintarSitios(); window.scrollTo(0, 0); return; }
   const rg = e.target.closest("[data-reglas]");
-  if (rg) { copiarReglasDe(rg.dataset.reglas, rg); return; }
+  if (rg) {
+    const pr = PROYECTOS.find((x) => x.id === rg.dataset.reglas);
+    if (pr) copiarReglasDe(pr, rg);
+    return;
+  }
+  const pb = e.target.closest("[data-publicadas]");
+  if (pb) {
+    const pr = PROYECTOS.find((x) => x.id === pb.dataset.publicadas);
+    if (pr) marcarPublicadas(pr, pb.dataset.pend || "", pb);
+    return;
+  }
   const pu = e.target.closest("[data-puerta]");
   if (pu) { irA("puerta"); window.scrollTo(0, 0); return; }
   const pv = e.target.closest("[data-previa]");
@@ -2022,6 +2341,19 @@ function sacarNotaDePlantilla(t) {
    más y listo. */
 const LLAVE_AGENTE = "panel:uidAgente";
 
+/* ARMAR LA PLANTILLA: poner los dos UID y cambiar la nota. Vivía adentro de
+   `pintarReglas()`, que es la pantalla de «La puerta». Desde `panel-21` la ficha
+   del propio panel, en «Sitios», copia el mismo texto con el mismo botón que
+   los otros cuatro proyectos, así que esto tenía que salir de ahí: dos copias
+   de la sustitución serían dos textos que se pueden separar, y uno de los dos
+   se publicaría. */
+function armarPlantilla(t) {
+  const a = String($("uidAgente").value || "").trim();
+  return sacarNotaDePlantilla(t)
+    .split(MARCA_MIA).join(yo ? yo.uid : MARCA_MIA)
+    .split(MARCA_AGENTE).join(a || SIN_AGENTE);
+}
+
 let plantillaReglas = null;
 
 /* Una sola vez por sesión. Con `?v=` para que una tanda nueva no quede servida
@@ -2054,9 +2386,7 @@ async function pintarReglas() {
       + 'abrila en el repositorio y completá los dos UID a mano.';
     return;
   }
-  ta.value = sacarNotaDePlantilla(t)
-              .split(MARCA_MIA).join(yo.uid)
-              .split(MARCA_AGENTE).join(a || SIN_AGENTE);
+  ta.value = armarPlantilla(t);
   btn.disabled = false;
   /* EL AVISO DE LA v4, Y NO ES DECORATIVO. Estas reglas le dan `fichas/` al
      agente. Si se publican con una contraseña todavía adentro de una ficha, la

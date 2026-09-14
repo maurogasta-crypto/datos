@@ -35,7 +35,7 @@ Sale `Todo en orden.` y código 0, o la lista de fallas y código 1.
 
 ## Qué comprueba, y por qué esas cosas
 
-Son 209 comprobaciones en veintidós grupos. Las que más valen no son las obvias:
+Son 263 comprobaciones en veintitrés grupos. Las que más valen no son las obvias:
 
 > **Los números de grupo tienen huecos desde `panel-16`.** Faltan el 8, 9, 10,
 > 14, 16, 18, 19, 25, 26, 28, 29 y 31: todos probaban la solapa «Parte», que se
@@ -59,6 +59,17 @@ Son 209 comprobaciones en veintidós grupos. Las que más valen no son las obvia
   que el panel arma con él —que es el que realmente se pega—, y que el cierre
   `if false` siga negando el resto. La próxima colección que se agregue sin su
   regla falla acá y no en el teléfono.
+- **Publicar las reglas es el MISMO mecanismo en todos los sitios** (grupo 35).
+  Prueba las cuatro cosas que se rompen de verdad: que la base del propio panel
+  deje de ser la excepción y su plantilla se arme con los dos UID adentro (si el
+  botón copiara el crudo, se publicaría una base a la que no entra nadie); que
+  una plantilla de OTRA base se rechace en vez de copiarse a medias; que el chip
+  salga de comparar huellas y no de una frase tecleada —el 2026-09-14 el tablero
+  y la ficha del sitio dijeron cosas distintas del mismo hecho—; y que un
+  proyecto cargado con sólo `acceso.base` y `acceso.reglasUrl` tenga todo eso sin
+  que nadie toque una línea de código. También que tocar un botón adentro de la
+  tarjeta de un pendiente **no** abra el editor: ahí se rompía el «sin salir de
+  esa ventana» que pidió Mauro.
 - **El panel NO tiene una segunda copia de las reglas** (grupo 33). Desde
   `panel-15` el texto vive sólo en `reglas.txt` y el panel lo baja. Este grupo
   ya no compara dos copias: comprueba que la segunda no exista. Si alguien

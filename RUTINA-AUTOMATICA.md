@@ -101,14 +101,29 @@ estética: cada parte existe porque la anterior sola no alcanzaba.
 node herramientas/ronda.mjs abrir
 ```
 
-Cinco secciones, en el orden del § 8 «Al abrir» y del § 6 «El apretón de manos»
+Seis secciones, en el orden del § 8 «Al abrir» y del § 6 «El apretón de manos»
 de `protocolos/PROTOCOLO-GENERAL.md`:
 
 1. **TOCADOS** — lo que Mauro editó desde el último parte.
 2. **SIN RESPONDER** — las preguntas que lo están esperando a él.
 3. **REPORTES NUEVOS** — fallas escritas desde un sitio, sin pendiente que las traiga.
 4. **ABIERTOS** — el resto, por proyecto y prioridad, con las trabas al final.
-5. **FUENTES** — qué base contestó y qué no.
+5. **REGLAS SIN PUBLICAR** — las bases cuyo archivo de reglas no coincide con lo
+   último que Mauro confirmó haber publicado.
+6. **FUENTES** — qué base contestó y qué no.
+
+**La 5 entró el 14-sep-2026**, y el motivo es el mismo que el del punto de abajo:
+el panel encabeza su pantalla con eso desde `panel-15` y la ronda no lo miraba,
+así que una corrida automática podía informar todo en orden mientras una base
+seguía con las reglas viejas. Sale de `acceso.estado` de `proyectos/`, que desde
+`panel-21` es la salida guardada del cálculo del panel — la ronda **no** la
+vuelve a derivar, porque el mismo hecho calculado en dos lugares es exactamente
+lo que esa tanda vino a cerrar.
+
+**Y desde esa misma fecha los reportes se piden a todas las bases que conoce
+`firestore.mjs` menos el panel**, en vez de a una lista escrita a mano. Era el
+último lugar del circuito donde dar de alta un sitio nuevo pedía acordarse de
+tocar un archivo.
 
 El punto 5 no es diagnóstico de adorno, y es la regla más importante de todo el
 documento:

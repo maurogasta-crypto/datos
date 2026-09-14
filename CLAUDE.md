@@ -225,6 +225,28 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   esperan. El orden está justificado en `pintarTeToca()` y no es estético — las
   reglas van primero porque son lo único que deja una base abierta mientras
   espera. Si entra una cuarta cosa, se argumenta dónde va.
+- **Publicar las reglas es UN solo mecanismo, igual en todos los sitios.** Tres
+  botones —copiar, abrir la consola, «Ya las publiqué»— armados por
+  `botonesDeReglas()`, que usan la ficha del sitio y la tarjeta del pendiente. No
+  se le agrega un camino especial a ningún proyecto: el panel era la excepción
+  hasta `panel-20` y dejó de serlo, porque un mecanismo distinto en uno de cinco
+  es un mecanismo que hay que tener en la cabeza.
+- **El estado de las reglas se DERIVA, no se teclea.** Sale de comparar
+  `acceso.repo.huella` contra `acceso.publicado.huella`, las dos escritas por el
+  panel. `acceso.estado` se sigue guardando, pero como salida de ese cálculo y
+  con un solo escritor: el 2026-09-14, con el campo escrito a mano, el tablero y
+  la ficha del sitio dijeron cosas distintas del mismo hecho. **Nadie más vuelve
+  a derivarlo** — `ronda.mjs` lee el campo, no la regla.
+- **Un sitio nuevo no se agrega en ningún lado de este camino.** Con
+  `acceso.base` y `acceso.reglasUrl` en su documento de `proyectos/` ya tiene los
+  botones, el chip y el reconocimiento de sus pendientes; y con su entrada en
+  `PROYECTOS` de `herramientas/firestore.mjs`, los reportes. Si alguna vez hace
+  falta escribir el id de un sitio en el código para que algo ande, eso es el
+  error, no la solución.
+- **Lo que el panel NO puede leer son las reglas publicadas.** Firebase no se
+  las muestra al navegador. Todo lo que muestra y copia es el archivo del
+  repositorio — el que hay que publicar. Es una pregunta que ya se hizo dos
+  veces: que la pantalla lo diga con esas palabras es parte del trabajo.
 - **Antes de tocar código se LEE el panel, y al cerrar se ESCRIBE en él.** Es la
   otra mitad de la conversación con Mauro, no un archivo de datos que se
   consulta si hace falta: sus respuestas, sus correcciones y sus cambios de

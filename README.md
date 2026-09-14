@@ -391,10 +391,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-20` |
+| `index.html` | `P.PANEL` | `panel-21` |
 | `estilos.css` | (en el comentario) | `estilos-9` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v11` |
+| `sw.js` | `VERSION` | `panel-shell-v12` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
@@ -453,7 +453,7 @@ La solapa «La puerta» tiene un campo para pegar el **UID del agente**. Se pega
 cada vez que entrás. Si está vacío, salen igual, pero sólo para vos: el lugar
 del agente queda con un valor que ningún usuario de Firebase puede tener.
 
-### De dónde sale el texto que se pega (cambió en `panel-15`)
+### De dónde sale el texto que se pega (cambió en `panel-15`, y en `panel-21`)
 
 **`reglas.txt` es la plantilla, y es la única copia del texto.** Los dos UID
 están puestos como marcadores —`TU-UID-ACA` y `UID-DEL-AGENTE`— porque este
@@ -467,6 +467,17 @@ otra vez a mano, adentro de `index.html`. Dos copias del mismo texto que había
 que acordarse de tocar juntas — el error que este ecosistema ya cometió cuatro
 veces con los sellos. Ahora si cambiás una línea de `reglas.txt`, cambia sola
 la que el panel ofrece copiar.
+
+**Desde `panel-21` esta pantalla no es el único lugar donde se copian.** La
+ficha del Panel en «Sitios» arma el mismo texto con el mismo botón que los otros
+cuatro proyectos, para que el mecanismo sea uno solo en todos lados. La
+sustitución de los dos UID vive en **una función, `armarPlantilla()`**, que usan
+las dos pantallas: dos copias de esa sustitución serían dos textos que se pueden
+separar, y uno de los dos se publicaría.
+
+Esta solapa sigue existiendo por lo que sólo se hace acá: **pegar el UID del
+agente** (se guarda en este teléfono, no en la base) y **probar que las reglas
+están vivas**.
 
 Dos detalles que hacen que esto no muerda:
 
@@ -528,34 +539,112 @@ Cada pestaña tiene, de arriba abajo:
 | **Quién es y dónde se ve** | un resumen de una línea y tres botones: ver el sitio, el repositorio, y el documento que explica cómo funciona |
 | **Previsualización** | el sitio real, adentro del panel, detrás de un botón |
 | **Con qué está hecha** | la ficha técnica de siempre, sin los botones de fichas |
-| **Quién entra a su base** | el proyecto de Firebase, dónde vive el texto de las reglas, si están publicadas, **qué colecciones NO lee el agente**, y el botón para copiarlas |
+| **Quién entra a su base** | el proyecto de Firebase, dónde vive el texto de las reglas, si están publicadas —y cuánto cambiaron si no—, **qué colecciones NO lee el agente**, y los tres botones para publicarlas |
 | **Qué falta** | los contadores de ese proyecto y los cuatro pendientes más urgentes |
 
 ### Publicar las reglas de un sitio, desde el panel
 
-Desde `panel-16`. Antes el panel decía «pendiente de publicar» y ahí se
-terminaba: para publicarlas había que acordarse de en qué repositorio vive el
-archivo, abrirlo en GitHub, **seleccionar todo el texto en un teléfono** —que es
-lo peor de todo— y recién después ir a la consola. Cuatro pasos para una tarea
-que el panel ya sabía que estaba pendiente.
+Desde `panel-16`, y emparejado del todo en `panel-21`. Antes el panel decía
+«pendiente de publicar» y ahí se terminaba: para publicarlas había que acordarse
+de en qué repositorio vive el archivo, abrirlo en GitHub, **seleccionar todo el
+texto en un teléfono** —que es lo peor de todo— y recién después ir a la
+consola. Cuatro pasos para una tarea que el panel ya sabía que estaba pendiente.
 
-Ahora hay dos botones: **Copiar las reglas** baja el texto y lo deja en el
-portapapeles, y **Abrir la consola** lleva a la pantalla de reglas de esa base.
+Hoy son **tres botones, iguales en los cinco proyectos y en el que se dé de alta
+mañana**:
 
-- El texto se baja de `raw.githubusercontent.com`, que es la única dirección de
-  GitHub que sirve el archivo pelado **y** manda `Access-Control-Allow-Origin`.
-  La que guarda `proyectos/` es la de mirarlo, y se convierte en el momento. Los
-  cuatro repositorios son públicos, así que esto no necesita ningún servidor.
-- Se baja **al tocar**, no al pintar la pantalla: son cuatro archivos de varios
+| Botón | Qué hace |
+|---|---|
+| **Copiar para publicar** | baja el archivo de reglas de ese proyecto y lo deja entero en el portapapeles, en un solo toque |
+| **Abrir la consola** | lleva a la pantalla de reglas de esa base, lista para pegar |
+| **Ya las publiqué** | registra que lo publicado es ese texto. Es el único dato que el panel no puede averiguar solo |
+
+Y aparecen en **dos lugares con el mismo código**: la ficha del sitio, y la
+tarjeta de cualquier pendiente que pida publicar reglas — ahí se resuelve sin
+salir de la lista, y el tercer botón cierra el pendiente en el mismo acto.
+
+**Lo que el panel no puede hacer, y conviene tenerlo presente:** leer las reglas
+*publicadas*. Firebase no se las muestra al navegador sin credenciales de
+administrador. Todo lo que esta pantalla muestra y copia es **el archivo del
+repositorio, o sea el que hay que publicar** — nunca lo que está publicado. Es
+la pregunta que Mauro hizo dos veces (13 y 14 de septiembre), y la respuesta
+estaba en el código y no en la pantalla.
+
+#### De dónde sale el texto
+
+- Se baja de `raw.githubusercontent.com`, que es la única dirección de GitHub
+  que sirve el archivo pelado **y** manda `Access-Control-Allow-Origin`. La que
+  guarda `proyectos/` es la de mirarlo, y se convierte en el momento. Los
+  repositorios son públicos, así que esto no necesita ningún servidor.
+- Se baja **al tocar**, no al pintar la pantalla: son cinco archivos de varios
   kilobytes y bajarlos todos para copiar uno es regalar la conexión.
-- **La base del propio panel es la excepción.** Su `reglas.txt` es una plantilla
-  con marcadores, no un archivo para pegar: publicarla tal cual dejaría afuera a
-  todo el mundo, porque ningún usuario tiene un uid llamado `TU-UID-ACA`. Para
-  esa base el botón lleva a «La puerta», que es donde se le ponen los UID. Y si
-  igual se intentara copiar una plantilla, el panel lo detecta y se niega: es el
-  cinturón por si otro proyecto adopta la misma forma y nadie se acuerda.
+- **La base del propio panel ya no es una excepción.** Su `reglas.txt` es una
+  plantilla con marcadores —ese repositorio es público y no puede guardar un UID
+  real—, así que el botón **arma el texto ahí mismo**, con el UID de Mauro y el
+  del agente puestos adentro, y lo copia. Hasta `panel-20` mandaba a «La puerta»
+  a armarlo, que era un mecanismo distinto en uno de cinco: justo lo que hay que
+  recordar. La sustitución vive en **una sola función**, `armarPlantilla()`,
+  que usan las dos pantallas.
+- Una plantilla de **otra** base se rechaza y no se copia a medias: Firebase le
+  da a cada persona un UID distinto en cada proyecto, así que el único que el
+  panel conoce —el suyo— no sirve para completarla. Publicar eso dejaría una
+  base a la que no entra nadie, y el que pegó no se entera hasta que no puede
+  entrar.
 - Si el archivo no baja, lo dice con el motivo. Un 404 no es un problema de
   señal: significa que el archivo se movió y hay que corregir `reglasUrl`.
+
+#### «Publicadas» dejó de ser una frase tecleada
+
+Hasta `panel-20`, `acceso.estado` era un texto que alguien escribía al revisar.
+El **14 de septiembre de 2026** pasó lo que tenía que pasar: Mauro marcó
+`casayourte:T1` como hecho en «Pendientes» y la ficha del sitio siguió diciendo
+«sin publicar». El mismo hecho, en dos lugares, escrito por dos manos — el
+quinto caso de esta familia en el ecosistema, después de los cuatro de los
+sellos.
+
+Ahora sale de comparar **dos huellas**, y las dos las escribe el panel:
+
+```
+acceso.repo      { huella, lineas, bytes, visto }   ← cada vez que baja el archivo
+acceso.publicado { huella, lineas, bytes, fecha }   ← al tocar «Ya las publiqué»
+```
+
+- iguales → **al día**;
+- distintas → **falta publicar**, y dice *cuánto* cambió: «lo que publicaste el
+  13-sep tenía 188 renglones; el archivo de ahora tiene 205»;
+- falta alguna → **sin comprobar**, que no es lo mismo que «al día» y se dice
+  con esas palabras. Mientras tanto se respeta el `estado` viejo, para que un
+  proyecto cargado antes de esta tanda no empiece a mentir.
+
+`acceso.estado` **se sigue escribiendo**, pero ya no se teclea: es la salida de
+ese cálculo, guardada, para que lo que lee `ronda.mjs` —o una sesión, o un
+chat— sea exactamente lo que se ve en pantalla. Un solo cálculo
+(`estadoReglas()`), un solo escritor, y entonces no pueden divergir.
+
+**La huella no es criptográfica y no tiene por qué serlo.** La pregunta que
+contesta es «¿es el mismo texto que publiqué?», no «¿me lo falsificaron?». Es
+una función pura y síncrona —dos hashes de 32 bits más el largo— en vez de
+`crypto.subtle`, que es asíncrono y no existe fuera de un contexto seguro: el
+banco de pruebas tiene que poder correrla con `node` a secas.
+
+**Y el texto de las reglas no se copia a esta base.** La autoridad sigue siendo
+el archivo de cada repositorio; acá se guarda su huella y dos medidas. Guardar
+el contenido sería otra copia del mismo texto, que es el error que este diseño
+existe para no cometer.
+
+#### Un pendiente que pide publicar reglas
+
+Se reconoce por dos caminos:
+
+- `accion: "publicar-reglas"` en el pendiente — explícito, y es como se escriben
+  de ahora en adelante;
+- el **título**, si dice «publicar» y «reglas» (o `.rules`, o `REGLAS.txt`).
+  Existe porque los tres que había el 14-sep no tienen el campo, y reescribirlos
+  a mano para estrenar esto sería empezar pidiendo justo el trabajo manual que
+  se vino a sacar.
+
+En los dos casos el proyecto tiene que tener de dónde bajar las reglas: un botón
+que no puede hacer nada es peor que no tener botón.
 
 **La previsualización va detrás de un botón, no puesta.** Cuatro `iframe` son
 cuatro sitios enteros bajando en un teléfono cada vez que se abre la pantalla.
@@ -570,14 +659,29 @@ campos `sitio` y `acceso` los escribe el agente. Las fichas siguen en su
 pantalla y no se mezclan — es la regla de fondo del panel, y esta pantalla no
 la toca.
 
-Los campos nuevos son **todos opcionales**, y falta cualquiera sin romper nada:
-un proyecto recién dado de alta tiene nombre y poco más, y la pantalla tiene
-que servir igual desde ese día.
+Los campos son **todos opcionales**, y falta cualquiera sin romper nada: un
+proyecto recién dado de alta tiene nombre y poco más, y la pantalla tiene que
+servir igual desde ese día.
 
 ```
 sitio  { url, repo, readme, resumen, sinPrevia }
-acceso { base, reglas, reglasUrl, estado, selladas[], nota }
+acceso { base, reglas, reglasUrl, estado, selladas[], nota,
+         repo { huella, lineas, bytes, visto },
+         publicado { huella, lineas, bytes, fecha } }
 ```
+
+#### Un sitio nuevo no pide acordarse de nada
+
+Con cargarle `acceso.base` y `acceso.reglasUrl` ya tiene los tres botones, el
+chip derivado, el renglón de «Lo primero» y el reconocimiento de sus pendientes
+de publicar. **No hay ninguna lista de sitios escrita en el código** de este
+camino. El banco lo prueba con un proyecto que tiene sólo esos dos campos.
+
+Lo mismo del otro lado: `herramientas/ronda.mjs` pedía los reportes a una lista
+escrita a mano (`["remate", "casayourte", "casaverde"]`) y desde el 14-sep los
+pide a **todas las bases que conoce `firestore.mjs` menos el panel**. Era el
+último lugar del circuito donde dar de alta un sitio pedía acordarse de tocar un
+archivo.
 
 **La vista «Todos»** ordena los proyectos por lo que queda abierto, con una
 barra de cuánto está hecho, y marca en rojo los que tienen **reglas sin

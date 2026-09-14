@@ -33,7 +33,15 @@
 //                           tienen pendiente en el panel.
 //   4. ABIERTOS           — el resto, por proyecto (§ 9: Mauro trabaja en un
 //                           proyecto por vez) y por prioridad.
-//   5. FUENTES            — qué base contestó y qué no. Va último porque es
+//   5. REGLAS SIN PUBLICAR — las bases cuyo archivo de reglas no coincide con lo
+//                           último que Mauro confirmó haber publicado. Entra el
+//                           2026-09-14: el panel lo encabeza desde `panel-15` y
+//                           la ronda no lo miraba, así que una corrida
+//                           automática podía dar todo por bien mientras una base
+//                           seguía con las reglas viejas. Sale de
+//                           `acceso.estado`, que el panel calcula y guarda: acá
+//                           NO se vuelve a derivar.
+//   6. FUENTES            — qué base contestó y qué no. Va último porque es
 //                           diagnóstico, pero **no es opcional**: el § 6 del
 //                           CLAUDE.md de los cuatro proyectos dice que un
 //                           `permission-denied` es un bloqueo y se avisa.
@@ -41,12 +49,21 @@
 
 import { PROYECTOS, entrar, deFirestore } from "./firestore.mjs";
 
-/* Las bases de sitio que tienen (o van a tener) formulario de reporte. Remate
-   lo estrenó en su tanda 27; los otros dos lo esperan —«Lo que falta» de
-   REPORTES.md— y por eso aparecen igual: si un día la colección existe, esto
-   la trae sola, sin tocar este archivo. Harmonía no está y no va a estar: no
-   tiene base ni administradores, todo su estado vive en el localStorage. */
-const CON_REPORTES = ["remate", "casayourte", "casaverde"];
+/* Las bases de sitio donde puede haber reportes: TODAS las que la herramienta
+   conoce, menos el panel, que es donde se cruzan.
+
+   Hasta el 2026-09-14 esto era una lista escrita a mano —`["remate",
+   "casayourte", "casaverde"]`— y era el último lugar del circuito donde dar de
+   alta un sitio nuevo pedía acordarse de algo. Mauro lo pidió con esas
+   palabras: «que al momento de agregar un sitio nuevo al panel todo esto siga
+   funcionando». Ahora un proyecto que entre en `PROYECTOS` de `firestore.mjs`
+   entra acá solo.
+
+   No hace falta que la colección exista: Firestore contesta 200 con cero
+   documentos, y si las reglas la niegan sale en FUENTES, que es donde tiene
+   que salir. Harmonía no aparece porque no tiene base —no está en `PROYECTOS`—
+   y todo su estado vive en el localStorage del teléfono. */
+const CON_REPORTES = Object.keys(PROYECTOS).filter((p) => p !== "panel");
 
 /* Cómo se escribe de dónde salió un pendiente. Lo fijó REPORTES.md y es lo
    único que evita traer dos veces el mismo reporte: el agente no escribe en la
@@ -110,6 +127,20 @@ function ordenarAbiertos(pendientes) {
     );
 }
 
+/* Las bases cuyas reglas no están publicadas. Sale de `acceso.estado` de
+   `proyectos/`, y NO se vuelve a derivar acá: desde `panel-21` ese campo es la
+   salida guardada del cálculo del panel —comparar la huella del archivo del
+   repositorio contra la de lo último que Mauro confirmó haber publicado—, con
+   un solo escritor. Escribir la regla otra vez en este archivo sería el mismo
+   error que todo esto vino a cerrar: el mismo hecho calculado en dos lugares.
+
+   Va en la ronda porque es lo único de la lista que deja una base con las
+   reglas viejas mientras espera, y porque sólo Mauro puede hacerlo: publicar
+   es entrar a la consola de Firebase con su cuenta. */
+const reglasSinPublicar = (proyectos) => (proyectos || [])
+  .filter((p) => p && p.acceso && p.acceso.estado
+    && /pendiente|falta|sin publicar/i.test(p.acceso.estado));
+
 const tocados = (p) => (p || []).filter((x) => x.tocado);
 const sinResponder = (p) => (p || []).filter((x) => x.pregunta && !x.respuesta);
 
@@ -132,7 +163,7 @@ function porProyecto(pendientes, fichas) {
 }
 
 export { CON_REPORTES, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
-         tocados, sinResponder, porProyecto, pesoDe };
+         tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar };
 
 /* ── Lo que sí toca la red ───────────────────────────────────────────────────
    `firestore.mjs` corta el proceso ante un 403, que es lo correcto cuando una
@@ -222,10 +253,12 @@ function imprimir(d) {
   const sr = sinResponder(d.pendientes);
   const nuevos = d.reportes.flatMap((r) => r.nuevos.map((x) => ({ ...x, _proy: r.proyecto })));
   const abiertos = ordenarAbiertos(d.pendientes);
+  const reglas = reglasSinPublicar(d.proyectos);
 
   L.push(`\n  RONDA · ${d.fecha}`);
   L.push(`  ${d.pendientes.length} pendientes · ${abiertos.length} abiertos · ` +
-         `${ti.length} tocados · ${sr.length} sin responder · ${nuevos.length} reportes nuevos`);
+         `${ti.length} tocados · ${sr.length} sin responder · ${nuevos.length} reportes nuevos · ` +
+         `${reglas.length} con las reglas sin publicar`);
 
   L.push(`\n  1 · TOCADOS — Mauro los editó desde el último parte`);
   if (!ti.length) L.push(`      (ninguno)`);
@@ -259,7 +292,21 @@ function imprimir(d) {
     }
   }
 
-  L.push(`\n  5 · FUENTES`);
+  L.push(`\n  5 · REGLAS SIN PUBLICAR — sólo las puede publicar él`);
+  if (!reglas.length) L.push(`      (ninguna)`);
+  for (const p of reglas) {
+    const a = p.acceso || {};
+    L.push(`      ${p.id}  ${a.base || "?"}  ${a.reglas || ""}`);
+    if (a.publicado && a.publicado.fecha) {
+      L.push(`          publicó el ${a.publicado.fecha}: ${a.publicado.lineas} renglones` +
+             (a.repo ? `  ·  el archivo de ahora: ${a.repo.lineas}` : ""));
+    } else {
+      L.push(`          sin registro de publicación — el panel todavía no comparó`);
+    }
+    if (a.reglasUrl) L.push(`          ${a.reglasUrl}`);
+  }
+
+  L.push(`\n  6 · FUENTES`);
   for (const f of d.fuentes) {
     L.push(`      ${f.ok ? "✓" : "✖"} ${f.base}/${f.coleccion}` +
            (f.ok ? `  ${f.cuantos}` : `  ${f.motivo}`));

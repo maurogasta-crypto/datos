@@ -97,15 +97,19 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 /* ---- el módulo de index.html ---- */
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
-  "getDocs","serverTimestamp","writeBatch",
-  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; } };");
+  "getDocs","serverTimestamp","writeBatch","firebaseConfig",
+  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
 P.quienEntra = async () => ({ uid: "uid-de-prueba" });
 
+/* `firebaseConfig` lo importa el panel de `firebase-init.js`, y lo usa para una
+   sola cosa: saber cuál de los proyectos es SU PROPIA base, la única cuyas
+   reglas son una plantilla con marcadores. Acá se le pasa el mismo projectId
+   que usa la siembra de abajo. */
 const api = correr(P, $, {}, {}, doc, setDoc, deleteDoc, collection,
-  getDocs, serverTimestamp, writeBatch);
+  getDocs, serverTimestamp, writeBatch, { projectId: "datos-830f8" });
 
 /* ---- sembrar la base ----
    HASTA `panel-15` LOS DATOS DE PRUEBA ENTRABAN POR LA SOLAPA «PARTE»: se
@@ -874,6 +878,243 @@ await api.leer(); await esperar();
 api.pintarSitios();
 ok($("s-cuerpo").textContent.includes("Todo junto"),
    "si el proyecto elegido ya no está, vuelve a la vista global en vez de quedar en blanco");
+
+console.log("\n35 · publicar las reglas: un solo mecanismo para todos los sitios");
+/* Pedido de Mauro el 2026-09-14. Lo que hay que probar acá no es que los
+   botones se dibujen, sino las cuatro cosas que se rompen de verdad:
+
+     · que el PANEL deje de ser la excepción — su archivo es una plantilla, y
+       si el botón copiara el crudo publicaría unas reglas sin ningún UID
+       adentro, o sea una base a la que no entra nadie;
+     · que una plantilla de OTRA base NO se copie a medias: los UID de Firebase
+       son distintos en cada proyecto y el panel no puede completarlos;
+     · que el estado salga de comparar huellas y no de una frase tecleada, que
+       es lo que el 2026-09-14 hizo que el tablero y la ficha del sitio dijeran
+       cosas distintas del mismo hecho;
+     · que un proyecto NUEVO, con lo mínimo cargado, tenga todo esto sin que
+       nadie toque una línea de código. */
+
+/* El portapapeles y la red, de mentira. Los dos guardan lo que les pasa para
+   poder preguntarles después. */
+let copiado = null;
+Object.defineProperty(globalThis, "navigator", {
+  value: { clipboard: { writeText: async (t) => { copiado = t; } } }, configurable: true });
+const REGLAS_DE_PRUEBA = "// reglas del sitio\nmatch /cosas/{id} { allow read: if true; }\n";
+let pedidos = [];
+globalThis.fetch = async (u) => {
+  pedidos.push(String(u));
+  if (String(u).includes("reglas.txt")) {
+    return { ok: true, text: async () => fs.readFileSync(RAIZ + "reglas.txt", "utf8") };
+  }
+  if (String(u).includes("con-marcadores")) {
+    return { ok: true, text: async () => "match /x/{id} { allow read: if request.auth.uid == '"
+             + api.MARCA_MIA + "'; }" };
+  }
+  if (String(u).includes("no-esta")) return { ok: false, status: 404 };
+  return { ok: true, text: async () => REGLAS_DE_PRUEBA };
+};
+
+/* ── la huella ── */
+ok(api.huella("hola") === api.huella("hola"), "la misma huella para el mismo texto");
+ok(api.huella("hola") !== api.huella("holA"),
+   "y otra distinta si cambia UNA letra — es lo único que tiene que hacer");
+ok(api.huella("hola") !== api.huella("hola "),
+   "un espacio al final también cuenta: en la consola se pega el texto entero");
+ok(api.medirReglas("a\nb\nc").lineas === 3, "mide los renglones, para poder decir qué cambió");
+
+/* ── el estado, derivado ── */
+ok(api.estadoReglas({ acceso: {} }).chip === "sin comprobar",
+   "sin ninguna huella dice «sin comprobar», que NO es lo mismo que «al día»");
+ok(api.estadoReglas({ acceso: { estado: "sin publicar" } }).mal,
+   "mientras no haya huellas, respeta el `estado` viejo: un proyecto de antes no empieza a mentir");
+ok(api.estadoReglas({ acceso: { repo: { huella: "x" }, publicado: { huella: "x" } } }).chip === "al día",
+   "dos huellas iguales: al día");
+const distinto = api.estadoReglas({
+  acceso: { repo: { huella: "y", lineas: 205 }, publicado: { huella: "x", lineas: 188, fecha: "2026-09-13" } } });
+ok(distinto.mal && distinto.chip === "falta publicar", "dos huellas distintas: falta publicar");
+ok(api.queEspera(distinto).includes("188") && api.queEspera(distinto).includes("205"),
+   "y dice QUÉ está esperando, con los dos largos — no un cartel rojo a secas");
+
+/* ── la pantalla, con los cinco proyectos ── */
+BASE.proyectos = {}; BASE.pendientes = {}; BASE.protocolos = {}; BASE.fichas = {};
+BASE.proyectos["panel"] = {
+  nombre: "Panel", orden: 1,
+  acceso: { base: "datos-830f8", reglas: "reglas.txt v4",
+            reglasUrl: "https://github.com/maurogasta-crypto/datos/blob/main/reglas.txt",
+            estado: "publicada", selladas: ["claves"] }
+};
+BASE.proyectos["sitio"] = {
+  nombre: "Un Sitio", orden: 2,
+  acceso: { base: "sitio-123", reglas: "REGLAS.txt",
+            reglasUrl: "https://github.com/quien/sitio/blob/main/REGLAS.txt",
+            estado: "sin publicar" }
+};
+/* El que va a pasar seguro: dado de alta con lo mínimo y nada más. */
+BASE.proyectos["nuevito"] = {
+  nombre: "Recién dado de alta", orden: 3,
+  acceso: { base: "nuevito-9", reglasUrl: "https://github.com/quien/nuevito/blob/main/firestore.rules" }
+};
+BASE.proyectos["sinreglas"] = { nombre: "Sin reglas todavía", orden: 4, acceso: { base: "x-1" } };
+await api.leer(); await esperar();
+
+const proy = (id) => api.PROYECTOS().find((x) => x.id === id);
+ok(api.esPropia(proy("panel")), "reconoce cuál es su PROPIA base por el projectId, no por el nombre");
+ok(!api.esPropia(proy("sitio")), "y que la de un sitio no lo es");
+ok(api.tieneReglas(proy("nuevito")),
+   "un proyecto nuevo con sólo `base` y `reglasUrl` ya tiene de dónde bajarlas");
+ok(!api.tieneReglas(proy("sinreglas")), "y uno sin `reglasUrl` no ofrece botones que no podrían hacer nada");
+
+for (const id of ["panel", "sitio", "nuevito"]) {
+  api.verSitio(id); api.pintarSitios();
+  const c = $("s-cuerpo");
+  ok(!!c.querySelector('[data-reglas="' + id + '"]'), id + ": tiene el botón de copiar");
+  ok(!!c.querySelector('[data-publicadas="' + id + '"]'), id + ": y el de «Ya las publiqué»");
+  ok(!!c.querySelector('a[href*="console.firebase.google.com"]'), id + ": y el de abrir la consola");
+}
+api.verSitio("panel"); api.pintarSitios();
+ok(!$("s-cuerpo").textContent.includes("Armarlas en"),
+   "el panel dejó de ser la excepción: su ficha ya no manda a otra pantalla");
+
+/* ── copiar: baja, copia entero y ANOTA ── */
+api.verSitio("sitio"); api.pintarSitios();
+copiado = null; pedidos = [];
+await api.copiarReglasDe(proy("sitio"), $("s-cuerpo").querySelector('[data-reglas="sitio"]'));
+await esperar();
+ok(pedidos.some((u) => u.startsWith("https://raw.githubusercontent.com/")),
+   "baja del crudo de GitHub, que es el único que manda CORS");
+ok(copiado === REGLAS_DE_PRUEBA, "copia el archivo ENTERO, tal cual está en el repositorio");
+ok(BASE.proyectos["sitio"].acceso.huella === undefined
+   && BASE.proyectos["sitio"].acceso.repo.huella === api.huella(REGLAS_DE_PRUEBA),
+   "y anota la huella de lo que bajó, que es lo que después deja comparar");
+ok(BASE.proyectos["sitio"].acceso.selladas === undefined
+   && BASE.proyectos["sitio"].acceso.base === "sitio-123",
+   "sin pisar el resto de `acceso`: se escribe mezclando, no reemplazando");
+
+/* ── la propia: se arma con los dos UID y NO viaja ningún marcador ── */
+/* Un uid con forma de uid, y NO uno que contenga el marcador adentro: con
+   «UID-DEL-AGENTE-DE-PRUEBA» la comprobación de abajo encontraba el marcador
+   dentro del valor sustituido y acusaba al panel de un error suyo. */
+$("uidAgente").value = "Ag3nTe000111222333444555666";
+copiado = null;
+api.verSitio("panel"); api.pintarSitios();
+await api.copiarReglasDe(proy("panel"), $("s-cuerpo").querySelector('[data-reglas="panel"]'));
+await esperar();
+ok(copiado && copiado.includes("uid-de-prueba"), "la plantilla del panel sale con TU uid adentro");
+ok(copiado && copiado.includes("Ag3nTe000111222333444555666"), "y con el del agente");
+ok(copiado && !copiado.includes(api.MARCA_MIA) && !copiado.includes(api.MARCA_AGENTE),
+   "y no queda un solo marcador: pegar eso dejaría la base sin nadie adentro");
+ok(!pedidos.some((u) => u.includes("raw.githubusercontent.com/maurogasta-crypto")),
+   "la propia sale del archivo local, que el service worker ya tiene guardado");
+
+/* ── una plantilla de OTRA base no se copia a medias ── */
+BASE.proyectos["ajeno"] = { nombre: "Ajeno", orden: 5,
+  acceso: { base: "ajeno-1", reglasUrl: "https://github.com/q/con-marcadores/blob/main/r.txt" } };
+await api.leer(); await esperar();
+let falló = "";
+try { await api.bajarReglasDe(proy("ajeno")); } catch (e) { falló = e.message; }
+ok(falló.includes("plantilla"),
+   "una plantilla de otra base se rechaza: sus UID son otros y el panel no los puede inventar");
+
+/* ── el pendiente, con los mismos botones ── */
+BASE.pendientes["r1"] = { proyecto: "sitio", clave: "R1", estado: "abierto", quien: "mauro",
+  prioridad: "alta", titulo: "Publicar REGLAS.txt en la consola" };
+BASE.pendientes["r2"] = { proyecto: "sitio", clave: "R2", estado: "abierto", quien: "mauro",
+  titulo: "Cambiar el color del botón" };
+BASE.pendientes["r3"] = { proyecto: "sinreglas", clave: "R3", estado: "abierto", quien: "mauro",
+  titulo: "Publicar las reglas" };
+BASE.pendientes["r4"] = { proyecto: "sitio", clave: "R4", estado: "abierto", quien: "mauro",
+  titulo: "Un título que no dice nada", accion: "publicar-reglas" };
+await api.leer(); await esperar();
+const pend = (id) => api.PENDIENTES().find((x) => x.id === id);
+ok(!!api.reglasDelPendiente(pend("r1")), "reconoce por el título el pendiente que pide publicar reglas");
+ok(!api.reglasDelPendiente(pend("r2")), "y no confunde uno que habla de otra cosa");
+ok(!api.reglasDelPendiente(pend("r3")),
+   "un proyecto sin reglas que bajar no recibe botones, por más que el título lo diga");
+ok(!!api.reglasDelPendiente(pend("r4")),
+   "y con `accion: \"publicar-reglas\"` alcanza, sin depender de cómo esté redactado el título");
+
+/* El filtro arranca en «lo que falta»; para mirar también los cerrados se toca
+   «Todo», como lo haría Mauro. */
+const verFiltroDeTodo = () => {
+  $("filtro").querySelector('[data-v="todo"]').dispatchEvent(
+    new window.MouseEvent("click", { bubbles: true }));
+};
+$("cual-app").value = ""; api.pintar();
+const tarj = $("lista").querySelector('[data-abrir="r1"]');
+ok(!!tarj && !!tarj.querySelector('[data-reglas="sitio"]'),
+   "la tarjeta del pendiente trae el botón de copiar, sin salir de la lista");
+ok(!!tarj.querySelector('[data-publicadas="sitio"]'), "y el de «Ya las publiqué»");
+ok(tarj.querySelector('[data-publicadas="sitio"]').dataset.pend === "r1",
+   "que sabe de QUÉ pendiente salió — es lo que lo deja cerrar en el mismo toque");
+ok(!$("lista").querySelector('[data-abrir="r2"]').querySelector("[data-reglas]"),
+   "y el pendiente que no es de reglas no trae botones de más");
+
+/* Un pendiente de publicar ya CERRADO y con las reglas al día no repite los
+   botones: sería ruido. Pero uno cerrado con las reglas SIN publicar sí — que
+   es el caso de `casayourte:T1`, cerrado a mano el 2026-09-14 mientras la ficha
+   del sitio seguía diciendo «sin publicar». */
+BASE.proyectos["quieto"] = { nombre: "Quieto", orden: 8,
+  acceso: { base: "quieto-1", reglasUrl: "https://github.com/q/quieto/blob/main/r.txt",
+            repo: { huella: "h" }, publicado: { huella: "h", fecha: "2026-09-13" } } };
+BASE.pendientes["r5"] = { proyecto: "quieto", clave: "R5", estado: "hecho", quien: "mauro",
+  titulo: "Publicar las reglas" };
+BASE.proyectos["atrasado"] = { nombre: "Atrasado", orden: 9,
+  acceso: { base: "atrasado-1", reglasUrl: "https://github.com/q/atrasado/blob/main/r.txt",
+            repo: { huella: "nueva" }, publicado: { huella: "vieja", fecha: "2026-09-13" } } };
+BASE.pendientes["r6"] = { proyecto: "atrasado", clave: "R6", estado: "hecho", quien: "mauro",
+  titulo: "Publicar las reglas" };
+await api.leer(); await esperar();
+verFiltroDeTodo();
+ok(!$("lista").querySelector('[data-abrir="r5"] [data-reglas]'),
+   "un pendiente cerrado con las reglas al día no repite los botones");
+ok(!!$("lista").querySelector('[data-abrir="r6"] [data-reglas]'),
+   "pero uno cerrado con las reglas sin publicar sí: es el caso que se cerró a mano");
+
+/* ── tocar un botón de adentro NO abre el editor ── */
+$("t-editor").classList.add("hide"); $("t-lista").classList.remove("hide");
+$("lista").querySelector('[data-abrir="r1"] [data-publicadas]').dispatchEvent(
+  new window.MouseEvent("click", { bubbles: true }));
+await esperar(); await esperar(); await esperar();
+ok($("t-editor").classList.contains("hide"),
+   "tocar un botón de la tarjeta no te saca de la lista, que era el punto entero");
+
+/* ── y el toque dejó las dos cosas escritas, juntas ── */
+ok(BASE.proyectos["sitio"].acceso.publicado
+   && BASE.proyectos["sitio"].acceso.publicado.huella === api.huella(REGLAS_DE_PRUEBA),
+   "«Ya las publiqué» registra la huella de lo que se publicó");
+ok(BASE.proyectos["sitio"].acceso.estado === "publicada",
+   "y deja el campo viejo en la misma verdad, para el que todavía lo lea");
+ok(BASE.pendientes["r1"].estado === "hecho",
+   "y el pendiente queda hecho en el MISMO acto: una sola línea de tiempo");
+ok((BASE.pendientes["r1"].historia || []).some((x) => (x.texto || "").includes("huella")),
+   "con un renglón de historia que dice qué se publicó, no sólo que se publicó");
+ok(api.estadoReglas(proy("sitio")).chip === "al día",
+   "y desde ahí el chip lo calcula solo, sin que nadie teclee una frase");
+/* La frase guardada y lo que se ve tienen que salir del mismo cálculo. Si un
+   día alguien escribe la regla dos veces, esto falla el mismo día. */
+for (const caso of [{ repo: { huella: "a" }, publicado: { huella: "a" } },
+                    { repo: { huella: "a" }, publicado: { huella: "b" } },
+                    { estado: "sin publicar" }, {}]) {
+  const g = api.estadoGuardable(caso), e = api.estadoReglas({ acceso: caso });
+  ok(g === null ? !e.comprobado : (g === "sin publicar") === e.mal,
+     "`acceso.estado` guardado dice lo mismo que el chip: " + JSON.stringify(caso));
+}
+
+/* ── si el archivo cambia, el panel lo nota sin que nadie avise ── */
+const antesDelCambio = REGLAS_DE_PRUEBA;
+globalThis.fetch = async () => ({ ok: true, text: async () => antesDelCambio + "\nmatch /nueva/{id} {}\n" });
+api.verSitio("sitio"); api.pintarSitios();
+await api.copiarReglasDe(proy("sitio"), $("s-cuerpo").querySelector('[data-reglas="sitio"]'));
+await esperar();
+ok(api.estadoReglas(proy("sitio")).chip === "falta publicar",
+   "el archivo cambió y el chip se da cuenta solo: nadie tuvo que acordarse de nada");
+ok($("s-cuerpo").textContent.includes("renglones"),
+   "y la ficha dice cuántos renglones tiene ahora contra los que se publicaron");
+
+/* ── «Lo primero» sale del mismo cálculo ── */
+api.pintar();
+ok($("te-toca").textContent.includes("las reglas sin publicar"),
+   "y el tablero lo encabeza con eso, del mismo cálculo y no de otra frase");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

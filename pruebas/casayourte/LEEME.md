@@ -58,28 +58,8 @@ regla y no un deseo.
 Hacen lo mismo, pero el nombre distinto es la próxima trampa de la misma familia:
 quien busque `esc` en Rematetaller no la encuentra y escribe otra.
 
-## `reportar.mjs` — el circuito de reportar una falla (2026-09-15)
-
-21 comprobaciones, sin dependencias y sin red. **No prueba la interfaz: prueba
-que la regla y el código digan lo mismo.** Es lo que se rompe en silencio — si
-el formulario manda un campo que la regla no espera, o deja de mandar uno que
-exige, Firestore rechaza el reporte, la persona ve «no se pudo enviar» y nadie
-se entera de que el circuito está cortado. **Un reporte que no llega es
-indistinguible de nadie que reporte.**
-
-Lo que cruza:
-
-- que `estado: 'nuevo'` y el `uid` de la sesión estén en los dos lados;
-- que escribir sea de cualquiera con sesión activa y leer sea de admin;
-- que el `texto` no se pueda reescribir;
-- que `reportes` **no** esté en las exclusiones del agente ni en `selladas` de
-  `herramientas/firestore.mjs` — las dos listas que tienen que coincidir;
-- que el sello de `nucleo.js` y la `VERSION` del `sw.js` coincidan con la tabla
-  del README, porque `nucleo.js` está en el SHELL;
-- que la entrada esté **una sola vez**, en `CY.renderNav`.
-
-La primera corrida encontró un error del propio banco: contaba llaves desde
-`match /reportes/{id}`, y las de `{id}` abren y cierran, así que el bloque salía
-vacío y daba cinco fallas de cosas que estaban bien escritas. Queda anotado
-porque es el modo de fallar más caro de un banco: **decir que algo está mal
-cuando está bien** enseña a no creerle.
+> **`reportar.mjs` se mudó el 2026-09-15.** Nació acá el mismo día, cuando el
+> circuito de reportes existía en un solo sitio. Con el segundo, mantener un
+> banco por sitio era garantizar que se separaran — el error que este ecosistema
+> ya cometió cuatro veces con los sellos. Ahora es **`pruebas/reportes.mjs`**,
+> una sola tabla con los tres: agregar un sitio es agregarle una fila.

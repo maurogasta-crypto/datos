@@ -131,8 +131,10 @@ const PROYECTOS = {
     apiKey: "AIzaSyDG12FsMYyGVzkodq07N1SSWQfMcTJ-3yM",
     mail: "FB_CASAVERDE_MAIL",
     clave: "FB_CASAVERDE_CLAVE",
+    /* `reportes` entra el 2026-09-15 con el circuito de reportar una falla.
+       El agente la LEE y no la escribe, igual que en los otros dos sitios. */
     colecciones: ["cabanas", "espacios_comunes", "disponibilidad", "actividades",
-                  "grupos", "recuerdos", "usuarios"],
+                  "grupos", "recuerdos", "usuarios", "reportes"],
     /* Tres familias, por el mismo motivo cada una:
        · credenciales — `claves_recuerdos` es la clave del QR del huésped, y
          `config/integraciones` guarda claves de terceros (lo dice la regla);

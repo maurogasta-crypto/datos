@@ -139,6 +139,23 @@ La documentación de Anthropic dice lo mismo desde el otro lado:
 Un 403 de red o un `permission-denied` de Firestore se ven, desde afuera, como
 una corrida verde que no hizo nada.
 
+**Y hay una variante peor, porque no falla nada: un `0` que no quiere decir lo
+que parece.** El 2026-09-15 la sección FUENTES imprimía `✓ casayourte/reportes
+0`, que se lee como «está bien y todavía nadie reportó». Era falso: en
+CasaYourte y en Casa Verde el circuito de reportes **no existe** — ni
+formulario, ni bloque `reportes/` en sus reglas, ni colección. Contestaba 0
+porque el acceso del agente en los tres sitios es un comodín con exclusiones, y
+**listar una colección que ninguna regla declara devuelve vacío en vez de
+negar**. Es la misma trampa del 13-sep, y esta vez hizo que el panel pareciera
+decir que algo estaba hecho.
+
+Lo que distingue un caso del otro no se puede averiguar desde la base, así que
+sale de un dato declarado, `proyectos/{id}.reportes`. Con `true` un 0 significa
+«nadie reportó»; sin él, la ronda escribe «el sitio todavía no tiene el circuito
+de reportes» y no pone un tilde. La regla general que deja esto: **cuando una
+lectura vacía puede significar dos cosas distintas, la herramienta dice cuál —
+o no la muestra como verde.**
+
 **Y la ronda se corre UNA sola vez por corrida.** Cada `abrir` hace login en las
 cuatro bases; polearlo agota la cuota de Firebase Authentication y la base
 empieza a contestar `QUOTA_EXCEEDED: Exceeded quota for verifying passwords`.

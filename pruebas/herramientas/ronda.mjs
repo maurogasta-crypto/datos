@@ -16,7 +16,8 @@
 import assert from "node:assert/strict";
 import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
-         CON_REPORTES, vivaL, diasTomada, lineasVivas } from "../../herramientas/ronda.mjs";
+         CON_REPORTES, vivaL, diasTomada, lineasVivas,
+         tieneCircuito } from "../../herramientas/ronda.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -264,6 +265,34 @@ prueba("la ronda NO deriva choques, y es a propósito", () => {
      mostrar qué está tomado y por quién. Esta prueba existe para que, si
      alguien agrega la derivación, tenga que borrarla a propósito. */
   assert.equal(typeof globalThis.choques, "undefined");
+});
+
+/* ── «Contestó 0» no siempre es «no hay nada» ───────────────────────────── */
+titulo("Un 0 que no quiere decir lo que parece");
+
+prueba("un sitio con el circuito declarado cuenta como que lo tiene", () => {
+  assert.equal(tieneCircuito({ id: "remate", reportes: true }), true);
+});
+
+prueba("y sin el campo, NO — que es el caso que mordió el 15-sep", () => {
+  /* En los tres sitios el acceso del agente es un comodín con exclusiones, así
+     que listar una colección que ninguna regla declara devuelve vacío en vez de
+     negar. Un `✓ 0` ahí se lee como «está bien y nadie reportó» cuando en
+     realidad el circuito no existe. */
+  assert.equal(tieneCircuito({ id: "casayourte" }), false);
+  assert.equal(tieneCircuito({ id: "casaverde", reportes: false }), false);
+});
+
+prueba("y no explota con un proyecto que no está", () => {
+  assert.equal(tieneCircuito(undefined), false);
+  assert.equal(tieneCircuito(null), false);
+});
+
+prueba("`reportes` tiene que ser el booleano, no cualquier cosa parecida", () => {
+  /* Con `== true` un `"sí"` o un `1` pasarían, y el dato lo escribe una persona
+     o un chat a mano. Que sea estricto es lo que evita un falso tilde. */
+  assert.equal(tieneCircuito({ reportes: "true" }), false);
+  assert.equal(tieneCircuito({ reportes: 1 }), false);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

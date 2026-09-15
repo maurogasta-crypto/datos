@@ -178,6 +178,26 @@ function lineasVivas(lineas) {
     String(a.titulo || a.id).localeCompare(String(b.titulo || b.id)));
 }
 
+/* ── «CONTESTÓ 0» NO SIEMPRE QUIERE DECIR «NO HAY NADA» ───────────────────
+   El 2026-09-15 Mauro preguntó si el circuito de reportes había quedado
+   funcionando en CasaYourte y en Casa Verde. La ronda venía imprimiendo
+   `✓ casayourte/reportes 0`, que se lee como «está bien y todavía nadie
+   reportó». Era falso: en esos dos sitios el circuito NO EXISTE — ni
+   formulario, ni bloque `reportes/` en sus reglas, ni colección.
+
+   Contesta 0 porque el acceso del agente en los tres sitios es un comodín con
+   exclusiones (`match /{coleccion}/{resto=**}`), así que **listar una colección
+   que ninguna regla declara devuelve vacío en vez de negar**. Es la misma
+   trampa que quedó escrita el 13-sep al verificar las reglas publicadas, y acá
+   mordió de nuevo — esta vez haciendo que el panel pareciera decir que algo
+   estaba hecho.
+
+   Lo que distingue un caso del otro no se puede averiguar desde la base, así
+   que sale de un dato declarado: `proyectos/{id}.reportes`. Con `true`, el
+   sitio tiene el circuito y un 0 significa «nadie reportó»; sin él, significa
+   «todavía no existe», y se dice con esas palabras. */
+const tieneCircuito = (p) => !!(p && p.reportes === true);
+
 const tocados = (p) => (p || []).filter((x) => x.tocado);
 const sinResponder = (p) => (p || []).filter((x) => x.pregunta && !x.respuesta);
 
@@ -201,7 +221,7 @@ function porProyecto(pendientes, fichas) {
 
 export { CON_REPORTES, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
-         vivaL, diasTomada, lineasVivas };
+         vivaL, diasTomada, lineasVivas, tieneCircuito };
 
 /* ── Lo que sí toca la red ───────────────────────────────────────────────────
    `firestore.mjs` corta el proceso ante un 403, que es lo correcto cuando una
@@ -254,6 +274,7 @@ async function juntar() {
   if (!pend.ok) return { fatal: "el panel no contestó — " + pend.motivo, fuentes };
 
   const pendientes = pend.docs;
+  const fichas = proy.ok ? proy.docs : [];
   const reportes = [];
   for (const nombre of CON_REPORTES) {
     const cfg = PROYECTOS[nombre];
@@ -267,7 +288,9 @@ async function juntar() {
       continue;
     }
     const r = await listarSuave(cfg, sesion, "reportes");
-    fuentes.push({ base: nombre, coleccion: "reportes", ok: r.ok, motivo: r.motivo, cuantos: r.docs.length });
+    fuentes.push({ base: nombre, coleccion: "reportes", ok: r.ok, motivo: r.motivo,
+                   cuantos: r.docs.length,
+                   circuito: tieneCircuito(fichas.find((f) => f.id === nombre)) });
     if (!r.ok) continue;
     const { nuevos, yaTraidos } = cruzar(nombre, r.docs, pendientes);
     reportes.push({ proyecto: nombre, nuevos, yaTraidos });
@@ -374,8 +397,13 @@ function imprimir(d) {
 
   L.push(`\n  6 · FUENTES`);
   for (const f of d.fuentes) {
-    L.push(`      ${f.ok ? "✓" : "✖"} ${f.base}/${f.coleccion}` +
-           (f.ok ? `  ${f.cuantos}` : `  ${f.motivo}`));
+    /* Un 0 de una colección que el sitio todavía no tiene no se muestra como
+       un tilde: se dice qué significa. Ver `tieneCircuito` arriba. */
+    const sinCircuito = f.coleccion === "reportes" && f.ok && !f.circuito;
+    L.push(`      ${!f.ok ? "✖" : sinCircuito ? "·" : "✓"} ${f.base}/${f.coleccion}` +
+           (!f.ok ? `  ${f.motivo}`
+            : sinCircuito ? `  el sitio todavía no tiene el circuito de reportes`
+            : `  ${f.cuantos}`));
   }
   const caidas = d.fuentes.filter((f) => !f.ok);
   if (caidas.length) {

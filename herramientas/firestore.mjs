@@ -115,7 +115,11 @@ const PROYECTOS = {
     apiKey: "AIzaSyDDD_xvpC4I_ec2OZymyDqVsm1K0ISTr4Q",
     mail: "FB_CASAYOURTE_MAIL",
     clave: "FB_CASAYOURTE_CLAVE",
-    colecciones: ["sitio", "albums", "usuarios"],
+    /* `reportes` entra el 2026-09-15 con el circuito de reportar una falla,
+       molde de remate. El agente la LEE y no la escribe —lo dice el CLAUDE.md
+       del proyecto y lo aplica la regla—, y para saber qué reporte ya trajo se
+       mira el campo `origen` del pendiente que creó en el panel. */
+    colecciones: ["sitio", "albums", "usuarios", "reportes"],
     /* `calculos`: datos de clientes y medidas de obra, y detrás costos,
        márgenes y tarifas — lo que el CLAUDE.md del proyecto prohíbe publicar.
        `invitaciones`: mails de gente que todavía no entró. */

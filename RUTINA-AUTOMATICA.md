@@ -371,7 +371,22 @@ sesión**, en vez de arrancar limpia cada día. Eso trae dos cosas:
   cosas, la respuesta es crear una sesión nueva con los repositorios adjuntos y
   reapuntar la routine**, no discutir con la vieja.
 
-Y hay un límite que hoy no molesta pero conviene tener anotado: una sesión se
+**Y hay un segundo costo, descubierto el 15-sep y más caro que el primero:
+atada a una sesión persistente, la routine ya no deja editarle el prompt desde
+un chat.** El intento devuelve, textual:
+
+> *«editing the prompt of a routine whose fires deliver into a session that is
+> not your own is not available via this tool»*
+
+Nombre, horario y el interruptor de activada siguen siendo editables; el texto
+de la instrucción, no. **Así que el prompt hay que dejarlo bien la primera vez**,
+y cambiarlo después significa borrar la routine y crearla de nuevo contra la
+misma sesión — se pierde su historial de corridas, no la sesión. Conviene
+pensarlo antes de atar una routine a una sesión: en modo «sesión nueva cada vez»
+el prompt se edita cuando se quiere, pero no hay forma de adjuntarle repositorios.
+**Es una cosa o la otra.**
+
+Y un límite más, que hoy no molesta: una sesión se
 crea con **un** repositorio adjunto. Para que la Parte 2 toque el código de los
 sitios hay que adjuntarle los otros cuatro desde adentro, con la herramienta de
 agregar repositorio —no con `git clone`, que es exactamente lo que estaba

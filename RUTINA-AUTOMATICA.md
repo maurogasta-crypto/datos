@@ -271,12 +271,39 @@ todo lo que la ronda necesita.
 
 | | |
 |---|---|
-| Nombre | **Ronda de control diaria (con datos adjunto)** |
-| Identificador | `trig_012Bcu41exyW2rZz8rJ8tY8i` |
+| Nombre | **Ronda de control diaria (los cinco repos)** |
+| Identificador | `trig_01SLpmh9QgpG9gfoqeeqtsHG` |
 | Cuándo | `0 11 * * *` — 11:00 UTC, o sea **8 de la mañana** en Uruguay |
-| Cómo dispara | **contra una sesión que ya existe** (`session_012KWUM3TbLqjXh67fsBYGBD`), no creando una nueva |
+| Cómo dispara | **contra una sesión que ya existe** (`session_014k7ZKSv5XCMQDbtyjWbFRh`), no creando una nueva |
 | Modelo | el de esa sesión: `claude-opus-5` |
 | Aviso | notificación al teléfono cuando una corrida termina |
+
+**Esta tabla se corrigió el 15-sep-2026 y decía otra cosa.** Nombraba a
+`trig_012Bcu41exyW2rZz8rJ8tY8i`, atado a `session_012KWUM3TbLqjXh67fsBYGBD`:
+esa routine ya no es la que corre. La de arriba se creó el 15-sep a las 02:55
+UTC y es la que disparó ese día. Queda anotado el reemplazo y no borrado el
+anterior, por el mismo motivo que este documento no borra los fracasos — si
+mañana aparece una tercera, lo primero que hay que poder contestar es cuál de
+todas está viva.
+
+### La corrida del 15-sep: la desatendida sí funcionó
+
+Verificado **en esa misma corrida**, no leído de otro lado:
+
+- **La ronda corrió sola y pudo ejecutar.** Ningún «Code from External». Los
+  cinco repositorios estaban en el disco de la sesión persistente, y eso es lo
+  que destrabó el bloqueo del 14-sep. **Ojo con la explicación fácil:**
+  `sources` de la routine **sigue vacío** —no es que `create_trigger` haya
+  aprendido a declarar repositorios—. Lo que cambió es dónde cae el disparo:
+  una sesión que ya los tenía adjuntos no necesita clonar nada.
+- **Las cuatro fuentes contestaron**, sin un `permission-denied`.
+- **El checkout estaba atrasado en los cinco repos** —uno o dos commits cada
+  uno— y el `git pull --ff-only` del punto 0 no es precaución de adorno: la
+  primera ronda de esa corrida se corrió con las herramientas viejas y trajo
+  un pendiente como «hecho» que en `main` estaba **abierto**. Se repitió
+  después del pull y la lista era otra. Es exactamente el fallo que el punto 0
+  describe, visto una segunda vez.
+
 
 **Esa cuarta fila es toda la diferencia, y es lo que este documento existe para
 explicar.** La primera versión (`trig_01WDGNPPmESxcJXktjtebLw4`, borrada el

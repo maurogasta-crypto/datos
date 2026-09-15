@@ -148,12 +148,12 @@ caso("`fichas` la administra el equipo, desde la v4", () => {
   trae(r, "panel:R4", "falta la advertencia de mover la contraseña antes de publicar");
 });
 
-caso("el equipo llega a las cuatro colecciones del estado, y a ninguna más", () => {
-  for (const c of ["proyectos", "pendientes", "tandas", "protocolos"]) {
+caso("el equipo llega a las cinco colecciones del estado, y a ninguna más", () => {
+  for (const c of ["lineas", "proyectos", "pendientes", "tandas", "protocolos"]) {
     trae(r, "match /" + c + "/{id}", "falta la colección");
   }
   const declaradas = [...r.matchAll(/match \/([a-z-]+)\/\{id\}/g)].map((m) => m[1]).sort();
-  igual(declaradas.join(","), "claves,fichas,pendientes,protocolos,proyectos,tandas",
+  igual(declaradas.join(","), "claves,fichas,lineas,pendientes,protocolos,proyectos,tandas",
     "cambió la lista de colecciones: si entró una nueva, agregala acá y a las reglas");
 });
 

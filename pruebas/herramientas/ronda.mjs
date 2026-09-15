@@ -16,7 +16,7 @@
 import assert from "node:assert/strict";
 import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
-         CON_REPORTES } from "../../herramientas/ronda.mjs";
+         CON_REPORTES, vivaL, diasTomada, lineasVivas } from "../../herramientas/ronda.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -225,6 +225,45 @@ prueba("los reportes se piden a TODAS las bases menos el panel", () => {
 
 prueba("y el panel nunca está: es contra quien se cruzan", () => {
   assert.ok(!CON_REPORTES.includes("panel"));
+});
+
+/* ── Las líneas de trabajo ───────────────────────────────────────────────── */
+titulo("En qué estamos");
+
+prueba("una línea cerrada no entra: la ronda muestra lo vivo", () => {
+  const l = [{ id: "a", estado: "cerrada" }, { id: "b", estado: "curso" }];
+  assert.deepEqual(lineasVivas(l).map((x) => x.id), ["b"]);
+});
+
+prueba("lo TOMADO va arriba: es lo que condiciona al que lee", () => {
+  const l = [{ id: "libre", estado: "curso" },
+             { id: "mia", estado: "abierta", tomada: { desde: "2026-09-14" } }];
+  assert.deepEqual(lineasVivas(l).map((x) => x.id), ["mia", "libre"]);
+});
+
+prueba("y a igual dueño, primero lo que está en curso", () => {
+  const l = [{ id: "pausada", estado: "pausada" }, { id: "curso", estado: "curso" },
+             { id: "abierta", estado: "abierta" }];
+  assert.deepEqual(lineasVivas(l).map((x) => x.id), ["curso", "abierta", "pausada"]);
+});
+
+prueba("los días que lleva tomada se cuentan desde `desde`", () => {
+  const hoy = new Date("2026-09-14T12:00:00").getTime();
+  assert.equal(diasTomada({ tomada: { desde: "2026-09-10" } }, hoy), 4);
+});
+
+prueba("una línea sin tomar lleva cero días, no NaN", () => {
+  assert.equal(diasTomada({}), 0);
+  assert.equal(diasTomada({ tomada: {} }), 0);
+  assert.equal(diasTomada({ tomada: { desde: "no es una fecha" } }), 0);
+});
+
+prueba("la ronda NO deriva choques, y es a propósito", () => {
+  /* El panel sí los calcula. Repetir esa regla acá sería la misma cosa escrita
+     dos veces en dos lenguajes que no se importan entre sí. Acá alcanza con
+     mostrar qué está tomado y por quién. Esta prueba existe para que, si
+     alguien agrega la derivación, tenga que borrarla a propósito. */
+  assert.equal(typeof globalThis.choques, "undefined");
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

@@ -148,6 +148,45 @@ decide.
 > publica. «La puerta» lo avisa al lado del botón de copiar, que es el único
 > momento en que alguien lo va a leer.
 
+### En qué estamos: las líneas de trabajo
+
+**Es lo primero de la pantalla, desde `panel-22`**, y nace del 2026-09-14: ese
+día se descubrió que había dos chats trabajando en paralelo sobre el mismo
+ecosistema sin enterarse uno del otro. Una sesión empujó a `main`, la otra abrió
+una rama, y la rama quedó con archivos que `main` ya no tenía.
+
+No se arregla con más disciplina: **cada chat arranca sin memoria del anterior**,
+y lo único que los dos ven es este panel.
+
+Una **línea de trabajo** es el *porqué* que agrupa varios pendientes, y el lugar
+donde dos chats se ponen de acuerdo antes de tocar código. Un pendiente contesta
+«¿qué hay que hacer?»; una línea contesta la pregunta anterior: **«¿en qué
+estamos, por qué, y quién lo está haciendo ahora mismo?»**.
+
+| | |
+|---|---|
+| **Qué se busca** | el título |
+| **Por qué** | el motivo, no el plan. Es lo que otro chat lee para no volver a discutirlo |
+| **Cuándo termina** | sin esto, una línea no se cierra nunca |
+| **Quién la tiene** | un chat la *toma* antes de tocar código y la *suelta* al cerrar |
+| **La bitácora** | qué se decidió y por qué. **Ahí es donde dos chats que dijeron cosas distintas quedan uno al lado del otro** |
+
+**Los dos ámbitos, que son la mitad del pedido.** Una línea de `sitio` es trabajo
+de un proyecto; una `global` toca el panel, el reglamento o la conexión entre
+sitios. La misma colección guarda las dos y la misma pantalla las muestra: el
+selector de app filtra a lo de ese sitio, **y lo global se ve siempre**, porque
+una decisión de ecosistema tomada mientras se mira un sitio es exactamente la
+que se pierde de vista. Cada sitio, además, muestra las suyas en su pestaña.
+
+**Los choques se derivan, no se escriben.** Dos líneas tomadas por dueños
+distintos sobre el mismo proyecto, o una tomada hace más de dos días sin soltar.
+Aparecen en «Lo primero», **arriba de las reglas sin publicar**: es la única cosa
+de esa lista que está *perdiendo trabajo mientras se lee*. Un aviso que alguien
+tiene que acordarse de crear no aparece el día que hace falta.
+
+El reglamento completo —qué hace una sesión al abrir, antes de tocar código y al
+cerrar— está en `protocolos/PROTOCOLO-GENERAL.md` § 2.1 quinquies.
+
 ### El tablero: en qué app, qué primero, y qué traba qué
 
 Arriba de todo hay un **selector de app**. Todo lo que se ve cuelga de él —los
@@ -411,16 +450,16 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-21` |
-| `estilos.css` | (en el comentario) | `estilos-9` |
+| `index.html` | `P.PANEL` | `panel-22` |
+| `estilos.css` | (en el comentario) | `estilos-10` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v12` |
+| `sw.js` | `VERSION` | `panel-shell-v13` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-9` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-10` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

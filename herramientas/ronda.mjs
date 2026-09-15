@@ -22,7 +22,13 @@
 // decide sigue siendo quien lee.
 //
 // ── EL ORDEN NO ES DECORACIÓN ────────────────────────────────────────────────
-// Sale del § 8 «Al abrir» y del § 6 «El apretón de manos», en ese orden:
+// Arriba de todo, SIN número, va EN QUÉ ESTAMOS: las líneas de trabajo y quién
+// las tiene. Entra el 2026-09-14 y no es una cola de tareas — es el contexto de
+// todo lo que viene abajo, y la única forma de que dos chats no hagan lo mismo.
+// Sin número a propósito: numerarlo correría las cinco secciones que el § 8 del
+// PROTOCOLO-GENERAL cita por número.
+//
+// Y después, del § 8 «Al abrir» y del § 6 «El apretón de manos», en ese orden:
 //   1. TOCADOS            — lo que Mauro editó desde el último parte. § 6: es lo
 //                           primero que mira un agente, y compararlo a ojo es
 //                           el trabajo que se olvida hacer.
@@ -141,6 +147,37 @@ const reglasSinPublicar = (proyectos) => (proyectos || [])
   .filter((p) => p && p.acceso && p.acceso.estado
     && /pendiente|falta|sin publicar/i.test(p.acceso.estado));
 
+/* ── LAS LÍNEAS DE TRABAJO ───────────────────────────────────────────────
+   Entran el 2026-09-14 con la colección `lineas/` del panel, y son lo PRIMERO
+   que imprime la ronda: antes de mirar qué hay que hacer, hay que saber en qué
+   se está y quién lo tiene. Ése fue el agujero que costó el día — dos chats
+   trabajando en paralelo sin enterarse.
+
+   ACÁ SÓLO SE IMPRIME EL ESTADO, NO SE DERIVA NINGÚN AVISO. El panel sí calcula
+   los choques —dos dueños distintos sobre el mismo proyecto—, y esta
+   herramienta no repite ese cálculo a propósito: sería la misma regla escrita
+   dos veces, en dos lenguajes que no se pueden importar entre sí, y ya sabemos
+   cómo termina eso acá. Para un agente alcanza con ver qué está tomado y por
+   quién: una línea con dueño no se toca, y se pregunta. */
+const vivaL = (l) => l && l.estado !== "cerrada";
+
+const diasTomada = (l, hoy = Date.now()) => {
+  const t = (l && l.tomada) || null;
+  if (!t || !t.desde) return 0;
+  const d = new Date(t.desde + "T00:00:00");
+  return isNaN(d) ? 0 : Math.floor((hoy - d.getTime()) / 86400000);
+};
+
+/* Las vivas, con lo tomado arriba: es lo que condiciona lo que puede hacer
+   quien está leyendo. */
+function lineasVivas(lineas) {
+  const peso = { curso: 0, abierta: 1, pausada: 2 };
+  return (lineas || []).filter(vivaL).slice().sort((a, b) =>
+    ((a.tomada && a.tomada.desde) ? 0 : 1) - ((b.tomada && b.tomada.desde) ? 0 : 1) ||
+    (peso[a.estado] ?? 1) - (peso[b.estado] ?? 1) ||
+    String(a.titulo || a.id).localeCompare(String(b.titulo || b.id)));
+}
+
 const tocados = (p) => (p || []).filter((x) => x.tocado);
 const sinResponder = (p) => (p || []).filter((x) => x.pregunta && !x.respuesta);
 
@@ -163,7 +200,8 @@ function porProyecto(pendientes, fichas) {
 }
 
 export { CON_REPORTES, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
-         tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar };
+         tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
+         vivaL, diasTomada, lineasVivas };
 
 /* ── Lo que sí toca la red ───────────────────────────────────────────────────
    `firestore.mjs` corta el proceso ante un 403, que es lo correcto cuando una
@@ -204,6 +242,9 @@ async function juntar() {
   const sesionPanel = await entrar(cfgPanel);
   const pend = await listarSuave(cfgPanel, sesionPanel, "pendientes");
   const proy = await listarSuave(cfgPanel, sesionPanel, "proyectos");
+  const lin = await listarSuave(cfgPanel, sesionPanel, "lineas");
+  fuentes.push({ base: "panel", coleccion: "lineas", ok: lin.ok, motivo: lin.motivo,
+                 cuantos: lin.docs.length });
   fuentes.push({ base: "panel", coleccion: "pendientes", ...pend, docs: undefined, cuantos: pend.docs.length });
 
   /* Si el panel no contesta, no hay ronda: todo lo demás se cruza contra él.
@@ -235,6 +276,7 @@ async function juntar() {
   return {
     fecha: new Date().toISOString().slice(0, 10),
     pendientes,
+    lineas: lin.ok ? lin.docs : [],
     proyectos: proy.ok ? proy.docs : [],
     reportes,
     fuentes
@@ -259,6 +301,30 @@ function imprimir(d) {
   L.push(`  ${d.pendientes.length} pendientes · ${abiertos.length} abiertos · ` +
          `${ti.length} tocados · ${sr.length} sin responder · ${nuevos.length} reportes nuevos · ` +
          `${reglas.length} con las reglas sin publicar`);
+  L.push(`  ${lineasVivas(d.lineas).length} líneas abiertas · ` +
+         `${lineasVivas(d.lineas).filter((l) => l.tomada && l.tomada.desde).length} tomadas`);
+
+  /* Va antes del 1 y SIN número: no es una cola de trabajo, es el contexto de
+     todo lo que viene abajo. Numerarlo habría corrido las cinco secciones que
+     el § 8 del PROTOCOLO-GENERAL cita por número. */
+  L.push(`\n  EN QUÉ ESTAMOS — las líneas de trabajo, y quién las tiene`);
+  const vivas = lineasVivas(d.lineas);
+  if (!vivas.length) {
+    L.push(`      (ninguna abierta — si vas a tocar código, abrí una primero)`);
+  }
+  for (const l of vivas) {
+    const t = l.tomada && l.tomada.desde ? l.tomada : null;
+    const dias = diasTomada(l);
+    L.push(`      ${l.id}  [${l.estado || "abierta"}/${l.alcance || "sitio"}]  ${corto(l.titulo, 64)}`);
+    if ((l.proyectos || []).length) L.push(`          toca    : ${l.proyectos.join(", ")}`);
+    if (l.objetivo) L.push(`          termina : ${corto(l.objetivo, 110)}`);
+    L.push(t
+      ? `          TOMADA  : ${t.chat || t.quien || "?"}${t.sesion ? " (" + t.sesion + ")" : ""}` +
+        `  desde el ${t.desde}${dias > 2 ? `  ⚠ hace ${dias} días` : ""}`
+      : `          libre   : nadie la tomó`);
+  }
+  L.push(`\n      Antes de tocar código: tomá una línea o abrila. Si ya está tomada`);
+  L.push(`      por otro, NO la toques — preguntá. Es todo el punto de esta sección.`);
 
   L.push(`\n  1 · TOCADOS — Mauro los editó desde el último parte`);
   if (!ti.length) L.push(`      (ninguno)`);

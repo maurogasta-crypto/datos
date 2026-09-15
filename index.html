@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-9">
+<link rel="stylesheet" href="estilos.css?v=estilos-10">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
@@ -86,6 +86,21 @@
            que para saber qué hacer primero había que recorrerlas y sumar de
            cabeza. Acá van las tres, ordenadas, y cada una lleva a su lugar.
            El orden NO es discutible y está explicado en `pintarTeToca()`. -->
+      <!-- 1a ter · EN QUÉ ESTAMOS. Las líneas de trabajo.
+           Pedido de Mauro el 2026-09-14, después de descubrir que había dos
+           chats trabajando en paralelo sin saberlo: «que todas las
+           intervenciones tengan un registro de por qué se hacen, para que si
+           hay otro chat que pisa esa tarea no se superpongan», y «que el
+           desarrollo sea de una sola línea y no múltiples ramas que van a irse
+           abandonando».
+
+           Va ARRIBA de «Lo primero» a propósito, y es la única cosa que se le
+           puso encima: «Lo primero» contesta «¿qué tengo que hacer?», y esto
+           contesta la pregunta anterior, «¿en qué estamos y quién lo tiene?».
+           Contestar la segunda sin la primera es lo que hace que dos sesiones
+           hagan el mismo trabajo. -->
+      <div id="lineas"></div>
+
       <div id="te-toca"></div>
 
       <div id="ficha-tecnica" class="hide"></div>
@@ -108,6 +123,75 @@
       <div id="aviso-trabas" class="hide"></div>
 
       <div id="lista"></div>
+    </div>
+
+    <!-- 1b bis · una línea abierta: el porqué, quién la tiene, y su bitácora -->
+    <div id="t-linea" class="hide">
+      <p class="volver"><a href="#lista" id="l-volver">← Volver al tablero</a></p>
+      <h1 id="l-cual">Nueva línea</h1>
+      <p class="gris" id="l-donde"></p>
+
+      <div class="tarj">
+        <label for="l-titulo">Qué se busca</label>
+        <input id="l-titulo" autocomplete="off" placeholder="Publicar las reglas en un toque">
+        <label for="l-porque">Por qué — el motivo, no el plan</label>
+        <textarea id="l-porque" class="libre"
+          placeholder="Qué pasa hoy que hace falta esto. Es lo que otro chat tiene que poder leer para no volver a discutirlo."></textarea>
+        <label for="l-objetivo">Cuándo está terminada</label>
+        <textarea id="l-objetivo" class="libre"
+          placeholder="Cómo se sabe que se puede cerrar. Sin esto, una línea no se cierra nunca."></textarea>
+      </div>
+
+      <div class="tarj">
+        <label>¿A qué alcanza?</label>
+        <div class="seg" id="l-alcance" role="group" aria-label="Alcance">
+          <button data-v="sitio">Un sitio</button>
+          <button data-v="global">Todo el ecosistema</button>
+        </div>
+        <label for="l-proyectos">¿Cuáles toca?</label>
+        <div id="l-proyectos" class="l-checks"></div>
+        <label>¿Cómo está?</label>
+        <div class="seg" id="l-estado" role="group" aria-label="Estado">
+          <button data-v="abierta">Abierta</button>
+          <button data-v="curso">En curso</button>
+          <button data-v="pausada">Pausada</button>
+          <button data-v="cerrada">Cerrada</button>
+        </div>
+        <label>¿Qué tan urgente?</label>
+        <div class="seg" id="l-prioridad" role="group" aria-label="Prioridad">
+          <button data-v="alta">Primero</button>
+          <button data-v="media">Después</button>
+          <button data-v="baja">Cuando se pueda</button>
+        </div>
+      </div>
+
+      <!-- QUIÉN LA TIENE. Es el campo por el que existe todo esto: un chat la
+           toma antes de tocar código y la suelta al cerrar, y mientras tanto
+           cualquier otro —o Mauro— ve que está tomada y por quién. -->
+      <div class="tarj">
+        <label>Quién la tiene</label>
+        <p class="gris" id="l-tomada" style="margin:.2rem 0 .4rem">—</p>
+        <div class="fila-btn">
+          <button class="btn" id="btnTomar">La tomo yo</button>
+          <button class="btn" id="btnSoltar">Soltarla</button>
+        </div>
+      </div>
+
+      <div class="tarj">
+        <label for="l-nota">Agregar a la bitácora</label>
+        <p class="gris" style="margin:.1rem 0 .4rem;font-size:.78rem">Lo que se
+          decidió y por qué. Acá es donde dos chats que dijeron cosas distintas
+          quedan uno al lado del otro, que es lo único que deja verlo.</p>
+        <input id="l-nota" autocomplete="off" placeholder="Qué se decidió en esta vuelta.">
+      </div>
+
+      <div id="l-bitacora"></div>
+      <div id="l-pendientes"></div>
+
+      <div class="fila-btn">
+        <button class="btn" id="btnLineaCancelar">Cancelar</button>
+        <button class="btn p" id="btnLineaGuardar">Guardar</button>
+      </div>
     </div>
 
     <!-- 1b · un pendiente abierto: acá se marca y se responde -->
@@ -355,7 +439,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-21";
+P.PANEL = "panel-22";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -474,6 +558,7 @@ $("nav").addEventListener("click", (e) => {
 /* Igual que `irA()`: el bloque «Lo primero» tiene filas que llevan a un
    filtro, y el filtro tiene que quedar marcado o la pantalla miente. */
 function verFiltro(v) {
+  cerrarLinea();
   /* Entrar a «Preguntas» arranca la fila desde el principio, siempre. Si
      quedara donde estaba, volver al filtro mostraría una del medio. */
   if (v !== filtro) reiniciarCola();
@@ -491,9 +576,13 @@ $("filtro").addEventListener("click", (e) => {
 /* ---------- leer ---------- */
 async function leer() {
   try {
-    const [pr, pe] = await Promise.all([
+    const [pr, pe, li] = await Promise.all([
       getDocs(collection(db, "proyectos")),
-      getDocs(collection(db, "pendientes"))
+      getDocs(collection(db, "pendientes")),
+      /* Las líneas entran en la MISMA lectura que el resto: son lo primero que
+         se ve al abrir, y pedirlas aparte sería una segunda espera para la
+         pantalla que más rápido tiene que estar. */
+      getDocs(collection(db, "lineas"))
     ]);
     PROYECTOS = [];
     pr.forEach((d) => PROYECTOS.push({ id: d.id, ...d.data() }));
@@ -503,6 +592,9 @@ async function leer() {
       || String(a.nombre || a.id).localeCompare(String(b.nombre || b.id), "es"));
     PENDIENTES = [];
     pe.forEach((d) => PENDIENTES.push({ id: d.id, ...d.data() }));
+    LINEAS = [];
+    li.forEach((d) => LINEAS.push({ id: d.id, ...d.data() }));
+    ordenarLineas();
     pintar();
   } catch (e) {
     $("resumen").textContent = P.explicar(e);
@@ -802,12 +894,19 @@ function bloque(titulo, lista, vacio) {
 
    EL ORDEN, que es la parte que importa y no es una preferencia estética:
 
-     1 · LAS REGLAS SIN PUBLICAR. Van primero porque son lo único de esta
+     0 · LOS CHOQUES ENTRE CHATS. Entran el 2026-09-14 y van ARRIBA de las
+         reglas, que hasta hoy eran lo primero. El § de `pintarTeToca()` pedía
+         que una cuarta cosa se argumentara: ésta se pone primera porque es la
+         única de la lista que **está perdiendo trabajo mientras se lee**. Una
+         base con las reglas viejas es un estado que no se degrada solo; dos
+         sesiones escribiendo el mismo repositorio sin saberlo sí, y lo que se
+         pierde no se recupera mirándolo después. Pasó el 2026-09-14.
+     1 · LAS REGLAS SIN PUBLICAR. Van segundas porque son lo único de esta
          lista que deja una base abierta mientras espera, y porque nadie más
          que Mauro puede hacerlas: publicar reglas es entrar a la consola de
          Firebase con su cuenta. Un pendiente que espera una semana es un
          pendiente; una base con las reglas viejas una semana es otra cosa.
-     2 · LAS PREGUNTAS SIN RESPONDER. Segundas porque cada una tiene a un
+     2 · LAS PREGUNTAS SIN RESPONDER. Terceras porque cada una tiene a un
          agente parado esperando: mientras no se contesten, el trabajo que
          depende de ellas no avanza, y el que lo espera no es Mauro.
      3 · LOS PENDIENTES QUE LO ESPERAN. Últimos porque son trabajo suyo que
@@ -839,15 +938,25 @@ function pintarTeToca() {
   });
   const preguntas = mios.filter(sinResponder).length;
   const esperan = mios.filter((p) => abierto(p) && p.quien !== "claude").length;
+  const ch = choques();
 
   if (!PENDIENTES.length && !PROYECTOS.length) { caja.innerHTML = ""; return; }
-  if (!sinPublicar.length && !preguntas && !esperan) {
+  if (!ch.length && !sinPublicar.length && !preguntas && !esperan) {
     caja.innerHTML = '<div class="tarj"><p class="gris" style="margin:0">'
       + "<b>Nada te está esperando.</b> Lo que queda abierto lo hago yo.</p></div>";
     return;
   }
 
   let h = '<div class="tarj"><h2 style="margin:.1rem 0 .6rem">Lo primero</h2>';
+
+  /* Los choques no llevan botón «Ir»: llevan a la línea que los causa, que es
+     donde se resuelve. Uno por fila, con el motivo abajo, porque acá la
+     pregunta no es «cuántos» sino «cuál y con quién». */
+  for (const c of ch) {
+    h += '<div class="tt-fila tt-mal"><div class="tt-que"><b>' + P.esc(c.que)
+      + "</b><span>" + P.esc(c.porQue) + "</span></div>"
+      + '<button class="btn" data-tt-linea="' + P.esc(c.lineas[0].id) + '">Ver</button></div>';
+  }
 
   if (sinPublicar.length) {
     h += '<div class="tt-fila tt-mal"><div class="tt-que"><b>'
@@ -873,6 +982,12 @@ function pintarTeToca() {
 }
 
 $("te-toca").addEventListener("click", (e) => {
+  const li = e.target.closest("[data-tt-linea]");
+  if (li) {
+    const l = LINEAS.find((x) => x.id === li.dataset.ttLinea);
+    if (l) abrirLinea(l);
+    return;
+  }
   const b = e.target.closest("[data-tt]"); if (!b) return;
   if (b.dataset.tt === "sitios") { irA("sitios"); window.scrollTo(0, 0); return; }
   verFiltro(b.dataset.tt);
@@ -881,6 +996,7 @@ $("te-toca").addEventListener("click", (e) => {
 
 function pintar() {
   llenarApps();
+  pintarLineas();
   pintarTeToca();
   pintarFichaTecnica();
   /* Las fichas se leen cuando hacen falta, no al arrancar: el tablero abre sin
@@ -950,6 +1066,329 @@ function pintar() {
    abierto para lo que se resuelva al vuelo; son dos caminos, no uno que
    reemplaza al otro. */
 
+/* ═══════════════════════════════════════════════════════════
+   LAS LÍNEAS DE TRABAJO — «en qué estamos, y quién lo tiene»
+
+   Pedido de Mauro el 2026-09-14, el día que descubrió que había dos chats
+   trabajando en paralelo sin saberlo. Sus palabras, que son la especificación
+   entera y conviene no perder:
+
+     · «que todas las intervenciones tengan un registro de por qué se hacen,
+        para que si hay otro chat que pisa esa tarea no se superpongan»;
+     · «que el desarrollo sea de una sola línea y no múltiples ramas que van a
+        irse abandonando»;
+     · «centralizado y súper claro en todos los comienzos de desarrollo, dentro
+        de un mismo lugar único, que sería siempre dentro del panel»;
+     · «la visualización por sitio es importante… pero también hay un desarrollo
+        global que puede implicar al panel en sí mismo o a los desarrollos
+        intersitio».
+
+   POR QUÉ UNA COLECCIÓN NUEVA Y NO UN CAMPO MÁS EN `pendientes`. Un pendiente
+   contesta «¿qué hay que hacer?». Lo que faltaba es la pregunta ANTERIOR: «¿en
+   qué estamos, por qué, y quién lo está haciendo ahora mismo?». Son cosas de
+   vida distinta —una línea vive semanas y junta muchos pendientes— y meterlas
+   en la misma colección obliga a que cada pendiente cargue el porqué del
+   conjunto, que es justo lo que hoy se pierde entre dos chats.
+
+   LOS DOS ÁMBITOS, QUE SON LA MITAD DEL PEDIDO. Una línea `sitio` es trabajo de
+   un proyecto; una `global` toca el panel, el reglamento o la conexión entre
+   sitios. La MISMA colección los guarda y la misma pantalla los muestra: el
+   selector de app filtra a lo de ese sitio, y lo global se ve siempre, porque
+   una decisión de ecosistema tomada mientras se mira un sitio es exactamente la
+   que se pierde de vista.
+
+   LO QUE ESTO NO ES. No es un tablero de tareas: los pendientes siguen donde
+   estaban. Una línea es el porqué que los agrupa, y el lugar donde dos chats se
+   ponen de acuerdo antes de tocar código.
+   ═══════════════════════════════════════════════════════════ */
+
+let LINEAS = [];
+let editandoLinea = null;     // la línea abierta, o null
+
+const ALCANCES = { sitio: "un sitio", global: "todo el ecosistema" };
+const ESTADOS_L = { abierta: "abierta", curso: "en curso", pausada: "pausada", cerrada: "cerrada" };
+const vivaL = (l) => l && l.estado !== "cerrada";
+
+/* Quién tiene la línea, en palabras. `tomada` es `{quien, chat, sesion, desde}`:
+   `quien` dice si la tomó Mauro desde el panel o un chat, y `sesion` es el
+   identificador de esa sesión de Claude Code — que es lo que permite que un
+   chat reconozca SU propia marca y no la confunda con la de otro. */
+const quienLaTiene = (l) => {
+  const t = (l && l.tomada) || null;
+  if (!t || !t.desde) return "";
+  return (t.quien === "mauro" ? "Mauro" : (t.chat || "un chat")) + ", desde el " + t.desde;
+};
+
+/* Los días que lleva tomada. Una línea tomada y olvidada es peor que una sin
+   tomar: bloquea a quien la lee correctamente. */
+const diasTomada = (l) => {
+  const t = (l && l.tomada) || null;
+  if (!t || !t.desde) return 0;
+  const d = new Date(t.desde + "T00:00:00");
+  return isNaN(d) ? 0 : Math.floor((Date.now() - d.getTime()) / 86400000);
+};
+
+const proyectosDe = (l) => Array.isArray(l && l.proyectos) ? l.proyectos : [];
+
+/* Las líneas que importan con el selector puesto en un sitio: las suyas MÁS las
+   globales. Las globales no se esconden nunca, y es a propósito — ver arriba. */
+function lineasDe(app) {
+  const vivas = LINEAS.filter(vivaL);
+  if (!app) return vivas;
+  return vivas.filter((l) => l.alcance === "global" || proyectosDe(l).includes(app));
+}
+
+/* ── LOS CHOQUES ────────────────────────────────────────────────────────────
+   Derivados, nunca escritos: un aviso que hay que acordarse de crear es un
+   aviso que no aparece el día que hace falta.
+
+   Dos formas, y las dos ya pasaron en este ecosistema el 2026-09-14:
+
+     1. DOS LÍNEAS EN CURSO TOMADAS POR DISTINTOS SOBRE EL MISMO PROYECTO. Es el
+        choque de verdad: dos sesiones escribiendo el mismo repositorio sin
+        saberlo. Una empujó a `main` y la otra abrió una rama; la rama quedó
+        abandonada con cosas que `main` ya no tenía.
+     2. UNA LÍNEA TOMADA HACE DÍAS Y SIN SOLTAR. No es un choque todavía, pero
+        bloquea: el que la lee bien no la toca, y el que la tomó ya se fue. */
+const DIAS_OLVIDADA = 2;
+
+function choques() {
+  const fuera = [];
+  const tomadas = LINEAS.filter((l) => vivaL(l) && l.tomada && l.tomada.desde);
+
+  for (const l of tomadas) {
+    if (diasTomada(l) > DIAS_OLVIDADA) {
+      fuera.push({ tipo: "olvidada", lineas: [l],
+        que: "«" + (l.titulo || l.id) + "» está tomada hace " + diasTomada(l) + " días",
+        porQue: "Quien la tomó no la soltó. Mientras siga así, el que la lea bien no la va a tocar." });
+    }
+  }
+
+  /* El cruce se hace por PROYECTO y no por línea: dos líneas distintas sobre el
+     mismo repositorio chocan igual, aunque se llamen diferente. */
+  const porProyecto = new Map();
+  for (const l of tomadas) {
+    for (const p of (l.alcance === "global" ? proyectosDe(l) : proyectosDe(l))) {
+      if (!porProyecto.has(p)) porProyecto.set(p, []);
+      porProyecto.get(p).push(l);
+    }
+  }
+  for (const [p, ls] of porProyecto) {
+    if (ls.length < 2) continue;
+    /* Dos líneas del MISMO dueño no son un choque: es una persona o un chat
+       haciendo dos cosas, que es su problema y no una colisión. */
+    const duenos = new Set(ls.map((l) => (l.tomada.sesion || l.tomada.quien || "?")));
+    if (duenos.size < 2) continue;
+    fuera.push({ tipo: "cruce", lineas: ls,
+      que: ls.length + " líneas tomadas por distintos tocan «" + nombreProy(p) + "»",
+      porQue: ls.map((l) => "«" + (l.titulo || l.id) + "» — " + quienLaTiene(l)).join(" · ") });
+  }
+  return fuera;
+}
+
+/* ── LA CAJA DE ARRIBA ──────────────────────────────────────────────────────
+   Lo primero que se ve al abrir el panel, y lo primero que tiene que leer un
+   chat. Se agrupa por ALCANCE y no por proyecto: con el selector en un sitio,
+   lo suyo arriba y lo del ecosistema abajo; sin selector, todo junto igual
+   dividido. Es la forma que contesta «¿dónde estoy parado?» sin scrollear. */
+function filaLinea(l) {
+  const c = LINEAS_CUENTA(l);
+  const t = l.tomada && l.tomada.desde;
+  return '<div class="lin" data-linea="' + P.esc(l.id) + '">'
+    + '<div class="lin-t"><b>' + P.esc(l.titulo || l.id) + "</b>"
+    + '<span class="sit-chip' + (l.estado === "curso" ? " ok" : "") + '">'
+    + P.esc(ESTADOS_L[l.estado] || l.estado || "abierta") + "</span></div>"
+    + (l.objetivo ? '<div class="lin-o">' + P.esc(l.objetivo) + "</div>" : "")
+    + '<div class="lin-p">'
+    + (t ? '<span class="sit-chip ' + (diasTomada(l) > DIAS_OLVIDADA ? "mal" : "ok") + '">'
+         + P.esc(quienLaTiene(l)) + "</span>" : '<span class="sit-chip">sin tomar</span>')
+    + (c.abiertos ? "<span>" + c.abiertos + " sin terminar</span>" : "<span>sin pendientes</span>")
+    + (l.alcance === "global" && proyectosDe(l).length
+        ? "<span>" + P.esc(proyectosDe(l).map(nombreProy).join(" · ")) + "</span>" : "")
+    + "</div></div>";
+}
+
+/* Los números de una línea salen del mismo PENDIENTES que el tablero: un solo
+   origen, así no pueden discrepar entre dos pantallas. */
+function LINEAS_CUENTA(l) {
+  const mios = PENDIENTES.filter((p) => p.linea === l.id);
+  return { total: mios.length, abiertos: mios.filter(abierto).length };
+}
+
+function pintarLineas() {
+  const caja = $("lineas");
+  if (!caja) return;
+  const vivas = lineasDe(APP);
+  const suyas = vivas.filter((l) => l.alcance !== "global");
+  const globales = vivas.filter((l) => l.alcance === "global");
+
+  let h = '<div class="tarj"><h2 style="margin:.1rem 0 .2rem">En qué estamos</h2>';
+  if (!LINEAS.length) {
+    h += '<p class="gris" style="margin:.2rem 0 .6rem">Todavía no hay ninguna línea '
+      + "abierta. Una línea es el porqué que agrupa varios pendientes, y el lugar "
+      + "donde dos chats se ponen de acuerdo antes de tocar código.</p>";
+  } else if (!vivas.length) {
+    h += '<p class="gris" style="margin:.2rem 0 .6rem">Nada abierto '
+      + (APP ? "en " + P.esc(nombreProy(APP)) + " ni en el ecosistema." : "en ninguna parte.") + "</p>";
+  } else {
+    if (suyas.length) {
+      h += '<div class="proy">' + (APP ? P.esc(nombreProy(APP)) : "Por sitio") + "</div>"
+        + suyas.map(filaLinea).join("");
+    }
+    if (globales.length) {
+      h += '<div class="proy">Todo el ecosistema</div>' + globales.map(filaLinea).join("");
+    }
+  }
+  h += '<div class="fila-btn"><button class="btn" data-linea-nueva="1">Abrir una línea</button></div>';
+  caja.innerHTML = h + "</div>";
+}
+
+/* ── EL EDITOR ──────────────────────────────────────────────────────────────*/
+function pintarChecksProyectos(marcados) {
+  $("l-proyectos").innerHTML = PROYECTOS.map((p) =>
+    '<label class="l-check"><input type="checkbox" value="' + P.esc(p.id) + '"'
+    + (marcados.includes(p.id) ? " checked" : "") + "> " + P.esc(p.nombre || p.id) + "</label>").join("");
+}
+const proyectosMarcados = () =>
+  [...$("l-proyectos").querySelectorAll("input:checked")].map((i) => i.value);
+
+function abrirLinea(l) {
+  editandoLinea = l;
+  const nueva = !l;
+  $("l-cual").textContent = nueva ? "Nueva línea" : (l.titulo || l.id);
+  $("l-donde").textContent = nueva ? "" : ("abierta el " + (l.abierta || "—"));
+  $("l-titulo").value = nueva ? "" : (l.titulo || "");
+  $("l-porque").value = nueva ? "" : (l.porQue || "");
+  $("l-objetivo").value = nueva ? "" : (l.objetivo || "");
+  $("l-nota").value = "";
+  marcarSeg("l-alcance", (l && l.alcance) || (APP ? "sitio" : "global"));
+  marcarSeg("l-estado", (l && l.estado) || "abierta");
+  marcarSeg("l-prioridad", (l && l.prioridad) || "media");
+  pintarChecksProyectos(l ? proyectosDe(l) : (APP ? [APP] : []));
+
+  $("l-tomada").textContent = nueva ? "Nadie todavía."
+    : (quienLaTiene(l) || "Nadie la tiene tomada.");
+  $("btnTomar").classList.toggle("hide", nueva);
+  $("btnSoltar").classList.toggle("hide", nueva || !(l.tomada && l.tomada.desde));
+
+  const bit = Array.isArray(l && l.bitacora) ? l.bitacora : [];
+  $("l-bitacora").innerHTML = bit.length
+    ? '<div class="tarj"><label>La bitácora</label>' + bit.slice().reverse().map((x) =>
+        '<div class="bit"><i>' + P.esc(x.fecha || "") + "</i> · <b>"
+        + P.esc(x.chat || x.quien || "?") + "</b><div>" + P.esc(x.texto || "") + "</div></div>").join("")
+      + "</div>"
+    : "";
+
+  const suyos = l ? PENDIENTES.filter((p) => p.linea === l.id) : [];
+  $("l-pendientes").innerHTML = suyos.length
+    ? '<div class="tarj"><label>Los pendientes de esta línea</label>'
+      + suyos.sort(porUrgencia).map((p) =>
+        '<div class="sit-pend"><span class="prio ' + P.esc(p.prioridad || "media") + '">'
+        + P.esc(NOMBRE_PRIO[p.prioridad] || "después") + "</span><span>"
+        + P.esc(p.titulo || p.clave || p.id) + "</span></div>").join("") + "</div>"
+    : (nueva ? "" : '<p class="gris">Todavía no hay ningún pendiente en esta línea. Se '
+        + "enganchan escribiendo el campo <code>linea</code> del pendiente.</p>");
+
+  $("t-lista").classList.add("hide");
+  $("t-editor").classList.add("hide");
+  $("t-linea").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+
+function cerrarLinea() {
+  editandoLinea = null;
+  $("t-linea").classList.add("hide");
+  $("t-lista").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+
+["l-alcance", "l-estado", "l-prioridad"].forEach((cual) =>
+  $(cual).addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) marcarSeg(cual, b.dataset.v);
+  }));
+
+$("lineas").addEventListener("click", (e) => {
+  if (e.target.closest("[data-linea-nueva]")) { abrirLinea(null); return; }
+  const c = e.target.closest("[data-linea]");
+  if (!c) return;
+  const l = LINEAS.find((x) => x.id === c.dataset.linea);
+  if (l) abrirLinea(l);
+});
+$("btnLineaCancelar").addEventListener("click", cerrarLinea);
+$("l-volver").addEventListener("click", (e) => { e.preventDefault(); cerrarLinea(); });
+
+/* Tomar y soltar escriben en el acto, sin pasar por «Guardar»: es una marca de
+   presencia, y una marca que espera a que alguien toque otro botón no sirve
+   para avisarle a nadie. */
+async function marcarTomada(tomada) {
+  const l = editandoLinea;
+  if (!l) return;
+  try {
+    await setDoc(doc(db, "lineas", l.id), { tomada, actualizadoEn: serverTimestamp() }, { merge: true });
+    await leerLineas();
+    const fresca = LINEAS.find((x) => x.id === l.id);
+    if (fresca) abrirLinea(fresca);
+    P.aviso(tomada ? "Tomada. Queda escrito que es tuya." : "Soltada.");
+  } catch (e) { P.aviso(P.explicar(e), "error"); }
+}
+$("btnTomar").addEventListener("click", () =>
+  marcarTomada({ quien: "mauro", chat: "Mauro, desde el panel", sesion: "", desde: P.hoy() }));
+$("btnSoltar").addEventListener("click", () => marcarTomada(null));
+
+$("btnLineaGuardar").addEventListener("click", async () => {
+  const titulo = $("l-titulo").value.trim();
+  if (!titulo) return P.aviso("Ponele un título: es lo que otro chat va a leer.", "error");
+  const nota = $("l-nota").value.trim();
+  const l = editandoLinea;
+  const id = l ? l.id : "L-" + P.hoy() + "-" + Math.random().toString(36).slice(2, 7);
+  const datos = {
+    titulo,
+    porQue: $("l-porque").value.trim(),
+    objetivo: $("l-objetivo").value.trim(),
+    alcance: leerSeg("l-alcance") || "sitio",
+    estado: leerSeg("l-estado") || "abierta",
+    prioridad: leerSeg("l-prioridad") || "media",
+    proyectos: proyectosMarcados(),
+    abierta: (l && l.abierta) || P.hoy(),
+    actualizadoEn: serverTimestamp()
+  };
+  if (datos.estado === "cerrada") datos.cerrada = P.hoy();
+  if (nota) {
+    datos.bitacora = (Array.isArray(l && l.bitacora) ? l.bitacora : [])
+      .concat([{ fecha: P.hoy(), quien: "mauro", chat: "Mauro", texto: nota }]);
+  }
+  const b = $("btnLineaGuardar"); b.disabled = true; b.textContent = "…";
+  try {
+    await setDoc(doc(db, "lineas", id), datos, { merge: true });
+    await leerLineas();
+    pintar();
+    cerrarLinea();
+    P.aviso("Guardada. La leo de la base.");
+  } catch (e) { P.aviso(P.explicar(e), "error"); }
+  finally { b.disabled = false; b.textContent = "Guardar"; }
+});
+
+/* El orden: primero lo urgente, y a igual urgencia lo que está EN CURSO, que
+   es lo que alguien está tocando ahora mismo. */
+const PESO_EST = { curso: 0, abierta: 1, pausada: 2, cerrada: 3 };
+function ordenarLineas() {
+  LINEAS.sort((a, b) =>
+    (PESO_EST[a.estado] ?? 1) - (PESO_EST[b.estado] ?? 1)
+    || pesoPrio(a) - pesoPrio(b)
+    || String(a.titulo || a.id).localeCompare(String(b.titulo || b.id), "es"));
+}
+
+/* Recarga SÓLO las líneas. Tomar y soltar no tienen por qué releer los sesenta
+   pendientes: es un toque que tiene que contestar ya. */
+async function leerLineas() {
+  const s = await getDocs(collection(db, "lineas"));
+  LINEAS = [];
+  s.forEach((d) => LINEAS.push({ id: d.id, ...d.data() }));
+  ordenarLineas();
+  pintarLineas();
+}
+
 let abriendo = null;    // el pendiente abierto, o null
 
 /* Los dos segmentados del editor funcionan igual: se marca uno y se lee cuál
@@ -971,6 +1410,7 @@ const leerSeg = (cual) => {
 
 function abrirPendiente(p) {
   abriendo = p;
+  $("t-linea").classList.add("hide");
   $("t-cual").textContent = p.titulo || "(sin título)";
   $("t-donde").textContent = [nombreProy(p.proyecto), p.clave].filter(Boolean).join(" · ");
   $("t-porque").textContent = p.porQue || "";
@@ -1007,6 +1447,7 @@ function abrirPendiente(p) {
 
 function cerrarPendiente() {
   abriendo = null;
+  $("t-linea").classList.add("hide");
   $("t-editor").classList.add("hide");
   $("t-lista").classList.remove("hide");
   window.scrollTo(0, 0);
@@ -2160,6 +2601,36 @@ function pintarUnSitio(pr) {
     h += "</div>";
   }
 
+  /* 4 bis · EN QUÉ ESTAMOS ACÁ. Las líneas de este sitio, más las globales que
+        lo tocan. Es la «visualización por sitio» que pidió Mauro el 2026-09-14
+        —«para poder tener yo un control sobre lo que voy buscando desarrollar
+        por cada sitio»—, y es la MISMA colección que el tablero: una sola
+        fuente, dos ventanas. Lo global se muestra igual y marcado como tal,
+        porque una decisión de ecosistema tomada mientras se mira un sitio es
+        justo la que se pierde de vista. */
+  const susLineas = LINEAS.filter(vivaL).filter((l) =>
+    proyectosDe(l).includes(pr.id) || (l.alcance === "global" && !proyectosDe(l).length));
+  if (susLineas.length) {
+    h += '<div class="tarj"><h2 style="margin:.1rem 0 .5rem">En qué estamos acá</h2>'
+      + susLineas.map((l) => {
+        const c = LINEAS_CUENTA(l);
+        return '<div class="lin" data-ir-linea="' + P.esc(l.id) + '">'
+          + '<div class="lin-t"><b>' + P.esc(l.titulo || l.id) + "</b>"
+          + '<span class="sit-chip' + (l.estado === "curso" ? " ok" : "") + '">'
+          + P.esc(ESTADOS_L[l.estado] || l.estado || "abierta") + "</span>"
+          + (l.alcance === "global" ? '<span class="sit-chip">ecosistema</span>' : "") + "</div>"
+          + (l.objetivo ? '<div class="lin-o">' + P.esc(l.objetivo) + "</div>" : "")
+          + '<div class="lin-p">'
+          + (l.tomada && l.tomada.desde
+              ? '<span class="sit-chip ' + (diasTomada(l) > DIAS_OLVIDADA ? "mal" : "ok") + '">'
+                + P.esc(quienLaTiene(l)) + "</span>"
+              : '<span class="sit-chip">sin tomar</span>')
+          + "<span>" + c.abiertos + " sin terminar</span></div></div>";
+      }).join("")
+      + '<p class="gris" style="margin:.5rem 0 0;font-size:.78rem">Tocá una para '
+      + "abrirla en el tablero, que es donde se toma y se escribe la bitácora.</p></div>";
+  }
+
   /* 5 · Qué falta. Los tres o cuatro de arriba, no la lista entera: para eso
         está el tablero, y repetirlo acá sería otro lugar que se desactualiza. */
   h += '<div class="tarj"><h2 style="margin:.1rem 0 .5rem">Qué falta</h2>'
@@ -2257,6 +2728,15 @@ $("s-tabs").addEventListener("click", (e) => {
 });
 
 $("s-cuerpo").addEventListener("click", (e) => {
+  /* Una línea se abre SIEMPRE en el tablero, nunca en una segunda copia del
+     editor acá: dos editores del mismo documento divergen, y este ecosistema ya
+     sabe cómo termina eso. */
+  const il = e.target.closest("[data-ir-linea]");
+  if (il) {
+    const l = LINEAS.find((x) => x.id === il.dataset.irLinea);
+    if (l) { irA("tablero"); abrirLinea(l); }
+    return;
+  }
   const ir = e.target.closest("[data-ir]");
   if (ir) { SITIO = ir.dataset.ir; pintarSitios(); window.scrollTo(0, 0); return; }
   const rg = e.target.closest("[data-reglas]");

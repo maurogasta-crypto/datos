@@ -98,7 +98,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch","firebaseConfig",
-  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta };");
+  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -129,7 +129,7 @@ const api = correr(P, $, {}, {}, doc, setDoc, deleteDoc, collection,
    de paso el camino de entrada. */
 const sembrar = async (datos) => {
   let hayReglas = false;
-  for (const col of ["proyectos", "pendientes", "protocolos"]) {
+  for (const col of ["lineas", "proyectos", "pendientes", "protocolos"]) {
     (datos[col] || []).forEach((d) => {
       const { id, ...resto } = d;
       const m = (BASE[col] ||= {});
@@ -1115,6 +1115,144 @@ ok($("s-cuerpo").textContent.includes("renglones"),
 api.pintar();
 ok($("te-toca").textContent.includes("las reglas sin publicar"),
    "y el tablero lo encabeza con eso, del mismo cálculo y no de otra frase");
+
+const hoy = () => P.hoy();
+
+console.log("\n36 · las líneas de trabajo: en qué estamos, y quién lo tiene");
+/* Pedido de Mauro el 2026-09-14, el día que descubrió que había dos chats
+   trabajando en paralelo sin saberlo. Lo que hay que probar no es que la
+   tarjeta se dibuje, sino las cuatro cosas que, si fallan, devuelven el
+   problema entero:
+
+     · que lo GLOBAL no se esconda al elegir un sitio — una decisión de
+       ecosistema tomada mirando un sitio es justo la que se pierde de vista;
+     · que el choque entre dos chats se DERIVE y no haya que acordarse de
+       escribirlo, porque un aviso que alguien tiene que crear no aparece el
+       día que hace falta;
+     · que dos líneas del MISMO dueño no se cuenten como choque, o el aviso se
+       vuelve ruido y se deja de mirar;
+     · que tomar una línea escriba en el acto, sin pasar por «Guardar»: una
+       marca de presencia que espera otro botón no le avisa a nadie. */
+
+BASE.proyectos = {}; BASE.pendientes = {}; BASE.protocolos = {}; BASE.fichas = {};
+BASE.lineas = {};
+await sembrar({
+  proyectos: [{ id: "casayourte", nombre: "CasaYourte", orden: 1 },
+              { id: "remate", nombre: "Rematetaller", orden: 2 },
+              { id: "panel", nombre: "Panel", orden: 3 }],
+  lineas: [
+    { id: "L-cy", titulo: "El taller de CasaYourte", alcance: "sitio",
+      proyectos: ["casayourte"], estado: "curso", prioridad: "alta",
+      objetivo: "Que el diseñador pueda escribir sin tocar lo publicado.",
+      porQue: "Hace falta un piloto.", abierta: "2026-09-14",
+      tomada: { quien: "claude", chat: "chat del taller", sesion: "s-1", desde: hoy() } },
+    { id: "L-eco", titulo: "Que dos chats no se pisen", alcance: "global",
+      proyectos: ["panel", "casayourte"], estado: "abierta", prioridad: "alta",
+      objetivo: "Que al abrir se vea quién tiene qué.", abierta: "2026-09-14" },
+    { id: "L-vieja", titulo: "Algo que ya se cerró", alcance: "sitio",
+      proyectos: ["remate"], estado: "cerrada", abierta: "2026-09-10", cerrada: "2026-09-12" }
+  ],
+  pendientes: [
+    { id: "x1", proyecto: "casayourte", titulo: "Uno", estado: "abierto", quien: "mauro", linea: "L-cy" },
+    { id: "x2", proyecto: "casayourte", titulo: "Dos", estado: "hecho", quien: "claude", linea: "L-cy" },
+    { id: "x3", proyecto: "remate", titulo: "Suelto", estado: "abierto", quien: "mauro" }
+  ]
+});
+
+/* ── los dos ámbitos ── */
+ok(api.lineasDe("").length === 2, "una línea cerrada no aparece: la lista es de lo vivo");
+const deCY = api.lineasDe("casayourte").map((l) => l.id).sort();
+ok(deCY.join(",") === "L-cy,L-eco",
+   "con un sitio elegido se ven las suyas Y las globales — lo global no se esconde nunca");
+ok(api.lineasDe("remate").map((l) => l.id).join(",") === "L-eco",
+   "y en otro sitio queda sólo lo global, no lo ajeno");
+
+/* ── la caja de arriba ── */
+$("cual-app").value = ""; api.pintar();
+ok($("lineas").textContent.includes("En qué estamos"), "la caja encabeza el tablero");
+ok($("lineas").textContent.includes("El taller de CasaYourte"), "y lista las líneas vivas");
+ok(!$("lineas").textContent.includes("Algo que ya se cerró"), "y no las cerradas");
+ok($("lineas").textContent.includes("Todo el ecosistema"),
+   "separa lo global de lo de un sitio, que es lo que pidió Mauro");
+ok($("lineas").textContent.includes("chat del taller"),
+   "y dice QUIÉN la tiene, que es el campo por el que existe todo esto");
+ok($("lineas").textContent.includes("1 sin terminar"),
+   "los números de una línea salen del mismo PENDIENTES que el tablero");
+ok(!!$("lineas").querySelector("[data-linea-nueva]"), "y se puede abrir una línea desde acá");
+
+/* ── los choques, derivados ── */
+ok(api.choques().length === 0, "con una sola línea tomada no hay choque");
+
+BASE.lineas["L-eco"].tomada = { quien: "claude", chat: "otro chat", sesion: "s-2", desde: hoy() };
+await api.leer(); await esperar();
+const ch = api.choques();
+ok(ch.length === 1 && ch[0].tipo === "cruce",
+   "dos chats distintos tocando el mismo proyecto: eso SÍ es un choque");
+ok(ch[0].que.includes("CasaYourte"), "y dice sobre qué sitio chocan");
+ok(ch[0].porQue.includes("otro chat") && ch[0].porQue.includes("chat del taller"),
+   "con los dos nombres, que es lo que deja resolverlo");
+
+/* Mismo dueño: no es un choque, es una sesión haciendo dos cosas. */
+BASE.lineas["L-eco"].tomada = { quien: "claude", chat: "chat del taller", sesion: "s-1", desde: hoy() };
+await api.leer(); await esperar();
+ok(api.choques().length === 0,
+   "dos líneas del MISMO dueño no son un choque: si lo fueran, el aviso sería ruido");
+
+/* La tomada y olvidada. */
+BASE.lineas["L-eco"].tomada = { quien: "claude", chat: "un chat viejo", sesion: "s-9", desde: "2026-01-01" };
+await api.leer(); await esperar();
+const ch2 = api.choques();
+ok(ch2.some((c) => c.tipo === "olvidada"),
+   "una línea tomada hace días y sin soltar también avisa: bloquea al que la lee bien");
+
+/* ── «Lo primero» los pone arriba de las reglas ── */
+BASE.proyectos["remate"].acceso = { base: "r-1", estado: "sin publicar",
+  reglasUrl: "https://github.com/q/r/blob/main/r.txt" };
+await api.leer(); await esperar();
+const tt = $("te-toca").textContent;
+ok(tt.includes("tomada hace"), "«Lo primero» encabeza con el choque");
+ok(tt.indexOf("tomada hace") < tt.indexOf("las reglas sin publicar"),
+   "y va ARRIBA de las reglas: es lo único de la lista que pierde trabajo mientras se lee");
+ok(!!$("te-toca").querySelector("[data-tt-linea]"), "y el botón lleva a la línea que lo causa");
+
+/* ── la ficha del sitio muestra las suyas ── */
+api.verSitio("casayourte"); api.pintarSitios();
+ok($("s-cuerpo").textContent.includes("En qué estamos acá"),
+   "cada sitio muestra sus líneas: es la visualización por sitio que se pidió");
+ok($("s-cuerpo").textContent.includes("El taller de CasaYourte"), "con la suya");
+ok(!!$("s-cuerpo").querySelector('[data-ir-linea="L-eco"]'),
+   "y la global que lo toca, marcada como tal");
+ok($("s-cuerpo").textContent.includes("ecosistema"), "para que se vea que no es sólo de este sitio");
+
+/* ── el editor escribe ── */
+api.abrirLinea(api.LINEAS().find((l) => l.id === "L-cy"));
+ok(!$("t-linea").classList.contains("hide"), "se abre el editor de la línea");
+ok($("l-porque").value === "Hace falta un piloto.", "con su porqué, que es lo que otro chat lee");
+$("l-nota").value = "Claude: quedó decidido que el piloto no toca lo publicado.";
+$("btnLineaGuardar").click(); await esperar(); await esperar(); await esperar();
+ok((BASE.lineas["L-cy"].bitacora || []).length === 1,
+   "la nota entra en la bitácora: ahí es donde dos chats que se contradijeron quedan juntos");
+ok($("t-linea").classList.contains("hide"), "y al guardar se vuelve al tablero");
+
+/* Tomar escribe en el acto, sin pasar por Guardar. */
+api.abrirLinea(api.LINEAS().find((l) => l.id === "L-vieja"));
+$("btnTomar").click(); await esperar(); await esperar(); await esperar();
+ok(BASE.lineas["L-vieja"].tomada && BASE.lineas["L-vieja"].tomada.quien === "mauro",
+   "«La tomo yo» escribe en el acto: una marca de presencia no puede esperar otro botón");
+ok(BASE.lineas["L-vieja"].titulo === "Algo que ya se cerró",
+   "y escribe MEZCLANDO: tomar una línea no puede borrarle el título ni el porqué");
+$("btnSoltar").click(); await esperar(); await esperar(); await esperar();
+ok(!BASE.lineas["L-vieja"].tomada, "y soltarla la deja libre");
+api.cerrarLinea();
+
+/* ── una línea sin título no se guarda ── */
+api.abrirLinea(null);
+ok($("l-cual").textContent === "Nueva línea", "se puede abrir una línea nueva");
+$("l-titulo").value = "";
+$("btnLineaGuardar").click(); await esperar();
+ok(Object.keys(BASE.lineas).length === 3,
+   "sin título no se guarda: el título es lo único que otro chat va a ver en la lista");
+api.cerrarLinea();
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

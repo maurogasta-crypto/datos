@@ -77,7 +77,7 @@ const PROYECTOS = {
     apiKey: "AIzaSyAxWOM9ZEHt6CXh8Nf1qU6FvL2uh1wFbug",
     mail: "FB_PANEL_MAIL",
     clave: "FB_PANEL_CLAVE",
-    colecciones: ["proyectos", "pendientes", "protocolos", "tandas", "fichas"],
+    colecciones: ["lineas", "proyectos", "pendientes", "protocolos", "tandas", "fichas"],
     /* `claves` es la bóveda, desde el día uno y para siempre: es lo que ABRE
        algo — contraseñas, códigos de recuperación, segundos factores.
 
@@ -303,13 +303,30 @@ const escribir = async (cfg, sesion, coleccion, id, datos) => {
     { method: "PATCH", body: JSON.stringify({ fields: campos(datos) }) });
 };
 
+/* `fusionar` escribe SÓLO los campos que se le pasan y deja intacto el resto,
+   como el `setDoc({merge:true})` del panel. Existe desde el 2026-09-14 por un
+   footgun concreto: tomar una línea de trabajo es escribir UN campo, y hacerlo
+   con `escribir` borraba el título, el porqué y la bitácora de esa línea. Un
+   agente que se equivoca así no se entera hasta que alguien abre el panel.
+
+   La diferencia con `escribir` es el `updateMask`: sin él, Firestore entiende
+   que el documento es exactamente lo que le mandaste. */
+const fusionar = async (cfg, sesion, coleccion, id, datos) => {
+  guardia(cfg, coleccion, id);
+  const mascara = Object.keys(datos)
+    .map((k) => "updateMask.fieldPaths=" + encodeURIComponent(k)).join("&");
+  return pedir(cfg, sesion,
+    `/${coleccion}/${encodeURIComponent(id)}?${mascara}`,
+    { method: "PATCH", body: JSON.stringify({ fields: campos(datos) }) });
+};
+
 const borrar = async (cfg, sesion, coleccion, id) => {
   guardia(cfg, coleccion, id);
   return pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`, { method: "DELETE" });
 };
 
 export { PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
-         entrar, listar, leerUno, escribir, borrar, guardia, aFirestore, deFirestore };
+         entrar, listar, leerUno, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -352,14 +369,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(JSON.stringify(id ? await leerUno(cfg, sesion, coleccion, id)
                                   : await listar(cfg, sesion, coleccion), null, 2));
 
-  } else if (cmd === "escribir" || cmd === "borrar") {
+  } else if (cmd === "escribir" || cmd === "fusionar" || cmd === "borrar") {
     const [coleccion, id, archivo] = args;
     if (!coleccion || !id) ex("faltan la colección y el id");
     if (cmd === "borrar") { await borrar(cfg, sesion, coleccion, id); console.log(`  borrado ${coleccion}/${id}`); }
     else {
       if (!archivo) ex("falta el archivo .json con el contenido");
-      await escribir(cfg, sesion, coleccion, id, JSON.parse(fs.readFileSync(archivo, "utf8")));
-      console.log(`  escrito ${coleccion}/${id}`);
+      const datos = JSON.parse(fs.readFileSync(archivo, "utf8"));
+      /* `escribir` reemplaza el documento entero y `fusionar` sólo toca los
+         campos que nombra. Para cambiar UN campo va `fusionar`, siempre: con
+         `escribir` se borra en silencio todo lo que el archivo no traiga. */
+      if (cmd === "fusionar") await fusionar(cfg, sesion, coleccion, id, datos);
+      else await escribir(cfg, sesion, coleccion, id, datos);
+      console.log(`  ${cmd === "fusionar" ? "fusionado" : "escrito"} ${coleccion}/${id}`);
     }
 
   } else {

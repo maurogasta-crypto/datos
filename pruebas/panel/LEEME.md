@@ -35,7 +35,7 @@ Sale `Todo en orden.` y código 0, o la lista de fallas y código 1.
 
 ## Qué comprueba, y por qué esas cosas
 
-Son 263 comprobaciones en veintitrés grupos. Las que más valen no son las obvias:
+Son 295 comprobaciones en veinticuatro grupos. Las que más valen no son las obvias:
 
 > **Los números de grupo tienen huecos desde `panel-16`.** Faltan el 8, 9, 10,
 > 14, 16, 18, 19, 25, 26, 28, 29 y 31: todos probaban la solapa «Parte», que se
@@ -59,6 +59,13 @@ Son 263 comprobaciones en veintitrés grupos. Las que más valen no son las obvi
   que el panel arma con él —que es el que realmente se pega—, y que el cierre
   `if false` siga negando el resto. La próxima colección que se agregue sin su
   regla falla acá y no en el teléfono.
+- **Las líneas de trabajo: en qué estamos y quién lo tiene** (grupo 36). Las
+  cuatro cosas que, si fallan, devuelven el problema entero: que lo GLOBAL no se
+  esconda al elegir un sitio; que el choque entre dos chats se DERIVE y no haya
+  que acordarse de escribirlo; que dos líneas del mismo dueño **no** cuenten como
+  choque —si lo fueran, el aviso sería ruido y se dejaría de mirar—; y que tomar
+  una línea escriba en el acto y MEZCLANDO, porque escribirla entera le borraría
+  el título, el porqué y la bitácora.
 - **Publicar las reglas es el MISMO mecanismo en todos los sitios** (grupo 35).
   Prueba las cuatro cosas que se rompen de verdad: que la base del propio panel
   deje de ser la excepción y su plantilla se arme con los dos UID adentro (si el

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-9
+   Sello: estilos-10
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -401,3 +401,31 @@ textarea.libre { font-family:inherit; font-size:.95rem; white-space:pre-wrap;
   .sit-fila { grid-template-columns:1fr; }
   .sit-num { grid-template-columns:repeat(2,1fr); }
 }
+
+/* ── LAS LÍNEAS DE TRABAJO (estilos-10, 2026-09-14) ──────────────────────
+   Una línea se lee de un vistazo y en tres alturas: qué se busca, cómo se
+   sabe que terminó, y quién la tiene. Reusa `.sit-chip` a propósito —el
+   vocabulario visual de los estados ya existía en «Sitios» y tener dos sería
+   tener dos. */
+.lin { background:var(--tinta3); border-radius:var(--r-s); padding:.6rem .7rem;
+       margin-top:.5rem; cursor:pointer; }
+.lin-t { display:flex; align-items:baseline; gap:.4rem; flex-wrap:wrap; }
+.lin-t b { font-size:.92rem; flex:1; min-width:0; }
+.lin-o { font-size:.8rem; color:var(--gris); margin-top:.25rem; }
+.lin-p { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; margin-top:.4rem; }
+.lin-p span:not(.sit-chip) { font-size:.72rem; color:var(--gris2); }
+
+/* Las casillas de proyectos del editor. En un teléfono tienen que poder
+   tocarse sin apuntar: de ahí el alto y el envoltorio entero como objetivo. */
+.l-checks { display:flex; flex-wrap:wrap; gap:.4rem; margin:.3rem 0 .6rem; }
+.l-check { display:inline-flex; align-items:center; gap:.35rem; min-height:38px;
+           padding:.3rem .6rem; border:1px solid var(--linea); border-radius:999px;
+           font-size:.8rem; }
+
+/* La bitácora: quién dijo qué y cuándo. Es donde dos chats que se
+   contradijeron quedan uno al lado del otro. */
+.bit { border-top:1px solid var(--linea); padding:.45rem 0; font-size:.82rem; }
+.bit:first-of-type { border-top:0; }
+.bit i { font-family:var(--mono); font-style:normal; font-size:.72rem; color:var(--gris2); }
+.bit b { font-size:.78rem; color:var(--acento); }
+.bit div { color:var(--gris); margin-top:.2rem; }

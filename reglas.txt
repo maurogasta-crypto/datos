@@ -2,6 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
+//  v5 · 2026-09-14 · entra `lineas/`: en qué se está trabajando y quién
 //  v4 · 2026-09-13 · la bóveda se define por PROPÓSITO, y `fichas/` sale
 //
 //  ⚠ ESTE ARCHIVO ES UNA COPIA. La autoridad es lo que está publicado en
@@ -123,6 +124,19 @@ service cloud.firestore {
     function equipo() {
       return soyYo() || esAgente();
     }
+
+    // ── EN QUÉ SE ESTÁ TRABAJANDO, Y QUIÉN ──
+    //
+    // `lineas/` entra con la v5 (2026-09-14). Es la única colección que
+    // existe para que dos CHATS no se pisen: una línea de trabajo se «toma»
+    // antes de tocar código, y quien la tomó queda escrito adentro. Sin esto,
+    // dos sesiones abiertas en paralelo descubren que hicieron lo mismo —o lo
+    // contrario— recién cuando una pisa a la otra.
+    //
+    // Va al equipo, y tiene que ser así: el que necesita leerla al abrir y
+    // escribirla al cerrar es justamente el agente. No es sensible — son
+    // títulos de trabajo, no datos de nadie.
+    match /lineas/{id}     { allow read, write: if equipo(); }
 
     // ── El estado de los proyectos y el reglamento ──
     // No es sensible. Lo genera el agente y también lo escribe: es lo que

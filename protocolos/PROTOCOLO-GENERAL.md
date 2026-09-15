@@ -212,6 +212,106 @@ documento hace es **registrar** una decisión que Mauro tomó en el chat; no
 crearla. La distinción es la misma que separa un índice de secretos de un
 secreto.
 
+### 2.1 quinquies · Las líneas de trabajo: una sola línea, y quién la tiene
+
+Decidido por Mauro el **2026-09-14**, y es la regla que ordena a todas las
+demás. Sus palabras, que conviene no perder porque son la especificación:
+
+> «Es importante que todas las intervenciones tengan un registro de por qué se
+> hacen, para que si hay otro chat que pisa esa tarea no se superpongan las
+> intervenciones. (…) Que el desarrollo sea de una sola línea y no múltiples
+> ramas que van a irse abandonando. (…) Centralizado y súper claro en todos los
+> comienzos de desarrollo, dentro de un mismo lugar único, que sería siempre
+> dentro del panel.»
+
+**El problema que resuelve pasó ese mismo día.** Dos sesiones de Claude Code
+trabajaron en paralelo sobre el mismo ecosistema sin enterarse una de la otra.
+Una empujó a `main`; la otra abrió una rama. La rama quedó con archivos que
+`main` ya no tenía —entre ellos la titularidad de las consolas, en un
+repositorio público—, y hubo que hacer un censo archivo por archivo para saber
+qué se podía borrar. Nada de eso se perdió, pero costó una sesión entera
+averiguar algo que tendría que haber estado escrito en un renglón.
+
+Y no se arregla con más disciplina: **cada chat arranca sin memoria del
+anterior.** Lo único que los dos ven es el panel.
+
+#### La colección `lineas/`
+
+Una **línea de trabajo** es el *porqué* que agrupa varios pendientes, y el lugar
+donde dos chats se ponen de acuerdo antes de tocar código. Vive en `lineas/` de
+la base del panel (`datos-830f8`), con su bloque en las reglas desde la **v5**.
+
+| Campo | Qué guarda |
+|---|---|
+| `titulo` | qué se busca, en una línea |
+| `porQue` | **el motivo, no el plan.** Es lo que otro chat tiene que poder leer para no volver a discutirlo |
+| `objetivo` | cómo se sabe que está terminada. Sin esto una línea no se cierra nunca |
+| `alcance` | `sitio` o `global` — el panel, el reglamento, o la conexión entre sitios |
+| `proyectos[]` | cuáles toca |
+| `estado` | `abierta` · `curso` · `pausada` · `cerrada` |
+| `tomada` | `{quien, chat, sesion, desde}` — **quién la tiene ahora mismo**, o nada |
+| `bitacora[]` | qué se decidió y por qué, con fecha y autor |
+
+Y `pendientes/{id}.linea` engancha un pendiente a su línea. Es opcional: un
+pendiente suelto sigue siendo válido.
+
+#### Lo que tiene que hacer una sesión, y son tres cosas
+
+**1 · Al abrir, mirar.** `node herramientas/ronda.mjs abrir` encabeza con
+**EN QUÉ ESTAMOS**: las líneas vivas, con lo tomado arriba y quién lo tiene.
+
+**2 · Antes de tocar código, tomar.** Se escribe `tomada` con el identificador
+de la sesión. Y va con `fusionar`, **nunca** con `escribir`:
+
+```
+node herramientas/firestore.mjs panel fusionar lineas <id> tomar.json
+```
+
+```json
+{ "tomada": { "quien": "claude", "chat": "de qué trata este chat",
+              "sesion": "session_...", "desde": "AAAA-MM-DD" },
+  "estado": "curso" }
+```
+
+> **`escribir` reemplaza el documento entero y borraría el título, el porqué y
+> la bitácora.** Por eso existe `fusionar`, desde el 2026-09-14.
+
+**Si la línea ya está tomada por otro, no se toca.** Se le dice a Mauro en el
+chat, con el nombre de la línea y de quién la tiene. Eso es todo el punto.
+
+**3 · Al cerrar, soltar y anotar.** `tomada: null`, un renglón en la `bitacora`
+con lo que se decidió, y el estado que corresponda. **La bitácora es donde dos
+chats que dijeron cosas distintas quedan uno al lado del otro**, que es lo único
+que deja verlo.
+
+#### Por qué esto reemplaza a la rama, y no se suma a ella
+
+El § 2.1 ter empuja a `main` directo porque «una rama que nadie mira no previene
+nada». La línea hace lo que la rama prometía y no cumplía: **decir que alguien
+está trabajando en algo.** La diferencia es que la línea se mira —está arriba
+del panel y arriba de la ronda— y la rama no.
+
+Así que la regla completa es: **el código va a `main` directo; lo que se reserva
+es la línea, no el archivo.**
+
+#### Dónde se ve
+
+En un solo lugar, el panel, y en dos ventanas de la misma colección:
+
+- **«Pendientes» → «En qué estamos»**, arriba de todo, agrupado por alcance: lo
+  del sitio elegido y lo del ecosistema. **Lo global no se esconde nunca al
+  elegir un sitio** — una decisión de ecosistema tomada mirando un sitio es
+  justo la que se pierde de vista.
+- **«Sitios» → cada sitio → «En qué estamos acá»**, para el control por sitio.
+
+Y **«Lo primero» encabeza con los choques**, arriba incluso de las reglas sin
+publicar. Es la única cosa de esa lista que **está perdiendo trabajo mientras se
+lee**: una base con las reglas viejas es un estado que no se degrada solo; dos
+sesiones escribiendo el mismo repositorio sí. El panel los deriva —dos dueños
+distintos sobre el mismo proyecto, o una línea tomada hace más de dos días y sin
+soltar— y no hay que acordarse de crearlos: un aviso que alguien tiene que
+escribir a mano no aparece el día que hace falta.
+
 ### 2.1 quater · Las ramas que la plataforma abre igual, y cómo se cierran
 
 Decidido por Mauro el **2026-09-14**: *«haz el empuje hacia el main en forma

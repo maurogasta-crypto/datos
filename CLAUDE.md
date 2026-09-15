@@ -253,6 +253,15 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   las muestra al navegador. Todo lo que muestra y copia es el archivo del
   repositorio — el que hay que publicar. Es una pregunta que ya se hizo dos
   veces: que la pantalla lo diga con esas palabras es parte del trabajo.
+- **Antes de tocar código se TOMA una línea de trabajo, y si ya está tomada por
+  otro chat no se toca.** Es la regla que ordena a todas las demás, y existe
+  porque el 2026-09-14 dos sesiones trabajaron en paralelo sin enterarse. Las
+  líneas viven en `lineas/`, la ronda las encabeza con «EN QUÉ ESTAMOS», y se
+  toman con `fusionar` —nunca con `escribir`, que borraría el título, el porqué
+  y la bitácora—. Al cerrar se sueltan y se anota qué se decidió. El detalle
+  entero está en `protocolos/PROTOCOLO-GENERAL.md` § 2.1 quinquies.
+- **La `bitacora` de una línea es donde dos chats que se contradijeron quedan
+  uno al lado del otro.** No se pisa lo que escribió otro: se agrega.
 - **Antes de tocar código se LEE el panel, y al cerrar se ESCRIBE en él.** Es la
   otra mitad de la conversación con Mauro, no un archivo de datos que se
   consulta si hace falta: sus respuestas, sus correcciones y sus cambios de

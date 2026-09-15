@@ -450,10 +450,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-22` |
+| `index.html` | `P.PANEL` | `panel-23` |
 | `estilos.css` | (en el comentario) | `estilos-10` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v13` |
+| `sw.js` | `VERSION` | `panel-shell-v14` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
@@ -538,6 +538,13 @@ Esta solapa sigue existiendo por lo que sólo se hace acá: **pegar el UID del
 agente** (se guarda en este teléfono, no en la base) y **probar que las reglas
 están vivas**.
 
+**Y desde `panel-23` su botón de copiar recorta igual que el otro**: los dos
+salen de `paraPegar()`. Son dos botones porque son dos pantallas, pero copiar
+dos textos distintos sería el problema de siempre — el que se publica termina
+siendo el que no se probó. El cuadro de arriba sigue mostrando el texto entero a
+propósito: ahí sí se lee, y es de donde se copia a mano si el portapapeles
+falla.
+
 Dos detalles que hacen que esto no muerda:
 
 - El párrafo de `reglas.txt` que dice «esto es una plantilla, no se pega tal
@@ -614,7 +621,7 @@ mañana**:
 
 | Botón | Qué hace |
 |---|---|
-| **Copiar para publicar** | baja el archivo de reglas de ese proyecto y lo deja entero en el portapapeles, en un solo toque |
+| **Copiar para publicar** | baja el archivo de reglas de ese proyecto y lo deja en el portapapeles **sin los comentarios**, en un solo toque |
 | **Abrir la consola** | lleva a la pantalla de reglas de esa base, lista para pegar |
 | **Ya las publiqué** | registra que lo publicado es ese texto. Es el único dato que el panel no puede averiguar solo |
 
@@ -651,6 +658,40 @@ estaba en el código y no en la pantalla.
   entrar.
 - Si el archivo no baja, lo dice con el motivo. Un 404 no es un problema de
   señal: significa que el archivo se movió y hay que corregir `reglasUrl`.
+- **Se copia sin los comentarios, desde `panel-23`.** El archivo de Casa Verde
+  pesa 40.725 caracteres y el recorte lo deja en 13.031 — un tercio. Los
+  comentarios no se pierden: siguen enteros en el archivo del repositorio, que
+  es donde se leen. En la consola nadie los lee; se pegan y se aprieta Publicar.
+
+  **El porqué tiene fecha.** El 15 de septiembre de 2026 se publicaron las
+  reglas de Casa Verde desde el teléfono y la base quedó denegando todo —el
+  panel, el equipo y el sitio público—, incluso `cabanas`, que dice
+  `allow read: if true` en el archivo viejo **y** en el nuevo. Las reglas se
+  suman: agregar un bloque no puede quitarle permiso a otro, así que lo
+  publicado no era ninguno de los dos archivos. La explicación que queda en pie
+  es que llegó cortado. El de CasaYourte, de 9.690 caracteres, salió bien el
+  mismo día.
+
+  El recorte **lee carácter por carácter y sabe cuándo está adentro de una
+  cadena**, porque las reglas tienen `//` adentro de cadenas —
+  `.matches('https://res[.]cloudinary[.]com/dnwfu8ffn/.*')` es de Casa Verde — y
+  un `replace(/\/\/.*$/gm, "")` la deja en `.matches('https:`. Eso no se nota
+  al copiar: se nota cuando la base ya no deja entrar. El bloque 37 del banco lo
+  fija con ese renglón puesto a mano, y fija también que los dos marcadores de
+  UID de `reglas.txt` sobrevivan — viven adentro de cadenas, y si alguien los
+  moviera a un comentario el recorte se los llevaría y las reglas publicadas no
+  dejarían entrar a nadie.
+- **Lo que va al portapapeles lleva tres renglones de encabezado**, y son los
+  únicos comentarios que quedan: de qué sitio son las reglas, que las
+  explicaciones están en el repositorio, y **la huella del archivo completo**.
+  Esa tercera línea contesta desde la consola la pregunta que el 15 de
+  septiembre no se podía contestar desde ningún lado: qué versión es la que está
+  publicada.
+- **La huella que el panel guarda sigue siendo la del archivo completo**, no la
+  del recorte. La pregunta que contesta es «¿es la misma versión del archivo que
+  publiqué?», y ésa es sobre el archivo del repositorio. Medir el recorte habría
+  cambiado de un día para el otro todas las huellas ya guardadas, y los cinco
+  proyectos dirían «falta publicar» sin que nadie hubiera tocado una regla.
 
 #### «Publicadas» dejó de ser una frase tecleada
 

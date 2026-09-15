@@ -439,7 +439,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-22";
+P.PANEL = "panel-23";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2237,6 +2237,75 @@ const medirReglas = (t) => ({
   bytes: new TextEncoder().encode(String(t)).length
 });
 
+/* SACAR LOS COMENTARIOS, para que el texto quepa en un portapapeles.
+
+   POR QUÉ EXISTE, y conviene que quede escrito: el 2026-09-15 se publicaron las
+   reglas de Casa Verde desde el teléfono y la base quedó denegando TODO —el
+   panel, el equipo y el sitio público—, incluso `cabanas`, que dice
+   `allow read: if true` en el archivo viejo Y en el nuevo. Las reglas SE SUMAN:
+   agregar un bloque no puede quitarle permiso a otro, así que lo publicado no
+   era ninguno de los dos archivos. La explicación que queda en pie es que llegó
+   cortado. Pesa 40.725 caracteres y viaja por el portapapeles de un teléfono;
+   el de CasaYourte, 9.690, salió bien el mismo día.
+
+   Sacar los comentarios lo deja en un tercio, y no se pierde nada: los
+   comentarios siguen enteros en el archivo del repositorio, que es donde se
+   leen. En la consola nadie los lee — se pegan y se aprieta Publicar.
+
+   Y POR QUÉ NO ES UN `replace(/\/\/.*$/gm, "")`: porque las reglas tienen `//`
+   adentro de cadenas. En Casa Verde, sin ir más lejos:
+
+       .matches('https://res[.]cloudinary[.]com/dnwfu8ffn/.*')
+
+   Un recorte ingenuo la deja en `.matches('https:` — una cadena sin cerrar que
+   no compila, o peor, que compila distinto y deja pasar cualquier URL. La
+   primera medición de esta misma tanda se hizo con un recorte así y el número
+   estaba mal; por eso esto lee carácter por carácter y sabe cuándo está adentro
+   de una cadena. El banco lo fija, con ese renglón puesto a mano.
+
+   Lo que NO hace: tocar el contenido. Ni reordena, ni «mejora», ni completa.
+   Saca comentarios y renglones vacíos, y nada más. */
+function sinComentarios(texto) {
+  const s = String(texto == null ? "" : texto);
+  let fuera = "", i = 0, comilla = "";
+  while (i < s.length) {
+    const c = s[i];
+    if (comilla) {
+      /* Adentro de una cadena la barra invertida se lleva al siguiente
+         carácter, así que `\'` no cierra nada. */
+      if (c === "\\") { fuera += c + (s[i + 1] || ""); i += 2; continue; }
+      if (c === comilla) comilla = "";
+      fuera += c; i++; continue;
+    }
+    if (c === "'" || c === '"') { comilla = c; fuera += c; i++; continue; }
+    /* Afuera de una cadena, `//` abre un comentario hasta el fin del renglón.
+       Las reglas de Firestore no tienen comentarios de bloque. */
+    if (c === "/" && s[i + 1] === "/") {
+      while (i < s.length && s[i] !== "\n") i++;
+      continue;
+    }
+    fuera += c; i++;
+  }
+  return fuera.split("\n").filter((l) => l.trim() !== "").join("\n") + "\n";
+}
+
+/* Lo que efectivamente va al portapapeles: el texto recortado, con tres
+   renglones de encabezado.
+
+   El encabezado son comentarios —los únicos que sobreviven— y se los banca de
+   sobra: pesan ciento y pico de caracteres contra los veintisiete mil que se
+   acaban de sacar. Pagan eso porque contestan, DESDE LA CONSOLA, la pregunta
+   que hoy no se podía contestar de ningún lado: qué versión es esto. La huella
+   es la del archivo COMPLETO, el del repositorio, que es el que el panel
+   compara — no la del recorte. */
+function paraPegar(texto, quien) {
+  return "// " + quien + " · reglas sin los comentarios, copiadas del panel el "
+    + P.hoy() + ".\n"
+    + "// Las explicaciones de cada bloque están en el archivo del repositorio.\n"
+    + "// Huella del archivo completo: " + huella(texto) + "\n"
+    + sinComentarios(texto);
+}
+
 /* El estado de las reglas de un proyecto, DERIVADO y no tecleado.
 
    Los dos datos salen de actos y no de opiniones: `acceso.repo` lo escribe el
@@ -2342,7 +2411,15 @@ async function copiarReglasDe(pr, boton) {
   boton.disabled = true; boton.textContent = "Bajando…";
   try {
     const { texto } = await bajarReglasDe(pr);
-    await copiar(texto, "Copiadas enteras. En la consola: pegar y Publicar.");
+    /* Se copia el RECORTE y se mide el ORIGINAL, y no es un descuido: la huella
+       contesta «¿es la misma versión del archivo que publiqué?», y esa pregunta
+       es sobre el archivo del repositorio. Medir el recorte cambiaría de un día
+       para el otro todas las huellas ya guardadas y los cinco proyectos dirían
+       «falta publicar» sin que nadie haya tocado una regla. */
+    const pegable = paraPegar(texto, pr.nombre || pr.id);
+    await copiar(pegable, "Copiadas sin comentarios: "
+      + (pegable.split("\n").length - 1) + " renglones de los "
+      + String(texto).split("\n").length + " del archivo. En la consola: pegar y Publicar.");
     try { await anotarRepo(pr, medirReglas(texto)); }
     catch (e) {
       /* El copiado ya salió bien: que no se haya podido anotar el estado no se
@@ -2910,7 +2987,17 @@ const copiar = async (texto, ok) => {
   catch (e) { P.aviso("No se pudo copiar. Seleccionalo a mano.", "error"); }
 };
 $("btnCopiarUid").addEventListener("click", () => copiar($("miUid").value, "UID copiado."));
-$("btnCopiarReglas").addEventListener("click", () => copiar($("reglas").value, "Reglas copiadas."));
+/* El mismo recorte que el botón amarillo de «Sitios». Son dos botones porque
+   son dos pantallas, pero copiar dos textos distintos sería el problema de
+   siempre: el que se publica termina siendo el que no se probó. El cuadro de
+   arriba sigue mostrando el texto entero a propósito — ahí SÍ se lee, y es de
+   donde se copia a mano si el portapapeles falla. */
+$("btnCopiarReglas").addEventListener("click", () => {
+  const t = $("reglas").value;
+  const p = paraPegar(t, "Panel");
+  copiar(p, "Copiadas sin comentarios: " + (p.split("\n").length - 1)
+    + " renglones de los " + String(t).split("\n").length + " de la plantilla.");
+});
 
 /* Acá lo bueno es que FALLE. Que una lectura funcione prueba que ESA lectura
    está permitida; no prueba que lo prohibido esté prohibido — y eso es lo

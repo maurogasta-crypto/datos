@@ -98,7 +98,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch","firebaseConfig",
-  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
+  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -982,7 +982,11 @@ await api.copiarReglasDe(proy("sitio"), $("s-cuerpo").querySelector('[data-regla
 await esperar();
 ok(pedidos.some((u) => u.startsWith("https://raw.githubusercontent.com/")),
    "baja del crudo de GitHub, que es el único que manda CORS");
-ok(copiado === REGLAS_DE_PRUEBA, "copia el archivo ENTERO, tal cual está en el repositorio");
+ok(copiado === api.paraPegar(REGLAS_DE_PRUEBA, "Un Sitio"),
+   "copia el recorte, que es exactamente lo que hay que pegar en la consola");
+ok(copiado.includes("match /cosas/{id} { allow read: if true; }"),
+   "con la regla entera adentro: se sacan comentarios, no reglas");
+ok(!copiado.includes("// reglas del sitio"), "y sin el comentario del archivo");
 ok(BASE.proyectos["sitio"].acceso.huella === undefined
    && BASE.proyectos["sitio"].acceso.repo.huella === api.huella(REGLAS_DE_PRUEBA),
    "y anota la huella de lo que bajó, que es lo que después deja comparar");
@@ -1253,6 +1257,80 @@ $("btnLineaGuardar").click(); await esperar();
 ok(Object.keys(BASE.lineas).length === 3,
    "sin título no se guarda: el título es lo único que otro chat va a ver en la lista");
 api.cerrarLinea();
+
+console.log("\n37 · el recorte de comentarios: lo que se pega en la consola");
+
+/* POR QUÉ ESTE GRUPO. El 2026-09-15 Casa Verde quedó denegando todo después de
+   una publicación desde el teléfono, con un archivo de 40.725 caracteres. El
+   recorte lo deja en un tercio. Pero un recorte que se equivoca UNA vez no
+   rompe la pantalla: rompe la base, y se entera cuando ya nadie puede entrar.
+   Por eso lo que sigue no prueba que ande — prueba que no arruine. */
+
+const cv = "rules_version = '2';\n"
+  + "// un comentario con ' una comilla suelta\n"
+  + "service cloud.firestore {\n"
+  + "  match /fotos/{id} {\n"
+  + "    // la URL de abajo tiene // adentro de una cadena\n"
+  + "    allow write: if request.resource.data.url\n"
+  + "      .matches('https://res[.]cloudinary[.]com/dnwfu8ffn/.*');\n"
+  + "\n"
+  + "  }\n"
+  + "}\n";
+const r = api.sinComentarios(cv);
+
+ok(r.includes(".matches('https://res[.]cloudinary[.]com/dnwfu8ffn/.*')"),
+   "la URL de Cloudinary sobrevive ENTERA: es el renglón que un recorte ingenuo parte al medio");
+ok(!r.includes("un comentario con"), "y los comentarios se van");
+ok(!r.includes("la URL de abajo"), "también los que están sangrados adentro de un bloque");
+ok(r.split("{").length === cv.split("{").length
+   && r.split("}").length === cv.split("}").length,
+   "las llaves quedan igual: no se perdió ni se cerró ningún bloque");
+ok(!r.split("\n").slice(0, -1).some((l) => l.trim() === ""),
+   "no quedan renglones vacíos");
+ok(api.sinComentarios(r) === r, "pasarlo dos veces da lo mismo: no se come nada la segunda vez");
+
+/* Una comilla adentro de un comentario NO abre una cadena. Si abriera, todo lo
+   que viene después quedaría «adentro» y el recorte dejaría de sacar nada. */
+ok(api.sinComentarios("// no ' cierra\nlet b = 2;\n").trim() === "let b = 2;",
+   "una comilla suelta adentro de un comentario no desarma al que lee");
+/* La barra invertida, en los dos sentidos, porque son lo mismo mirado de cerca
+   y dan resultados opuestos:
+     'a\'// b'   → la comilla está ESCAPADA, la cadena sigue, el // es contenido.
+     'a\\'// b'  → la barra se escapa a sí misma, la cadena CIERRA, y el // que
+                   viene después sí es un comentario.
+   Un recortador que confunda estos dos se come media regla o deja un comentario
+   adentro del texto publicado. */
+ok(api.sinComentarios("let c = 'a\\'// b';\n").trim() === "let c = 'a\\'// b';",
+   "la comilla escapada no cierra la cadena: el // de adentro es contenido");
+ok(api.sinComentarios("let e = 'a\\\\'// b';\n").trim() === "let e = 'a\\\\'",
+   "y la barra escapada sí la cierra: el // de después es un comentario de verdad");
+ok(api.sinComentarios('let d = "p//q"; // x\n').trim() === 'let d = "p//q";',
+   "y las comillas dobles valen igual que las simples");
+ok(api.sinComentarios("") === "\n" && api.sinComentarios(null) === "\n",
+   "vacío y nulo no explotan");
+
+/* LOS DOS UID DE LA PLANTILLA DEL PANEL. Éste es el caso que podía dejar a
+   Mauro afuera de su propia base: si los marcadores vivieran en un comentario,
+   el recorte se los llevaría y las reglas publicadas no dejarían entrar a
+   nadie. Viven adentro de cadenas —`uid == 'TU-UID-ACA'`— y esto lo fija, para
+   que mover uno a un comentario rompa el banco y no la base. */
+const plantilla = fs.readFileSync(RAIZ + "reglas.txt", "utf8");
+ok(api.sinComentarios(plantilla).includes("'" + api.MARCA_MIA + "'"),
+   "el UID de Mauro sobrevive al recorte: está en una cadena, no en un comentario");
+ok(api.sinComentarios(plantilla).includes("'" + api.MARCA_AGENTE + "'"),
+   "y el del agente también");
+
+/* El encabezado: tres renglones, y los únicos comentarios que quedan. */
+const conCabeza = api.paraPegar(cv, "Casa Verde");
+ok(conCabeza.startsWith("// Casa Verde · reglas sin los comentarios"),
+   "el encabezado dice de qué sitio es");
+ok(conCabeza.includes("Huella del archivo completo: " + api.huella(cv)),
+   "y lleva la huella del archivo COMPLETO, que es la que el panel compara");
+ok(conCabeza.split("\n").filter((l) => l.trim().startsWith("//")).length === 3,
+   "y son exactamente tres renglones de comentario, no más");
+ok(conCabeza.includes(".matches('https://res[.]cloudinary[.]com/dnwfu8ffn/.*')"),
+   "con las reglas enteras debajo");
+ok(conCabeza.length < cv.length + 200, "y el encabezado pesa lo que pesa: tres renglones");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

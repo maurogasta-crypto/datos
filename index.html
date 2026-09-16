@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-10">
+<link rel="stylesheet" href="estilos.css?v=estilos-11">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
@@ -439,7 +439,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-23";
+P.PANEL = "panel-24";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2585,8 +2585,27 @@ function pintarUnSitio(pr) {
   h += '<div class="tarj">';
   h += '<h2 style="margin:.1rem 0 .3rem">' + P.esc(pr.nombre || pr.id) + "</h2>";
   if (s.resumen) h += '<p class="gris" style="margin:.2rem 0 .6rem">' + P.esc(s.resumen) + "</p>";
+
+  /* ── LA DESCARGA VA PRIMERA Y VA ANCHA ─────────────────────────────────
+     Entró con `hilux`, que es el primer proyecto del ecosistema que NO es un
+     sitio: es una aplicación que se instala, y lo que uno viene a buscar acá
+     es el archivo. Un enlace de texto al lado de otros tres no sirve — hay
+     que encontrarlo manejando una camioneta, o parado al lado de ella.
+
+     Es opcional y genérico: cualquier proyecto que cargue `sitio.descarga` lo
+     tiene, sin tocar una línea de acá. Si mañana hay una segunda aplicación,
+     ya está. */
+  if (s.descarga) {
+    h += fuera(s.descarga, s.descargaTexto || "Descargar la app", "sit-descarga");
+    if (s.descargaNota) {
+      h += '<p class="gris" style="margin:.4rem 0 .6rem;font-size:.78rem">'
+        + P.esc(s.descargaNota) + "</p>";
+    }
+  }
+
   h += '<div class="sit-enlaces">';
-  if (s.url) h += fuera(s.url, "Ver el sitio", "sit-link p");
+  if (s.url) h += fuera(s.url, s.descarga ? "Todas las versiones" : "Ver el sitio",
+    s.descarga ? "sit-link" : "sit-link p");
   if (s.repo) h += fuera(urlRepo(s.repo), "Repositorio");
   if (s.readme) h += fuera(s.readme, "Qué es y cómo funciona");
   h += "</div>";
@@ -2601,7 +2620,7 @@ function pintarUnSitio(pr) {
         que se abre esta pantalla. Y puede no verse — muchos servidores
         prohíben que los metan en un marco—, así que el enlace de arriba
         sigue siendo el camino que siempre funciona. */
-  if (s.url && !s.sinPrevia) {
+  if (s.url && !s.sinPrevia && !s.descarga) {
     h += '<div class="tarj"><label>Previsualización</label>'
       + '<div class="fila-btn"><button class="btn" data-previa="' + P.esc(s.url) + '">'
       + "Mostrarlo acá</button></div>"

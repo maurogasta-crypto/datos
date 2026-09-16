@@ -450,16 +450,16 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-23` |
-| `estilos.css` | (en el comentario) | `estilos-10` |
+| `index.html` | `P.PANEL` | `panel-24` |
+| `estilos.css` | (en el comentario) | `estilos-11` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v14` |
+| `sw.js` | `VERSION` | `panel-shell-v15` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-10` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-11` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 
@@ -764,11 +764,26 @@ proyecto recién dado de alta tiene nombre y poco más, y la pantalla tiene que
 servir igual desde ese día.
 
 ```
-sitio  { url, repo, readme, resumen, sinPrevia }
+sitio  { url, repo, readme, resumen, sinPrevia,
+         descarga, descargaTexto, descargaNota }
 acceso { base, reglas, reglasUrl, estado, selladas[], nota,
          repo { huella, lineas, bytes, visto },
          publicado { huella, lineas, bytes, fecha } }
 ```
+
+**`sitio.descarga` entró con `panel-24`, y con `hilux`**, que es el primer
+proyecto del ecosistema que no es un sitio: es una aplicación Android que se
+instala, y lo que uno viene a buscar en su pestaña es **el archivo**. Un enlace
+de texto al lado de otros tres no alcanzaba — hay que encontrarlo parado al
+lado de una camioneta. Cuando el campo está, arriba de todo aparece un botón
+ancho de 52 px con el texto de `descargaTexto` y, debajo, la aclaración de
+`descargaNota` (qué versión es, qué hay que hacer la primera vez). Los otros
+enlaces siguen abajo, y `url` pasa a llamarse «Todas las versiones», que es lo
+que es.
+
+Es opcional y **genérico**: cualquier proyecto que cargue el campo lo tiene, sin
+tocar una línea del panel. Y apaga sola la previsualización — un `iframe` de una
+página de descargas de GitHub no le sirve a nadie.
 
 #### Un sitio nuevo no pide acordarse de nada
 

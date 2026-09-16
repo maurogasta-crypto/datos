@@ -288,12 +288,21 @@ todo lo que la ronda necesita.
 
 | | |
 |---|---|
-| Nombre | **Ronda de control diaria (con datos adjunto)** |
-| Identificador | `trig_012Bcu41exyW2rZz8rJ8tY8i` |
+| Nombre | **Ronda de control diaria (los cinco repos)** |
+| Identificador | `trig_01SLpmh9QgpG9gfoqeeqtsHG` |
 | Cuándo | `0 11 * * *` — 11:00 UTC, o sea **8 de la mañana** en Uruguay |
-| Cómo dispara | **contra una sesión que ya existe** (`session_012KWUM3TbLqjXh67fsBYGBD`), no creando una nueva |
+| Cómo dispara | **contra una sesión que ya existe** (`session_014k7ZKSv5XCMQDbtyjWbFRh`), no creando una nueva |
 | Modelo | el de esa sesión: `claude-opus-5` |
 | Aviso | notificación al teléfono cuando una corrida termina |
+
+**Esta tabla se corrigió el 16-sep-2026 y decía otra cosa.** Nombraba a
+`trig_012Bcu41exyW2rZz8rJ8tY8i` sobre `session_012KWUM3TbLqjXh67fsBYGBD`. Esa
+routine ya no es la que corre: la de arriba se creó el 15-sep a las 02:55 UTC y
+es la que disparó el 15 y el 16. Se corrige y no se borra el reemplazo, por el
+mismo motivo por el que este documento no borra los fracasos — si mañana aparece
+una tercera, lo primero que hay que poder contestar es cuál de todas está viva.
+La lista real se lee con `list_triggers`, y es la única fuente: **este archivo es
+una copia y puede quedar vieja otra vez.**
 
 **Esa cuarta fila es toda la diferencia, y es lo que este documento existe para
 explicar.** La primera versión (`trig_01WDGNPPmESxcJXktjtebLw4`, borrada el
@@ -421,7 +430,7 @@ volver a averiguarlo.
 
 | Qué | Cómo está |
 |---|---|
-| La routine `trig_012Bcu41exyW2rZz8rJ8tY8i` | **activa** |
+| La routine de ese día (`trig_012Bcu41exyW2rZz8rJ8tY8i`) | activa **entonces**; reemplazada el 15-sep por `trig_01SLpmh9QgpG9gfoqeeqtsHG` — ver § 6 |
 | Corridas hasta hoy | **ninguna** |
 | Próxima | **2026-09-15, 11:04 UTC** — las 8:04 de la mañana en Uruguay |
 | La sesión contra la que dispara | existe, inactiva, con `maurogasta-crypto/datos` **adjunto como fuente** y `claude-opus-5` |
@@ -432,15 +441,29 @@ propio horario de las 11:00, así que su primera corrida de verdad es la del dí
 siguiente. La corrida que falló y que cuenta la sección de arriba era de la
 routine **anterior**, ya borrada.
 
-Dos cosas siguen sin probarse, y hasta que una corrida las pruebe se dicen como
-lo que son:
+Dos cosas seguían sin probarse hasta el 14-sep, y **las dos se probaron el
+15-sep**. Se deja lo que decían y lo que pasó, porque la diferencia es el punto:
 
-- **La Parte 2 sobre un repo que no sea `datos`.** Adjuntar otro repositorio
-  desde adentro de la sesión está descrito, no ejecutado. Hasta que ocurra una
-  vez, la Parte 2 sólo está garantizada para `datos`.
-- **Una corrida desatendida completa.** Lo que se probó el 14-sep fue que el
-  entorno deja correr `ronda.mjs` sin nadie delante. Que el resto del prompt se
-  ejecute entero sin una persona que apruebe algo, no.
+- **La Parte 2 sobre un repo que no sea `datos`.** Decía: «adjuntar otro
+  repositorio desde adentro de la sesión está descrito, no ejecutado».
+  **Probado el 15-sep**, y por un camino distinto del que se había imaginado: no
+  hizo falta adjuntar nada desde adentro, porque la sesión contra la que dispara
+  ya tenía los cinco repositorios. La corrida tocó `CasaYourte` y
+  `casaverdecanas` y empujó a una rama en cada uno.
+- **Una corrida desatendida completa.** Decía: «que el resto del prompt se ejecute
+  entero sin una persona que apruebe algo, no». **Probado el 15-sep**: la corrida
+  miró, escribió dos pendientes desde reportes, trabajó uno, corrió los bancos,
+  empujó tres ramas y avisó, sin nadie delante. Un solo permiso se denegó por el
+  camino —el clasificador cortó un comando que encadenaba el respaldo con otra
+  cosa— y la corrida siguió sola separándolos, que es lo que se quería saber.
+
+**Y lo que esa misma corrida dejó en evidencia, que vale más que las dos de
+arriba:** trabajó en paralelo con otro chat sobre la misma línea (`L-reportes`)
+sin enterarse, y las dos implementaciones terminaron siendo equivalentes. No fue
+descuido: corrió con el checkout atrasado, o sea con una `ronda.mjs` que todavía
+no mostraba **EN QUÉ ESTAMOS**, así que la regla de las líneas existía y esa
+sesión no podía verla. **El `git pull --ff-only` del punto 0 no es higiene: es lo
+que habilita la única regla que evita que dos chats se pisen.**
 
 **Lo que sí cambió ese día en la parte determinada**, y que la próxima corrida
 va a traer sola: la ronda suma la sección **5 · REGLAS SIN PUBLICAR**, y pide los

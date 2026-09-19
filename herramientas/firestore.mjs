@@ -128,11 +128,10 @@ const PROYECTOS = {
 
   hilux: {
     projectId: "hilux-1b6f1",
-    /* FALTA: la clave de API web del proyecto. Es pública por diseño —igual
-       que las otras cuatro de acá arriba— y se saca de la consola de Firebase:
-       Configuración del proyecto → General → «Clave de API web».
-       Hasta que esté, `node herramientas/firestore.mjs hilux …` no entra. */
-    apiKey: "FALTA-LA-CLAVE-DE-API-WEB",
+    /* Pública por diseño, igual que las otras cuatro: identifica al proyecto
+       ante la API y NO da permisos — eso lo hacen las reglas. La pasó Mauro
+       el 2026-09-19 desde la consola. */
+    apiKey: "AIzaSyBlig453HlCWZhgYs0j1k5ftY7DCVJvopI",
     mail: "FB_HILUX_MAIL",
     clave: "FB_HILUX_CLAVE",
     /* El primero del ecosistema donde el que escribe `reportes` es una

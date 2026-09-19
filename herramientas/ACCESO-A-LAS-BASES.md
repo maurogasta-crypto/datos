@@ -15,6 +15,7 @@ exactamente lo que tiene que hacer el deny por defecto.
 | `remate` | `remate-acbc9` | catálogo, categorías, métodos de pago vs. lo que dice el código |
 | `casayourte` | `casayourte-mauro` | `sitio/publicado` vs. `contenido.json` y los textos de `index.html` |
 | `casaverde` | `casaverde-20` | cabañas, espacios y actividades vs. lo que muestra el sitio |
+| `hilux` | `hilux-1b6f1` | los reportes que sube la app de la camioneta. **Acá además ESCRIBE**: sus conclusiones van a `analisis` |
 
 **Los cuatro UID**, que es lo que va en cada regla. No son secretos: un UID sin
 contraseña no abre nada, y de hecho tienen que estar escritos en las reglas
@@ -26,6 +27,7 @@ publicadas para servir de algo.
 | `remate` | `node herramientas/firestore.mjs remate quien` |
 | `casayourte` | `node herramientas/firestore.mjs casayourte quien` |
 | `casaverde` | `node herramientas/firestore.mjs casaverde quien` |
+| `hilux` | `node herramientas/firestore.mjs hilux quien` |
 
 **Los valores no están escritos acá, a propósito.** Un UID sin contraseña no
 abre nada, pero este documento vive en un repositorio público y el del panel no
@@ -38,6 +40,17 @@ UID es por proyecto.
 
 Harmonía no está porque no tiene base: su estado vive en el `localStorage` del
 teléfono.
+
+**`hilux` entró el 2026-09-19 y es distinto a los otros cuatro en dos cosas
+que conviene saber antes de dar el alta:**
+
+1. **El que escribe es una aplicación Android, no una página web.** Por eso la
+   credencial del que escribe no vive en el código: el APK se descarga sin
+   cuenta desde un repositorio público. La teclea Mauro en el teléfono.
+2. **Es la primera base donde el agente ESCRIBE algo.** Lee `reportes` y no lo
+   toca —un reporte es lo que midió el teléfono— y escribe en `analisis`, que
+   son sus conclusiones. La separación en dos colecciones es lo que lo hace
+   seguro: si un análisis sale mal, se rehace sin tocar el dato medido.
 
 ---
 

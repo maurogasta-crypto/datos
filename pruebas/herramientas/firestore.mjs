@@ -133,15 +133,35 @@ await prueba("y si están los dos pares, gana el nombre bueno", () => {
   try { assert.equal(credenciales(PROYECTOS.remate).mail, "agente@ejemplo.invalido"); }
   finally { delete process.env[MAIL_HEREDADO]; }
 });
-await prueba("las cuatro bases están, y ninguna comparte projectId con otra", () => {
+/* La ÚNICA base que no sella ninguna colección, y está acá con nombre para
+   que sea una decisión y no un olvido. En `hilux` no hay nada que sellar: no
+   hay credenciales, no hay datos de terceros, y el recorrido —lo único
+   sensible del proyecto— NO sube: lo que llega a esa base es el reporte sin
+   coordenadas, el mismo que se puede mandar por un chat.
+
+   Si algún día sube algo más, deja de estar exenta y sella lo que
+   corresponda. */
+const SIN_NADA_QUE_SELLAR = new Set(["hilux"]);
+
+await prueba("las cinco bases están, y ninguna comparte projectId con otra", () => {
   const ids = Object.values(PROYECTOS).map((p) => p.projectId);
-  assert.equal(ids.length, 4);
-  assert.equal(new Set(ids).size, 4);
+  assert.equal(ids.length, 5);
+  assert.equal(new Set(ids).size, 5);
   for (const [n, p] of Object.entries(PROYECTOS)) {
     assert.ok(p.apiKey && p.projectId, `${n} sin identificadores`);
-    assert.ok(p.selladas.length > 0, `${n} no sella nada — revisar a propósito`);
+    if (!SIN_NADA_QUE_SELLAR.has(n)) {
+      assert.ok(p.selladas.length > 0, `${n} no sella nada — revisar a propósito`);
+    }
     assert.ok(p.colecciones.length > 0, `${n} sin colecciones para bajar`);
   }
+});
+
+await prueba("hilux no sella nada porque el recorrido no sube, y se comprueba", () => {
+  const h = PROYECTOS.hilux;
+  assert.deepEqual(h.selladas, []);
+  /* Las dos colecciones y ninguna más: si alguien agrega una tercera, tiene
+     que venir acá y decidir si sella. */
+  assert.deepEqual(h.colecciones, ["reportes", "analisis"]);
 });
 await prueba("ninguna colección de `bajar` está sellada — el respaldo no se cuelga", async () => {
   for (const [n, p] of Object.entries(PROYECTOS)) {

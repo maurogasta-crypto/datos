@@ -126,6 +126,33 @@ const PROYECTOS = {
     selladas: ["calculos", "invitaciones"]
   },
 
+  hilux: {
+    projectId: "hilux-1b6f1",
+    /* FALTA: la clave de API web del proyecto. Es pública por diseño —igual
+       que las otras cuatro de acá arriba— y se saca de la consola de Firebase:
+       Configuración del proyecto → General → «Clave de API web».
+       Hasta que esté, `node herramientas/firestore.mjs hilux …` no entra. */
+    apiKey: "FALTA-LA-CLAVE-DE-API-WEB",
+    mail: "FB_HILUX_MAIL",
+    clave: "FB_HILUX_CLAVE",
+    /* El primero del ecosistema donde el que escribe `reportes` es una
+       APLICACIÓN ANDROID y no una página web. Cambia una cosa importante: la
+       credencial no puede vivir en el código, porque el APK se descarga sin
+       cuenta desde un repositorio público. La teclea Mauro en el teléfono.
+
+       `reportes`: un documento por viaje, subido al terminarlo. El agente lo
+       LEE y no lo escribe —un reporte es lo que midió el teléfono y no se
+       toca—, y lo que el agente concluye va en `analisis`, que sí escribe.
+       Es la primera base del ecosistema donde el agente escribe algo, y la
+       separación en dos colecciones es lo que lo hace seguro: si un análisis
+       sale mal, se rehace sin tocar el dato medido. */
+    colecciones: ["reportes", "analisis"],
+    /* Ninguna. Acá no hay credenciales, ni datos de terceros, ni recorrido:
+       lo que sube es el reporte SIN coordenadas, el mismo que se puede mandar
+       por un chat. El recorrido no sale del teléfono por ningún canal. */
+    selladas: []
+  },
+
   casaverde: {
     projectId: "casaverde-20",
     apiKey: "AIzaSyDG12FsMYyGVzkodq07N1SSWQfMcTJ-3yM",

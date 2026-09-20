@@ -331,10 +331,28 @@ function imprimir(d) {
   const abiertos = ordenarAbiertos(d.pendientes);
   const reglas = reglasSinPublicar(d.proyectos);
 
+  /* EL ENCABEZADO LIDERA CON LO QUE HAY QUE HACER, no con el tamaño del
+     archivo. Hasta el 2026-09-20 el primer número era el total de pendientes
+     —95 ese día— y Mauro lo dijo con todas las letras: «95 pendientes en el
+     panel es mucho para mí». Y tenía razón en sentirlo y no en el número: de
+     esos 95, setenta y cuatro estaban cerrados. Lo que quedaba eran 21, y de
+     ésos sólo 13 lo esperaban a él.
+
+     Un contador que mezcla el trabajo con el archivo no informa: desmoraliza.
+     Los cerrados siguen contándose —son la memoria del proyecto y no se
+     borran— pero van al final y entre paréntesis, que es el lugar que les
+     corresponde. */
+  const mios = abiertos.filter((p) => p.quien === "claude").length;
+  const suyos = abiertos.length - mios;
+  const cerrados = (d.pendientes || []).filter((p) => p.estado === "hecho").length;
+  const retirados = (d.pendientes || []).filter((p) => p.estado === "retirado").length;
+
   L.push(`\n  RONDA · ${d.fecha}`);
-  L.push(`  ${d.pendientes.length} pendientes · ${abiertos.length} abiertos · ` +
-         `${ti.length} tocados · ${sr.length} sin responder · ${nuevos.length} reportes nuevos · ` +
+  L.push(`  ${abiertos.length} ABIERTOS — ${suyos} te esperan a vos, ${mios} son míos`);
+  L.push(`  ${ti.length} tocados · ${sr.length} sin responder · ${nuevos.length} reportes nuevos · ` +
          `${reglas.length} con las reglas sin publicar`);
+  L.push(`  (${cerrados + retirados} cerrados y fuera de la cuenta: ` +
+         `${cerrados} hechos, ${retirados} retirados)`);
   L.push(`  ${lineasVivas(d.lineas).length} líneas abiertas · ` +
          `${lineasVivas(d.lineas).filter((l) => l.tomada && l.tomada.desde).length} tomadas`);
 

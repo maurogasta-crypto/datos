@@ -93,6 +93,26 @@ cargás vos. Ningún chat pide ese valor ni lo escribe en ningún lado.**
 > sesión. Si cargaste algo y el chat dice que no lo ve, no está equivocado:
 > hay que abrir una sesión nueva.
 
+### Y eso tiene una consecuencia para la ronda diaria, que apareció el 2026-09-20
+
+La *routine* de la ronda **dispara contra una sesión que ya existe** y no contra
+una nueva (`RUTINA-AUTOMATICA.md` § 6). Así que una variable cargada hoy **no la
+va a ver esa sesión**, y la ronda de mañana va a seguir fallando con la base
+nueva aunque la variable esté bien puesta. No es que la cargaste mal.
+
+**De ahí sale una recomendación concreta, y es la razón por la que este archivo
+insiste con «con UN par alcanza»:** cuando una base nueva no deja entrar, **la
+salida corta es igualar la contraseña en esa base**, no cargarle un par propio.
+Igualar no toca el entorno y anda en la sesión que ya está corriendo, ahora
+mismo. El par propio es la salida buena el día que de verdad haga falta separar
+una base — y ese día hay que rehacer la sesión de la routine, o la ronda queda
+con la mitad de las fuentes.
+
+Pasó exactamente así con `hilux`: los dos usuarios estaban creados y el agente
+no entraba, porque la contraseña de esa base no era la misma que la de las otras
+cuatro. La prueba que lo decidió fue entrar a las cuatro con las mismas
+credenciales y fallar sólo en la quinta.
+
 ---
 
 ## Paso 1 · Crear el usuario en el proyecto

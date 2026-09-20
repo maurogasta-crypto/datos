@@ -439,7 +439,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-24";
+P.PANEL = "panel-25";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2143,7 +2143,17 @@ if ("serviceWorker" in navigator) {
    y poco más, y la pantalla tiene que servir igual desde ese día.
 
      sitio  { url, repo, readme, resumen, sinPrevia }
-     acceso { base, reglas, reglasUrl, estado, selladas[], nota }
+     acceso { base, reglas, reglasUrl, estado, selladas[], nota,
+              uids { mio, agente } }
+
+   `acceso.uids` entró en `panel-25`. Es de dónde saca el panel con qué
+   completar la plantilla de reglas de OTRA base — la suya la completa con la
+   sesión abierta, pero el UID es por proyecto y el de acá no sirve allá. Sin
+   ese campo, un proyecto cuyo archivo de reglas tenga marcadores no se podía
+   copiar y no había forma de seguir desde el teléfono: le pasó a `hilux` el
+   2026-09-20. Un UID no es un secreto y por eso vive en la base y no en
+   `claves/`; lo que no puede estar en un repositorio público es el valor
+   dentro del archivo, y eso no cambió — allá siguen los marcadores.
    ═══════════════════════════════════════════════════════════ */
 
 let SITIO = "*";            // "*" es la vista de todos juntos
@@ -2378,15 +2388,49 @@ async function bajarReglasDe(pr) {
   const r = await fetch(crudo, { cache: "no-cache" });
   if (!r.ok) throw new Error("HTTP " + r.status);
   const texto = await r.text();
-  /* Una plantilla de OTRA base no se completa desde acá, y no se copia a
-     medias: Firebase le da a Mauro un UID DISTINTO en cada proyecto, así que
-     el único que el panel conoce —el suyo, en esta base— no sirve para otra.
-     Si algún día un sitio adopta esta forma, hay que enseñarle al panel de
-     dónde sacar ese UID; adivinarlo publicaría unas reglas que no dejan entrar
-     a nadie, y el que pega no se entera hasta que ya no puede entrar. */
+  /* Una plantilla de OTRA base. Hasta `panel-24` esto era un callejón sin
+     salida: el panel se negaba y ahí terminaba todo. Se negaba POR EL MOTIVO
+     CORRECTO —Firebase le da a Mauro un UID distinto en cada proyecto, así que
+     el único que el panel conoce, el suyo en esta base, no sirve para otra, y
+     publicar con los marcadores adentro deja la base cerrada para todos sin
+     que el que pega se entere—. Pero le faltaba la otra mitad.
+
+     El 2026-09-20 `hilux` adoptó esta forma y el callejón apareció de verdad:
+     Mauro tocó «Copiar para publicar», le salió el cartel rojo, y no tenía
+     desde el teléfono ninguna forma de seguir. El propio comentario que estaba
+     acá lo anticipaba — «hay que enseñarle al panel de dónde sacar ese UID».
+     Esto es eso.
+
+     De dónde: de `acceso.uids` del documento del proyecto, que lo escribe el
+     equipo. Un UID NO es un secreto —sin la contraseña no abre nada, y de
+     hecho tiene que estar escrito en las reglas publicadas para servir de
+     algo—, así que vive en la base del panel sin problema. Lo que no puede
+     estar en ningún archivo de un repositorio público es otra cosa, y sigue
+     igual: la plantilla del repo guarda los marcadores y el texto completo
+     existe sólo acá, en pantalla.
+
+     Y si el proyecto todavía no tiene los UID, el mensaje dice QUÉ HACER en
+     vez de cortar. Es la diferencia entre un cartel rojo y una instrucción. */
   if (texto.includes(MARCA_MIA) || texto.includes(MARCA_AGENTE)) {
-    throw new Error("ese archivo es una plantilla con marcadores de UID, y los UID "
-      + "de Firebase son distintos en cada proyecto: el panel no puede completarlos.");
+    const u = a.uids || {};
+    const mio = String(u.mio || "").trim();
+    const agente = String(u.agente || "").trim();
+    if (!mio) {
+      throw new Error("esa plantilla lleva los UID como marcadores y este proyecto "
+        + "todavía no los tiene anotados. Los UID de Firebase son distintos en cada "
+        + "proyecto, así que el panel no puede adivinarlos. Creá los usuarios en "
+        + "Firebase → " + (a.base || "esa base") + " → Authentication, copiá los dos "
+        + "UID, y anotalos en `acceso.uids` de este proyecto. Ahí el botón arma el "
+        + "texto solo, como con el del panel.");
+    }
+    return {
+      texto: sacarNotaDePlantilla(texto)
+        .split(MARCA_MIA).join(mio)
+        .split(MARCA_AGENTE).join(agente || SIN_AGENTE),
+      propia: false,
+      armada: true,
+      sinAgente: !agente
+    };
   }
   return { texto, propia: false };
 }
@@ -2410,7 +2454,16 @@ async function copiarReglasDe(pr, boton) {
   const antes = boton.textContent;
   boton.disabled = true; boton.textContent = "Bajando…";
   try {
-    const { texto } = await bajarReglasDe(pr);
+    const { texto, armada, sinAgente } = await bajarReglasDe(pr);
+    /* Si la plantilla se armó sin el UID del agente, las reglas SE PUEDEN
+       publicar —`SIN-AGENTE-CONFIGURADO` no se parece a ningún UID de Firebase,
+       así que esa comparación no da verdadera nunca— pero el agente no va a
+       entrar. Se avisa antes de copiar y no después: publicar y descubrirlo
+       cuando la ronda marca ✖ es pagar el viaje dos veces. */
+    if (armada && sinAgente) {
+      P.aviso("Ojo: se armó SIN el UID del agente. Las reglas sirven, pero el chat "
+        + "no va a poder entrar a esa base hasta que lo anotes en `acceso.uids`.", "error");
+    }
     /* Se copia el RECORTE y se mide el ORIGINAL, y no es un descuido: la huella
        contesta «¿es la misma versión del archivo que publiqué?», y esa pregunta
        es sobre el archivo del repositorio. Medir el recorte cambiaría de un día

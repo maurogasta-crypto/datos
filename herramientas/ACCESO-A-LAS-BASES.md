@@ -4,10 +4,23 @@ Para que un chat de Claude Code pueda leer una base de Firestore y compararla
 con el código publicado del sitio. Escrito para hacerse **desde el teléfono**,
 en la consola de Firebase.
 
-Estado al 2026-09-11, al cierre del día: **los cuatro usuarios están creados y
-los cuatro entran.** Lo único que falta es pegar las reglas en la consola de
-cada proyecto — hasta que eso pase, el agente entra pero no lee nada, que es
-exactamente lo que tiene que hacer el deny por defecto.
+Estado al **2026-09-20**: **las cinco bases están completas.** Los cinco
+usuarios creados, los cinco entran, y las reglas de los cinco proyectos
+publicadas y verificadas. La ronda diaria trae las cinco fuentes con ✓.
+
+`hilux` fue la última y costó dos cosas que conviene no volver a pagar:
+
+1. **Una base nueva sin el usuario dado de alta volteaba la ronda ENTERA.**
+   `entrar` terminaba en `process.exit`, que no se atrapa con try/catch, así
+   que el `catch` escrito para ese caso exacto nunca corría. Tres días sin
+   ronda y nadie se enteró. Arreglado el 2026-09-20 con `entrarSuave`: una base
+   caída ahora sale como un renglón de FUENTES y la corrida sigue.
+2. **Crear el usuario en una base nueva es ponerle una contraseña NUEVA ahí.**
+   Las contraseñas de Firebase Authentication son por proyecto, igual que los
+   UID. El usuario de hilux existía y el agente no entraba porque su contraseña
+   no era la compartida. **La prueba que lo decide:** entrar a las otras bases
+   con las mismas credenciales. Si entran ahí y fallan en una sola, no es el
+   mail ni falta el usuario — es la contraseña de ESA base.
 
 | Proyecto de la herramienta | Firebase | Para qué sirve que el agente lo lea |
 |---|---|---|

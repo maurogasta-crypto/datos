@@ -439,7 +439,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-25";
+P.PANEL = "panel-26";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2411,7 +2411,8 @@ async function bajarReglasDe(pr) {
 
      Y si el proyecto todavía no tiene los UID, el mensaje dice QUÉ HACER en
      vez de cortar. Es la diferencia entre un cartel rojo y una instrucción. */
-  if (texto.includes(MARCA_MIA) || texto.includes(MARCA_AGENTE)) {
+  if (texto.includes(MARCA_MIA) || texto.includes(MARCA_MIA_VIEJA)
+      || texto.includes(MARCA_AGENTE)) {
     const u = a.uids || {};
     const mio = String(u.mio || "").trim();
     const agente = String(u.agente || "").trim();
@@ -2426,6 +2427,7 @@ async function bajarReglasDe(pr) {
     return {
       texto: sacarNotaDePlantilla(texto)
         .split(MARCA_MIA).join(mio)
+        .split(MARCA_MIA_VIEJA).join(mio)
         .split(MARCA_AGENTE).join(agente || SIN_AGENTE),
       propia: false,
       armada: true,
@@ -2932,6 +2934,22 @@ $("s-cuerpo").addEventListener("click", (e) => {
 
 const MARCA_MIA = "TU-UID-ACA";
 const MARCA_AGENTE = "UID-DEL-AGENTE";
+
+/* El mismo marcador con OTRO nombre. `sitd-hilux` escribió el suyo como
+   `UID-DE-MAURO` —misma idea, nombre distinto— y por eso el panel no lo
+   reconocía: al tocar «Copiar para publicar» se negaba y no había forma de
+   seguir desde el teléfono.
+
+   La unificación está hecha en una rama de ese repositorio, pero el panel NO
+   puede depender de que alguien la mergee: mientras tanto el botón tiene que
+   andar contra el archivo que hay hoy en `main`. Así que se reconocen los dos
+   y se reemplazan los dos. Cuando la rama entre, este alias no molesta — no
+   encontrará nada que reemplazar.
+
+   Es la misma lección de `perm`/`permiso` entre CasaYourte y Casa Verde: dos
+   nombres para la misma cosa rompen sin dar error. La diferencia es que acá se
+   arregla en los dos lados, no en uno. */
+const MARCA_MIA_VIEJA = "UID-DE-MAURO";
 
 /* Con el campo vacío, `esAgente()` queda escrito pero no le abre la puerta a
    nadie: ningún UID de Firebase se parece a esto —son 28 caracteres

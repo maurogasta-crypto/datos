@@ -71,7 +71,7 @@ globalThis.fetch = async (url, op = {}) => {
 };
 
 const { PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
-        entrar, listar, leerUno, escribir, borrar, aFirestore, deFirestore } =
+        entrar, entrarSuave, listar, leerUno, escribir, borrar, aFirestore, deFirestore } =
   await import("../../herramientas/firestore.mjs");
 const cfg = PROYECTOS.panel;
 
@@ -93,6 +93,47 @@ await prueba("entra y devuelve el UID, que es lo que va en las reglas", () => {
 await prueba("manda la contraseña al login y NO la guarda en la sesión", () => {
   assert.equal(ultimoLogin.password, CLAVE_FALSA);
   assert.ok(!JSON.stringify(sesion).includes(CLAVE_FALSA), "la clave quedó en la sesión");
+});
+
+/* ── Una base que no deja entrar NO puede voltear la corrida ──────────────
+   Entró el 2026-09-20 y cubre una falla que pasó de verdad. `entrar` termina
+   en `ex()`, que hace `process.exit(1)`, y eso **no se atrapa con try/catch**:
+   la ronda tenía uno alrededor de su login por base y no servía para nada. El
+   19-sep entró `hilux` a `PROYECTOS` sin que el usuario del agente estuviera
+   dado de alta en esa base, y la ronda diaria dejó de correr entera, sin
+   imprimir una sola línea del panel.
+
+   Se prueban las DOS mitades, porque arreglar una rompiendo la otra sería peor:
+   que `entrarSuave` informe sin cortar, y que `entrar` siga cortando —en la
+   línea de comandos, morir con un mensaje claro es lo correcto. */
+titulo("Una base que no deja entrar");
+await prueba("entrarSuave contesta ok con la sesión adentro", async () => {
+  const e = await entrarSuave(cfg);
+  assert.equal(e.ok, true);
+  assert.equal(e.sesion.uid, "uid-agente");
+  assert.equal(e.motivo, "");
+});
+await prueba("entrarSuave INFORMA y no corta cuando la base dice que no", async () => {
+  process.env.FB_AGENTE_CLAVE = "otra-que-no-es";
+  try {
+    const e = await entrarSuave(cfg);
+    assert.equal(e.ok, false, "dijo que sí con la clave equivocada");
+    assert.equal(e.sesion, null);
+    assert.ok(e.motivo.includes("INVALID_LOGIN_CREDENTIALS"), "el motivo no dice qué pasó");
+    assert.ok(e.motivo.includes("ACCESO-A-LAS-BASES"), "no explica cómo darse de alta");
+  } finally { process.env.FB_AGENTE_CLAVE = CLAVE_FALSA; }
+});
+await prueba("y el motivo NO trae la contraseña que se mandó", async () => {
+  process.env.FB_AGENTE_CLAVE = "otra-que-no-es";
+  try {
+    const e = await entrarSuave(cfg);
+    assert.ok(!e.motivo.includes("otra-que-no-es"), "la clave se coló en el mensaje");
+  } finally { process.env.FB_AGENTE_CLAVE = CLAVE_FALSA; }
+});
+await prueba("entrar, el de la línea de comandos, SIGUE cortando", async () => {
+  process.env.FB_AGENTE_CLAVE = "otra-que-no-es";
+  try { assert.ok(await frena(() => entrar(cfg)), "no cortó"); }
+  finally { process.env.FB_AGENTE_CLAVE = CLAVE_FALSA; }
 });
 
 titulo("Un solo usuario para las cuatro bases");

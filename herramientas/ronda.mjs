@@ -53,7 +53,7 @@
 //                           `permission-denied` es un bloqueo y se avisa.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { PROYECTOS, entrar, deFirestore } from "./firestore.mjs";
+import { PROYECTOS, entrar, entrarSuave, deFirestore } from "./firestore.mjs";
 
 /* Las bases de sitio donde puede haber reportes: TODAS las que la herramienta
    conoce, menos el panel, que es donde se cruzan.
@@ -259,7 +259,16 @@ async function juntar() {
   const fuentes = [];
 
   const cfgPanel = PROYECTOS.panel;
-  const sesionPanel = await entrar(cfgPanel);
+  /* Suave también acá: si el panel no deja entrar, esto tiene que salir por el
+     camino de `fatal` —con FUENTES adentro, que es lo que se mira— y no como un
+     `process.exit` que no dice qué llegó a contestar. */
+  const ePanel = await entrarSuave(cfgPanel);
+  if (!ePanel.ok) {
+    fuentes.push({ base: "panel", coleccion: "pendientes", ok: false,
+                   motivo: ePanel.motivo, cuantos: 0 });
+    return { fatal: "el panel no dejó entrar — " + ePanel.motivo, fuentes };
+  }
+  const sesionPanel = ePanel.sesion;
   const pend = await listarSuave(cfgPanel, sesionPanel, "pendientes");
   const proy = await listarSuave(cfgPanel, sesionPanel, "proyectos");
   const lin = await listarSuave(cfgPanel, sesionPanel, "lineas");
@@ -279,15 +288,17 @@ async function juntar() {
   for (const nombre of CON_REPORTES) {
     const cfg = PROYECTOS[nombre];
     if (!cfg) continue;
-    let sesion;
-    try {
-      sesion = await entrar(cfg);
-    } catch (e) {
+    /* `entrarSuave` y no `entrar`: el try/catch que había acá NO servía, porque
+       `entrar` terminaba en un `process.exit` y el catch nunca corría. Una base
+       recién dada de alta —sin el usuario del agente todavía— volteaba la ronda
+       ENTERA en vez de salir como un renglón de FUENTES. Pasó con `hilux`. */
+    const e = await entrarSuave(cfg);
+    if (!e.ok) {
       fuentes.push({ base: nombre, coleccion: "reportes", ok: false,
-                     motivo: "no se pudo entrar: " + (e && e.message ? e.message : e), cuantos: 0 });
+                     motivo: "no se pudo entrar: " + e.motivo.split("\n")[0], cuantos: 0 });
       continue;
     }
-    const r = await listarSuave(cfg, sesion, "reportes");
+    const r = await listarSuave(cfg, e.sesion, "reportes");
     fuentes.push({ base: nombre, coleccion: "reportes", ok: r.ok, motivo: r.motivo,
                    cuantos: r.docs.length,
                    circuito: tieneCircuito(fichas.find((f) => f.id === nombre)) });

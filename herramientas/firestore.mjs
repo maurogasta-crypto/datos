@@ -178,6 +178,9 @@ const PROYECTOS = {
 };
 
 const ex = (m) => { console.error("\n✖ " + m + "\n"); process.exit(1); };
+/* Lo mismo que `ex` pero devolviendo el control a quien llamó. `ex` mata el
+   proceso y por eso NO se puede atrapar: ver el comentario de `entrarCrudo`. */
+const lanzar = (m) => { throw new Error(m); };
 
 /* ── El guardia ──────────────────────────────────────────────────────────────
    Cinturón de seguridad, no cerradura: la cerradura son las reglas. Existe
@@ -221,10 +224,26 @@ function credenciales(cfg) {
   };
 }
 
-async function entrar(cfg) {
+/* `entrarCrudo` LANZA; `entrar` corta el proceso; `entrarSuave` informa.
+   Los tres hacen el mismo login y existen por separado desde el 2026-09-20,
+   por una falla concreta: `entrar` terminaba en `ex()`, que hace
+   `process.exit(1)`, y eso **no se puede atrapar con un try/catch**. La ronda
+   tenía uno alrededor de su login por base, escrito justamente para que una
+   base caída saliera en FUENTES y no volteara la corrida — y no servía para
+   nada, porque el proceso moría antes del catch.
+
+   No era teórico: el 2026-09-19 entró `hilux` a `PROYECTOS`, que es un cambio
+   correcto, y el usuario del agente todavía no estaba dado de alta en esa base.
+   La ronda diaria dejó de correr ENTERA, sin imprimir una línea del panel,
+   durante los días que nadie la miró. Una base sin dar de alta tiene que ser un
+   renglón en FUENTES, no el fin de la corrida.
+
+   Para la línea de comandos, morir con un mensaje claro sigue siendo lo
+   correcto: ahí no hay nada más que hacer. Por eso `entrar` no cambia. */
+async function entrarCrudo(cfg) {
   const { mail, clave } = credenciales(cfg);
   if (!mail || !clave) {
-    ex(`faltan las credenciales del agente para este proyecto.\n`
+    lanzar(`faltan las credenciales del agente para este proyecto.\n`
      + `  Sirve CUALQUIERA de estos pares, y con uno alcanza para las cuatro bases:\n`
      + `    ${MAIL_COMPARTIDO} y ${CLAVE_COMPARTIDA}   (el nombre bueno)\n`
      + `    ${MAIL_HEREDADO} y ${CLAVE_HEREDADA}   (el primero que hubo, sigue andando)\n`
@@ -241,14 +260,34 @@ async function entrar(cfg) {
     /* El mensaje de Firebase se repite tal cual PERO nunca el valor enviado. */
     const m = (j.error && j.error.message) || r.status;
     if (String(m).includes("INVALID_LOGIN_CREDENTIALS") || String(m).includes("EMAIL_NOT_FOUND")) {
-      ex(`no se pudo entrar a «${cfg.projectId}»: ${m}\n`
+      lanzar(`no se pudo entrar a «${cfg.projectId}»: ${m}\n`
        + `  El usuario del agente se da de alta EN CADA proyecto de Firebase, a mano.\n`
        + `  Que ande en una base no quiere decir que exista en esta.\n`
        + `  El paso a paso: herramientas/ACCESO-A-LAS-BASES.md`);
     }
-    ex(`no se pudo entrar a «${cfg.projectId}»: ${m}`);
+    lanzar(`no se pudo entrar a «${cfg.projectId}»: ${m}`);
   }
   return { token: j.idToken, uid: j.localId, mail: j.email };
+}
+
+/* La de siempre, para la línea de comandos: mismo mensaje, mismo corte. */
+async function entrar(cfg) {
+  try {
+    return await entrarCrudo(cfg);
+  } catch (e) {
+    ex(e && e.message ? e.message : String(e));
+  }
+}
+
+/* La que usa la ronda: nunca corta, siempre contesta. El mismo par
+   `{ ok, motivo }` que ya devuelve `listarSuave` allá, para que una base que
+   no deja entrar y una colección que no deja listar se informen igual. */
+async function entrarSuave(cfg) {
+  try {
+    return { ok: true, motivo: "", sesion: await entrarCrudo(cfg) };
+  } catch (e) {
+    return { ok: false, motivo: e && e.message ? e.message : String(e), sesion: null };
+  }
 }
 
 /* ── Traducir entre JSON común y el formato de Firestore ─────────────────────
@@ -358,7 +397,7 @@ const borrar = async (cfg, sesion, coleccion, id) => {
 };
 
 export { PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
-         entrar, listar, leerUno, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
+         entrar, entrarSuave, listar, leerUno, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -13,19 +13,37 @@ node herramientas/firestore.mjs <proyecto> escribir <coleccion> <id> <archivo.js
 node herramientas/firestore.mjs <proyecto> borrar <coleccion> <id>
 ```
 
-### Las cuatro bases
+### Las cinco bases
 
-| Proyecto | Firebase | Estado al 2026-09-11 |
+| Proyecto | Firebase | Estado al 2026-09-20 |
 |---|---|---|
-| `panel` | `datos-830f8` | lee y escribe. Falta sacarle `fichas` en las reglas |
-| `remate` | `remate-acbc9` | entra; falta pegar `firestore.rules` v0.8 en la consola |
-| `casayourte` | `casayourte-mauro` | entra; falta pegar `REGLAS.txt` en la consola |
-| `casaverde` | `casaverde-20` | entra; falta pegar `interno/firestore.rules` en la consola |
+| `panel` | `datos-830f8` | lee y escribe |
+| `remate` | `remate-acbc9` | entra y lee |
+| `casayourte` | `casayourte-mauro` | entra y lee |
+| `casaverde` | `casaverde-20` | entra y lee |
+| `hilux` | `hilux-1b6f1` | **NO entra**: el usuario del agente todavía no está dado de alta en esa base |
 
 Harmonía no está porque no tiene base: todo su estado vive en el
 `localStorage` del teléfono.
 
-**Es un solo usuario para las cuatro**, con el mismo mail y la misma
+**Una base que no deja entrar no voltea la ronda, desde el 2026-09-20.** Sale
+como un renglón de FUENTES con su motivo y la corrida sigue con las demás. Hasta
+ese día no era así, y costó caro: `hilux` entró a `PROYECTOS` el 19-sep —un
+cambio correcto— sin que el usuario del agente existiera en esa base, y la ronda
+diaria dejó de correr ENTERA, sin imprimir una línea del panel.
+
+El motivo es de los que no se adivinan mirando el código por encima: `entrar`
+termina en `ex()`, que hace `process.exit(1)`, y **eso no se atrapa con un
+try/catch**. La ronda tenía uno escrito justamente para ese caso y no servía
+para nada, porque el proceso moría antes del `catch`. Ahora hay tres puertas:
+
+| | Qué hace si no puede entrar | Quién la usa |
+|---|---|---|
+| `entrarCrudo` | lanza un `Error` | las otras dos |
+| `entrar` | corta el proceso con el mensaje de siempre | la línea de comandos, donde morir claro es lo correcto |
+| `entrarSuave` | devuelve `{ ok: false, motivo }` | la ronda, en el panel y en cada base |
+
+**Es un solo usuario para las cinco**, con el mismo mail y la misma
 contraseña, y **con un solo par de variables alcanza**: sirve
 `FB_AGENTE_MAIL`/`FB_AGENTE_CLAVE`, y también `FB_PANEL_MAIL`/`FB_PANEL_CLAVE`,
 que es el par con el que nació esto. Se busca de lo más específico a lo más

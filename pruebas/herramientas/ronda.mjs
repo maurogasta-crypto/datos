@@ -16,7 +16,8 @@
 import assert from "node:assert/strict";
 import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
-         CON_REPORTES, vivaL, diasTomada, lineasVivas,
+         CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA,
+         vivaL, diasTomada, lineasVivas,
          tieneCircuito } from "../../herramientas/ronda.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
@@ -217,15 +218,58 @@ prueba("sin lista de proyectos devuelve vacío, no explota", () => {
 
 titulo("Un sitio nuevo entra solo");
 
-prueba("los reportes se piden a TODAS las bases menos el panel", () => {
-  /* Era una lista escrita a mano hasta el 2026-09-14, y era el último lugar
-     donde dar de alta un sitio pedía acordarse de tocar un archivo. */
-  assert.deepEqual([...CON_REPORTES].sort(),
+prueba("se ENTRA a todas las bases menos el panel, diga lo que diga", () => {
+  /* Es la corrección del 2026-09-21 a la tarde: el primer arreglo sacaba a
+     hilux de la vuelta entera, y con eso una base caída dejaba de aparecer en
+     FUENTES. Leerla no cuesta nada que no se pagara ya. */
+  assert.deepEqual([...BASES_CON_REPORTES].sort(),
     Object.keys(PROYECTOS).filter((x) => x !== "panel").sort());
+});
+
+prueba("pero sólo se CRUZAN contra los pendientes las que guardan fallas", () => {
+  assert.deepEqual([...CON_REPORTES].sort(),
+    Object.keys(PROYECTOS)
+      .filter((x) => x !== "panel" && QUE_GUARDA(x) === "fallas")
+      .sort());
+});
+
+prueba("lo que guarda se declara en POSITIVO, y sin declarar son fallas", () => {
+  /* Una negación (`reportesSonFallas: false`) dice qué NO es y no qué es, y
+     además invitaba a usarla para apagar la lectura. */
+  assert.equal(QUE_GUARDA("remate"), "fallas");
+  assert.equal(QUE_GUARDA("hilux"), "viajes");
+  assert.equal(QUE_GUARDA("no-existe"), "fallas");
 });
 
 prueba("y el panel nunca está: es contra quien se cruzan", () => {
   assert.ok(!CON_REPORTES.includes("panel"));
+});
+
+prueba("una base que no dice nada SÍ entra: un sitio nuevo sigue entrando solo",
+  () => {
+    const callados = Object.keys(PROYECTOS).filter(
+      (x) => x !== "panel" && PROYECTOS[x].reportesSon === undefined);
+    assert.ok(callados.length > 0, "el ecosistema tiene que tener alguna");
+    for (const x of callados) assert.ok(CON_REPORTES.includes(x), x);
+  });
+
+prueba("hilux se lee pero no se cruza: su `reportes` son viajes", () => {
+  /* El 2026-09-21 la ronda trajo `maurogasta-viaje-1` y `-viaje-2` como
+     reportes nuevos, con el título vacío y un `?`. No eran fallas: eran los
+     dos viajes que el teléfono subió solo. Sin esto, dos pendientes vacíos
+     por día y para siempre — pero tampoco se la puede dejar de leer, o una
+     base caída no se entera nadie. */
+  assert.equal(PROYECTOS.hilux.reportesSon, "viajes");
+  assert.ok(BASES_CON_REPORTES.includes("hilux"), "se entra igual");
+  assert.ok(!CON_REPORTES.includes("hilux"), "pero no se cruza");
+});
+
+prueba("lo declarado vive junto a la colección, no en una lista aparte", () => {
+  /* Si alguien vuelve a poner la decisión en `ronda.mjs`, esta prueba no lo
+     agarra — pero el que agrega una base mira `colecciones`, y ahí está. */
+  assert.ok(PROYECTOS.hilux.colecciones.includes("reportes"));
+  assert.ok(PROYECTOS.remate.reportesSon === undefined);
+  assert.ok(CON_REPORTES.includes("remate"));
 });
 
 /* ── Las líneas de trabajo ───────────────────────────────────────────────── */

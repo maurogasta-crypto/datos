@@ -55,8 +55,9 @@
 
 import { PROYECTOS, entrar, entrarSuave, deFirestore } from "./firestore.mjs";
 
-/* Las bases de sitio donde puede haber reportes: TODAS las que la herramienta
-   conoce, menos el panel, que es donde se cruzan.
+/* Las bases de sitio donde puede haber FALLAS reportadas: todas las que la
+   herramienta conoce, menos el panel —que es donde se cruzan— y menos las que
+   declaren que su `reportes` es otra cosa.
 
    Hasta el 2026-09-14 esto era una lista escrita a mano —`["remate",
    "casayourte", "casaverde"]`— y era el último lugar del circuito donde dar de
@@ -68,8 +69,33 @@ import { PROYECTOS, entrar, entrarSuave, deFirestore } from "./firestore.mjs";
    No hace falta que la colección exista: Firestore contesta 200 con cero
    documentos, y si las reglas la niegan sale en FUENTES, que es donde tiene
    que salir. Harmonía no aparece porque no tiene base —no está en `PROYECTOS`—
-   y todo su estado vive en el localStorage del teléfono. */
-const CON_REPORTES = Object.keys(PROYECTOS).filter((p) => p !== "panel");
+   y todo su estado vive en el localStorage del teléfono.
+
+   **El 2026-09-21 hubo que distinguir QUÉ guarda cada `reportes`, y el motivo
+   importa más que el arreglo.** `hilux` entró a `PROYECTOS` el 19 y entró acá
+   solo, que era la gracia — pero su `reportes` no guarda fallas: guarda **un
+   viaje por documento**, subido por la aplicación al terminarlo. La ronda los
+   traía como «reportes nuevos» sin título y sin qué pasó, y habrían sido dos
+   pendientes vacíos por día.
+
+   **Y el primer arreglo de esa mañana se quedó corto, que es lo que Mauro
+   marcó.** Decía `reportesSonFallas: false` y con eso sacaba a `hilux` de la
+   vuelta ENTERA: no se entraba a esa base, así que dejaba de aparecer en
+   FUENTES — y una base que se cae en silencio es justo lo que el § 6 no
+   permite. Además una negación no dice qué ES la colección, sólo qué no es.
+
+   Ahora la base declara **qué guarda** (`reportesSon: "viajes"`), se la lee
+   igual y se la cuenta en FUENTES con su nombre. Lo único que cambia es que
+   un registro de viajes NO se cruza contra los pendientes ni entra en
+   «reportes nuevos»: nadie reportó nada. El que no declara nada guarda
+   fallas, que es lo que vale para los tres sitios, y sigue entrando solo. */
+const QUE_GUARDA = (p) => (PROYECTOS[p] && PROYECTOS[p].reportesSon) || "fallas";
+const BASES_CON_REPORTES = Object.keys(PROYECTOS).filter((p) => p !== "panel");
+const CON_REPORTES = BASES_CON_REPORTES.filter((p) => QUE_GUARDA(p) === "fallas");
+
+/* Cómo se llama en pantalla lo que guarda cada colección. Sale de acá y no de
+   un `if` en el que imprime: agregar una clase nueva es agregar un renglón. */
+const NOMBRE_DE_LO_QUE_GUARDA = { fallas: "reportes", viajes: "viajes" };
 
 /* Cómo se escribe de dónde salió un pendiente. Lo fijó REPORTES.md y es lo
    único que evita traer dos veces el mismo reporte: el agente no escribe en la
@@ -219,7 +245,7 @@ function porProyecto(pendientes, fichas) {
     );
 }
 
-export { CON_REPORTES, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
+export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
          vivaL, diasTomada, lineasVivas, tieneCircuito };
 
@@ -285,24 +311,37 @@ async function juntar() {
   const pendientes = pend.docs;
   const fichas = proy.ok ? proy.docs : [];
   const reportes = [];
-  for (const nombre of CON_REPORTES) {
+  /* Se recorren TODAS las bases y no sólo las de fallas: una que se caiga
+     tiene que salir en FUENTES aunque lo que guarde no se cruce con nada. */
+  for (const nombre of BASES_CON_REPORTES) {
     const cfg = PROYECTOS[nombre];
     if (!cfg) continue;
     /* `entrarSuave` y no `entrar`: el try/catch que había acá NO servía, porque
        `entrar` terminaba en un `process.exit` y el catch nunca corría. Una base
        recién dada de alta —sin el usuario del agente todavía— volteaba la ronda
        ENTERA en vez de salir como un renglón de FUENTES. Pasó con `hilux`. */
+    const guarda = QUE_GUARDA(nombre);
+    const comoSeLlama = NOMBRE_DE_LO_QUE_GUARDA[guarda] || guarda;
     const e = await entrarSuave(cfg);
     if (!e.ok) {
-      fuentes.push({ base: nombre, coleccion: "reportes", ok: false,
+      fuentes.push({ base: nombre, coleccion: comoSeLlama, ok: false,
                      motivo: "no se pudo entrar: " + e.motivo.split("\n")[0], cuantos: 0 });
       continue;
     }
     const r = await listarSuave(cfg, e.sesion, "reportes");
-    fuentes.push({ base: nombre, coleccion: "reportes", ok: r.ok, motivo: r.motivo,
+    fuentes.push({ base: nombre, coleccion: comoSeLlama, ok: r.ok, motivo: r.motivo,
                    cuantos: r.docs.length,
-                   circuito: tieneCircuito(fichas.find((f) => f.id === nombre)) });
+                   /* El 0 que no quiere decir lo que parece sólo aplica a las
+                      fallas: un sitio sin formulario de reporte contesta 0 y
+                      eso no es «todo bien». Un registro de viajes con 0 es un
+                      0 de verdad — todavía no se anduvo. */
+                   circuito: guarda === "fallas"
+                     ? tieneCircuito(fichas.find((f) => f.id === nombre))
+                     : true });
     if (!r.ok) continue;
+    /* Un viaje no lo reportó nadie: no se cruza contra los pendientes y no
+       entra en «reportes nuevos». Se contó arriba, que es lo que hacía falta. */
+    if (guarda !== "fallas") continue;
     const { nuevos, yaTraidos } = cruzar(nombre, r.docs, pendientes);
     reportes.push({ proyecto: nombre, nuevos, yaTraidos });
   }

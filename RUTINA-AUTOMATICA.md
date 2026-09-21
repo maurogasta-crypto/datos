@@ -125,6 +125,44 @@ lo que esa tanda vino a cerrar.
 último lugar del circuito donde dar de alta un sitio nuevo pedía acordarse de
 tocar un archivo.
 
+**El 2026-09-21 eso necesitó una segunda condición, y el motivo vale más que el
+arreglo.** `hilux` entró a `PROYECTOS` el 19 y entró a la ronda solo, que era
+justamente la gracia — pero su colección `reportes` no guarda fallas: guarda un
+VIAJE por documento, que sube la aplicación al terminarlo. La ronda de esa
+mañana los trajo como «reportes nuevos» con el título vacío y un `?`, y la
+Parte 1 habría escrito dos pendientes sin nada que decir. Dos por día, para
+siempre.
+
+Lo que se derivaba estaba bien; lo que faltaba era que una base pudiera **decir
+qué guarda**. Se declara con `reportesSon: "viajes"` en `firestore.mjs`, pegado
+a la definición de sus colecciones —que es lo que mira el que da de alta una
+base— y no en una lista aparte en `ronda.mjs`. El que no dice nada guarda
+fallas, así que la regla de arriba no se pierde.
+
+**Y el primer intento de esa mañana se quedó corto.** Decía
+`reportesSonFallas: false`, y con esa negación la ronda dejaba de **entrar** a
+la base: `hilux` desaparecía de FUENTES, así que si se caía no lo decía nadie —
+que es exactamente lo que el punto 5 no permite. Lo marcó Mauro el mismo día:
+*«que sea coherente con registro de viajes y no de fallas»*.
+
+Ahora se entra a todas las bases igual y se las cuenta en FUENTES **con el
+nombre de lo que guardan** (`✓ hilux/viajes 3`). Lo único que cambia entre una
+clase y otra es qué se hace después: un registro de viajes no se cruza contra
+los pendientes ni entra en «reportes nuevos», porque nadie reportó nada. Y el
+«0 que no quiere decir lo que parece» sigue valiendo sólo para las fallas: un
+sitio sin formulario contesta 0 y eso no es «todo bien», mientras que un
+registro de viajes en 0 es un 0 de verdad — todavía no se anduvo.
+
+**La lección de las dos vueltas juntas:** una excepción se declara diciendo
+**qué ES** el caso distinto, no qué no es. Una negación no alcanza para
+clasificar, y encima invita a usarla para apagar cosas.
+
+La lección es la misma que la del punto anterior y la que este ecosistema
+aprende una y otra vez: **una derivación que vale para todos los casos que
+había deja de valer el día que entra uno distinto, y lo que hay que agregar no
+es una excepción escrita al lado, sino la forma de que el caso distinto se
+declare.**
+
 El punto 5 no es diagnóstico de adorno, y es la regla más importante de todo el
 documento:
 

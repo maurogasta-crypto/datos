@@ -249,6 +249,19 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `PROYECTOS` de `herramientas/firestore.mjs`, los reportes. Si alguna vez hace
   falta escribir el id de un sitio en el código para que algo ande, eso es el
   error, no la solución.
+
+  **Lo único que se declara a mano es lo que NO se puede deducir**: QUÉ guarda
+  la colección `reportes` de esa base. Va con `reportesSon: "viajes"` en la
+  misma entrada de `PROYECTOS`, pegado a `colecciones`, y sólo lo necesita el
+  que no guarda fallas — hoy `hilux`, donde cada documento es un viaje que
+  subió el teléfono. El que no dice nada guarda fallas, como siempre.
+
+  **Se declara en POSITIVO y no como una negación**, y la diferencia costó una
+  corrección el mismo día: con `reportesSonFallas: false` la ronda dejaba de
+  ENTRAR a esa base y desaparecía de FUENTES, así que una base caída no se la
+  contaba nadie. Se entra a todas y se las cuenta con el nombre de lo que
+  guardan (`✓ hilux/viajes 3`); lo único que cambia es que un registro de
+  viajes no se cruza contra los pendientes.
 - **Cómo se empaqueta y se firma una app sale de `empaquetado`, en su
   documento de `proyectos/`** (desde `panel-27`, 2026-09-21). Es la tarjeta que
   contesta las cuatro preguntas del empaquetado —cómo llega, con qué se firma,

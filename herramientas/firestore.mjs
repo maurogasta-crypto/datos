@@ -155,11 +155,16 @@ const PROYECTOS = {
        Hasta el 2026-09-21 la ronda no distinguía —tomaba todas las bases
        menos el panel— y cada viaje aparecía como «reporte nuevo» con el
        título en blanco y un `?`. Dos por día, para siempre, pidiendo un
-       pendiente que no tenía qué decir. Se declara acá, al lado de la
-       colección, y no en una lista aparte: el que agregue una base nueva está
-       mirando justo esto. Sin esta línea, `reportes` se asume falla, que es
+       pendiente que no tenía qué decir.
+
+       Se declara acá, al lado de la colección, y no en una lista aparte en
+       `ronda.mjs`: el que agregue una base nueva está mirando justo esto. Y
+       se declara en POSITIVO —qué guarda— y no como una negación: el primer
+       intento decía `reportesSonFallas: false` y con eso la ronda dejaba de
+       entrar a esta base, así que si se caía no lo decía nadie. Lo corrigió
+       Mauro el mismo día. Sin esta línea, `reportes` se asume fallas, que es
        lo que vale para los tres sitios. */
-    reportesSonFallas: false,
+    reportesSon: "viajes",
     /* Ninguna. Acá no hay credenciales, ni datos de terceros, ni recorrido:
        lo que sube es el reporte SIN coordenadas, el mismo que se puede mandar
        por un chat. El recorrido no sale del teléfono por ningún canal. */

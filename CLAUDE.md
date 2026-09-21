@@ -250,12 +250,18 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   falta escribir el id de un sitio en el código para que algo ande, eso es el
   error, no la solución.
 
-  **Lo único que se declara a mano es lo que NO se puede deducir**: si la
-  colección `reportes` de esa base guarda fallas de gente o alguna otra cosa.
-  Va con `reportesSonFallas: false` en la misma entrada de `PROYECTOS`, pegado
-  a `colecciones`, y sólo lo necesita el que no guarda fallas — hoy `hilux`,
-  donde cada documento es un viaje que subió el teléfono. El que no dice nada
-  entra solo, como siempre.
+  **Lo único que se declara a mano es lo que NO se puede deducir**: QUÉ guarda
+  la colección `reportes` de esa base. Va con `reportesSon: "viajes"` en la
+  misma entrada de `PROYECTOS`, pegado a `colecciones`, y sólo lo necesita el
+  que no guarda fallas — hoy `hilux`, donde cada documento es un viaje que
+  subió el teléfono. El que no dice nada guarda fallas, como siempre.
+
+  **Se declara en POSITIVO y no como una negación**, y la diferencia costó una
+  corrección el mismo día: con `reportesSonFallas: false` la ronda dejaba de
+  ENTRAR a esa base y desaparecía de FUENTES, así que una base caída no se la
+  contaba nadie. Se entra a todas y se las cuenta con el nombre de lo que
+  guardan (`✓ hilux/viajes 3`); lo único que cambia es que un registro de
+  viajes no se cruza contra los pendientes.
 - **Lo que el panel NO puede leer son las reglas publicadas.** Firebase no se
   las muestra al navegador. Todo lo que muestra y copia es el archivo del
   repositorio — el que hay que publicar. Es una pregunta que ya se hizo dos

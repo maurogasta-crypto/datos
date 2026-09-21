@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-11">
+<link rel="stylesheet" href="estilos.css?v=estilos-12">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
@@ -272,8 +272,15 @@
       </div>
       <div class="tarj">
         <label>Los datos</label>
-        <p class="gris" style="margin-top:.1rem;">Un renglón por dato: a la izquierda qué es,
-          a la derecha el valor.</p>
+        <p class="gris" style="margin-top:.1rem;">Un renglón por dato: arriba qué es,
+          abajo el valor.</p>
+        <p class="gris" style="margin-top:.4rem;font-size:.78rem"><b>Qué va acá:</b>
+          punteros cortos — de quién es una cuenta, a qué mail llega la
+          recuperación, dónde está guardado un archivo. <b>Qué NO:</b> nada que
+          abra algo (eso va a la bóveda, y lo escribís sólo vos), ni la
+          explicación de cómo funciona el proyecto — para eso está su pestaña
+          en «Sitios». Si un dato no entra en un renglón, probablemente no sea
+          un dato: es una explicación.</p>
         <div id="f-campos"></div>
         <div class="fila-btn"><button class="btn" id="btnCampo">Agregar un dato</button></div>
       </div>
@@ -439,7 +446,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-27";
+P.PANEL = "panel-28";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2015,13 +2022,40 @@ $("f-fichas").addEventListener("click", (e) => {
 function filaCampo(clave, valor) {
   const fila = document.createElement("div");
   fila.className = "par";
+  /* ── EL VALOR ES UN `textarea` QUE CRECE, Y NO UN `input` ────────────────
+     Hasta `panel-28` eran dos `input` lado a lado, al 34 % y al 66 %. En un
+     teléfono eso son unos doscientos píxeles para el valor: **no se podía leer
+     lo que uno mismo había escrito**, sólo el principio. Mauro lo dijo así:
+     «la información ahí está muy engorrosa, llena de texto».
+
+     Un `input` no tiene cómo mostrar dos renglones. Un `textarea` sí, y como
+     se lee con `.value` igual que un `input`, el guardado no cambia ni una
+     línea. Arranca en un renglón y crece con lo que haya adentro. */
   fila.innerHTML = '<input class="k" placeholder="qué es" autocomplete="off">'
-    + '<input class="v" placeholder="el valor" autocomplete="off">'
-    + '<button class="mini quitar" type="button" aria-label="Quitar este dato">×</button>';
+    + '<button class="mini quitar" type="button" aria-label="Quitar este dato">×</button>'
+    + '<textarea class="v" rows="1" placeholder="el valor"></textarea>';
   fila.querySelector(".k").value = clave || "";
-  fila.querySelector(".v").value = valor || "";
+  const caja = fila.querySelector(".v");
+  caja.value = valor || "";
+  caja.addEventListener("input", () => crecer(caja));
   fila.querySelector(".quitar").onclick = () => fila.remove();
   return fila;
+}
+
+/* Que la caja mida lo que mide su contenido.
+   ── DOS MEDIDAS, Y LA PRIMERA NO ES DE ADORNO ──────────────────────────
+   `rows` sale de contar los renglones del texto, y `scrollHeight` termina de
+   ajustar lo que el navegador ya dibujó. Hace falta el primero porque el
+   segundo vale 0 hasta que el elemento está en pantalla: sin `rows`, una
+   ficha con un valor de seis renglones se abriría con una caja de uno.
+   Lo encontró el banco, que corre contra un DOM sin layout — o sea el mismo
+   caso, llevado al extremo. Tope de doce para que un valor larguísimo no
+   empuje el botón de guardar fuera de la pantalla. */
+function crecer(caja) {
+  const renglones = String(caja.value || "").split("\n").length;
+  caja.rows = Math.min(12, Math.max(1, renglones));
+  caja.style.height = "auto";
+  if (caja.scrollHeight) caja.style.height = Math.max(44, caja.scrollHeight) + "px";
 }
 
 function abrirFicha(f) {
@@ -2044,6 +2078,8 @@ function abrirFicha(f) {
   cont.innerHTML = "";
   const campos = (f && Array.isArray(f.campos) && f.campos.length) ? f.campos : [{ clave: "", valor: "" }];
   campos.forEach((c) => cont.appendChild(filaCampo(c.clave, c.valor)));
+  /* Recién ahora están en la pantalla y `scrollHeight` dice algo. */
+  cont.querySelectorAll("textarea.v").forEach(crecer);
 
   $("btnFichaBorrar").classList.toggle("hide", !f);
   $("f-lista").classList.add("hide");

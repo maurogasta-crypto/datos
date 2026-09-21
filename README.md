@@ -450,16 +450,16 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-27` |
-| `estilos.css` | (en el comentario) | `estilos-11` |
+| `index.html` | `P.PANEL` | `panel-28` |
+| `estilos.css` | (en el comentario) | `estilos-12` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v18` |
+| `sw.js` | `VERSION` | `panel-shell-v19` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-11` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-12` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 
@@ -883,6 +883,32 @@ ninguna: un botón que a veces no muestra nada enseña a no tocarlo.
 La segunda zona: titularidad de cuentas, contactos, números. **Se escriben en el
 panel y no salen de ahí.** Cada ficha tiene un título, un proyecto, los datos que
 le pongas —un renglón por dato— y notas libres.
+
+**Qué va en una ficha, que es la pregunta que en su momento no tenía respuesta
+y costó nueve días** con `fichas/` sellada «por las dudas». Mauro lo dijo así:
+*no encontraba claridad sobre qué poner en una ficha.* No la había. Ahora sí, y
+está escrita adentro del editor para que llegue sin leer esto:
+
+| | |
+|---|---|
+| **Va** | punteros cortos: de quién es una cuenta, a qué mail llega la recuperación, dónde quedó guardado un archivo, qué UID usa una base |
+| **No va** | lo que abre algo — eso es `claves/`, la bóveda, y lo escribís sólo vos |
+| **Tampoco va** | la explicación de cómo funciona el proyecto: para eso está su pestaña en «Sitios» |
+
+La regla corta, que es la que sirve parado en la cocina: **si un dato no entra
+en un renglón, probablemente no sea un dato — es una explicación.**
+
+**Y desde `panel-28` la pantalla acompaña esa regla.** Hasta ahí el editor eran
+dos `input` lado a lado, al 34 % y al 66 %: en un teléfono el valor entraba en
+unos doscientos píxeles y **no se podía leer lo que uno mismo había escrito**.
+Ahora la clave va arriba y el valor abajo, a lo ancho, en una caja que crece con
+su contenido. La lista de fichas hace lo mismo.
+
+> El alto sale de **dos** medidas y la primera no es de adorno: `rows` cuenta los
+> renglones del texto, y `scrollHeight` termina de ajustar. Hace falta el primero
+> porque el segundo vale 0 hasta que el navegador dibujó el elemento — sin él,
+> una ficha con seis renglones adentro se abre con una caja de uno. Lo encontró
+> el banco, que corre contra un DOM sin layout: el mismo caso llevado al extremo.
 
 Tres cosas que son decisiones, no huecos:
 

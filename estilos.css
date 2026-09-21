@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-11
+   Sello: estilos-12
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -188,12 +188,13 @@ textarea { min-height:7rem; font-family:var(--mono); font-size:.78rem;
 
 /* Un dato: qué es, el valor, y copiarlo. El valor puede ser largo y no se
    corta con puntos suspensivos — una cuenta bancaria a medias no sirve. */
-.campo { display:flex; align-items:baseline; gap:.5rem; margin-top:.4rem;
+/* Misma idea en la lista: la clave arriba, el valor entero abajo. */
+.campo { display:flex; flex-wrap:wrap; align-items:baseline; gap:.5rem; margin-top:.4rem;
   border-top:1px dashed var(--linea); padding-top:.4rem; }
 .campo .k { font-family:var(--mono); font-size:.62rem; letter-spacing:.08em;
   text-transform:uppercase; color:var(--gris2); flex:none; max-width:38%;
   overflow-wrap:anywhere; }
-.campo .v { flex:1; font-size:.9rem; overflow-wrap:anywhere; }
+.campo .v { flex:1 1 100%; font-size:.9rem; overflow-wrap:anywhere; }
 
 /* ── un botón chico, para lo que acompaña y no manda ── */
 /* Sigue teniendo 34px de alto: más chico que eso, en un teléfono, se falla. */
@@ -202,11 +203,20 @@ textarea { min-height:7rem; font-family:var(--mono); font-size:.78rem;
   font-size:.72rem; cursor:pointer; flex:none; }
 
 /* ── el par clave/valor mientras se edita ── */
-.par { display:flex; gap:.4rem; margin-top:.4rem; }
-.par input { min-height:42px; font-size:.9rem; }
-.par input.k { flex:0 0 34%; font-family:var(--mono); font-size:.8rem; }
-.par input.v { flex:1; }
-.par .quitar { align-self:stretch; font-size:1rem; line-height:1; }
+/* ── UN DATO OCUPA DOS RENGLONES, NO DOS COLUMNAS (panel-28) ──────────────
+   Eran dos `input` lado a lado, al 34 % y al 66 %. En un teléfono eso deja
+   unos doscientos píxeles para el valor y no se podía leer lo que uno mismo
+   había escrito. Ahora la clave va arriba con su botón de quitar, y el valor
+   abajo, a lo ancho y en una caja que crece. */
+.par { display:grid; grid-template-columns:1fr auto; gap:.3rem .4rem;
+       margin-top:.8rem; }
+.par input.k { grid-column:1; grid-row:1; min-height:42px;
+               font-family:var(--mono); font-size:.8rem; }
+.par .quitar { grid-column:2; grid-row:1; align-self:stretch;
+               font-size:1rem; line-height:1; }
+.par textarea.v { grid-column:1 / -1; grid-row:2; min-height:44px;
+                  font-family:inherit; font-size:.9rem; white-space:pre-wrap;
+                  overflow:hidden; resize:none; }
 
 /* ── borrar no se disfraza de acción cualquiera, pero tampoco grita ── */
 .btn.borrar { color:var(--mal); border-color:var(--mal); background:none; }

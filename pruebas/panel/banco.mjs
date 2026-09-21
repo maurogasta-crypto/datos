@@ -172,6 +172,42 @@ ok(Object.keys(BASE.fichas || {}).length === 1, "se escribió una sola ficha");
 ok(api.FICHAS()[0].campos.length === 2, "guardó los dos datos");
 ok($("f-editor").classList.contains("hide"), "vuelve a la lista sola");
 
+/* ── EL VALOR SE TIENE QUE PODER LEER (panel-28) ──────────────────────────
+   Mauro abrió una ficha y no podía leer lo que él mismo había escrito: eran
+   dos `input` al 34 % y al 66 %, y en un teléfono el valor entra cortado.
+   Lo que se comprueba es que el valor sea una caja que crece y no un `input`,
+   y que al abrir una ficha ya venga alta — si `crecer` se llamara antes de
+   que el elemento esté en la pantalla, `scrollHeight` daría 0 y volvería a
+   quedar de un renglón. */
+api.abrirFicha(null);
+const cajaV = $("f-campos").querySelector(".v");
+ok(cajaV.tagName === "TEXTAREA", "el valor es una caja que crece, no un input de un renglón");
+ok($("f-campos").querySelector(".k").tagName === "INPUT", "la clave sigue siendo un input");
+ok(cajaV.rows === 1, "una ficha nueva arranca con una caja de un renglón");
+
+/* Una ficha con un valor de varios renglones: la caja tiene que venir más
+   alta que una vacía. Es la comprobación que falla si alguien mueve el
+   `crecer` de abrirFicha a antes de meter las filas en la pantalla. */
+BASE.fichas["larga"] = { titulo: "Una larga", proyecto: "", notas: "",
+  campos: [{ clave: "corto", valor: "sí" },
+           { clave: "largo", valor: "uno\ndos\ntres\ncuatro\ncinco" }] };
+await api.leerFichas(); await esperar();
+api.abrirFicha(api.FICHAS().find((f) => f.titulo === "Una larga"));
+const cajas = [...$("f-campos").querySelectorAll("textarea.v")];
+ok(cajas[1].rows === 5 && cajas[0].rows === 1,
+   "un valor de cinco renglones abre con cinco, y uno de una palabra con uno");
+ok(cajas[1].value.includes("cinco"), "y el valor entero está ahí, no cortado");
+delete BASE.fichas["larga"];
+await api.leerFichas(); await esperar();
+
+/* La guía de qué va y qué no en una ficha. Existe porque su ausencia costó
+   nueve días con `fichas/` sellada: Mauro dijo que «no encontraba claridad
+   sobre qué poner en una ficha», y no la había. */
+ok($("f-editor").textContent.includes("punteros cortos"),
+   "el editor dice qué va en una ficha");
+ok($("f-editor").textContent.includes("bóveda"),
+   "y que lo que abre algo no va acá");
+
 console.log("\n3 · una ficha con acentos, y la búsqueda");
 api.abrirFicha(null);
 $("f-titulo").value = "Teléfono de la escribanía";

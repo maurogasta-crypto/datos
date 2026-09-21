@@ -189,6 +189,15 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   vuelve a sellar `fichas/` «por precaución»** — ya se probó, y el resultado fue
   nueve días sin que nadie las mantuviera. Si aparece una credencial adentro de
   una ficha, lo que se mueve es la credencial, no el sello.
+- **Una ficha lleva PUNTEROS CORTOS, no explicaciones** (`panel-28`). Va de
+  quién es una cuenta, a qué mail llega la recuperación, dónde quedó guardado
+  un archivo, qué UID usa una base. NO va lo que abre algo —eso es `claves/`—
+  ni cómo funciona el proyecto, que vive en su pestaña de «Sitios». La regla
+  corta: **si un dato no entra en un renglón, no es un dato, es una
+  explicación.** Está escrita adentro del editor, porque su ausencia costó los
+  nueve días de `fichas/` sellada. Y la pantalla la acompaña: la clave arriba,
+  el valor abajo a lo ancho, en una caja que crece — antes eran dos `input` al
+  34 % y al 66 % y en un teléfono no se leía lo que uno mismo había escrito.
 - **Las reglas se editan completas, nunca por fragmentos:** se suman. Y lo que
   el agente no toca está escrito **en dos lugares**: `reglas.txt` acá y
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El

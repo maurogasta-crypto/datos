@@ -26,7 +26,7 @@ publicadas y verificadas. La ronda diaria trae las cinco fuentes con ✓.
 |---|---|---|
 | `panel` | `datos-830f8` | ✅ lee y escribe. Falta sacarle `fichas` en las reglas |
 | `remate` | `remate-acbc9` | catálogo, categorías, métodos de pago vs. lo que dice el código |
-| `casayourte` | `casayourte-mauro` | `sitio/publicado` vs. `contenido.json` y los textos de `index.html` |
+| `casayourte` | `casayourte-mauro` | `sitio/publicado` vs. `contenido.json` y los textos de `index.html`. **Acá además ESCRIBE `sitio/taller`**, y nada más: el sitio piloto donde se ejecutan los pedidos de diseño |
 | `casaverde` | `casaverde-20` | cabañas, espacios y actividades vs. lo que muestra el sitio |
 | `hilux` | `hilux-1b6f1` | los reportes que sube la app de la camioneta. **Acá además ESCRIBE**: sus conclusiones van a `analisis` |
 
@@ -258,7 +258,21 @@ la garantía.
 
 ## Lo que queda afuera a propósito
 
-**Escritura.** Estos bloques dan lectura y nada más. En el panel el agente
+**Escritura.** Estos bloques dan lectura y nada más, con **dos excepciones
+nombradas una por una**, que es la forma en que se abre una: `hilux`, donde el
+agente escribe `analisis/` (y no `reportes/`, que es lo que midió el teléfono),
+y `casayourte`, donde desde el 21-sep-2026 escribe **`sitio/taller` y nada
+más** — el sitio piloto, para ejecutar los pedidos de diseño que la gente deja
+en `reportes/`.
+
+Las dos siguen el mismo criterio y conviene decirlo porque es el que decide la
+próxima: **se abre el destino donde un error se deshace, no el que se publica
+solo.** Un análisis mal calculado se rehace sin tocar el dato medido; un taller
+mal editado se vuelve a guardar y no lo vio nadie. `sitio/publicado` no entra en
+esa categoría y por eso no se abre: un pedido mal leído saldría al aire sin que
+nadie lo mire.
+
+En el panel el agente
 escribe porque ése es su trabajo; en los tres sitios, por ahora, mira. El día
 que haga falta que escriba algo concreto —un campo de `sitio/publicado`, por
 ejemplo— se abre ese camino y nada más, en la misma tanda que el código que lo

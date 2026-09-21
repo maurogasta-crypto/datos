@@ -224,6 +224,16 @@ function lineasVivas(lineas) {
    «todavía no existe», y se dice con esas palabras. */
 const tieneCircuito = (p) => !!(p && p.reportes === true);
 
+/* Qué cuenta como PEDIDO y no como falla. Está acá arriba, con nombre y
+   exportado, para que se pueda probar: vive adentro de la rutina que corre
+   sola una vez por día, y una que se equivoca en silencio no se entera nadie.
+
+   La ausencia de `tipo` se lee como FALLA, nunca como «desconocido»: los
+   reportes anteriores al 21-sep-2026 no tienen el campo y en esa época sólo
+   existían fallas. Tratarlos como desconocidos sería inventar una categoría
+   que nunca tuvo nada adentro. */
+const esPedido = (r) => !!r && r.tipo === "pedido";
+
 const tocados = (p) => (p || []).filter((x) => x.tocado);
 const sinResponder = (p) => (p || []).filter((x) => x.pregunta && !x.respuesta);
 
@@ -247,7 +257,7 @@ function porProyecto(pendientes, fichas) {
 
 export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
-         vivaL, diasTomada, lineasVivas, tieneCircuito };
+         vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido };
 
 /* ── Lo que sí toca la red ───────────────────────────────────────────────────
    `firestore.mjs` corta el proceso ante un 403, que es lo correcto cuando una
@@ -367,6 +377,19 @@ function imprimir(d) {
   const ti = tocados(d.pendientes);
   const sr = sinResponder(d.pendientes);
   const nuevos = d.reportes.flatMap((r) => r.nuevos.map((x) => ({ ...x, _proy: r.proyecto })));
+  /* FALLAS Y PEDIDOS SE SEPARAN, y no es cosmético — 21-sep-2026.
+     Desde `nucleo-20` de CasaYourte la misma hoja escribe dos cosas en
+     `reportes/`: una FALLA («esto está roto») y un PEDIDO («quiero que esto
+     cambie»). Van a la misma colección a propósito, para que esta corrida los
+     traiga juntos, pero mezclados en una sola lista se leen mal: un pedido
+     listado bajo «fallas» se atiende como una urgencia que no es, y una falla
+     perdida entre pedidos espera su turno cuando no debería.
+
+     Un reporte sin `tipo` es de antes de ese cambio, y entonces sólo había
+     fallas: la ausencia se lee como 'falla' y no como «desconocido». */
+  const fallas = nuevos.filter((r) => !esPedido(r));
+  const pedidos = nuevos.filter(esPedido);
+
   const abiertos = ordenarAbiertos(d.pendientes);
   const reglas = reglasSinPublicar(d.proyectos);
 
@@ -388,7 +411,7 @@ function imprimir(d) {
 
   L.push(`\n  RONDA · ${d.fecha}`);
   L.push(`  ${abiertos.length} ABIERTOS — ${suyos} te esperan a vos, ${mios} son míos`);
-  L.push(`  ${ti.length} tocados · ${sr.length} sin responder · ${nuevos.length} reportes nuevos · ` +
+  L.push(`  ${ti.length} tocados · ${sr.length} sin responder · ${fallas.length} fallas nuevas · ${pedidos.length} pedidos · ` +
          `${reglas.length} con las reglas sin publicar`);
   L.push(`  (${cerrados + retirados} cerrados y fuera de la cuenta: ` +
          `${cerrados} hechos, ${retirados} retirados)`);
@@ -431,14 +454,23 @@ function imprimir(d) {
     L.push(`          pregunta: ${corto(p.pregunta, 140)}`);
   }
 
-  L.push(`\n  3 · REPORTES NUEVOS — fallas de un sitio sin pendiente que las traiga`);
-  if (!nuevos.length) L.push(`      (ninguno)`);
-  for (const r of nuevos) {
-    L.push(`      ${r._proy}:reportes/${r.id}  [${r.gravedad || "sin gravedad"}]  ${r.pagina || "?"}`);
-    L.push(`          qué pasó : ${corto(r.texto, 140)}`);
-    if (r.esperaba) L.push(`          esperaba : ${corto(r.esperaba, 140)}`);
+  const renglones = (r, primera) => {
+    // Una falla tiene `gravedad` y un pedido tiene `urgencia`: son campos
+    // distintos porque son cosas distintas. Se muestra el que traiga.
+    const marca = r.gravedad || r.urgencia || "sin marca";
+    L.push(`      ${r._proy}:reportes/${r.id}  [${marca}]  ${r.pagina || "?"}`);
+    L.push(`          ${primera} : ${corto(r.texto, 140)}`);
+    if (r.esperaba) L.push(`          ${esPedido(r) ? "para qué" : "esperaba"} : ${corto(r.esperaba, 140)}`);
     L.push(`          origen   : ${origenDe(r._proy, r.id)}`);
-  }
+  };
+
+  L.push(`\n  3 · REPORTES NUEVOS — fallas de un sitio sin pendiente que las traiga`);
+  if (!fallas.length) L.push(`      (ninguna)`);
+  for (const r of fallas) renglones(r, "qué pasó");
+
+  L.push(`\n  3 bis · PEDIDOS NUEVOS — cambios que pidió alguien del equipo`);
+  if (!pedidos.length) L.push(`      (ninguno)`);
+  for (const r of pedidos) renglones(r, "qué pide");
 
   L.push(`\n  4 · ABIERTOS — por proyecto, por prioridad, las trabas al final`);
   for (const g of porProyecto(abiertos, d.proyectos)) {

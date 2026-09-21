@@ -18,7 +18,7 @@ import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
          CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA,
          vivaL, diasTomada, lineasVivas,
-         tieneCircuito } from "../../herramientas/ronda.mjs";
+         tieneCircuito, esPedido } from "../../herramientas/ronda.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -337,6 +337,57 @@ prueba("`reportes` tiene que ser el booleano, no cualquier cosa parecida", () =>
      o un chat a mano. Que sea estricto es lo que evita un falso tilde. */
   assert.equal(tieneCircuito({ reportes: "true" }), false);
   assert.equal(tieneCircuito({ reportes: 1 }), false);
+});
+
+/* ── Un pedido no es una falla ───────────────────────────────────────────── */
+titulo("Fallas y pedidos, que van a la misma colección y no se leen igual");
+
+prueba("un pedido se reconoce por `tipo`", () => {
+  assert.equal(esPedido({ tipo: "pedido" }), true);
+  assert.equal(esPedido({ tipo: "falla" }), false);
+});
+
+prueba("SIN `tipo` es una falla, no un desconocido", () => {
+  /* Los reportes anteriores al 21-sep-2026 no tienen el campo, y en esa época
+     lo único que existía era una falla. Si esto empezara a devolver `true`, o
+     a inventar una tercera categoría, los reportes viejos desaparecerían de la
+     sección 3 sin que nadie lo note — que es exactamente el modo de fallar que
+     esta rutina no puede tener, porque corre sola. */
+  assert.equal(esPedido({ texto: "no anda el botón" }), false);
+  assert.equal(esPedido({ tipo: undefined }), false);
+  assert.equal(esPedido({ tipo: null }), false);
+  assert.equal(esPedido({ tipo: "" }), false);
+});
+
+prueba("tiene que ser el texto exacto, no algo parecido", () => {
+  /* Mismo criterio que `tieneCircuito`: el dato lo escribe un formulario, pero
+     también podría escribirlo alguien a mano desde la consola. */
+  assert.equal(esPedido({ tipo: "Pedido" }), false);
+  assert.equal(esPedido({ tipo: "pedidos" }), false);
+  assert.equal(esPedido({ tipo: " pedido" }), false);
+});
+
+prueba("no explota con lo que no es un reporte", () => {
+  assert.equal(esPedido(undefined), false);
+  assert.equal(esPedido(null), false);
+});
+
+prueba("separar una lista mezclada no pierde ni duplica ninguno", () => {
+  /* La garantía que importa de una partición: todo cae de un lado y de uno
+     solo. Un reporte que no aparece en ninguna de las dos listas es un reporte
+     que nadie va a atender. */
+  const lista = [
+    { id: "a", tipo: "falla" },
+    { id: "b", tipo: "pedido" },
+    { id: "c" },                       // viejo, sin tipo
+    { id: "d", tipo: "pedido" },
+    { id: "e", tipo: "ruido" }
+  ];
+  const pedidos = lista.filter(esPedido);
+  const fallas = lista.filter((r) => !esPedido(r));
+  assert.deepEqual(pedidos.map((r) => r.id), ["b", "d"]);
+  assert.deepEqual(fallas.map((r) => r.id), ["a", "c", "e"]);
+  assert.equal(pedidos.length + fallas.length, lista.length);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

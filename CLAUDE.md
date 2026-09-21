@@ -207,9 +207,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (34 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (25 casos, sin npm ni red) para la ronda de apertura, que desde el
+  (46 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
-  silencio; y `pruebas/panel/banco.mjs` (con `npm install` una vez) para el
+  silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
+  pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
+  falla**: si eso cambiara, los reportes viejos desaparecerían de la sección 3
+  sin que nadie lo note; y `pruebas/panel/banco.mjs` (con `npm install` una vez) para el
   panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.
 - **`reglas.txt` es la plantilla, y es la ÚNICA copia del texto de las reglas.**

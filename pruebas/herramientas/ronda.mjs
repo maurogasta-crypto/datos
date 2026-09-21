@@ -217,15 +217,43 @@ prueba("sin lista de proyectos devuelve vacío, no explota", () => {
 
 titulo("Un sitio nuevo entra solo");
 
-prueba("los reportes se piden a TODAS las bases menos el panel", () => {
+prueba("los reportes se piden a toda base que no diga lo contrario", () => {
   /* Era una lista escrita a mano hasta el 2026-09-14, y era el último lugar
-     donde dar de alta un sitio pedía acordarse de tocar un archivo. */
+     donde dar de alta un sitio pedía acordarse de tocar un archivo. Sigue
+     derivándose: lo único que saca a una base es que ELLA lo declare. */
   assert.deepEqual([...CON_REPORTES].sort(),
-    Object.keys(PROYECTOS).filter((x) => x !== "panel").sort());
+    Object.keys(PROYECTOS)
+      .filter((x) => x !== "panel" && PROYECTOS[x].reportesSonFallas !== false)
+      .sort());
 });
 
 prueba("y el panel nunca está: es contra quien se cruzan", () => {
   assert.ok(!CON_REPORTES.includes("panel"));
+});
+
+prueba("una base que no dice nada SÍ entra: un sitio nuevo sigue entrando solo",
+  () => {
+    const callados = Object.keys(PROYECTOS).filter(
+      (x) => x !== "panel" && PROYECTOS[x].reportesSonFallas === undefined);
+    assert.ok(callados.length > 0, "el ecosistema tiene que tener alguna");
+    for (const x of callados) assert.ok(CON_REPORTES.includes(x), x);
+  });
+
+prueba("hilux NO entra: su `reportes` son viajes, no fallas", () => {
+  /* El 2026-09-21 la ronda trajo `maurogasta-viaje-1` y `-viaje-2` como
+     reportes nuevos, con el título vacío y un `?`. No eran fallas: eran los
+     dos viajes que el teléfono subió solo. Sin esto, dos pendientes vacíos
+     por día y para siempre. */
+  assert.equal(PROYECTOS.hilux.reportesSonFallas, false);
+  assert.ok(!CON_REPORTES.includes("hilux"));
+});
+
+prueba("lo declarado vive junto a la colección, no en una lista aparte", () => {
+  /* Si alguien vuelve a poner la decisión en `ronda.mjs`, esta prueba no lo
+     agarra — pero el que agrega una base mira `colecciones`, y ahí está. */
+  assert.ok(PROYECTOS.hilux.colecciones.includes("reportes"));
+  assert.ok(PROYECTOS.remate.reportesSonFallas === undefined);
+  assert.ok(CON_REPORTES.includes("remate"));
 });
 
 /* ── Las líneas de trabajo ───────────────────────────────────────────────── */

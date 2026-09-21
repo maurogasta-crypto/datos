@@ -146,6 +146,20 @@ const PROYECTOS = {
        separación en dos colecciones es lo que lo hace seguro: si un análisis
        sale mal, se rehace sin tocar el dato medido. */
     colecciones: ["reportes", "analisis"],
+    /* **Y por eso `reportes` de acá NO es lo mismo que en los otros tres.**
+       En remate, CasaYourte y Casa Verde un documento de `reportes` es una
+       PERSONA diciendo que algo se rompió, y la ronda lo levanta para que se
+       le escriba un pendiente. Acá es un VIAJE que subió el teléfono solo: no
+       trae `gravedad`, ni `queEsperaba`, ni nada que reportar.
+
+       Hasta el 2026-09-21 la ronda no distinguía —tomaba todas las bases
+       menos el panel— y cada viaje aparecía como «reporte nuevo» con el
+       título en blanco y un `?`. Dos por día, para siempre, pidiendo un
+       pendiente que no tenía qué decir. Se declara acá, al lado de la
+       colección, y no en una lista aparte: el que agregue una base nueva está
+       mirando justo esto. Sin esta línea, `reportes` se asume falla, que es
+       lo que vale para los tres sitios. */
+    reportesSonFallas: false,
     /* Ninguna. Acá no hay credenciales, ni datos de terceros, ni recorrido:
        lo que sube es el reporte SIN coordenadas, el mismo que se puede mandar
        por un chat. El recorrido no sale del teléfono por ningún canal. */

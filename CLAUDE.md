@@ -249,6 +249,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `PROYECTOS` de `herramientas/firestore.mjs`, los reportes. Si alguna vez hace
   falta escribir el id de un sitio en el código para que algo ande, eso es el
   error, no la solución.
+
+  **Lo único que se declara a mano es lo que NO se puede deducir**: si la
+  colección `reportes` de esa base guarda fallas de gente o alguna otra cosa.
+  Va con `reportesSonFallas: false` en la misma entrada de `PROYECTOS`, pegado
+  a `colecciones`, y sólo lo necesita el que no guarda fallas — hoy `hilux`,
+  donde cada documento es un viaje que subió el teléfono. El que no dice nada
+  entra solo, como siempre.
 - **Lo que el panel NO puede leer son las reglas publicadas.** Firebase no se
   las muestra al navegador. Todo lo que muestra y copia es el archivo del
   repositorio — el que hay que publicar. Es una pregunta que ya se hizo dos

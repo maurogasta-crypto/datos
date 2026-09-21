@@ -55,8 +55,9 @@
 
 import { PROYECTOS, entrar, entrarSuave, deFirestore } from "./firestore.mjs";
 
-/* Las bases de sitio donde puede haber reportes: TODAS las que la herramienta
-   conoce, menos el panel, que es donde se cruzan.
+/* Las bases de sitio donde puede haber FALLAS reportadas: todas las que la
+   herramienta conoce, menos el panel —que es donde se cruzan— y menos las que
+   declaren que su `reportes` es otra cosa.
 
    Hasta el 2026-09-14 esto era una lista escrita a mano —`["remate",
    "casayourte", "casaverde"]`— y era el último lugar del circuito donde dar de
@@ -68,8 +69,18 @@ import { PROYECTOS, entrar, entrarSuave, deFirestore } from "./firestore.mjs";
    No hace falta que la colección exista: Firestore contesta 200 con cero
    documentos, y si las reglas la niegan sale en FUENTES, que es donde tiene
    que salir. Harmonía no aparece porque no tiene base —no está en `PROYECTOS`—
-   y todo su estado vive en el localStorage del teléfono. */
-const CON_REPORTES = Object.keys(PROYECTOS).filter((p) => p !== "panel");
+   y todo su estado vive en el localStorage del teléfono.
+
+   **El 2026-09-21 hubo que agregar la segunda condición, y el motivo importa
+   más que el arreglo.** `hilux` entró a `PROYECTOS` el 19 y entró acá solo,
+   que era la gracia — pero su `reportes` no guarda fallas: guarda un viaje
+   por documento, subido por la aplicación. La ronda los traía como «reportes
+   nuevos» sin título y sin qué pasó, y habrían sido dos pendientes vacíos por
+   día. Lo que se derivaba estaba bien; lo que faltaba era que una base pudiera
+   decir que su `reportes` no es eso. Se declara en `firestore.mjs`, pegado a
+   la colección, y el que no diga nada sigue entrando solo. */
+const CON_REPORTES = Object.keys(PROYECTOS).filter(
+  (p) => p !== "panel" && PROYECTOS[p].reportesSonFallas !== false);
 
 /* Cómo se escribe de dónde salió un pendiente. Lo fijó REPORTES.md y es lo
    único que evita traer dos veces el mismo reporte: el agente no escribe en la

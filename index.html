@@ -439,7 +439,7 @@ import {
   doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-26";
+P.PANEL = "panel-27";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2629,6 +2629,180 @@ function cuentaDe(id) {
 }
 
 /* ---------- un sitio ---------- */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CÓMO SE EMPAQUETA Y SE FIRMA — entró en `panel-27` (2026-09-21).
+
+   POR QUÉ EXISTE ESTA TARJETA. Ese día `hilux` se volvió el primer proyecto
+   del ecosistema con secretos de GitHub Actions y con clave de firma propia.
+   Dejarlo andando costó cuatro corridas y tres viajes al teléfono, y el
+   conocimiento quedó repartido entre un chat, un `.md` de otro repositorio y
+   la cabeza de nadie. `partitura` va a recorrer el mismo camino.
+
+   Lo que faltaba no era más documentación: era que el panel conteste solo las
+   cuatro preguntas que uno se hace parado frente a una app que no actualiza.
+
+     1. ¿Cómo llega al teléfono?
+     2. ¿Con qué está firmada, y desde cuándo?
+     3. ¿Qué secretos consume, y dónde se cargan?
+     4. Si se pierde lo irreemplazable, ¿de dónde se saca?
+
+   LA REGLA QUE NO SE TOCA, y es la misma que la tabla de «Secretos» de cada
+   `CLAUDE.md`: acá se muestra el NOMBRE de un secreto, para qué sirve y dónde
+   vive el valor real. **El valor no aparece nunca, en ninguna pantalla.** El
+   panel no lo tiene ni lo puede tener: las contraseñas de firma van a
+   `claves/`, que es la bóveda, y esa colección la base se la niega al agente.
+
+   Y EL RIESGO QUE HAY QUE NOMBRAR NO ES EL ROBO. Nadie está atacando el
+   odómetro de una camioneta. Lo que de verdad pasa es PERDER el keystore, y
+   eso deja la aplicación sin forma de actualizarse nunca más: habría que
+   desinstalar, y desinstalar borra los datos. Por eso la tarjeta insiste con
+   dónde está el respaldo y no con quién podría leerlo.
+
+   ES GENÉRICA A PROPÓSITO. Nada de acá nombra a `hilux`. Un proyecto tiene
+   esta tarjeta cuando su documento de `proyectos/` trae `empaquetado`, y
+   `partitura` la va a tener escribiendo ese campo — sin tocar una línea de
+   este archivo. Es la misma regla que ya rige para los botones de reglas y
+   para el enlace de descarga: si hace falta escribir el id de un proyecto en
+   el código para que algo ande, eso es el error.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Los tres estados de la firma, con su chip y con la CONSECUENCIA al lado.
+   «Depuración» no es un detalle técnico: es «hay que desinstalar, y eso borra
+   los datos», y así es como tiene que leerse en la pantalla. */
+const FIRMAS = {
+  propia: {
+    chip: "clave propia",
+    mal: false,
+    que: "Las tandas nuevas se instalan ENCIMA de la anterior: no hay que "
+       + "desinstalar y no se pierden los datos."
+  },
+  depuracion: {
+    chip: "clave de depuración",
+    mal: true,
+    que: "Cada compilación genera una clave distinta, así que Android no deja "
+       + "actualizar: dice «conflicto con un paquete» y hay que desinstalar — "
+       + "lo que BORRA los datos de la aplicación."
+  },
+  sinfirmar: {
+    chip: "sin firmar",
+    mal: true,
+    que: "Todavía no se define con qué se firma. Mientras tanto no se puede "
+       + "prometer que una actualización se instale encima."
+  }
+};
+
+function tieneEmpaquetado(pr) {
+  const e = pr && pr.empaquetado;
+  return !!(e && (e.como || e.firma || (e.secretos && e.secretos.length)));
+}
+
+/* La dirección de los secretos de un repositorio. Se arma y no se guarda:
+   guardarla sería una segunda copia del nombre del repositorio, que ya está
+   en `sitio.repo`, y el ecosistema ya pagó cuatro veces el precio de tener el
+   mismo dato escrito dos veces. */
+function urlSecretos(repo) {
+  return "https://github.com/" + String(repo || "").replace(/^\/+|\/+$/g, "")
+    + "/settings/secrets/actions";
+}
+function urlCorridas(repo) {
+  return "https://github.com/" + String(repo || "").replace(/^\/+|\/+$/g, "")
+    + "/actions";
+}
+
+function pintarEmpaquetado(pr) {
+  if (!tieneEmpaquetado(pr)) return "";
+  const e = pr.empaquetado || {};
+  const repo = (pr.sitio || {}).repo || "";
+  const f = FIRMAS[e.firma] || null;
+  let h = '<div class="tarj"><h2 style="margin:.1rem 0 .5rem">Cómo se empaqueta y se firma</h2>';
+
+  if (e.como) {
+    h += '<div class="sit-fila"><div class="ft-k">Cómo llega</div>'
+      + '<div class="ft-v">' + P.esc(e.como)
+      + (e.donde ? '<div class="ft-nota mono">' + P.esc(e.donde) + "</div>" : "")
+      + "</div></div>";
+  }
+
+  /* La firma, con su consecuencia. El chip solo diría «depuración» y eso no
+     le dice nada a nadie a las once de la noche al lado de una camioneta. */
+  if (f) {
+    h += '<div class="sit-fila"><div class="ft-k">Firma</div><div class="ft-v">'
+      + '<span class="sit-chip ' + (f.mal ? "mal" : "ok") + '">' + P.esc(f.chip) + "</span>"
+      + (e.desde ? '<span class="sit-chip">desde ' + P.esc(e.desde) + "</span>" : "")
+      + '<div class="ft-nota">' + P.esc(f.que) + "</div>"
+      + (e.alias ? '<div class="ft-nota">alias <span class="mono">'
+          + P.esc(e.alias) + "</span></div>" : "")
+      + "</div></div>";
+  }
+
+  /* La huella NO es un secreto: viaja adentro de cada APK firmado y cualquiera
+     la lee. Está acá porque sirve para una cosa concreta que si no cuesta una
+     corrida entera: el día que se restaure el keystore desde un respaldo,
+     dice si es EL MISMO antes de compilar. */
+  if (e.huella) {
+    h += '<div class="sit-fila"><div class="ft-k">Huella</div>'
+      + '<div class="ft-v mono" style="word-break:break-all">' + P.esc(e.huella)
+      + '<div class="ft-nota" style="word-break:normal">No es un secreto: va adentro '
+      + "de cada APK firmado. Sirve para confirmar, sin compilar, que un keystore "
+      + "restaurado desde un respaldo es el mismo de siempre.</div></div></div>";
+  }
+
+  /* ── LOS SECRETOS: LOS NOMBRES, NUNCA LOS VALORES ─────────────────────
+     Es la misma regla que la tabla de «Secretos» de cada CLAUDE.md, y acá se
+     dice con todas las letras abajo de la lista, porque esta pantalla la va a
+     abrir alguien que no leyó ningún protocolo. */
+  const secretos = Array.isArray(e.secretos) ? e.secretos.filter((s) => s && s.nombre) : [];
+  if (secretos.length) {
+    h += '<div class="sit-fila"><div class="ft-k">Secretos</div><div class="ft-v">'
+      + secretos.map((s) =>
+          '<div style="margin:0 0 .4rem"><span class="sit-chip mono">'
+          + P.esc(s.nombre) + "</span>"
+          + (s.que ? '<div class="ft-nota">' + P.esc(s.que) + "</div>" : "")
+          + "</div>").join("")
+      + '<div class="ft-nota"><b>Acá están los nombres y para qué sirve cada uno. '
+      + "El valor no está en esta pantalla, ni en el panel, ni en ningún "
+      + "repositorio</b> — los carga Mauro a mano en GitHub, y GitHub no los "
+      + "vuelve a mostrar ni a él.</div></div></div>";
+  }
+
+  /* Dónde vive lo que no se puede volver a generar. Es el campo que más vale a
+     tres años vista: lo que falla no es que te roben la clave, es no acordarte
+     dónde la guardaste. */
+  if (e.guarda || e.boveda) {
+    h += '<div class="sit-fila"><div class="ft-k">Respaldo</div><div class="ft-v">';
+    if (e.guarda) {
+      h += "<div>El archivo de la clave: " + P.esc(e.guarda) + "</div>";
+    }
+    if (e.boveda) {
+      h += '<div style="margin:.3rem 0 0">Sus contraseñas: ' + P.esc(e.boveda) + "</div>";
+    }
+    h += '<div class="ft-nota"><b>Perderlo es lo caro, no que lo lean.</b> Sin el '
+      + "archivo de la clave no hay forma de volver a firmar una actualización: "
+      + "habría que desinstalar y empezar de cero, para siempre. Por eso va a dos "
+      + "lugares distintos y no a uno.</div></div></div>";
+  }
+
+  if (e.nota) {
+    h += '<div class="sit-fila"><div class="ft-k">Ojo</div><div class="ft-v">'
+      + P.esc(e.nota) + "</div></div>";
+  }
+
+  /* Los botones, con el mismo criterio que los de reglas: llevan al lugar
+     exacto, porque acordarse de la ruta es la mitad del trabajo. Un botón que
+     no va a poder hacer nada no se dibuja — de ahí el `repo &&`. */
+  if (repo) {
+    h += '<div class="fila-btn">'
+      + fuera(urlSecretos(repo), "Cargar los secretos", "btn p")
+      + fuera(urlCorridas(repo), "Ver las corridas", "btn")
+      + "</div>";
+  }
+  if (e.guia) {
+    h += '<div class="fila-btn">' + fuera(e.guia, "El paso a paso", "btn") + "</div>";
+  }
+  h += "</div>";
+  return h;
+}
+
 function pintarUnSitio(pr) {
   const s = pr.sitio || {};
   const a = pr.acceso || {};
@@ -2751,6 +2925,13 @@ function pintarUnSitio(pr) {
     }
     h += "</div>";
   }
+
+  /* 4 ter · CÓMO SE EMPAQUETA Y SE FIRMA. Va detrás de la base y antes de las
+        líneas porque contesta la otra mitad de «cómo llega esto a un teléfono»:
+        arriba está quién entra a los datos, acá con qué se arma y se firma el
+        paquete. Sólo aparece si el proyecto lo declara — un sitio estático no
+        tiene nada que decir acá y no le sale una tarjeta vacía. */
+  h += pintarEmpaquetado(pr);
 
   /* 4 bis · EN QUÉ ESTAMOS ACÁ. Las líneas de este sitio, más las globales que
         lo tocan. Es la «visualización por sitio» que pidió Mauro el 2026-09-14

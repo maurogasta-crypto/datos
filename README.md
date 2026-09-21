@@ -450,10 +450,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-26` |
+| `index.html` | `P.PANEL` | `panel-27` |
 | `estilos.css` | (en el comentario) | `estilos-11` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v17` |
+| `sw.js` | `VERSION` | `panel-shell-v18` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
@@ -769,6 +769,9 @@ sitio  { url, repo, readme, resumen, sinPrevia,
 acceso { base, reglas, reglasUrl, estado, selladas[], nota,
          repo { huella, lineas, bytes, visto },
          publicado { huella, lineas, bytes, fecha } }
+empaquetado { como, donde, firma, desde, alias, huella,
+              guarda, boveda, nota, guia,
+              secretos[ { nombre, que } ] }
 ```
 
 **`sitio.descarga` entró con `panel-24`, y con `hilux`**, que es el primer
@@ -784,6 +787,51 @@ que es.
 Es opcional y **genérico**: cualquier proyecto que cargue el campo lo tiene, sin
 tocar una línea del panel. Y apaga sola la previsualización — un `iframe` de una
 página de descargas de GitHub no le sirve a nadie.
+
+#### Cómo se empaqueta y se firma (`empaquetado`, desde `panel-27`)
+
+**Entró el 2026-09-21, y entró por lo que costó.** Ese día `hilux` se volvió el
+primer proyecto del ecosistema con secretos de GitHub Actions y con clave de
+firma propia. Dejarlo andando llevó cuatro corridas y tres viajes al teléfono,
+y el conocimiento quedó repartido entre un chat, un `.md` de otro repositorio y
+la cabeza de nadie. `partitura` va a recorrer el mismo camino.
+
+Lo que faltaba no era más documentación: era que la pestaña del proyecto
+conteste sola las cuatro preguntas que uno se hace parado frente a una
+aplicación que no se deja actualizar.
+
+| | Campo |
+|---|---|
+| ¿Cómo llega al teléfono? | `como`, `donde` |
+| ¿Con qué está firmada, desde cuándo? | `firma`, `desde`, `alias`, `huella` |
+| ¿Qué secretos consume? | `secretos[]` — **el nombre y para qué sirve, nunca el valor** |
+| Si se pierde lo irreemplazable, ¿de dónde sale? | `guarda`, `boveda` |
+
+`firma` toma uno de tres valores y **cada uno se muestra con su consecuencia,
+no con su nombre técnico**: `propia` («se instala encima, sin perder los
+datos»), `depuracion` («Android dice conflicto con un paquete y hay que
+desinstalar — lo que BORRA los datos») y `sinfirmar`. Un chip que dijera sólo
+«depuración» no le sirve a nadie a las once de la noche al lado de una
+camioneta.
+
+**Lo que esta pantalla no muestra nunca es el valor de un secreto**, y lo dice
+con todas las letras abajo de la lista, porque la va a abrir alguien que no
+leyó ningún protocolo. El panel no lo tiene ni lo puede tener: las contraseñas
+de firma van a `claves/`, que es la bóveda, y esa colección la base se la niega
+al agente. La **huella** sí se muestra y no es una excepción — viaja adentro de
+cada APK firmado, así que cualquiera la lee, y sirve para confirmar sin
+compilar que un keystore restaurado desde un respaldo es el mismo de siempre.
+
+**Y el riesgo que la tarjeta nombra no es el robo: es la pérdida.** Nadie está
+atacando el odómetro de una camioneta. Lo que de verdad pasa es perder el
+keystore, y eso deja la aplicación sin forma de actualizarse nunca más. Por eso
+`guarda` pide **dos lugares distintos** y por eso ese renglón está escrito en
+negrita en la pantalla.
+
+Es opcional y **genérico**: nada del código nombra a `hilux`. Un sitio estático
+no declara `empaquetado` y no le sale ninguna tarjeta vacía; `partitura` la va a
+tener el día que se decida con qué se firma, **escribiendo este campo y sin
+tocar una línea del panel**.
 
 #### Un sitio nuevo no pide acordarse de nada
 

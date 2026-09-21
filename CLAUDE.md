@@ -249,6 +249,18 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `PROYECTOS` de `herramientas/firestore.mjs`, los reportes. Si alguna vez hace
   falta escribir el id de un sitio en el código para que algo ande, eso es el
   error, no la solución.
+- **Cómo se empaqueta y se firma una app sale de `empaquetado`, en su
+  documento de `proyectos/`** (desde `panel-27`, 2026-09-21). Es la tarjeta que
+  contesta las cuatro preguntas del empaquetado —cómo llega, con qué se firma,
+  qué secretos consume y dónde está el respaldo de lo irreemplazable— y es
+  genérica: `partitura` la va a tener escribiendo ese campo, sin tocar el
+  panel. **De un secreto se muestra el nombre y para qué sirve, nunca el
+  valor**, igual que en la tabla de secretos de cada `CLAUDE.md`; las
+  contraseñas de firma viven en `claves/` y ahí la base me dice que no. La
+  huella SHA-256 sí se muestra y no es una excepción: va adentro de cada APK
+  firmado. Y lo que la tarjeta pone en negrita es la **pérdida** y no el robo —
+  un keystore perdido deja la app sin forma de actualizarse nunca más. Está en
+  el `README.md`, § «Cómo se empaqueta y se firma».
 - **Lo que el panel NO puede leer son las reglas publicadas.** Firebase no se
   las muestra al navegador. Todo lo que muestra y copia es el archivo del
   repositorio — el que hay que publicar. Es una pregunta que ya se hizo dos

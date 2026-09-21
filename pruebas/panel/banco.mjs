@@ -864,6 +864,72 @@ ok($("s-cuerpo").textContent.includes("Todavía no cargué"), "y dice qué le fa
 ok($("s-cuerpo").textContent.includes("Todavía no hay pendientes"),
    "y que no tiene pendientes, en vez de un cero sin explicación");
 
+/* ── CÓMO SE EMPAQUETA Y SE FIRMA (`panel-27`) ─────────────────────────────
+   La prueba que importa de esta tarjeta NO es que se vea: es que NO se vea el
+   valor de un secreto. Se siembra un proyecto cuyo `empaquetado` trae, a
+   propósito, una cadena que jamás puede salir en pantalla, y se comprueba que
+   no esté en ningún lado del cuerpo. Si algún día alguien agrega un campo sin
+   pensarlo, esta línea falla antes de que se publique. */
+const NO_PUEDE_SALIR = "valor-de-una-clave-que-no-va-a-pantalla";
+BASE.proyectos["app"] = {
+  nombre: "Una app", orden: 11,
+  sitio: { repo: "duenio/una-app", sinPrevia: true },
+  empaquetado: {
+    como: "Un APK en el release «ultimo»",
+    donde: ".github/workflows/apk.yml",
+    firma: "propia", desde: "2026-09-21", alias: "elalias",
+    huella: "SHA256: AA:BB:CC",
+    guarda: "gestor de contraseñas y Drive",
+    boveda: "ficha de `claves/`",
+    guia: "https://ejemplo.invalido/guia.md",
+    secretos: [
+      { nombre: "FIRMA_JKS", que: "el keystore en base64", valor: NO_PUEDE_SALIR },
+      { nombre: "FIRMA_STORE_PASS", que: "la que abre el keystore", valor: NO_PUEDE_SALIR }
+    ]
+  }
+};
+await api.leer(); await esperar();
+api.verSitio("app"); api.pintarSitios();
+const emp = $("s-cuerpo");
+ok(emp.textContent.includes("Cómo se empaqueta y se firma"),
+   "un proyecto con `empaquetado` tiene la tarjeta");
+ok(!emp.textContent.includes(NO_PUEDE_SALIR),
+   "y el VALOR de un secreto no aparece en ningún lado de la pantalla");
+ok(emp.textContent.includes("FIRMA_JKS") && emp.textContent.includes("FIRMA_STORE_PASS"),
+   "los NOMBRES sí, que es lo que uno viene a buscar");
+ok(emp.textContent.includes("El valor no está en esta pantalla"),
+   "y la pantalla lo dice con todas las letras, para el que no leyó el protocolo");
+
+/* El chip no dice el nombre técnico: dice la consecuencia. Un «depuración»
+   solo no le sirve a nadie parado al lado de una camioneta. */
+ok(emp.textContent.includes("clave propia"), "el chip dice con qué está firmada");
+ok(emp.textContent.includes("ENCIMA de la anterior"),
+   "y al lado la consecuencia, no el término técnico");
+ok(emp.querySelector('a[href="https://duenio/una-app"]') === null,
+   "el repositorio no se usa crudo como dirección");
+ok(emp.querySelector('a[href="https://github.com/duenio/una-app/settings/secrets/actions"]'),
+   "hay un botón que lleva DERECHO a donde se cargan los secretos");
+ok(emp.querySelector('a[href="https://ejemplo.invalido/guia.md"]'), "y otro al paso a paso");
+ok(emp.textContent.includes("Perderlo es lo caro"),
+   "el riesgo que se nombra es la pérdida y no el robo, que es la parte que se olvida");
+
+/* Con la clave de depuración el chip tiene que ponerse en rojo y decir lo que
+   de verdad pasa: hay que desinstalar, y desinstalar borra los datos. */
+BASE.proyectos["app"].empaquetado.firma = "depuracion";
+await api.leer(); await esperar();
+api.verSitio("app"); api.pintarSitios();
+ok($("s-cuerpo").textContent.includes("BORRA los datos"),
+   "con la clave de depuración, la tarjeta dice que actualizar borra los datos");
+ok($("s-cuerpo").querySelector(".sit-chip.mal"), "y el chip queda en rojo");
+
+/* Y el que no la declara no tiene una tarjeta vacía: un sitio estático no
+   tiene nada que decir acá. */
+api.verSitio("harmonia"); api.pintarSitios();
+ok(!$("s-cuerpo").textContent.includes("Cómo se empaqueta y se firma"),
+   "un proyecto sin `empaquetado` no muestra la tarjeta");
+delete BASE.proyectos["app"];
+await api.leer(); await esperar();
+
 /* ── lo que se escapa ── */
 BASE.proyectos["malo"] = { nombre: '<img src=x onerror=alert(1)>', orden: 10,
   sitio: { url: "https://ok.invalido/", resumen: "<b>ojo</b>" } };

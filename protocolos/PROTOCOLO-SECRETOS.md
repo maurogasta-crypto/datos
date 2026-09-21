@@ -87,6 +87,7 @@ Antes de usar la tabla de abajo:
 | Identificador público por diseño (Firebase `apiKey`, Cloudinary `cloud name`, upload preset sin firma) | El propio código — no es secreto, ya está pensado para viajar al navegador | No hace falta protegerlo; sí documentarlo como "público" para no confundirlo con un secreto |
 | Credencial de acceso a una cuenta (login de Netlify, Firebase console, GitHub) | Gestor de contraseñas personal del administrador | Nunca en ningún repo ni documento |
 | Configuración de seguridad publicada en una consola, con copia en el repo (ej. reglas de Firestore) | La autoridad real es la consola (Firebase, etc.); el archivo del repo es una copia de referencia que puede haberse desincronizado | No se asume que el archivo del repo es lo que está corriendo — hay que verificar contra la consola |
+| **Clave de firma de una aplicación** (`.jks`/keystore de Android) | El ARCHIVO, en el gestor de contraseñas del administrador **y** en una nube — dos lugares distintos. Su base64 como secreto de Actions para que el workflow la use; sus contraseñas, en la bóveda del panel (`claves/`) | Nunca en el repositorio, ni cifrada. Ni en un chat. Y **nunca en un solo lugar**: ver la regla de abajo |
 | Capacidad resignada a propósito por no tener un secreto (ej. sin `api_secret` de Cloudinary, el panel no puede borrar archivos) | Ningún lado — es una decisión, no una configuración pendiente | No se "completa" agregando la clave sin que Mauro lo pida explícitamente: la ausencia es la elección |
 
 Un identificador público (Firebase `apiKey`, Cloudinary `cloud name`) puede
@@ -181,6 +182,53 @@ no pueda ver la lista de secretos ya cargados en Settings → Secrets and
 variables → Actions (las herramientas disponibles no siempre lo exponen) no
 debe asumir que no hay ninguno — anota `no verificable desde la sesión` (ver
 formato del índice) en vez de "no hay".
+
+## La clave de firma de una app: el caso donde perder es peor que filtrar
+
+**Entró el 2026-09-21, cuando `hilux` se volvió la primera aplicación
+instalable del ecosistema.** Hasta ese día todo lo de este documento ordenaba
+secretos por quién NO tiene que verlos. Una clave de firma rompe ese criterio,
+y si se la trata como a los demás se la guarda mal.
+
+**Qué es.** El archivo `.jks` con el que se firma cada versión de una
+aplicación Android. Android sólo deja instalar una actualización encima de otra
+si las dos están firmadas con la MISMA clave. Sin ella —o con una distinta— el
+teléfono dice «conflicto con un paquete» y hay que desinstalar, **lo que borra
+los datos de la aplicación**.
+
+**Por qué no se clasifica como los demás.** El daño de que alguien la lea es
+acotado: podría firmar un paquete que un teléfono acepte como actualización de
+esa app, y nada más. El daño de PERDERLA es permanente y no tiene arreglo: no
+hay forma de volver a firmar una actualización, para siempre, y la única salida
+es desinstalar y empezar de cero. Es el único dato de este documento donde
+**la copia de más es más barata que la copia de menos**.
+
+**Cómo se guarda, entonces:**
+
+1. **El archivo, en dos lugares distintos** — el gestor de contraseñas del
+   administrador y una nube. No uno. La redundancia es el punto.
+2. **Su base64, como secreto de Actions**, para que el workflow pueda firmar.
+   Lo carga Mauro a mano, por el circuito de arriba.
+3. **Sus contraseñas, en la bóveda del panel** (`claves/`), que es donde va lo
+   que abre algo. Ningún agente las lee: se lo niega la base.
+4. **Nunca las tres cosas en el mismo lugar.** Que el archivo y su contraseña
+   pidan dos accesos distintos es la única separación que queda.
+5. **El alias NO es un secreto** y no conviene cargarlo como tal: viaja adentro
+   de cada APK firmado, y taparlo hace que la plataforma lo censure en todos
+   los logs justo cuando hay que diagnosticar algo. Pasó el 2026-09-21.
+6. **La huella SHA-256 tampoco es un secreto**, y conviene anotarla: es lo
+   único que confirma, sin compilar, que un keystore restaurado desde un
+   respaldo es el mismo de siempre.
+
+**Y el panel lo muestra.** Desde `panel-27` la pestaña de cada proyecto tiene
+la tarjeta «Cómo se empaqueta y se firma», que sale del campo `empaquetado` de
+su documento de `proyectos/`: cómo llega al teléfono, con qué está firmada,
+**los nombres** de los secretos que consume y dónde está el respaldo. El valor
+de un secreto no aparece ahí, como en ninguna otra pantalla.
+
+**Un agente nunca genera un keystore ni pide su contraseña.** Su entregable es
+el comando que lo genera, el nombre exacto de cada secreto y dónde pegarlo —
+igual que con cualquier otra credencial.
 
 ## Formato del índice por proyecto
 

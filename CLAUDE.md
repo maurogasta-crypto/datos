@@ -207,7 +207,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (34 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (71 casos, sin npm ni red) para la ronda de apertura, que desde el
+  (107 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
@@ -314,6 +314,32 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   siete funciones con un pendiente completo y con uno enmascarado y exige que
   decidan igual. **Y el panel nunca se acota** — es lo que dice si otro chat
   está tocando algo.
+- **Y QUÉ PENDIENTE se toca NO se elige a ojo: lo calcula la ronda**
+  (§ 2.1 octies, desde el 2026-09-22). Es la segunda mitad del semáforo, y la
+  pidió Mauro el mismo día: el semáforo evitaba el choque, pero **nadie cruzaba
+  el semáforo con la lista de pendientes** — eso lo hacía el chat en su cabeza,
+  con un criterio escrito en prosa repartida entre el § 9, el prompt de la
+  rutina y cinco `CLAUDE.md`. O sea que cada sesión decidía distinto. Ahora la
+  ronda imprime **QUÉ TOCAR AHORA**: el candidato, y **el motivo de cada
+  descarte**.
+
+  El orden son tres términos y el primero no se negocia: **tu prioridad**,
+  después **cuánto destraba**, después **si el repositorio ya está reservado
+  por este chat** —la única medida de costo que se puede tomar sin inventar un
+  campo que nadie va a llenar—. Y **queda afuera lo que no se puede verificar
+  desde acá**: un repo con `pubspec.yaml` sin el SDK de Dart sólo podía
+  terminar sin entregar o entregado sin verificar.
+
+  **La carpeta de cada proyecto sale de `sitio.repo` de `proyectos/`**, que ya
+  estaba escrito y nadie leía, pedido con máscara de subcampo. No hay campo
+  nuevo: habría sido el cuarto lugar donde dar de alta un proyecto.
+
+  **Y no verifica nada** — ordena. Antes de trabajar un pendiente que dice que
+  algo está roto hay que preguntarle a la cosa; `hilux:R3` decía que unas
+  reglas no estaban publicadas y hacía días que lo estaban.
+
+  Hay que pasarle `--chat "de qué trata"` igual que a `reservar`: sin identidad
+  la ronda lee tu propia reserva como ajena y te descarta lo tuyo.
 - **La ronda abre con QUÉ CAMBIÓ**, derivado de `git log` y no de lo que
   alguien se haya acordado de anotar: los commits de los últimos dos días por
   repositorio y los archivos **CALIENTES**, tocados por más de un commit. Es

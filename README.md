@@ -479,7 +479,7 @@ Y una trampa que ya casi pasa: `index.html` y `nucleo.js` piden
   |---|---|---|
   | `pruebas-reglas.mjs` | que `reglas.txt`, tal como está hoy, produzca reglas correctas — y que `claves` siga siendo de una sola persona | `node` a secas |
   | `pruebas/herramientas/firestore.mjs` | la herramienta de Firestore contra una nube de mentira: que la traducción de tipos no pierda datos, que un documento se pueda ACHICAR, y que lo sellado se frene antes de salir a la red, en las cuatro bases | `node` a secas |
-  | `pruebas/herramientas/ronda.mjs` | la ronda de apertura: que un reporte ya traído no vuelva, que dos bases con el mismo id no se confundan, y que el orden ponga lo trabado después y lo que no declaró prioridad al fondo | `node` a secas |
+  | `pruebas/herramientas/ronda.mjs` | la ronda de apertura, 107 casos: que un reporte ya traído no vuelva, que dos bases con el mismo id no se confundan, que el semáforo no se rompa en rojo ni bloquee al propio chat, y —desde el § 2.1 octies— que QUÉ TOCAR AHORA elija lo mismo en dos sesiones distintas, descarte con el motivo al lado y nunca pase por arriba de la prioridad que puso Mauro | `node` a secas |
   | `pruebas/panel/banco.mjs` | este código, contra un DOM de verdad y un Firestore de mentira | `npm install` una vez, por `jsdom` |
 
   Y en `pruebas/casayourte/` hay dos que comparan los cuatro proyectos entre sí:

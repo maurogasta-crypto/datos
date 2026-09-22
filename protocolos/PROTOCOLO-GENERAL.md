@@ -136,7 +136,7 @@ las sesiones con alguien mirando y otro para las que corren solas; la única
 diferencia es que la que corre sola no puede preguntar, y por eso se detiene
 donde una con Mauro delante preguntaría.
 
-Los siete § de abajo están en orden de lectura. Los nombres en latín quedaron
+Los ocho § de abajo están en orden de lectura. Los nombres en latín quedaron
 del orden en que se fueron escribiendo y **no se renumeran**: hay 28 citas en
 los `CLAUDE.md` y en los protocolos del ecosistema, y renombrarlos las rompería
 todas. Lo que sí se ordenó, el 2026-09-22, es el archivo.
@@ -150,18 +150,22 @@ todas. Lo que sí se ordenó, el 2026-09-22, es el archivo.
 | **2.1 quinquies** | las **líneas**: por qué se trabaja, y quién la tiene | antes de tocar código |
 | **2.1 sexies** | el **semáforo**: qué repositorio está ocupado | antes de editar |
 | **2.1 septies** | acotar la ronda a un sitio, y qué no se acota | al abrir |
+| **2.1 octies** | **qué tocar ahora**: el criterio con el que se elige el pendiente | al elegir |
 
 El orden práctico de una intervención, con los § al lado:
 
 1. **Abrir** y mirar: `ronda.mjs abrir` (§ 8), acotada con `--sitio` si se va a
    tocar uno solo (§ 2.1 septies).
-2. **Tomar** la línea, o abrir una. Si la tiene otro, no se toca (§ 2.1 quinquies).
-3. **Reservar** el repositorio. Si lo tiene otro, no se toca (§ 2.1 sexies).
-4. **Trabajar**, obedeciendo el `CLAUDE.md` de ese repo, que gana sobre esto por
+2. **Elegir** el pendiente. No a ojo: lo calcula la ronda y lo imprime en QUÉ
+   TOCAR AHORA (§ 2.1 octies). Si no hay ninguno elegible, se dice con el
+   motivo y se cierra.
+3. **Tomar** la línea, o abrir una. Si la tiene otro, no se toca (§ 2.1 quinquies).
+4. **Reservar** el repositorio. Si lo tiene otro, no se toca (§ 2.1 sexies).
+5. **Trabajar**, obedeciendo el `CLAUDE.md` de ese repo, que gana sobre esto por
    ser más específico.
-5. **Verificar** — no es opcional (§ 2.1 ter).
-6. **Empujar** a `main`, sin rama (§ 2.1 y § 2.1 ter).
-7. **Soltar** la reserva, soltar la línea, escribir la bitácora y la tanda (§ 8).
+6. **Verificar** — no es opcional (§ 2.1 ter).
+7. **Empujar** a `main`, sin rama (§ 2.1 y § 2.1 ter).
+8. **Soltar** la reserva, soltar la línea, escribir la bitácora y la tanda (§ 8).
 
 ### 2.1 Dónde se empuja: `main` directo, y dónde no
 
@@ -638,6 +642,137 @@ otras bases NO se consultaron`. Sin ese renglón un listado corto se lee como
 El nombre del sitio sale de `PROYECTOS` en `herramientas/firestore.mjs`, que es
 la lista de siempre: **no hay un mapa nuevo que mantener.** Uno que no existe se
 rechaza con la lista al lado.
+
+### 2.1 octies · Qué tocar ahora: el criterio con el que se elige el pendiente
+
+Pedido por Mauro el **2026-09-22**, el mismo día que el semáforo y como su
+segunda mitad: «una forma de intervención más inteligente que optimice el
+recurso en base a la incorporación nueva del semáforo… tomar la decisión más
+acertada, más justa y correcta».
+
+#### El problema no era la falta de datos
+
+La ronda ya imprimía las líneas, el semáforo y los abiertos — **en tres listas
+separadas**. El cruce lo hacía el chat en su cabeza, con un criterio que vivía
+en prosa repartida entre el § 9, el prompt de la rutina y cinco `CLAUDE.md`.
+
+O sea que **cada sesión decidía distinto, y ninguna podía equivocarse de forma
+reproducible.** Es el mismo error que este ecosistema ya pagó tres veces en una
+semana: los seis hertz de la rueda de la Hilux, el prompt de la rutina que
+contradecía al § 2.1 ter, los sellos de versión. Una regla escrita en prosa en
+varios lugares diverge.
+
+Así que el criterio **se calcula en `ronda.mjs`, una vez, y la ronda lo
+imprime**. Es la doctrina que el encabezado de esa herramienta ya declaraba:
+cada dato que se puede juntar con código determinado es un dato que el modelo
+no tiene que leer. Elegir el pendiente es uno de esos datos.
+
+#### Paso 1 · Quién queda afuera, y por qué
+
+Un pendiente no es elegible si pasa alguna de estas, **en este orden** — el
+orden importa porque el primero que da es el motivo que se imprime, y va del
+más general al más circunstancial:
+
+| Motivo | Por qué | § |
+|---|---|---|
+| `quien` no es `claude` | lo que pide una consola, una cuenta, una decisión o una contraseña lo hace Mauro | § 9 |
+| `esperaA` algo que **sigue abierto** | no se puede empezar | § 9 |
+| tiene `pregunta` sin `respuesta` | empezar antes es trabajo que quizás haya que tirar | § 9 |
+| su repositorio lo tiene **otro chat** | el semáforo | § 2.1 sexies |
+| su repositorio **no está adjunto** a esta sesión | el alcance se fija al abrir, y no se clona | § 4.1 |
+| **no se puede correr su verificación previa acá** | sin verificación no se entrega | § 2.1 ter |
+
+**El último es el que faltaba y el que más recurso ahorra.** Salió del caso del
+mismo día: esta sesión perdió el SDK de Dart al reiniciarse el contenedor, y
+cualquier pendiente de `sitd-hilux` que pidiera `flutter test` sólo podía
+terminar de dos maneras, las dos desperdicio — sin entregar, o entregado sin
+verificar. Eso hay que saberlo **antes** de elegirlo, no después de leérselo
+entero. Se deduce de un archivo del propio repositorio (`pubspec.yaml` ES un
+proyecto de Dart) y no de un dato declarado, que se desactualizaría.
+
+**Una traba que apunta a algo ya hecho NO cuenta.** El § 9 lo dice: «cuando la
+que trababa se marca hecha, la traba desaparece sola», porque es un derivado.
+Hasta este día la ronda imprimía la flecha igual, y mostraba `casayourte:T2 ⟵
+espera casayourte:T1` con T1 hecho hacía días: un pendiente que ya se podía
+empezar, apagado en la pantalla.
+
+#### Paso 2 · El orden entre los que quedan, y por qué ése
+
+1. **La prioridad de Mauro**, siempre arriba. El § 9 es explícito: la propone el
+   agente y **la corrige él**, porque él sabe qué le urge. Un orden que lo
+   contradice es un orden que va a dejar de mirar.
+2. **Cuánto destraba**, a igual prioridad. Es la parte **justa** del pedido:
+   mira el tablero entero y no el ítem más ruidoso. Se deduce de `esperaA` —la
+   única punta que se escribe— y no se guarda.
+3. **Si el repositorio ya está reservado por este chat**, al final. Es la parte
+   que **optimiza el recurso**, y es la única medida de costo que se puede
+   tomar sin inventar nada: seguir donde ya se está ahorra la reserva, el
+   `CLAUDE.md` del otro repositorio y su banco de pruebas.
+4. **A igualdad de todo, el id.** No es decoración: sin un desempate
+   determinado, dos chats con los mismos datos podrían elegir distinto según
+   cómo vino ordenada la lista, y entonces esto no sería un criterio unificado
+   sino una opinión.
+
+**No hay un término de «costo» además del tercero, y es a propósito.** Haría
+falta un campo que alguien estime a mano en cada pendiente, y un campo que
+nadie llena no queda vacío: llega `undefined` y el orden miente en silencio. Es
+la misma trampa que las máscaras del § 2.1 septies.
+
+#### Paso 3 · No intervenir es una salida legítima, y se dice con el motivo
+
+Si no queda ninguno elegible, la ronda lo dice **con la razón de cada
+descarte**, no con una lista vacía. Es la tercera vez que este ecosistema
+arregla lo mismo —un contador sin la razón al lado no diagnostica nada— y acá
+la diferencia es entre dos estados opuestos que se ven idénticos: «no hay nada
+que hacer» y «hay cuatro cosas y las cuatro están frenadas».
+
+> Y entonces **no se inventa trabajo para llenar la corrida.** Se dice y se
+> cierra: eso es una ronda que hizo lo suyo, no una ronda vacía.
+
+La primera corrida real, el 2026-09-22, dio exactamente eso: los cuatro
+pendientes de Claude estaban frenados —tres esperando una respuesta de Mauro y
+uno trabado por `harmonia:H7`—, y los otros trece eran de él.
+
+#### De dónde sale el repositorio de cada proyecto
+
+De **`sitio.repo` de `proyectos/`**, que ya estaba escrito en los nueve
+documentos desde antes de que esto existiera: nadie lo estaba leyendo. La
+carpeta es el último tramo de `owner/repo`. **No hay campo nuevo, y no podía
+haberlo** — un campo nuevo habría sido un cuarto lugar donde dar de alta un
+proyecto, que es justo lo que el `CLAUDE.md` del panel prohíbe.
+
+Se pide con **máscara de subcampo** (`mask.fieldPaths=sitio.repo`), o sea
+treinta bytes en vez de los varios KiB del `sitio` entero, así que el ahorro
+del § 2.1 septies queda intacto.
+
+**Dos proyectos pueden compartir repositorio, y hoy pasa:** `panel` y `datos`
+son dos entradas del tablero y un solo repositorio. Por eso la carpeta no se
+deduce del id — deducirla habría dado dos carpetas y una no existe.
+
+Un proyecto **sin `sitio.repo`** —hoy `general`, que no tiene documento— no se
+descarta a ciegas: pasa **con un aviso** que dice que no se pudo cruzar con el
+semáforo. Descartarlo sería esconder trabajo por una ficha incompleta; dejarlo
+pasar en silencio sería el choque que el semáforo evita.
+
+#### Lo que esto NO hace, y por eso el modelo sigue haciendo falta
+
+**No verifica que el pendiente todavía sea cierto.** El mismo 2026-09-22
+`hilux:R3` decía, con prioridad alta, que unas reglas de Firestore no estaban
+publicadas — y hacía días que lo estaban. Lo había escrito un chat leyendo el
+campo `acceso.publicado` del panel, que es el **registro** de la última vez que
+alguien tocó «Ya las publiqué», no una **medición** del estado del mundo.
+
+> **Antes de trabajar un pendiente que dice que algo está roto, hay que
+> preguntarle a la cosa.** Un orden calculado no arregla eso: ordena, no
+> verifica.
+
+#### Y hay que decirle quién sos
+
+`ronda.mjs abrir --chat "de qué trata"`, igual que `reservar`. Sin identidad la
+ronda no puede distinguir **tu propia reserva** de la de otro y te descartaría
+tus propios pendientes — el mismo «un chat se bloquea a sí mismo» del § 2.1
+sexies, entrando por la ventana. Cuando falta, la ronda **lo dice** en vez de
+decidir mal en silencio.
 
 ## 3. Estructura mínima del `CLAUDE.md` de cada proyecto
 

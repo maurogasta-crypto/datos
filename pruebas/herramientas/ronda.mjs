@@ -21,7 +21,10 @@ import { origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
          vivaL, diasTomada, lineasVivas,
          tieneCircuito, esPedido, MINUTOS_RESERVA, reservaViva, reservasDe,
          minutosQueQuedan, archivosTocados, CAMPOS_PENDIENTE, CAMPOS_LINEA,
-         CAMPOS_PROYECTO, SOLO_NOMBRES } from "../../herramientas/ronda.mjs";
+         CAMPOS_PROYECTO, SOLO_NOMBRES,
+         repoDeCadaProyecto, trabasVivas, desbloquea, hayComando,
+         herramientaQueFalta, porQueNoSeToca, queTocarAhora
+       } from "../../herramientas/ronda.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -584,8 +587,41 @@ prueba("las máscaras NO piden los campos largos, que es de dónde sale el ahorr
     assert.ok(!CAMPOS_PENDIENTE.includes(c), `un pendiente no necesita ${c}`);
   assert.ok(!CAMPOS_LINEA.includes("bitacora"),
     "la bitácora son 23 de los 26 KiB de las líneas y la ronda no la imprime");
-  for (const c of ["tecnica", "sitio", "empaquetado"])
+  for (const c of ["tecnica", "empaquetado"])
     assert.ok(!CAMPOS_PROYECTO.includes(c), `la ronda no mira ${c} de un proyecto`);
+  assert.ok(!CAMPOS_PROYECTO.includes("sitio"),
+    "`sitio` ENTERO son varios KiB de resumen, url y readme: eso no entra");
+});
+
+prueba("pero `sitio.repo` SÍ, y sin él el cruce del semáforo se cae", () => {
+  /* La máscara de SUBCAMPO es lo que deja pedir treinta bytes en vez de los
+     varios KiB del `sitio` entero. Y esta prueba es de comportamiento y no de
+     lista a propósito: la primera versión sólo miraba que `sitio` no estuviera
+     en `CAMPOS_PROYECTO`, y sacar `sitio.repo` la dejaba pasar igual — la
+     ronda habría seguido corriendo, sin poder cruzar un solo pendiente con el
+     semáforo y sin decir por qué. */
+  const completo = {
+    id: "hilux", orden: 7, nombre: "SITD-Hilux", reportes: true, acceso: {},
+    sitio: { repo: "maurogasta-crypto/sitd-hilux", resumen: "x".repeat(4000),
+             readme: "https://…", url: "https://…" },
+    tecnica: "y".repeat(8000), empaquetado: { como: "…" }
+  };
+  /* Aplica la máscara como la aplica Firestore: un `a.b` trae `a` con sólo esa
+     clave adentro. */
+  const enmascarado = {};
+  for (const campo of [...CAMPOS_PROYECTO, "id"]) {
+    const [raiz, sub] = String(campo).split(".");
+    if (!(raiz in completo)) continue;
+    if (!sub) { enmascarado[raiz] = completo[raiz]; continue; }
+    if (completo[raiz] && sub in completo[raiz])
+      enmascarado[raiz] = { ...(enmascarado[raiz] || {}), [sub]: completo[raiz][sub] };
+  }
+  assert.ok(JSON.stringify(enmascarado).length < JSON.stringify(completo).length / 10,
+    "si no achicó, la máscara no está ahorrando nada");
+  assert.equal(repoDeCadaProyecto([enmascarado]).get("hilux"), "sitd-hilux",
+    "sin la carpeta, QUÉ TOCAR AHORA no puede cruzar nada con el semáforo");
+  assert.deepEqual(reglasSinPublicar([enmascarado]), reglasSinPublicar([completo]),
+    "y la máscara tampoco puede cambiar lo de las reglas sin publicar");
 });
 
 prueba("pero sí piden lo que la ronda imprime de una línea y de un proyecto", () => {
@@ -631,6 +667,320 @@ prueba("y la salida DICE que está acotada", () => {
      es la conclusión opuesta a la verdadera. */
   assert.match(fuente, /ACOTADA A/);
   assert.match(fuente, /las otras bases NO se consultaron/);
+});
+
+/* ── QUÉ TOCAR AHORA ─────────────────────────────────────────────────────────
+   El cruce del semáforo con los pendientes. Es lo que decide qué se toca en
+   una corrida desatendida, así que una equivocación acá no la ve nadie: o se
+   trabaja sobre algo que otro chat está tocando, o se deja pasar lo único que
+   se podía hacer. */
+titulo("Qué tocar ahora: de dónde sale el repositorio de cada proyecto");
+
+prueba("la carpeta sale de `sitio.repo`, que YA estaba escrito", () => {
+  /* No hay campo nuevo: los nueve documentos de `proyectos/` traían
+     `sitio.repo` desde antes; nadie lo estaba leyendo. */
+  const m = repoDeCadaProyecto([
+    { id: "hilux", sitio: { repo: "maurogasta-crypto/sitd-hilux" } },
+    { id: "casayourte", sitio: { repo: "casayourte/CasaYourte" } },
+  ]);
+  assert.equal(m.get("hilux"), "sitd-hilux");
+  assert.equal(m.get("casayourte"), "CasaYourte");
+});
+
+prueba("DOS proyectos pueden compartir repositorio, y hoy pasa", () => {
+  /* `panel` y `datos` son dos entradas del tablero y un solo repositorio. Si
+     la carpeta se dedujera del id, una de las dos no existiría. */
+  const m = repoDeCadaProyecto([
+    { id: "panel", sitio: { repo: "maurogasta-crypto/datos" } },
+    { id: "datos", sitio: { repo: "maurogasta-crypto/datos" } },
+  ]);
+  assert.equal(m.get("panel"), "datos");
+  assert.equal(m.get("datos"), "datos");
+});
+
+prueba("un proyecto sin `sitio.repo` no entra, y no se inventa una carpeta", () => {
+  const m = repoDeCadaProyecto([{ id: "general" }, { id: "x", sitio: {} }]);
+  assert.equal(m.size, 0);
+});
+
+prueba("funciona con la FORMA que devuelve la máscara de subcampo", () => {
+  /* Firestore con `mask.fieldPaths=sitio.repo` devuelve `sitio` con esa sola
+     clave adentro. Si esto dependiera de que venga el `sitio` entero, el
+     ahorro de la máscara rompería el cruce en silencio. */
+  const m = repoDeCadaProyecto([{ id: "remate", sitio: { repo: "rematetaller/remate" } }]);
+  assert.equal(m.get("remate"), "remate");
+});
+
+titulo("Qué tocar ahora: trabas que ya no traban");
+
+prueba("una `esperaA` que apunta a algo HECHO no traba", () => {
+  /* § 9: «cuando la que trababa se marca hecha, la traba desaparece sola». El
+     2026-09-22 la ronda mostraba `casayourte:T2 ⟵ espera casayourte:T1` con T1
+     hecho hacía días: un pendiente que ya se podía empezar, apagado. */
+  const abiertos = new Set(["casayourte:T2"]);
+  assert.deepEqual(trabasVivas({ id: "casayourte:T2", esperaA: ["casayourte:T1"] }, abiertos), []);
+});
+
+prueba("y una que apunta a algo abierto SÍ traba", () => {
+  const abiertos = new Set(["harmonia:H7", "harmonia:H8"]);
+  assert.deepEqual(trabasVivas({ id: "harmonia:H8", esperaA: ["harmonia:H7"] }, abiertos),
+                   ["harmonia:H7"]);
+});
+
+prueba("sin `esperaA` no hay traba, y no rompe", () => {
+  assert.deepEqual(trabasVivas({ id: "a" }, new Set(["a"])), []);
+  assert.deepEqual(trabasVivas(null, new Set()), []);
+});
+
+titulo("Qué tocar ahora: cuánto destraba");
+
+prueba("cuenta los abiertos que lo esperan", () => {
+  const lista = [
+    { id: "a" },
+    { id: "b", esperaA: ["a"] },
+    { id: "c", esperaA: ["a"] },
+    { id: "d", esperaA: ["b"] },
+  ];
+  assert.equal(desbloquea({ id: "a" }, lista), 2);
+  assert.equal(desbloquea({ id: "b" }, lista), 1);
+  assert.equal(desbloquea({ id: "d" }, lista), 0);
+});
+
+prueba("no se cuenta a sí mismo aunque el dato esté mal", () => {
+  const lista = [{ id: "a", esperaA: ["a"] }];
+  assert.equal(desbloquea({ id: "a" }, lista), 0);
+});
+
+titulo("Qué tocar ahora: ¿puedo verificarlo DESDE ACÁ?");
+
+prueba("un comando se busca en el PATH, sin lanzar un proceso", () => {
+  /* Sin `spawn` a propósito: esto lo corre una routine desatendida y un
+     proceso que se cuelga la voltea entera. */
+  assert.equal(hayComando("node", process.env.PATH), true);
+  assert.equal(hayComando("no-existe-este-comando-99", process.env.PATH), false);
+  assert.equal(hayComando("node", ""), false);
+});
+
+prueba("un repo con pubspec.yaml y sin `dart` NO se puede verificar acá", () => {
+  /* El caso real del 2026-09-22: la sesión perdió el SDK de Dart al
+     reiniciarse el contenedor. Un pendiente de `sitd-hilux` elegido ese día
+     sólo podía terminar sin entregar, o entregado sin verificar. */
+  const io = { hayArchivo: (c, m) => m === "pubspec.yaml", hayComando: () => false };
+  const h = herramientaQueFalta("sitd-hilux", io);
+  assert.ok(h, "tendría que faltar algo");
+  assert.equal(h.manda, "dart");
+});
+
+prueba("con `dart` puesto, no falta nada", () => {
+  const io = { hayArchivo: (c, m) => m === "pubspec.yaml", hayComando: () => true };
+  assert.equal(herramientaQueFalta("sitd-hilux", io), null);
+});
+
+prueba("un repo de JavaScript no pide nada: `node` está siempre", () => {
+  const io = { hayArchivo: () => false, hayComando: () => false };
+  assert.equal(herramientaQueFalta("datos", io), null);
+});
+
+titulo("Qué tocar ahora: por qué NO se toca un pendiente");
+
+const ctxBase = {
+  abiertosIds: new Set(["a", "b"]),
+  repoDe: new Map([["datos", "datos"], ["hilux", "sitd-hilux"]]),
+  reservas: [],
+  sesion: "yo",
+  adjunto: () => true,
+  faltaHerramienta: () => null,
+};
+
+prueba("uno de Mauro se descarta por ser de Mauro, y eso es lo que se dice", () => {
+  const r = porQueNoSeToca({ id: "a", quien: "mauro", proyecto: "datos" }, ctxBase);
+  assert.equal(r.codigo, "de-mauro");
+});
+
+prueba("el motivo de Mauro GANA aunque además esté trabado", () => {
+  /* El orden de los chequeos es el del motivo que se imprime: del más general
+     al más circunstancial. Decir «espera a b» de algo que no es mío haría
+     pensar que se destraba solo. */
+  const r = porQueNoSeToca(
+    { id: "a", quien: "mauro", proyecto: "datos", esperaA: ["b"] }, ctxBase);
+  assert.equal(r.codigo, "de-mauro");
+});
+
+prueba("uno trabado por otro ABIERTO se descarta, y nombra a cuál espera", () => {
+  const r = porQueNoSeToca(
+    { id: "a", quien: "claude", proyecto: "datos", esperaA: ["b"] }, ctxBase);
+  assert.equal(r.codigo, "trabado");
+  assert.match(r.texto, /\bb\b/);
+});
+
+prueba("uno con pregunta sin responder se descarta: empezarlo es trabajo a tirar", () => {
+  const r = porQueNoSeToca(
+    { id: "a", quien: "claude", proyecto: "datos", pregunta: "¿y?" }, ctxBase);
+  assert.equal(r.codigo, "sin-respuesta");
+});
+
+prueba("contestada, deja de descartarse", () => {
+  const r = porQueNoSeToca(
+    { id: "a", quien: "claude", proyecto: "datos", pregunta: "¿y?", respuesta: "sí" }, ctxBase);
+  assert.equal(r, null);
+});
+
+prueba("EL SEMÁFORO: si el repo lo tiene otro chat, no se toca", () => {
+  const ctx = { ...ctxBase, reservas: [{
+    repo: "datos", sesion: "otro", chat: "el otro chat",
+    vence: new Date(Date.now() + 60 * 60000).toISOString() }] };
+  const r = porQueNoSeToca({ id: "a", quien: "claude", proyecto: "datos" }, ctx);
+  assert.equal(r.codigo, "repo-ocupado");
+  assert.match(r.texto, /el otro chat/);
+});
+
+prueba("MI PROPIA reserva no me bloquea — si no, no podría renovar", () => {
+  /* Es el «un chat se bloquea a sí mismo» que el § 2.1 sexies ya nombra para
+     las reservas, y que acá volvería por la ventana. */
+  const ctx = { ...ctxBase, reservas: [{
+    repo: "datos", sesion: "yo", chat: "yo",
+    vence: new Date(Date.now() + 60 * 60000).toISOString() }] };
+  assert.equal(porQueNoSeToca({ id: "a", quien: "claude", proyecto: "datos" }, ctx), null);
+});
+
+prueba("una reserva VENCIDA no bloquea: el semáforo se rompe hacia el verde", () => {
+  const ctx = { ...ctxBase, reservas: [{
+    repo: "datos", sesion: "otro",
+    vence: new Date(Date.now() - 60000).toISOString() }] };
+  assert.equal(porQueNoSeToca({ id: "a", quien: "claude", proyecto: "datos" }, ctx), null);
+});
+
+prueba("un repo que no está adjunto a esta sesión se descarta (§ 4.1)", () => {
+  const ctx = { ...ctxBase, adjunto: () => false };
+  const r = porQueNoSeToca({ id: "a", quien: "claude", proyecto: "hilux" }, ctx);
+  assert.equal(r.codigo, "no-adjunto");
+});
+
+prueba("y uno que no se puede verificar acá también, DICIENDO qué falta", () => {
+  const ctx = { ...ctxBase,
+    faltaHerramienta: () => ({ manda: "dart", queEs: "el SDK de Dart/Flutter" }) };
+  const r = porQueNoSeToca({ id: "a", quien: "claude", proyecto: "hilux" }, ctx);
+  assert.equal(r.codigo, "sin-herramienta");
+  assert.match(r.texto, /dart/);
+});
+
+prueba("un proyecto SIN repo declarado pasa, y no se lo descarta a ciegas", () => {
+  /* `general` no tiene documento en `proyectos/`. Descartarlo sería esconder
+     trabajo por una ficha incompleta; dejarlo pasar sin avisar sería el choque
+     que el semáforo evita. Pasa CON AVISO — y el aviso se comprueba abajo. */
+  assert.equal(porQueNoSeToca({ id: "a", quien: "claude", proyecto: "general" }, ctxBase), null);
+});
+
+titulo("Qué tocar ahora: el orden de los tres términos");
+
+const ctxOrden = { ...ctxBase, abiertosIds: new Set(), repoDe: new Map([["p", "datos"]]) };
+const mio = (id, extra) => ({ id, quien: "claude", proyecto: "p", ...extra });
+
+prueba("1º manda TU prioridad, y ningún cálculo la pasa por arriba", () => {
+  /* § 9: la propone el agente y la corrige Mauro, porque él sabe qué le urge.
+     Acá el de media destraba tres y el de alta ninguno: gana el de alta. */
+  const lista = [
+    mio("z", { prioridad: "media" }),
+    mio("a", { prioridad: "alta" }),
+    mio("b", { esperaA: ["z"] }), mio("c", { esperaA: ["z"] }), mio("d", { esperaA: ["z"] }),
+  ];
+  const { elegibles } = queTocarAhora(lista, ctxOrden);
+  assert.equal(elegibles[0].p.id, "a");
+});
+
+prueba("2º a igual prioridad, gana el que DESTRABA más", () => {
+  const lista = [
+    mio("m", { prioridad: "media" }),
+    mio("n", { prioridad: "media" }),
+    mio("x", { prioridad: "media", esperaA: ["n"] }),
+  ];
+  const { elegibles } = queTocarAhora(lista, ctxOrden);
+  assert.equal(elegibles[0].p.id, "n");
+  assert.equal(elegibles[0].destraba, 1);
+});
+
+prueba("3º a igual todo, gana el repo que este chat YA tiene reservado", () => {
+  /* Es la única medida de costo que se puede tomar sin inventar un campo:
+     seguir donde ya se está ahorra la reserva, el CLAUDE.md del otro repo y su
+     banco de pruebas. */
+  const ctx = { ...ctxOrden,
+    repoDe: new Map([["aca", "datos"], ["alla", "remate"]]),
+    reservas: [{ repo: "datos", sesion: "yo",
+                 vence: new Date(Date.now() + 60 * 60000).toISOString() }] };
+  const lista = [
+    { id: "b-alla", quien: "claude", proyecto: "alla", prioridad: "media" },
+    { id: "z-aca", quien: "claude", proyecto: "aca", prioridad: "media" },
+  ];
+  const { elegibles } = queTocarAhora(lista, ctx);
+  assert.equal(elegibles[0].p.id, "z-aca", "el del repo reservado va primero");
+  assert.equal(elegibles[0].yaReservado, true);
+});
+
+prueba("y con todo igual desempata el id: dos sesiones eligen LO MISMO", () => {
+  /* Es la propiedad que hace que esto sea un criterio unificado y no una
+     opinión: sin un desempate determinado, dos chats con los mismos datos
+     podrían elegir distinto según cómo vino ordenada la lista. */
+  const lista = [mio("b", { prioridad: "alta" }), mio("a", { prioridad: "alta" })];
+  const a = queTocarAhora(lista, ctxOrden).elegibles.map((x) => x.p.id);
+  const b = queTocarAhora(lista.slice().reverse(), ctxOrden).elegibles.map((x) => x.p.id);
+  assert.deepEqual(a, ["a", "b"]);
+  assert.deepEqual(a, b);
+});
+
+prueba("sin prioridad se cae al fondo: no declararla no es declararla alta", () => {
+  const lista = [mio("sin"), mio("baja", { prioridad: "baja" })];
+  assert.equal(queTocarAhora(lista, ctxOrden).elegibles[0].p.id, "baja");
+});
+
+titulo("Qué tocar ahora: lo que devuelve");
+
+prueba("los descartados vienen CON el motivo, no sólo contados", () => {
+  const lista = [
+    { id: "a", quien: "mauro", proyecto: "p" },
+    { id: "b", quien: "claude", proyecto: "p", pregunta: "¿?" },
+  ];
+  const { elegibles, descartados } = queTocarAhora(lista, ctxOrden);
+  assert.equal(elegibles.length, 0);
+  assert.equal(descartados.length, 2);
+  for (const d of descartados) assert.ok(d.codigo && d.texto, "sin motivo no se puede auditar");
+});
+
+prueba("el elegible de un proyecto sin repo trae el AVISO del semáforo", () => {
+  const { elegibles } = queTocarAhora(
+    [{ id: "a", quien: "claude", proyecto: "desconocido", prioridad: "alta" }], ctxOrden);
+  assert.equal(elegibles.length, 1);
+  assert.equal(elegibles[0].carpeta, null);
+  assert.match(elegibles[0].aviso, /sitio\.repo/);
+  assert.match(elegibles[0].aviso, /SEMÁFORO/);
+});
+
+prueba("una lista vacía no rompe y no inventa un candidato", () => {
+  const r = queTocarAhora([], ctxOrden);
+  assert.deepEqual(r.elegibles, []);
+  assert.deepEqual(r.descartados, []);
+});
+
+titulo("Qué tocar ahora: lo que la pantalla NO puede dejar de decir");
+
+prueba("si no hay elegibles, se imprimen los MOTIVOS y no una lista vacía", () => {
+  /* Tercera vez que este ecosistema arregla lo mismo: «no hay nada que hacer»
+     y «hay cuatro cosas y las cuatro están frenadas» son estados opuestos que
+     sin el motivo al lado se ven idénticos. */
+  assert.match(fuente, /NINGUNO se puede empezar ahora/);
+  assert.match(fuente, /NO INVENTES trabajo para llenar la corrida/);
+});
+
+prueba("y la pantalla dice que esto ORDENA pero no verifica", () => {
+  /* El 2026-09-22 `hilux:R3` decía que unas reglas no estaban publicadas y
+     hacía días que lo estaban. Un orden calculado no arregla eso: el que lee
+     tiene que comprobar que el pendiente todavía sea cierto. */
+  assert.match(fuente, /TODAVÍA/);
+  assert.match(fuente, /Esto ordena; no verifica/);
+});
+
+prueba("sin saber quién sos, la ronda lo DICE en vez de descartarte lo tuyo", () => {
+  assert.match(fuente, /no sé quién sos/);
+  assert.match(fuente, /--chat/);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

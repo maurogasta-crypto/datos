@@ -613,8 +613,15 @@ una cuenta es un CUARTO lugar donde vive una regla —después del protocolo, de
 lleva escrito es lo que no está en ningún otro lado: cómo arranca, qué comandos
 corre y en qué orden.
 
-Si algún día hay que recrearla a mano, esto es lo que se pega en
-`claude.ai/code/routines`:
+**Y el prompt sube en la misma tanda que el § que cita.** Lo de arriba deja
+claro por qué: si el archivo cambia y el prompt no, la rutina obedece una regla
+que ya no existe y nadie ve el diff. La última vez que se tocó fue el
+2026-09-22, dos veces: primero para sacarle la rama del § 2.1 ter, y después
+para que el pendiente se elija con QUÉ TOCAR AHORA (§ 2.1 octies) en vez de a
+ojo.
+
+Si algún día hay que recrearla a mano —o si hay que volver a pegarlo después de
+cambiarlo acá—, esto es lo que va en `claude.ai/code/routines`:
 
 ```text
 RONDA DE CONTROL DIARIA. Corrés sola, sin nadie delante.
@@ -637,17 +644,20 @@ y esto se contradicen, gana el archivo y lo decís en el aviso.
 ════════ PARTE 1 · MIRAR (siempre) ════════
 
 1. Leé `CLAUDE.md` y `protocolos/PROTOCOLO-GENERAL.md` §§ 2.1 ter, 2.1 quinquies,
-   2.1 sexies, 2.1 septies, 6, 8 y 9 de `datos`.
-2. Corré UNA SOLA VEZ, desde `datos`:   node herramientas/ronda.mjs abrir
+   2.1 sexies, 2.1 septies, 2.1 octies, 6, 8 y 9 de `datos`.
+2. Corré UNA SOLA VEZ, desde `datos`, DICIENDO QUIÉN SOS:
+     node herramientas/ronda.mjs abrir --chat "ronda diaria <fecha>"
    Trae el panel y los reportes de los sitios, cruzados y ordenados. No la corras
    en loop ni para «verificar»: cada corrida hace login en cinco bases y Firebase
    corta por cuota («QUOTA_EXCEEDED»). Si el entorno bloquea ejecutarla, pará y
    decilo con el motivo exacto. NO improvises un reemplazo ni leas las bases a mano.
-   Trae arriba de todo tres cosas que tenés que MIRAR antes de decidir nada:
+   El `--chat` no es trámite: sin él la ronda lee TU propia reserva como si
+   fuera de otro y te descarta tus propios pendientes.
+   Trae arriba de todo cuatro cosas que tenés que MIRAR antes de decidir nada:
    EN QUÉ ESTAMOS (las líneas y quién las tiene), SEMÁFORO (qué repositorio está
-   tocando otro chat ahora) y QUÉ CAMBIÓ (los commits de los últimos dos días,
-   con los archivos CALIENTES). Eso último es para que no releas código que otra
-   sesión ya cambió.
+   tocando otro chat ahora), QUÉ CAMBIÓ (los commits de los últimos dos días,
+   con los archivos CALIENTES, para que no releas lo que otra sesión ya cambió)
+   y QUÉ TOCAR AHORA, que es el cruce de todo eso con los pendientes.
 3. Si alguna FUENTE está caída, ESO es lo primero que informás. Una ronda
    incompleta que no lo dice es peor que una que no corre: parece completa.
 4. Por cada REPORTE NUEVO, escribí un pendiente en el panel:
@@ -666,11 +676,17 @@ y esto se contradicen, gana el archivo y lo decís en el aviso.
 
 ════════ PARTE 2 · TRABAJAR (como máximo UN pendiente por corrida) ════════
 
-5. Elegí UNO SOLO: `quien: "claude"`, abierto, sin `esperaA` sin resolver, la
-   prioridad más alta. Uno por corrida y no más — un diff que Mauro no puede leer
-   desde el teléfono no se revisa, se aprueba a ciegas, y eso es peor que no
-   haberlo hecho. Si necesita una decisión suya, NO lo empieces: dejale la
-   `pregunta` en ese pendiente y pasá al siguiente.
+5. EL PENDIENTE NO SE ELIGE A OJO: lo calcula la ronda y lo imprime en QUÉ
+   TOCAR AHORA, con el motivo de cada descarte (§ 2.1 octies). Tomá el primero.
+   Uno por corrida y no más — un diff que Mauro no puede leer desde el teléfono
+   no se revisa, se aprueba a ciegas, y eso es peor que no haberlo hecho.
+   Lo que SÍ te toca, porque el código no puede: comprobar que el pendiente
+   TODAVÍA SEA CIERTO antes de trabajarlo. Preguntale a la cosa, no al registro
+   — `hilux:R3` decía que unas reglas no estaban publicadas y hacía días que lo
+   estaban. Si al mirarlo resulta que ya no aplica, cerralo y decilo.
+   SI NO HAY NINGUNO ELEGIBLE, ésa es la respuesta: decilo con los motivos que
+   imprimió la ronda y andá a la PARTE 3. **No inventes trabajo para llenar la
+   corrida** — eso es una ronda que hizo lo suyo, no una ronda vacía.
 6. TOMÁ LA LÍNEA y RESERVÁ EL REPOSITORIO, en ese orden, ANTES de tocar nada:
      node herramientas/ronda.mjs reservar <repo> --chat "ronda diaria <fecha>"
    Si la línea ya está tomada por otro chat, o el SEMÁFORO muestra ese repo con

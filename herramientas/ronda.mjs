@@ -260,8 +260,15 @@ const esPedido = (r) => !!r && r.tipo === "pedido";
    Esto informa; no mide. */
 const DIAS_CAMBIOS = 2;
 
+/* La carpeta donde viven los repositorios hermanos: la que contiene a `datos`.
+   Estaba calculada adentro de `queCambio`; sale acá porque QUÉ TOCAR AHORA
+   necesita lo mismo, y el día que cambie la estructura tiene que cambiar en un
+   solo lugar. */
+const raizDeLosRepos = () =>
+  dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+
 function queCambio(dias = DIAS_CAMBIOS) {
-  const raiz = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+  const raiz = raizDeLosRepos();
   let carpetas = [];
   try { carpetas = readdirSync(raiz, { withFileTypes: true })
           .filter((d) => d.isDirectory() && existsSync(join(raiz, d.name, ".git")))
@@ -352,6 +359,231 @@ const minutosQueQuedan = (r, ahora = Date.now()) => {
   return Math.max(0, Math.round((t - ahora) / 60000));
 };
 
+/* ── QUÉ TOCAR AHORA ─────────────────────────────────────────────────────────
+   Lo pidió Mauro el 2026-09-22, después del semáforo: «una forma de
+   intervención más inteligente que optimice el recurso en base a la
+   incorporación nueva del semáforo… tomar la decisión más acertada, más justa
+   y correcta».
+
+   EL PROBLEMA NO ERA LA FALTA DE DATOS, ERA QUE NADIE LOS CRUZABA. La ronda ya
+   imprimía las líneas, el semáforo y los abiertos — en tres listas separadas.
+   El cruce lo hacía el chat en su cabeza, con un criterio escrito en prosa
+   repartida entre el § 9, el prompt de la rutina y cinco `CLAUDE.md`. O sea:
+   cada sesión decidía distinto, y ninguna podía equivocarse de forma
+   reproducible. Es el mismo error que este ecosistema ya pagó con los seis
+   hertz de la rueda y con el prompt que contradecía al § 2.1 ter: **una regla
+   escrita en prosa en varios lugares diverge.**
+
+   Así que el criterio se calcula acá, una vez, y la ronda lo imprime. Es la
+   doctrina que el encabezado de este archivo ya declaraba: cada dato que se
+   puede juntar con código determinado es un dato que el modelo no tiene que
+   leer. Elegir el pendiente ES uno de esos datos.
+
+   EL ORDEN DE LOS TRES TÉRMINOS NO ES ARBITRARIO:
+
+     1. LA PRIORIDAD DE MAURO, siempre arriba. El § 9 es explícito: la propone
+        el agente y la corrige él, porque él sabe qué le urge. Un orden que lo
+        contradice es un orden que va a dejar de mirar.
+     2. CUÁNTO DESTRABA, a igual prioridad. Es la parte «justa» del pedido:
+        mira el tablero entero y no el ítem más ruidoso. Se deduce de `esperaA`
+        y no se guarda.
+     3. SI EL REPOSITORIO YA ESTÁ RESERVADO POR ESTE CHAT, al final. Es la
+        parte «que optimiza el recurso», y es la única medida de costo que se
+        puede tomar sin inventar nada: seguir en el repositorio que ya se tiene
+        reservado ahorra la reserva, el `CLAUDE.md` del otro y su banco.
+
+   Y NO HAY UN TÉRMINO DE «COSTO» ADEMÁS DE ÉSE, a propósito. Haría falta un
+   campo que alguien tendría que estimar a mano en cada pendiente, y un campo
+   que nadie llena no queda vacío: llega `undefined` y el orden miente en
+   silencio. Es la misma trampa que las máscaras del § 2.1 septies.
+
+   ESTO NO ESCRIBE NADA Y NO DECIDE SOLO. Imprime un candidato y los motivos de
+   cada descarte. Lo que no puede hacer —y por eso el modelo sigue haciendo
+   falta— es saber si el pendiente TODAVÍA ES CIERTO: el 2026-09-22 `hilux:R3`
+   decía que unas reglas no estaban publicadas y hacía días que lo estaban. */
+
+/* Dónde está el repositorio de cada proyecto. **No es un mapa nuevo:** sale de
+   `sitio.repo` de `proyectos/`, que ya estaba escrito en los nueve documentos
+   desde antes de que esto existiera — nadie lo estaba leyendo. La carpeta es
+   el último tramo de `owner/repo`, y coincide con la carpeta hermana.
+
+   DOS PROYECTOS PUEDEN COMPARTIR REPOSITORIO, y hoy pasa: `panel` y `datos`
+   son dos entradas del tablero y un solo repositorio. Por eso la carpeta no se
+   deduce del id del proyecto — deducirla habría dado dos carpetas, y una de
+   ellas no existe. */
+function repoDeCadaProyecto(proyectos) {
+  const m = new Map();
+  for (const p of proyectos || []) {
+    const r = p && p.sitio && p.sitio.repo;
+    if (!r) continue;
+    const carpeta = String(r).split("/").filter(Boolean).pop();
+    if (carpeta) m.set(p.id, carpeta);
+  }
+  return m;
+}
+
+/* Las trabas que SIGUEN vivas. Una `esperaA` que apunta a algo ya hecho no es
+   una traba: el § 9 lo dice con todas las letras —«cuando la que trababa se
+   marca hecha, la traba desaparece sola»— porque es un derivado.
+
+   Hasta el 2026-09-22 la ronda imprimía la flecha igual, sin mirar si el otro
+   seguía abierto, y ese día mostraba `casayourte:T2 ⟵ espera casayourte:T1`
+   con T1 hecho desde hacía días: un pendiente que ya se podía empezar,
+   figurando frenado. Es exactamente lo que el § 9 avisa que hay que revisar al
+   cerrar una tanda, sólo que acá se deduce y no hace falta acordarse. */
+const trabasVivas = (p, abiertosIds) =>
+  ((p && p.esperaA) || []).filter((id) => (abiertosIds || new Set()).has(id));
+
+/* Cuántos pendientes ABIERTOS se destraban si éste se hace. Es la única parte
+   del orden que mira el tablero entero en vez del ítem. */
+const desbloquea = (p, abiertos) => (abiertos || [])
+  .filter((x) => x && x.id !== p.id && ((x.esperaA || []).includes(p.id))).length;
+
+/* QUÉ HACE FALTA PARA PODER VERIFICAR, por repositorio. No es una lista de
+   dependencias: es la respuesta a «¿puedo ENTREGAR esto desde acá?».
+
+   Existe porque el 2026-09-22 esta sesión perdió el SDK de Dart al reiniciarse
+   el contenedor, y cualquier pendiente de `sitd-hilux` que pidiera `flutter
+   test` sólo podía terminar de dos maneras, las dos desperdicio: sin entregar,
+   o entregado sin verificar. Eso hay que saberlo ANTES de elegirlo, no después
+   de leerse el pendiente entero — y ahí está el recurso que se ahorra.
+
+   LA MARCA ES UN ARCHIVO DEL PROPIO REPOSITORIO y no un dato declarado: un
+   `pubspec.yaml` ES un proyecto de Dart, y eso no se desactualiza. Los repos
+   de JavaScript no necesitan entrada acá: `node` está siempre, y una entrada
+   de más sería una condición que puede quedar vieja. */
+const HERRAMIENTA_QUE_PIDE = [
+  { marca: "pubspec.yaml", manda: "dart", queEs: "el SDK de Dart/Flutter" },
+];
+
+/* Si un comando está en el PATH, sin lanzar un proceso: la ronda la corre una
+   routine desatendida y un `spawn` que se cuelga la voltea entera. */
+const hayComando = (cmd, path = process.env.PATH || "") =>
+  String(path).split(":").filter(Boolean).some((d) => {
+    try { return existsSync(join(d, cmd)); } catch (e) { return false; }
+  });
+
+/* Las tres consultas al disco van detrás de `io` para que el banco las pueda
+   sustituir: el resultado depende de qué tiene puesto ESTE contenedor, y una
+   prueba que dependa de eso mide el contenedor y no el código. */
+const ioPorDefecto = () => {
+  const raiz = raizDeLosRepos();
+  return {
+    adjunto: (carpeta) => {
+      try { return existsSync(join(raiz, carpeta)); } catch (e) { return false; }
+    },
+    hayArchivo: (carpeta, marca) => {
+      try { return existsSync(join(raiz, carpeta, marca)); } catch (e) { return false; }
+    },
+    hayComando,
+  };
+};
+
+function herramientaQueFalta(carpeta, io) {
+  const { hayArchivo, hayComando: hc } = io || ioPorDefecto();
+  for (const h of HERRAMIENTA_QUE_PIDE)
+    if (hayArchivo(carpeta, h.marca) && !hc(h.manda)) return h;
+  return null;
+}
+
+/* Por qué NO se toca este pendiente, o `null` si se puede.
+
+   EL ORDEN DE LOS CHEQUEOS ES EL DEL MOTIVO QUE SE IMPRIME, así que va del más
+   general al más circunstancial: de quién es, si está frenado, si te está
+   esperando, y recién después las tres razones que dependen de dónde y cuándo
+   se está corriendo esto. Un pendiente de Mauro que además está trabado se
+   descarta por ser de Mauro, que es lo que hay que decir. */
+function porQueNoSeToca(p, ctx) {
+  const c = ctx || {};
+  if (!p) return { codigo: "vacio", texto: "no es un pendiente" };
+
+  /* § 9: lo que necesita una consola, una cuenta, una decisión o una
+     contraseña lo hace él, y ningún orden lo cambia. */
+  if (p.quien !== "claude")
+    return { codigo: "de-mauro",
+             texto: `es de Mauro (quien: ${p.quien || "sin declarar"})` };
+
+  const trabas = trabasVivas(p, c.abiertosIds);
+  if (trabas.length)
+    return { codigo: "trabado", texto: `espera a ${trabas.join(", ")}` };
+
+  /* § 9: si una pregunta sigue sin responder, empezar antes es trabajo que
+     quizás haya que tirar. */
+  if (p.pregunta && !p.respuesta)
+    return { codigo: "sin-respuesta",
+             texto: "le dejaste una pregunta a Mauro y todavía no la contestó" };
+
+  const carpeta = (c.repoDe || new Map()).get(p.proyecto);
+  if (!carpeta) return null;          // sin repo declarado: pasa, con aviso
+
+  const otra = reservasDe(c.reservas, carpeta, c.sesion, c.ahora)[0];
+  if (otra)
+    return { codigo: "repo-ocupado",
+             texto: `el repositorio «${carpeta}» lo tiene ` +
+                    `${otra.chat || otra.sesion || "otro chat"}` +
+                    `, quedan ${minutosQueQuedan(otra, c.ahora)} min` };
+
+  /* § 4.1: el alcance de repositorios se fija al abrir la sesión. Uno que no
+     está adjunto no se clona — eso es lo que el modo automático no deja
+     ejecutar, y es la razón por la que la rutina existe. */
+  if (c.adjunto && !c.adjunto(carpeta))
+    return { codigo: "no-adjunto",
+             texto: `«${carpeta}» no está adjunto a esta sesión` };
+
+  const falta = c.faltaHerramienta ? c.faltaHerramienta(carpeta) : null;
+  if (falta)
+    return { codigo: "sin-herramienta",
+             texto: `no se puede verificar acá: falta ${falta.queEs} ` +
+                    `(«${falta.manda}» no está en el PATH)` };
+
+  return null;
+}
+
+/* El cruce entero. Devuelve los elegibles YA ORDENADOS y los descartados con
+   su motivo — los dos, porque una lista de candidatos sin los motivos del
+   resto no se puede auditar, y ésta es la tercera vez que este ecosistema
+   aprende que un contador sin la razón al lado no diagnostica nada. */
+function queTocarAhora(abiertos, ctx) {
+  const c = ctx || {};
+  const lista = abiertos || [];
+  const io = c.io || ioPorDefecto();
+  const ctx2 = {
+    abiertosIds: c.abiertosIds || new Set(lista.map((p) => p && p.id)),
+    repoDe: c.repoDe || new Map(),
+    reservas: c.reservas || [],
+    sesion: c.sesion,
+    ahora: c.ahora,
+    adjunto: c.adjunto || io.adjunto,
+    faltaHerramienta: c.faltaHerramienta || ((carpeta) => herramientaQueFalta(carpeta, io)),
+  };
+
+  const elegibles = [];
+  const descartados = [];
+  for (const p of lista) {
+    const no = porQueNoSeToca(p, ctx2);
+    if (no) { descartados.push({ p, ...no }); continue; }
+    const carpeta = ctx2.repoDe.get(p.proyecto) || null;
+    const mio = carpeta
+      ? (c.reservas || []).some((r) => reservaViva(r, c.ahora) && r.repo === carpeta
+                                       && c.sesion && r.sesion === c.sesion)
+      : false;
+    elegibles.push({
+      p, carpeta, yaReservado: mio, destraba: desbloquea(p, lista),
+      aviso: carpeta ? null
+        : `el proyecto «${p.proyecto}» no declara sitio.repo: no se pudo ` +
+          `cruzar con el semáforo — mirá el SEMÁFORO a mano antes de editar`,
+    });
+  }
+
+  elegibles.sort((a, b) =>
+    pesoDe(a.p) - pesoDe(b.p) ||
+    b.destraba - a.destraba ||
+    (b.yaReservado ? 1 : 0) - (a.yaReservado ? 1 : 0) ||
+    String(a.p.id).localeCompare(String(b.p.id)));
+
+  return { elegibles, descartados };
+}
+
 const tocados = (p) => (p || []).filter((x) => x.tocado);
 const sinResponder = (p) => (p || []).filter((x) => x.pregunta && !x.respuesta);
 
@@ -377,7 +609,9 @@ export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, origenDe, cruzar, letrasE
          tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
          vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido,
          MINUTOS_RESERVA, reservaViva, reservasDe, minutosQueQuedan,
-         queCambio, archivosTocados, DIAS_CAMBIOS,
+         queCambio, archivosTocados, DIAS_CAMBIOS, raizDeLosRepos,
+         repoDeCadaProyecto, trabasVivas, desbloquea, hayComando,
+         HERRAMIENTA_QUE_PIDE, herramientaQueFalta, porQueNoSeToca, queTocarAhora,
          CAMPOS_PENDIENTE, CAMPOS_LINEA, CAMPOS_PROYECTO, SOLO_NOMBRES };
 
 /* ── Lo que sí toca la red ───────────────────────────────────────────────────
@@ -415,12 +649,20 @@ const CAMPOS_PENDIENTE = ["clave", "esperaA", "estado", "linea", "origen",
    § 2.1 quinquies llama «la especificación» — el día que la ronda lo muestre,
    ya está.
 
-   De un PROYECTO se dejan afuera `tecnica`, `sitio` y `empaquetado`: 14 KiB
-   que son para las pantallas del panel, no para esto. La ronda mira `acceso`
-   —de ahí sale si las reglas están sin publicar—, `reportes` y el orden. */
+   De un PROYECTO se dejan afuera `tecnica` y `empaquetado`: 14 KiB que son
+   para las pantallas del panel, no para esto. La ronda mira `acceso` —de ahí
+   sale si las reglas están sin publicar—, `reportes` y el orden.
+
+   `sitio` ENTERO tampoco entra, pero sí `sitio.repo`, y la diferencia es el
+   punto: Firestore acepta máscaras de SUBCAMPO, así que se piden treinta bytes
+   —`maurogasta-crypto/sitd-hilux`— en vez de los varios KiB del resumen, la
+   url y el readme. De ahí sale la carpeta de cada proyecto, que es lo que
+   permite cruzar el semáforo con los pendientes (QUÉ TOCAR AHORA). Sin eso el
+   cruce habría necesitado un campo nuevo, o sea un cuarto lugar donde dar de
+   alta un proyecto: justo lo que el CLAUDE.md prohíbe. */
 const CAMPOS_LINEA = ["titulo", "alcance", "objetivo", "proyectos", "estado",
   "tomada", "porQue", "abierta"];
-const CAMPOS_PROYECTO = ["acceso", "reportes", "orden", "nombre"];
+const CAMPOS_PROYECTO = ["acceso", "reportes", "orden", "nombre", "sitio.repo"];
 
 /* Para una colección que sólo hay que CONTAR. Pedir un campo que no existe
    devuelve los documentos sin cuerpo: los nombres alcanzan para contarlos.
@@ -468,6 +710,17 @@ async function listarSuave(cfg, sesion, coleccion, campos) {
    El nombre que se pasa es el del proyecto en `PROYECTOS`, que es la misma
    lista de siempre: no hay un mapa nuevo que mantener. Uno que no existe se
    rechaza con la lista al lado, en vez de correr en silencio contra nada. */
+/* QUIÉN SOY, y lo usan `abrir` y `reservar` igual. Está acá arriba porque si
+   cada comando lo calculara a su manera pasaría lo peor: `abrir` leería MI
+   propia reserva como si fuera de otro y me descartaría mis propios
+   pendientes, que es exactamente el «un chat se bloquea a sí mismo» que el
+   § 2.1 sexies ya nombra. */
+function quienSoy(args) {
+  const i = (args || []).indexOf("--chat");
+  const nombre = process.env.CLAUDE_CHAT || (i >= 0 ? args[i + 1] : "") || "";
+  return process.env.CLAUDE_SESSION || nombre || null;
+}
+
 function acotar(args) {
   const i = args.indexOf("--sitio");
   if (i < 0) return null;
@@ -597,6 +850,7 @@ function imprimir(d) {
   const pedidos = nuevos.filter(esPedido);
 
   const abiertos = ordenarAbiertos(d.pendientes);
+  const idsAbiertos = new Set(abiertos.map((p) => p.id));
   const reglas = reglasSinPublicar(d.proyectos);
 
   /* EL ENCABEZADO LIDERA CON LO QUE HAY QUE HACER, no con el tamaño del
@@ -697,6 +951,63 @@ function imprimir(d) {
     }
   }
 
+  /* QUÉ TOCAR AHORA va acá: sin número, con el semáforo y las líneas, porque
+     es de la misma familia —la condición para empezar, no el trabajo— y porque
+     numerarlo correría las cinco secciones que el § 8 cita por número.
+
+     Y va ANTES de las listas y no después, aunque sea la conclusión: quien lee
+     esto de arriba abajo tiene el candidato antes de recorrer cien pendientes,
+     y ése es el recurso que se ahorra. */
+  const cruce = queTocarAhora(abiertos, {
+    abiertosIds: idsAbiertos,
+    repoDe: repoDeCadaProyecto(d.proyectos),
+    reservas: d.reservas || [],
+    sesion: d.yo || null,
+  });
+  L.push(`\n  QUÉ TOCAR AHORA — el semáforo cruzado con los pendientes míos (§ 2.1 octies)`);
+  if (!d.yo) {
+    L.push(`      ⚠ no sé quién sos, así que tu propia reserva cuenta como ajena.`);
+    L.push(`        Pasá  --chat "de qué trata"  igual que en reservar.`);
+  }
+  if (!cruce.elegibles.length) {
+    /* NUNCA UNA LISTA VACÍA A SECAS. Es la tercera vez que este ecosistema
+       aprende lo mismo: un contador sin la razón al lado no diagnostica nada,
+       y «no hay nada que hacer» y «hay cuatro cosas y las cuatro están
+       frenadas» son estados opuestos que se ven idénticos. */
+    const mios = cruce.descartados.filter((x) => x.codigo !== "de-mauro");
+    L.push(mios.length
+      ? `      NINGUNO se puede empezar ahora, y ${mios.length === 1 ? "el motivo es" : "los motivos son"}:`
+      : `      Ninguno: los ${cruce.descartados.length} abiertos son de Mauro.`);
+    for (const x of mios) L.push(`          ${x.p.id}  ·  ${x.texto}`);
+    if (mios.length) {
+      L.push(`\n      NO INVENTES trabajo para llenar la corrida. Decílo y cerrá:`);
+      L.push(`      eso es una ronda que hizo lo suyo, no una ronda vacía.`);
+    }
+  } else {
+    const [uno, ...otros] = cruce.elegibles;
+    L.push(`      → ${uno.p.id}  [${uno.p.prioridad || "sin prioridad"}]  ${corto(uno.p.titulo, 60)}`);
+    L.push(`            repo     : ${uno.carpeta || "sin declarar"}` +
+           `${uno.yaReservado ? "  (ya reservado por vos)" : ""}`);
+    L.push(`            destraba : ${uno.destraba}`);
+    if (uno.p.linea) L.push(`            línea    : ${uno.p.linea}`);
+    if (uno.aviso) L.push(`            ⚠ ${uno.aviso}`);
+    for (const o of otros.slice(0, 3))
+      L.push(`        ${o.p.id}  [${o.p.prioridad || "—"}]  destraba ${o.destraba}  ·  ${corto(o.p.titulo, 44)}`);
+    if (otros.length > 3) L.push(`        … y ${otros.length - 3} más`);
+    const mios = cruce.descartados.filter((x) => x.codigo !== "de-mauro");
+    if (mios.length) {
+      L.push(`\n      Míos pero descartados, con el motivo:`);
+      for (const x of mios) L.push(`          ${x.p.id}  ·  ${x.texto}`);
+    }
+    const suyos = cruce.descartados.length - mios.length;
+    if (suyos) L.push(`      (${suyos} son de Mauro y están abajo, en el 4)`);
+  }
+  L.push(`\n      El orden es: TU prioridad, después cuánto destraba, después si el`);
+  L.push(`      repositorio ya está reservado por este chat. Lo calcula la ronda y`);
+  L.push(`      no el chat, para que dos sesiones distintas elijan lo mismo.`);
+  L.push(`      Lo que SÍ le toca al que lee: comprobar que el pendiente TODAVÍA`);
+  L.push(`      sea cierto antes de trabajarlo. Esto ordena; no verifica.`);
+
   L.push(`\n  1 · TOCADOS — Mauro los editó desde el último parte`);
   if (!ti.length) L.push(`      (ninguno)`);
   for (const p of ti) {
@@ -739,7 +1050,13 @@ function imprimir(d) {
   for (const g of porProyecto(abiertos, d.proyectos)) {
     L.push(`      ── ${g.proyecto}`);
     for (const p of ordenarAbiertos(g.items)) {
-      const traba = (p.esperaA || []).length ? `  ⟵ espera ${p.esperaA.join(", ")}` : "";
+      /* SÓLO LAS TRABAS VIVAS. Una `esperaA` que apunta a algo ya hecho
+         no traba nada (§ 9: «la traba desaparece sola», es un derivado), y
+         hasta el 2026-09-22 acá salía igual: ese día `casayourte:T2` figuraba
+         esperando a `casayourte:T1`, que estaba hecho hacía días. Un pendiente
+         que ya se podía empezar, apagado en la pantalla. */
+      const vivasT = trabasVivas(p, idsAbiertos);
+      const traba = vivasT.length ? `  ⟵ espera ${vivasT.join(", ")}` : "";
       L.push(`      ${p.id}  [${p.prioridad || "sin prioridad"}/${p.quien || "?"}]  ${corto(p.titulo, 70)}${traba}`);
     }
   }
@@ -783,6 +1100,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   if (cmd === "abrir") {
     const d = await juntar(acotar(args));
+    /* QUIÉN SOY entra en `d` y no en `imprimir`, para que salga también con
+       `--json`: sin esto, mi propia reserva me descartaría mis pendientes. */
+    d.yo = quienSoy(args);
     if (d.fatal) {
       console.error(`\n✖ ${d.fatal}\n`);
       process.exit(1);
@@ -887,7 +1207,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   } else {
     console.log(`
-  node herramientas/ronda.mjs abrir [--json] [--sitio <id>]
+  node herramientas/ronda.mjs abrir [--json] [--sitio <id>] [--chat "quién sos"]
       Junta el panel y los reportes de los sitios, los cruza y los ordena
       como pide el § 8 del PROTOCOLO-GENERAL. No escribe nada.
 

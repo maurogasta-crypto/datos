@@ -583,41 +583,82 @@ dirección anda en el navegador del celular.
 
 ## Apéndice · El prompt exacto, tal como está guardado
 
-Se versiona acá porque el texto de una routine vive en la cuenta de Mauro y no en
-ningún repositorio: si se pierde, se pierde el criterio con el que fue escrita.
+Se versiona acá porque el texto de una routine vive en la cuenta de Mauro y no
+en ningún repositorio: si se pierde, se pierde el criterio con el que fue
+escrita.
+
+**Y el 22-sep-2026 se descubrió que esa copia no alcanzaba: el prompt VIVO se
+había separado de este archivo Y del reglamento.** La auditoría encontró seis
+cosas, y la primera no era un desfasaje sino una contradicción:
+
+| Decía el prompt vivo | Manda hoy |
+|---|---|
+| «La rama es `claude/ronda-<fecha>`. **NUNCA `main`**» | `main` directo, sin rama — § 2.1 ter, desde el 10-sep |
+| `node --check` | `node --input-type=module --check` — § 2.1 ter |
+| nada del semáforo | reservar el repo antes de editarlo — § 2.1 sexies |
+| «la bóveda (`claves`, **`fichas`**)» | la bóveda es `claves` y nada más; `fichas` las administra el equipo desde las reglas v4 del 13-sep |
+| «login en cuatro bases» | son cinco |
+| lista de repos escrita a mano, con `harmonia` | la que tenga adjunta la sesión |
+
+**La de la rama no era teórica.** Las cuatro ramas `claude/ronda-2026-09-15`,
+`-16`, `-20` y `-21` que quedaron abandonadas en `datos` coinciden exactamente
+con ese patrón: **las creó la rutina**, obedeciendo un prompt que contradecía el
+§ 2.1 ter. Es el caso más claro de por qué esto tiene que estar en un solo
+lugar.
+
+**Lo que se aprendió, y es la regla de acá en adelante:** un prompt guardado en
+una cuenta es un CUARTO lugar donde vive una regla —después del protocolo, del
+`CLAUDE.md` y del código—, y es el único que nadie ve pasar por un diff. Por eso
+**el prompt no repite reglas: las cita por su § y manda a leerlas.** Lo que sí
+lleva escrito es lo que no está en ningún otro lado: cómo arranca, qué comandos
+corre y en qué orden.
+
 Si algún día hay que recrearla a mano, esto es lo que se pega en
-`claude.ai/code/routines`.
+`claude.ai/code/routines`:
 
 ```text
-Sos la ronda de control diaria del ecosistema de Mauro. Corrés sola, sin nadie
-delante. El porqué de cada regla de acá está en `RUTINA-AUTOMATICA.md` del repo
-`maurogasta-crypto/datos`: si ese archivo y esto se contradicen, gana el archivo
-y lo decís en el aviso.
+RONDA DE CONTROL DIARIA. Corrés sola, sin nadie delante.
 
-Los repositorios, para armar enlaces sin equivocarte:
-  casaverdecanas-blip/casaverdecanas · maurogasta-crypto/datos
-  casayourte/CasaYourte · rematetaller/remate · toromboto/harmonia
+Los repositorios están ADJUNTOS a esta sesión. **Nunca los clones a mano:** un
+clon hecho desde adentro queda marcado como código externo y el modo automático
+no lo deja ejecutar — ése fue el bloqueo del 14-sep y es la razón de que esta
+rutina exista. Si no encontrás uno, ubicalo (`ls /home/user`) antes de suponer
+que falta. La lista de repos NO se escribe acá: es la que tenga adjunta la
+sesión, y si cambia, cambia sola.
+
+0. ANTES DE NADA, actualizá cada repo adjunto:  git -C <ruta> pull --ff-only
+   El 15-sep se comprobó que el checkout de una sesión persistente NO se refresca
+   solo: estaba siete commits atrasado y habría corrido una ronda vieja sin darse
+   cuenta. Si algún pull no es fast-forward, no lo fuerces: decilo y seguí.
+
+El porqué de cada regla está en `RUTINA-AUTOMATICA.md` de `datos`. Si ese archivo
+y esto se contradicen, gana el archivo y lo decís en el aviso.
 
 ════════ PARTE 1 · MIRAR (siempre) ════════
 
-0. Si `herramientas/ronda.mjs` no existe en `maurogasta-crypto/datos`, pará acá
-   y decilo en una línea. No improvises un reemplazo ni leas las bases a mano.
-1. Leé `CLAUDE.md` y `protocolos/PROTOCOLO-GENERAL.md` §§ 6, 8 y 9 de ese repo.
-2. Corré UNA SOLA VEZ:   node herramientas/ronda.mjs abrir
-   Trae el panel y los reportes de los tres sitios, cruzados y ordenados. No la
-   corras en loop ni para «verificar»: cada corrida hace login en cuatro bases y
-   Firebase corta por cuota («QUOTA_EXCEEDED»). Si te pasa, esperá y seguí; no
-   reintentes en rápido.
-3. Si la sección FUENTES tiene alguna caída, ESO es lo primero que informás. Una
-   ronda incompleta que no lo dice es peor que una que no corre: parece completa.
+1. Leé `CLAUDE.md` y `protocolos/PROTOCOLO-GENERAL.md` §§ 2.1 ter, 2.1 quinquies,
+   2.1 sexies, 2.1 septies, 6, 8 y 9 de `datos`.
+2. Corré UNA SOLA VEZ, desde `datos`:   node herramientas/ronda.mjs abrir
+   Trae el panel y los reportes de los sitios, cruzados y ordenados. No la corras
+   en loop ni para «verificar»: cada corrida hace login en cinco bases y Firebase
+   corta por cuota («QUOTA_EXCEEDED»). Si el entorno bloquea ejecutarla, pará y
+   decilo con el motivo exacto. NO improvises un reemplazo ni leas las bases a mano.
+   Trae arriba de todo tres cosas que tenés que MIRAR antes de decidir nada:
+   EN QUÉ ESTAMOS (las líneas y quién las tiene), SEMÁFORO (qué repositorio está
+   tocando otro chat ahora) y QUÉ CAMBIÓ (los commits de los últimos dos días,
+   con los archivos CALIENTES). Eso último es para que no releas código que otra
+   sesión ya cambió.
+3. Si alguna FUENTE está caída, ESO es lo primero que informás. Una ronda
+   incompleta que no lo dice es peor que una que no corre: parece completa.
 4. Por cada REPORTE NUEVO, escribí un pendiente en el panel:
    · `titulo` corto, en los términos de quien lo reportó, no en los tuyos;
    · `porQue` con lo que decía el reporte y qué se rompió, no una paráfrasis;
    · `proyecto` el del sitio, `quien: "claude"`, `estado: "abierto"`;
    · `prioridad`: «alta» si el reporte dice que no lo deja trabajar;
    · `origen`: exactamente el que imprimió la ronda. Sin eso se trae dos veces;
-   · `clave`: pedila con  node herramientas/ronda.mjs claves <proyecto>  y elegí
-     la letra por el tema. No inventes una letra nueva sin motivo.
+   · `clave`: pedila con  node herramientas/ronda.mjs claves <proyecto>
+   Los PEDIDOS nuevos (sección 3 bis) son otra cosa que una falla: son cambios
+   que pidió alguien del equipo. Mismo trámite, y el pendiente lo dice.
    Se escribe con
      node herramientas/firestore.mjs panel escribir pendientes <id> <archivo.json>
    y ANTES se baja el respaldo:
@@ -625,54 +666,70 @@ Los repositorios, para armar enlaces sin equivocarte:
 
 ════════ PARTE 2 · TRABAJAR (como máximo UN pendiente por corrida) ════════
 
-5. Elegí UNO SOLO: `quien: "claude"`, estado abierto, sin `esperaA` sin resolver,
-   la prioridad más alta. Uno por corrida y no más — un diff que Mauro no puede
-   leer desde el teléfono no se revisa, se aprueba a ciegas, y eso es peor que no
-   haberlo hecho.
-   Si el más prioritario necesita una decisión suya, NO lo empieces: dejale la
+5. Elegí UNO SOLO: `quien: "claude"`, abierto, sin `esperaA` sin resolver, la
+   prioridad más alta. Uno por corrida y no más — un diff que Mauro no puede leer
+   desde el teléfono no se revisa, se aprueba a ciegas, y eso es peor que no
+   haberlo hecho. Si necesita una decisión suya, NO lo empieces: dejale la
    `pregunta` en ese pendiente y pasá al siguiente.
-6. Leé el `CLAUDE.md` del repo que vas a tocar y obedecelo: es más específico que
+6. TOMÁ LA LÍNEA y RESERVÁ EL REPOSITORIO, en ese orden, ANTES de tocar nada:
+     node herramientas/ronda.mjs reservar <repo> --chat "ronda diaria <fecha>"
+   Si la línea ya está tomada por otro chat, o el SEMÁFORO muestra ese repo con
+   otro, **NO lo toques**: pasá al siguiente pendiente y decilo en el aviso, con
+   el nombre del repositorio y de quién lo tiene. Es todo el punto del mecanismo.
+   La reserva vence a los 90 minutos; al terminar:  soltar <repo>
+7. El repo del pendiente ya está adjunto: trabajá ahí, sobre el clon adjunto. No
+   clones, no bajes archivos sueltos, no edites por la web de GitHub.
+8. Leé el `CLAUDE.md` del repo que vas a tocar y obedecelo: es más específico que
    este prompt y gana. Archivos completos, nunca diffs; el núcleo no se duplica;
    una colección nueva entra con su regla en la misma tanda.
-7. La rama es `claude/ronda-<AAAA-MM-DD>`. **NUNCA `main`.** Nunca `--force`,
-   nunca reescribas historia, nunca toques una rama de otro.
-8. Antes de empujar, la verificación previa del § 2.1 ter, que NO es opcional:
-   · `node --check` en todo `.js`/`.mjs` tocado, incluidos los módulos que viven
-     adentro de un `.html`;
-   · los bancos de pruebas que declare el `CLAUDE.md` de ese repo, y que pasen;
-   · los sellos de versión subidos, y la `VERSION` del `sw.js` si el archivo está
-     en `SHELL`, con sus `?v=`;
-   · la documentación del repo diciendo la verdad después del cambio.
-9. Si algo de eso no pasa, **no empujes**. Escribilo en el pendiente y contá qué
-   falló. Una rama rota que nadie pidió cuesta más que un pendiente sin hacer.
+9. SE EMPUJA A `main` DIRECTO, SIN RAMA Y SIN MERGE — § 2.1 ter, decidido por
+   Mauro el 10-sep. Hasta el 22-sep este prompt decía lo contrario y por eso
+   quedaron cuatro ramas `claude/ronda-*` abandonadas en `datos`. Una rama que
+   nadie mira no previene nada y sí pierde trabajo. Nunca `--force`, nunca
+   reescribas historia, nunca toques una rama de otro.
+10. Antes de empujar, la verificación previa del § 2.1 ter, que NO es opcional:
+    · que el JavaScript parsee COMO MÓDULO:
+        node --input-type=module --check < archivo.js
+      `node --check` a secas NO alcanza: parsea como script, y el navegador carga
+      los módulos con otra gramática. El 22-sep dio verde sobre un `nucleo.js`
+      roto y dejó el panel de CasaYourte entero sin funcionar.
+    · los bancos de pruebas que declare el `CLAUDE.md` de ese repo, y que pasen;
+    · los sellos de versión subidos, con la `VERSION` del `sw.js` si el archivo
+      está en `SHELL`, y sus `?v=`;
+    · la documentación del repo diciendo la verdad después del cambio.
+    Si algo no pasa, **no empujes**: escribí en el pendiente qué falló.
 
 ════════ PARTE 3 · AVISAR (siempre, aunque no hayas tocado nada) ════════
 
-10. El aviso a Mauro va en DOS lugares, porque uno solo se pierde:
+11. El aviso va en DOS lugares, porque uno solo se pierde:
     · en el panel, como `pregunta` del pendiente que trabajaste, con el enlace
       adentro — así le aparece en «lo primero que tenés que mirar»;
     · como **última línea de tu respuesta, sola y sin nada después**, para que
       viaje en la notificación al teléfono.
-    El enlace es el de comparar, que muestra el diff y trae el botón de abrir el
-    pull request:
-      https://github.com/<owner>/<repo>/compare/main...claude/ronda-<AAAA-MM-DD>
-    Si no tocaste código, la última línea es igual de obligatoria y dice qué
-    pasó: «Ronda del <fecha>: sin reportes nuevos y sin cambios» o «Ronda del
-    <fecha>: <fuente> no contestó».
-11. Renglón de historia en cada pendiente que tocaste, fechado y con
+    El enlace es el del commit en `main`:
+      https://github.com/<owner>/<repo>/commit/<sha>
+    Si no tocaste código, la última línea es igual de obligatoria: «Ronda del
+    <fecha>: sin reportes nuevos y sin cambios», o «Ronda del <fecha>: <fuente>
+    no contestó». Un silencio y una ronda limpia no se pueden distinguir.
+12. Renglón de historia en cada pendiente que tocaste, fechado y con
     `por: "claude"`. **La respuesta de Mauro no se pisa nunca.**
-12. No marques «hecho» nada que dependa de que él apruebe la rama. Queda abierto
-    con la pregunta hasta que él mergee.
+13. SOLTÁ lo que reservaste y anotá la bitácora de la línea. Si no soltás, vence
+    solo a los 90 minutos, pero dejarlo colgado traba a quien venga antes.
+14. **No escribas en el panel que algo funciona si no lo comprobaste en esta
+    corrida.** El 14-sep una corrida anotó «la primera corrida con los
+    repositorios cargados» y era falso. Lo que no verificaste, se dice como lo
+    que es: sin verificar.
 
 ════════ LO QUE NO SE HACE NUNCA ════════
 
-· Empujar a `main`, forzar, o abrir un pull request sin que él lo pida.
-· Escribir el valor de una credencial en ningún lado, ni en el panel. Si algo
-  parece necesitarlo, se convierte en una `pregunta`.
-· Tocar lo sellado: la bóveda (`claves`, `fichas`), el dinero y los datos de
-  personas. La herramienta te frena y las reglas también.
+· Forzar, reescribir historia, o abrir un pull request sin que él lo pida.
+· Escribir el valor de una credencial en ningún lado, ni en el panel.
+· Tocar la BÓVEDA, que es `claves` y nada más: lo que abre algo. `fichas` NO
+  está sellada desde las reglas v4 del 13-sep y la administra el equipo — no se
+  vuelve a sellar «por precaución», ya se probó y dejó nueve días sin que nadie
+  las mantuviera. Tampoco se toca el dinero ni los datos de personas: la
+  herramienta te frena y las reglas también.
 · Agregar `npm`, bundlers, workflows de GitHub Actions o secretos de Actions.
-  Ninguno de los cuatro sitios tiene, y el primero es una decisión de Mauro.
 · Declarar entregado algo que no se entregó. Si quedó a medias, se dice cuál y
   por qué, y queda abierto en el panel.
 ```

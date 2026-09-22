@@ -14,6 +14,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
          CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA,
@@ -482,6 +483,43 @@ prueba("no explota con lo vacío ni con lo incompleto", () => {
   assert.equal(archivosTocados(undefined).size, 0);
   assert.equal(archivosTocados([{ repo: "x" }]).size, 0);
   assert.equal(archivosTocados([{ repo: "x", commits: [{ titulo: "t" }] }]).size, 0);
+});
+
+prueba("UNA RESERVA SIN IDENTIDAD ES UN FAROL EN VERDE", () => {
+  /* Dos bugs reales del 2026-09-22, los dos encontrados probando contra la
+     base y no leyendo el archivo, y los dos silenciosos:
+
+     1 · El comando leía con `listar` + `deFirestore`, y `deFirestore`
+         decodifica un VALOR, no un DOCUMENTO: devolvía null por cada reserva,
+         `ajenas` quedaba siempre vacía y el semáforo NUNCA bloqueaba.
+     2 · Sin `CLAUDE_SESSION` —que esta plataforma no define— la identidad era
+         "", y entonces un chat no podía renovar lo suyo: se bloqueaba a sí
+         mismo a los 90 minutos.
+
+     Esta prueba fija las dos invariantes que quedaron: con identidad, lo
+     propio no choca y lo ajeno sí. Si alguien vuelve a romper el decodificado,
+     el banco no lo ve —es de cableado— pero la regla de abajo deja escrito qué
+     tiene que pasar para que la comprobación contra la base valga. */
+  const mia = [{ repo: "datos", sesion: "chat A", chat: "chat A", vence: enMin(30) }];
+  assert.equal(reservasDe(mia, "datos", "chat A").length, 0, "lo propio NO choca");
+  assert.equal(reservasDe(mia, "datos", "chat B").length, 1, "lo ajeno SÍ choca");
+  /* Y la identidad vacía tiene que chocar contra todo: es lo que fuerza a que
+     el comando exija un nombre en vez de reservar de forma anónima. */
+  assert.equal(reservasDe(mia, "datos", "").length, 1,
+    "sin identidad, todo es ajeno — por eso el comando pide --chat");
+});
+
+prueba("el comando exige identidad y lee con el decodificador correcto", () => {
+  /* De cableado y no de lógica, así que se mira el texto. Vale la pena porque
+     los dos bugs de arriba eran exactamente eso. */
+  const src = readFileSync(new URL("../../herramientas/ronda.mjs", import.meta.url), "utf8");
+  assert.match(src, /falta decir quién sos/, "tiene que negarse sin nombre");
+  assert.match(src, /listarSuave\(cfg, sesion, "reservas"\)/,
+    "tiene que leer con listarSuave, que decodifica un documento");
+  assert.doesNotMatch(src, /listar\(cfg, sesion, "reservas"\)\.map/,
+    "no vuelve el par listar+deFirestore, que devolvía null por documento");
+  assert.match(src, /if \(!leidas\.ok\)/,
+    "si no puede leer las reservas, NO reserva: a ciegas es peor que no hacerlo");
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

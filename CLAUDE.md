@@ -207,7 +207,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (34 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (62 casos, sin npm ni red) para la ronda de apertura, que desde el
+  (64 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
@@ -296,7 +296,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   dos chats con líneas distintas y legítimas editaron el mismo
   `herramientas/ronda.mjs` y terminó en un rebase con conflicto — una línea
   reserva un propósito, no una superficie.
-  `node herramientas/ronda.mjs reservar <repo>` · `soltar <repo>`. **Vence a
+  `node herramientas/ronda.mjs reservar <repo> --chat "quién sos"` ·
+  `soltar <repo>`. **El nombre es obligatorio**: sin él un chat no puede
+  renovar lo suyo —se bloquea a sí mismo a los 90 min— y el semáforo no le
+  dice a Mauro a quién preguntarle.. **Vence a
   los 90 minutos**, que es lo que a `lineas.tomada` le falta: un chat que muere
   sin soltar la trababa para siempre. Y **se rompe hacia el verde** — una
   reserva sin plazo legible se trata como vencida, porque un semáforo trabado

@@ -60,7 +60,7 @@ import { readdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PROYECTOS, entrar, entrarSuave, deFirestore, escribir, borrar, listar } from "./firestore.mjs";
+import { PROYECTOS, entrar, entrarSuave, deFirestore, escribir, borrar } from "./firestore.mjs";
 
 /* Las bases de sitio donde puede haber FALLAS reportadas: todas las que la
    herramienta conoce, menos el panel —que es donde se cruzan— y menos las que
@@ -577,7 +577,8 @@ function imprimir(d) {
   } else {
     for (const r of vivasR.slice().sort((a, b) => String(a.repo).localeCompare(String(b.repo)))) {
       L.push(`      ${r.repo}${r.rutas && r.rutas.length ? "  [" + r.rutas.join(", ") + "]" : ""}`);
-      L.push(`          lo tiene : ${r.chat || r.quien || "?"}${r.sesion ? " (" + r.sesion + ")" : ""}`);
+      const quien = r.chat || r.quien || "?";
+      L.push(`          lo tiene : ${quien}${r.sesion && r.sesion !== quien ? " (" + r.sesion + ")" : ""}`);
       L.push(`          quedan   : ${minutosQueQuedan(r)} min${r.linea ? "  ·  línea " + r.linea : ""}`);
     }
   }
@@ -713,23 +714,57 @@ if (import.meta.url === `file://${process.argv[1]}`) {
        milisegundo, es que uno no mire. Lo que resuelve eso es que la ronda lo
        ponga arriba, no una primitiva más fuerte. */
     const repo = args[0];
-    if (!repo) { console.error("\n✖ falta el repositorio. Ej: reservar datos\n"); process.exit(1); }
+    if (!repo) { console.error("\n✖ falta el repositorio. Ej: reservar datos --chat \"de qué trata\"\n"); process.exit(1); }
+
+    /* QUIÉN SOS, y es obligatorio. Sin identidad pasan las dos cosas que
+       vacían el semáforo: no se puede RENOVAR —el chat se bloquea a sí mismo a
+       los 90 minutos— y la pantalla dice «chat sin nombre», así que Mauro no
+       sabe a quién preguntarle. Las dos rompen justo lo que esto existe para
+       dar. El entorno no define `CLAUDE_SESSION` en esta plataforma
+       —comprobado—, así que se pide a mano y se usa para las dos cosas. */
+    const iChat = args.indexOf("--chat");
+    const nombre = process.env.CLAUDE_CHAT
+      || (iChat >= 0 ? args[iChat + 1] : "")
+      || "";
+    const mias = process.env.CLAUDE_SESSION || nombre;
+    if (cmd === "reservar" && !mias) {
+      console.error(`\n✖ falta decir quién sos, y no es trámite.`
+        + `\n  Sin nombre no se puede renovar —te bloqueás a vos mismo a los ${MINUTOS_RESERVA} min—`
+        + `\n  y el semáforo no le dice a Mauro a quién preguntarle.`
+        + `\n\n  node herramientas/ronda.mjs reservar ${repo} --chat "de qué trata este chat"\n`);
+      process.exit(1);
+    }
+    const rutas = (iChat >= 0 ? args.slice(1, iChat) : args.slice(1));
     const cfg = PROYECTOS.panel;
     const sesion = await entrar(cfg);
-    const mias = process.env.CLAUDE_SESSION || "";
 
     if (cmd === "soltar") {
       await borrar(cfg, sesion, "reservas", repo);
       console.log(`\n  soltado ${repo}. Queda libre para el que venga.\n`);
     } else {
       /* Antes de pisar, mirar: si la tiene otro y sigue viva, no se reserva.
-         Volver a reservar lo propio es RENOVAR, y por eso no choca consigo. */
-      const todas = (await listar(cfg, sesion, "reservas")).map(deFirestore);
-      const ajenas = reservasDe(todas, repo, mias);
+         Volver a reservar lo propio es RENOVAR, y por eso no choca consigo.
+
+         CON `listarSuave`, que es el que decodifica un DOCUMENTO. El primer
+         intento usó `listar` + `deFirestore` y `deFirestore` decodifica un
+         VALOR, no un documento: devolvía `null` para cada reserva, `ajenas`
+         quedaba siempre vacía y el semáforo NUNCA bloqueaba. Un farol clavado
+         en verde, que es peor que no tenerlo — porque se confía. */
+      const leidas = await listarSuave(cfg, sesion, "reservas");
+      /* Y si no se pueden leer, NO se reserva. Reservar a ciegas es decirle al
+         que viene que el repo es suyo sin haber mirado si ya lo era de otro:
+         justo el choque que esto existe para evitar. */
+      if (!leidas.ok) {
+        console.error(`\n✖ no se pudieron leer las reservas: ${leidas.motivo}`
+          + `\n  NO se reservó nada. Sin poder mirar, reservar es peor que no hacerlo.\n`);
+        process.exit(1);
+      }
+      const ajenas = reservasDe(leidas.docs, repo, mias);
       if (ajenas.length) {
         const o = ajenas[0];
         console.error(`\n✖ «${repo}» lo está tocando ${o.chat || o.quien || "otro chat"}`
-          + `${o.sesion ? " (" + o.sesion + ")" : ""}, y le quedan ${minutosQueQuedan(o)} min.`
+          + `${o.sesion && o.sesion !== (o.chat || o.quien) ? " (" + o.sesion + ")" : ""}`
+          + `, y le quedan ${minutosQueQuedan(o)} min.`
           + `\n  NO lo toques. Decíselo a Mauro con el nombre del repositorio y de quién lo tiene.`
           + `\n  Si ese chat ya terminó, se libera solo al vencer.\n`);
         process.exit(1);
@@ -737,13 +772,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       const ahora = Date.now();
       await escribir(cfg, sesion, "reservas", repo, {
         repo,
-        rutas: args.slice(1),
-        chat: process.env.CLAUDE_CHAT || "chat sin nombre",
+        rutas,
+        chat: nombre || mias,
         sesion: mias,
         desde: new Date(ahora).toISOString(),
         vence: new Date(ahora + MINUTOS_RESERVA * 60000).toISOString()
       });
-      console.log(`\n  reservado ${repo}${args.length > 1 ? "  [" + args.slice(1).join(", ") + "]" : ""}`
+      console.log(`\n  reservado ${repo}${rutas.length ? "  [" + rutas.join(", ") + "]" : ""}`
         + ` por ${MINUTOS_RESERVA} min.`
         + `\n  Volvé a correr esto para renovar. Al terminar: soltar ${repo}.\n`);
     }
@@ -774,7 +809,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       Las letras de clave en uso en ese proyecto y la próxima libre de cada
       una, para escribir un pendiente nuevo sin pisar otro.
 
-  node herramientas/ronda.mjs reservar <repo> [rutas...]
+  node herramientas/ronda.mjs reservar <repo> [rutas...] --chat "quién sos"
       EL SEMÁFORO. Dice que estás tocando ese repositorio, por ${MINUTOS_RESERVA}
       minutos. Falla si lo tiene otro chat vivo. Volver a correrlo RENUEVA.
 

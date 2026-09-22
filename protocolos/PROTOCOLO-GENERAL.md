@@ -362,8 +362,13 @@ habría dos, y ninguna tendría razón.
 **1 · Antes de editar un repositorio, reservarlo.**
 
 ```
-node herramientas/ronda.mjs reservar <repo> [rutas...]
+node herramientas/ronda.mjs reservar <repo> [rutas...] --chat "quién sos"
 ```
+
+**El nombre es obligatorio, y no es trámite.** Sin identidad pasan las dos
+cosas que vacían el semáforo: un chat no puede *renovar* lo suyo —se bloquea a
+sí mismo a los noventa minutos— y la pantalla dice «chat sin nombre», así que
+Mauro no sabe a quién preguntarle. Las dos rompen justo lo que esto da.
 
 Falla si lo tiene otro chat vivo. **Si figura tomado, no se toca:** se le dice
 a Mauro con el nombre del repositorio y de quién lo tiene, igual que con una
@@ -384,6 +389,11 @@ preciso y pide algo que un chat no siempre tiene: saber de antemano qué va a
 tocar. `rutas` existe para afinar cuando sí se sabe, pero lo que decide el
 choque es `repo` — y el choque del 22-sep habría quedado evitado entero con una
 reserva de repositorio.
+
+**Si no se pueden LEER las reservas, no se reserva.** Reservar a ciegas es
+decirle al que viene que el repositorio es suyo sin haber mirado si ya era de
+otro — justo el choque que esto existe para evitar. Es la única parte del
+mecanismo que falla hacia el rojo, y es a propósito.
 
 **Y el semáforo se rompe hacia el VERDE.** Una reserva sin plazo, o con una
 fecha que no se entiende, se trata como vencida. Un semáforo roto en rojo traba

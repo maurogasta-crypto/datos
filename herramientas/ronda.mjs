@@ -4,6 +4,8 @@
 // fallas que la gente reportó desde cada sitio.
 //
 //   node herramientas/ronda.mjs abrir [--json]
+//   node herramientas/ronda.mjs reservar <repo> [rutas...]
+//   node herramientas/ronda.mjs soltar <repo>
 //   node herramientas/ronda.mjs claves <proyecto>
 //
 // ── POR QUÉ EXISTE ───────────────────────────────────────────────────────────
@@ -53,7 +55,12 @@
 //                           `permission-denied` es un bloqueo y se avisa.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { PROYECTOS, entrar, entrarSuave, deFirestore } from "./firestore.mjs";
+import { execFileSync } from "node:child_process";
+import { readdirSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { PROYECTOS, entrar, entrarSuave, deFirestore, escribir, borrar, listar } from "./firestore.mjs";
 
 /* Las bases de sitio donde puede haber FALLAS reportadas: todas las que la
    herramienta conoce, menos el panel —que es donde se cruzan— y menos las que
@@ -234,6 +241,117 @@ const tieneCircuito = (p) => !!(p && p.reportes === true);
    que nunca tuvo nada adentro. */
 const esPedido = (r) => !!r && r.tipo === "pedido";
 
+/* ── QUÉ CAMBIÓ ─────────────────────────────────────────────────────────────
+   La otra mitad del problema, y la que Mauro puso primero: que una sesión
+   nueva no tenga que recorrer el código para enterarse de lo que hizo otra.
+
+   Sale de `git log` y NO de algo que alguien escriba. Es el mismo criterio que
+   el estado de las reglas: un dato que hay que acordarse de anotar es un dato
+   que va a quedar viejo. Acá lo que hay que saber ya está escrito en el
+   repositorio, sólo que nadie lo estaba mirando al abrir.
+
+   Mira los repositorios HERMANOS —las carpetas al lado de `datos`— y no una
+   lista escrita a mano. Esto último es a propósito: una lista sería un cuarto
+   lugar donde dar de alta un proyecto, y la regla del panel es justamente que
+   un sitio nuevo no se agrega en ningún lado de este camino.
+
+   Y NO PUEDE ROMPER LA RONDA. Si no hay git, si la carpeta no es un
+   repositorio, si el comando tarda: se saltea en silencio y la ronda sigue.
+   Esto informa; no mide. */
+const DIAS_CAMBIOS = 2;
+
+function queCambio(dias = DIAS_CAMBIOS) {
+  const raiz = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+  let carpetas = [];
+  try { carpetas = readdirSync(raiz, { withFileTypes: true })
+          .filter((d) => d.isDirectory() && existsSync(join(raiz, d.name, ".git")))
+          .map((d) => d.name).sort(); } catch (e) { return []; }
+
+  const salida = [];
+  for (const nombre of carpetas) {
+    try {
+      const txt = execFileSync("git",
+        ["log", `--since=${dias} days ago`, "--format=%x00%h %s", "--name-only"],
+        { cwd: join(raiz, nombre), encoding: "utf8", timeout: 8000, stdio: ["ignore", "pipe", "ignore"] });
+      const commits = txt.split("\u0000").map((b) => b.trim()).filter(Boolean).map((b) => {
+        const [cab, ...resto] = b.split("\n");
+        const corte = cab.indexOf(" ");
+        return { sha: cab.slice(0, corte), titulo: cab.slice(corte + 1),
+                 archivos: resto.map((x) => x.trim()).filter(Boolean) };
+      });
+      if (commits.length) salida.push({ repo: nombre, commits });
+    } catch (e) { /* sin git, sin repo, o tardó: no es asunto de la ronda */ }
+  }
+  return salida;
+}
+
+/* Qué archivo tocó qué commit, que es lo que de verdad sirve para no releer:
+   un archivo que aparece dos veces es un archivo donde dos trabajos se
+   cruzaron. */
+function archivosTocados(cambios) {
+  const m = new Map();
+  for (const r of cambios || []) {
+    for (const c of r.commits || []) {
+      for (const a of c.archivos || []) {
+        const k = r.repo + "/" + a;
+        if (!m.has(k)) m.set(k, []);
+        m.get(k).push(c.titulo);
+      }
+    }
+  }
+  return m;
+}
+
+/* ── EL SEMÁFORO ────────────────────────────────────────────────────────────
+   Una RESERVA dice qué repositorio está tocando un chat, y hasta cuándo. Es
+   distinta de una LÍNEA, que dice por qué se trabaja, y las dos hacen falta.
+
+   EL CASO QUE LA TRAJO, del 2026-09-22: dos chats con líneas distintas y las
+   dos legítimas —una de casayourte, otra de hilux— editaron el mismo día
+   `herramientas/ronda.mjs`. Terminó en un rebase con conflicto y en releer los
+   cinco commits del otro. Una línea reserva un PROPÓSITO; no reserva una
+   SUPERFICIE, y por eso el choque no se vio hasta el push.
+
+   POR REPOSITORIO Y NO POR ARCHIVO, al menos para empezar. Por archivo es más
+   preciso y pide algo que un chat no siempre tiene: saber de antemano qué va a
+   tocar. `rutas` existe para afinar cuando sí se sabe, pero lo que decide el
+   choque es `repo` — y el choque de ese día habría quedado evitado entero con
+   una reserva de repositorio.
+
+   VENCE, y eso es lo que a `lineas.tomada` le falta. Un chat que muere sin
+   soltar deja la línea trabada para siempre; con un plazo, se libera sola. El
+   plazo se renueva volviendo a reservar, así que una sesión larga no se queda
+   sin él. Noventa minutos: más corto molesta, más largo deja trabado a un
+   muerto. */
+const MINUTOS_RESERVA = 90;
+
+/* Viva = no vencida. Se DERIVA de la fecha y no de un campo `activa`, por lo
+   mismo que el estado de las reglas se deriva: un campo que alguien tiene que
+   acordarse de apagar es un campo que va a quedar encendido. Una reserva sin
+   `vence`, o con una fecha que no se entiende, se trata como VENCIDA — el
+   semáforo se rompe hacia el verde, porque un semáforo roto en rojo traba el
+   ecosistema entero y eso es peor que un choque. */
+const reservaViva = (r, ahora = Date.now()) => {
+  if (!r || !r.repo) return false;
+  const t = Date.parse(r.vence || "");
+  return Number.isFinite(t) && t > ahora;
+};
+
+/* Las vivas de un repo, sacando la del propio chat: reservarse contra uno
+   mismo no es un choque, es renovar. */
+const reservasDe = (reservas, repo, sesion, ahora = Date.now()) =>
+  (reservas || []).filter((r) => reservaViva(r, ahora) && r.repo === repo
+                                && (!sesion || r.sesion !== sesion));
+
+/* `Math.max(0, NaN)` es NaN, no 0: una fecha ilegible imprimiría «quedan NaN
+   min», que es de las cosas que hacen dudar de todo el resto de la pantalla.
+   Se comprueba que el número EXISTE antes de compararlo. */
+const minutosQueQuedan = (r, ahora = Date.now()) => {
+  const t = Date.parse((r && r.vence) || "");
+  if (!Number.isFinite(t)) return 0;
+  return Math.max(0, Math.round((t - ahora) / 60000));
+};
+
 const tocados = (p) => (p || []).filter((x) => x.tocado);
 const sinResponder = (p) => (p || []).filter((x) => x.pregunta && !x.respuesta);
 
@@ -257,7 +375,9 @@ function porProyecto(pendientes, fichas) {
 
 export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
-         vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido };
+         vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido,
+         MINUTOS_RESERVA, reservaViva, reservasDe, minutosQueQuedan,
+         queCambio, archivosTocados, DIAS_CAMBIOS };
 
 /* ── Lo que sí toca la red ───────────────────────────────────────────────────
    `firestore.mjs` corta el proceso ante un 403, que es lo correcto cuando una
@@ -310,6 +430,11 @@ async function juntar() {
   const lin = await listarSuave(cfgPanel, sesionPanel, "lineas");
   fuentes.push({ base: "panel", coleccion: "lineas", ok: lin.ok, motivo: lin.motivo,
                  cuantos: lin.docs.length });
+  const res = await listarSuave(cfgPanel, sesionPanel, "reservas");
+  /* Se cuentan las VIVAS y no las guardadas: una reserva vencida es ruido, y
+     el renglón de FUENTES tiene que decir lo que importa. */
+  fuentes.push({ base: "panel", coleccion: "reservas", ok: res.ok, motivo: res.motivo,
+                 cuantos: res.ok ? res.docs.filter((r) => reservaViva(r)).length : 0 });
   fuentes.push({ base: "panel", coleccion: "pendientes", ...pend, docs: undefined, cuantos: pend.docs.length });
 
   /* Si el panel no contesta, no hay ronda: todo lo demás se cruza contra él.
@@ -360,6 +485,8 @@ async function juntar() {
     fecha: new Date().toISOString().slice(0, 10),
     pendientes,
     lineas: lin.ok ? lin.docs : [],
+    reservas: res.ok ? res.docs : [],
+    cambios: queCambio(),
     proyectos: proy.ok ? proy.docs : [],
     reportes,
     fuentes
@@ -439,6 +566,49 @@ function imprimir(d) {
   }
   L.push(`\n      Antes de tocar código: tomá una línea o abrila. Si ya está tomada`);
   L.push(`      por otro, NO la toques — preguntá. Es todo el punto de esta sección.`);
+
+  /* EL SEMÁFORO va pegado a las líneas y no en una sección numerada, porque no
+     es trabajo: es la condición para empezar. Una línea dice por qué; una
+     reserva dice qué repositorio está ocupado y hasta cuándo. */
+  const vivasR = (d.reservas || []).filter((r) => reservaViva(r));
+  L.push(`\n  SEMÁFORO — qué repositorio está tocando alguien ahora mismo`);
+  if (!vivasR.length) {
+    L.push(`      (ninguno · todos libres)`);
+  } else {
+    for (const r of vivasR.slice().sort((a, b) => String(a.repo).localeCompare(String(b.repo)))) {
+      L.push(`      ${r.repo}${r.rutas && r.rutas.length ? "  [" + r.rutas.join(", ") + "]" : ""}`);
+      L.push(`          lo tiene : ${r.chat || r.quien || "?"}${r.sesion ? " (" + r.sesion + ")" : ""}`);
+      L.push(`          quedan   : ${minutosQueQuedan(r)} min${r.linea ? "  ·  línea " + r.linea : ""}`);
+    }
+  }
+  L.push(`\n      Antes de editar un repositorio: reservalo.`);
+  L.push(`          node herramientas/ronda.mjs reservar <repo> [rutas...]`);
+  L.push(`      Si figura arriba con otro chat, NO lo toques — decíselo a Mauro.`);
+  L.push(`      Vence solo a los ${MINUTOS_RESERVA} min, así que un chat que muere no traba a nadie;`);
+  L.push(`      volver a reservar lo renueva. Al cerrar: soltar <repo>.`);
+
+  /* QUÉ CAMBIÓ: para no releer lo que otro ya hizo. Sale de git, no de que
+     alguien se haya acordado de anotarlo. */
+  const cambios = d.cambios || [];
+  L.push(`\n  QUÉ CAMBIÓ — commits de los últimos ${DIAS_CAMBIOS} días, para no releer de cero`);
+  if (!cambios.length) {
+    L.push(`      (nada, o no se pudo mirar el git desde acá)`);
+  } else {
+    for (const r of cambios) {
+      L.push(`      ${r.repo} · ${r.commits.length} commit${r.commits.length === 1 ? "" : "s"}`);
+      for (const c of r.commits.slice(0, 6)) L.push(`          ${c.sha}  ${corto(c.titulo, 78)}`);
+      if (r.commits.length > 6) L.push(`          … y ${r.commits.length - 6} más`);
+    }
+    /* Un archivo que aparece en varios commits es donde dos trabajos se
+       cruzaron. Es lo primero que hay que mirar antes de editarlo. */
+    const calientes = [...archivosTocados(cambios)]
+      .filter(([, t]) => t.length > 1)
+      .sort((a, b) => b[1].length - a[1].length).slice(0, 8);
+    if (calientes.length) {
+      L.push(`\n      CALIENTES — tocados por más de un commit. Mirá esto antes de editarlos:`);
+      for (const [a, t] of calientes) L.push(`          ${t.length}×  ${a}`);
+    }
+  }
 
   L.push(`\n  1 · TOCADOS — Mauro los editó desde el último parte`);
   if (!ti.length) L.push(`      (ninguno)`);
@@ -532,6 +702,52 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
     console.log(args.includes("--json") ? JSON.stringify(d, null, 2) : imprimir(d));
 
+  } else if (cmd === "reservar" || cmd === "soltar") {
+    /* EL IDENTIFICADOR ES EL REPOSITORIO, y eso es lo que hace de esto un
+       semáforo y no una lista de deseos: dos chats que reservan el mismo repo
+       escriben el MISMO documento, así que el segundo ve al primero. Si cada
+       reserva tuviera un id propio, habría dos y ninguna tendría razón.
+
+       No es un candado atómico —Firestore podría darlo con una transacción—
+       y no hace falta: acá el riesgo no es que dos chats reserven en el mismo
+       milisegundo, es que uno no mire. Lo que resuelve eso es que la ronda lo
+       ponga arriba, no una primitiva más fuerte. */
+    const repo = args[0];
+    if (!repo) { console.error("\n✖ falta el repositorio. Ej: reservar datos\n"); process.exit(1); }
+    const cfg = PROYECTOS.panel;
+    const sesion = await entrar(cfg);
+    const mias = process.env.CLAUDE_SESSION || "";
+
+    if (cmd === "soltar") {
+      await borrar(cfg, sesion, "reservas", repo);
+      console.log(`\n  soltado ${repo}. Queda libre para el que venga.\n`);
+    } else {
+      /* Antes de pisar, mirar: si la tiene otro y sigue viva, no se reserva.
+         Volver a reservar lo propio es RENOVAR, y por eso no choca consigo. */
+      const todas = (await listar(cfg, sesion, "reservas")).map(deFirestore);
+      const ajenas = reservasDe(todas, repo, mias);
+      if (ajenas.length) {
+        const o = ajenas[0];
+        console.error(`\n✖ «${repo}» lo está tocando ${o.chat || o.quien || "otro chat"}`
+          + `${o.sesion ? " (" + o.sesion + ")" : ""}, y le quedan ${minutosQueQuedan(o)} min.`
+          + `\n  NO lo toques. Decíselo a Mauro con el nombre del repositorio y de quién lo tiene.`
+          + `\n  Si ese chat ya terminó, se libera solo al vencer.\n`);
+        process.exit(1);
+      }
+      const ahora = Date.now();
+      await escribir(cfg, sesion, "reservas", repo, {
+        repo,
+        rutas: args.slice(1),
+        chat: process.env.CLAUDE_CHAT || "chat sin nombre",
+        sesion: mias,
+        desde: new Date(ahora).toISOString(),
+        vence: new Date(ahora + MINUTOS_RESERVA * 60000).toISOString()
+      });
+      console.log(`\n  reservado ${repo}${args.length > 1 ? "  [" + args.slice(1).join(", ") + "]" : ""}`
+        + ` por ${MINUTOS_RESERVA} min.`
+        + `\n  Volvé a correr esto para renovar. Al terminar: soltar ${repo}.\n`);
+    }
+
   } else if (cmd === "claves") {
     const proyecto = args[0];
     if (!proyecto) { console.error("\n✖ falta el proyecto\n"); process.exit(1); }
@@ -557,6 +773,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   node herramientas/ronda.mjs claves <proyecto>
       Las letras de clave en uso en ese proyecto y la próxima libre de cada
       una, para escribir un pendiente nuevo sin pisar otro.
+
+  node herramientas/ronda.mjs reservar <repo> [rutas...]
+      EL SEMÁFORO. Dice que estás tocando ese repositorio, por ${MINUTOS_RESERVA}
+      minutos. Falla si lo tiene otro chat vivo. Volver a correrlo RENUEVA.
+
+  node herramientas/ronda.mjs soltar <repo>
+      Lo libera. Si no se hace, vence solo — un chat que muere no traba a nadie.
 
   Lo que se hace con esto: RUTINA-AUTOMATICA.md
 `);

@@ -18,7 +18,8 @@ import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
          CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA,
          vivaL, diasTomada, lineasVivas,
-         tieneCircuito, esPedido } from "../../herramientas/ronda.mjs";
+         tieneCircuito, esPedido, MINUTOS_RESERVA, reservaViva, reservasDe,
+         minutosQueQuedan, archivosTocados } from "../../herramientas/ronda.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -388,6 +389,99 @@ prueba("separar una lista mezclada no pierde ni duplica ninguno", () => {
   assert.deepEqual(pedidos.map((r) => r.id), ["b", "d"]);
   assert.deepEqual(fallas.map((r) => r.id), ["a", "c", "e"]);
   assert.equal(pedidos.length + fallas.length, lista.length);
+});
+
+/* ── EL SEMÁFORO ─────────────────────────────────────────────────────────── */
+titulo("El semáforo: qué repositorio está tocando alguien, y hasta cuándo");
+
+const enMin = (m) => new Date(Date.now() + m * 60000).toISOString();
+
+prueba("una reserva con plazo por delante está viva", () => {
+  assert.equal(reservaViva({ repo: "datos", vence: enMin(30) }), true);
+});
+
+prueba("VENCIDA es lo mismo que soltada", () => {
+  /* Es toda la diferencia con `lineas.tomada`, que no vence: un chat que muere
+     sin soltar dejaba la línea trabada para siempre. */
+  assert.equal(reservaViva({ repo: "datos", vence: enMin(-1) }), false);
+});
+
+prueba("SIN plazo, o con basura, se rompe hacia el VERDE", () => {
+  /* A propósito y vale escribirlo: un semáforo roto en rojo traba el ecosistema
+     entero, y eso es peor que un choque. Un choque se ve y se arregla; un
+     bloqueo fantasma no se sabe ni a quién preguntarle. */
+  assert.equal(reservaViva({ repo: "datos" }), false);
+  assert.equal(reservaViva({ repo: "datos", vence: "cuando sea" }), false);
+  assert.equal(reservaViva({ repo: "datos", vence: null }), false);
+});
+
+prueba("sin repositorio no es una reserva", () => {
+  assert.equal(reservaViva({ vence: enMin(30) }), false);
+  assert.equal(reservaViva(null), false);
+  assert.equal(reservaViva(undefined), false);
+});
+
+prueba("RENOVAR LO PROPIO no choca consigo mismo", () => {
+  /* Si la reserva de uno contara como ajena, renovar sería imposible: el chat
+     se bloquearía a sí mismo a los 90 minutos y no habría forma de seguir. */
+  const todas = [{ repo: "datos", sesion: "session_A", vence: enMin(30) }];
+  assert.equal(reservasDe(todas, "datos", "session_A").length, 0);
+  assert.equal(reservasDe(todas, "datos", "session_B").length, 1);
+});
+
+prueba("sólo mira el repositorio que se pide, y sólo lo vivo", () => {
+  const todas = [
+    { repo: "datos",      sesion: "A", vence: enMin(30) },
+    { repo: "CasaYourte", sesion: "B", vence: enMin(30) },
+    { repo: "datos",      sesion: "C", vence: enMin(-5) }   // vencida
+  ];
+  assert.deepEqual(reservasDe(todas, "datos", "X").map((r) => r.sesion), ["A"]);
+  assert.deepEqual(reservasDe(todas, "remate", "X"), []);
+});
+
+prueba("los minutos que quedan nunca son negativos", () => {
+  /* «quedan -40 min» no es un dato, es un error de lectura esperando. */
+  assert.equal(minutosQueQuedan({ vence: enMin(-40) }), 0);
+  assert.equal(minutosQueQuedan({ vence: "basura" }), 0);
+  assert.ok(minutosQueQuedan({ vence: enMin(30) }) >= 29);
+});
+
+prueba("el plazo es el que se decidió y no otro", () => {
+  assert.equal(MINUTOS_RESERVA, 90);
+});
+
+/* ── QUÉ CAMBIÓ ──────────────────────────────────────────────────────────── */
+titulo("Qué cambió: para no releer lo que otro chat ya hizo");
+
+prueba("un archivo tocado por dos commits sale marcado", () => {
+  /* Es la señal que importa: donde dos trabajos se cruzaron. Fue exactamente
+     lo que pasó el 2026-09-22 con `herramientas/ronda.mjs`. */
+  const cambios = [{ repo: "datos", commits: [
+    { sha: "aaa", titulo: "uno", archivos: ["herramientas/ronda.mjs", "CLAUDE.md"] },
+    { sha: "bbb", titulo: "dos", archivos: ["herramientas/ronda.mjs"] }
+  ]}];
+  const m = archivosTocados(cambios);
+  assert.deepEqual(m.get("datos/herramientas/ronda.mjs"), ["uno", "dos"]);
+  assert.deepEqual(m.get("datos/CLAUDE.md"), ["uno"]);
+});
+
+prueba("el mismo nombre en dos repos NO se mezcla", () => {
+  /* `CLAUDE.md` existe en los seis. Si la clave no llevara el repositorio
+     adelante, el andamio diría que está calentísimo y sería mentira. */
+  const m = archivosTocados([
+    { repo: "datos",      commits: [{ titulo: "a", archivos: ["CLAUDE.md"] }] },
+    { repo: "CasaYourte", commits: [{ titulo: "b", archivos: ["CLAUDE.md"] }] }
+  ]);
+  assert.equal(m.get("datos/CLAUDE.md").length, 1);
+  assert.equal(m.get("CasaYourte/CLAUDE.md").length, 1);
+});
+
+prueba("no explota con lo vacío ni con lo incompleto", () => {
+  /* Esto informa, no mide: nunca puede voltear la ronda. */
+  assert.equal(archivosTocados([]).size, 0);
+  assert.equal(archivosTocados(undefined).size, 0);
+  assert.equal(archivosTocados([{ repo: "x" }]).size, 0);
+  assert.equal(archivosTocados([{ repo: "x", commits: [{ titulo: "t" }] }]).size, 0);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

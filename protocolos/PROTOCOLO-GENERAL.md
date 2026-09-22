@@ -312,6 +312,99 @@ distintos sobre el mismo proyecto, o una línea tomada hace más de dos días y 
 soltar— y no hay que acordarse de crearlos: un aviso que alguien tiene que
 escribir a mano no aparece el día que hace falta.
 
+### 2.1 sexies · El semáforo: qué repositorio está ocupado, y hasta cuándo
+
+Decidido por Mauro el **2026-09-22**, y **no reemplaza a las líneas**: las dos
+hacen falta y dicen cosas distintas.
+
+> una **LÍNEA** dice **POR QUÉ** se trabaja, y agrupa pendientes.
+> una **RESERVA** dice **QUÉ REPOSITORIO** se está tocando, y **HASTA CUÁNDO**.
+
+#### El caso que lo trajo, y es del mismo día
+
+Dos chats tenían líneas distintas y las dos legítimas —una de `casayourte`,
+otra de `hilux`— y los dos editaron `herramientas/ronda.mjs`. Terminó en un
+rebase con conflicto, y en que uno tuviera que leer los cinco commits del otro
+y volver a correr sus bancos.
+
+**La causa es de diseño y no de disciplina.** Una línea reserva un *propósito*;
+no reserva una *superficie*. Dos propósitos correctos caen en el mismo archivo
+sin que nadie lo vea hasta el push.
+
+#### Lo que se descartó, y por qué
+
+La respuesta estándar de la industria es **aislar y no coordinar**: un *git
+worktree* por agente, cada uno en su copia. Acá no aplica: **un worktree es una
+rama con otro nombre**, y el § 2.1 ter ya decidió contra las ramas con
+evidencia —cuatro trabajos perdidos en dos días—. Lo que previene no es la
+copia; es que alguien mire. Así que esto es coordinación, y lo que la hace
+funcionar es el mismo mecanismo que ya ganó con las líneas: **que la ronda lo
+ponga arriba de todo.**
+
+#### La colección `reservas/`
+
+Vive en la base del panel, con su bloque en las reglas desde el 2026-09-22.
+**El identificador del documento es el nombre del repositorio**, y eso es lo
+que la hace un semáforo: dos chats que reservan el mismo repo escriben el mismo
+documento, así que el segundo ve al primero. Con un id propio por reserva
+habría dos, y ninguna tendría razón.
+
+| Campo | Qué guarda |
+|---|---|
+| `repo` | `datos`, `CasaYourte`, … — igual al id |
+| `rutas[]` | opcional, para afinar cuando se sabe qué se va a tocar |
+| `chat` · `sesion` · `desde` | quién la tiene |
+| `vence` | **el plazo.** Una reserva caduca sola |
+| `linea` | a qué línea pertenece |
+
+#### Las tres reglas
+
+**1 · Antes de editar un repositorio, reservarlo.**
+
+```
+node herramientas/ronda.mjs reservar <repo> [rutas...]
+```
+
+Falla si lo tiene otro chat vivo. **Si figura tomado, no se toca:** se le dice
+a Mauro con el nombre del repositorio y de quién lo tiene, igual que con una
+línea.
+
+**2 · Vence a los 90 minutos, y renovar es volver a correrlo.** Es lo que a
+`lineas.tomada` le falta: un chat que muere sin soltar deja la línea trabada
+para siempre. Noventa minutos porque más corto molesta en una sesión larga y
+más largo deja trabado a un muerto.
+
+**3 · Al cerrar, soltar.** `soltar <repo>`. Si no se hace, vence solo — el
+mecanismo no depende de que alguien se acuerde.
+
+#### Dos decisiones que no son de comodidad
+
+**Por repositorio y no por archivo**, al menos para empezar. Por archivo es más
+preciso y pide algo que un chat no siempre tiene: saber de antemano qué va a
+tocar. `rutas` existe para afinar cuando sí se sabe, pero lo que decide el
+choque es `repo` — y el choque del 22-sep habría quedado evitado entero con una
+reserva de repositorio.
+
+**Y el semáforo se rompe hacia el VERDE.** Una reserva sin plazo, o con una
+fecha que no se entiende, se trata como vencida. Un semáforo roto en rojo traba
+el ecosistema entero, y eso es peor que un choque: un choque se ve y se
+arregla; un bloqueo fantasma no se sabe ni a quién preguntarle. Tiene su prueba.
+
+#### Y la otra mitad: **QUÉ CAMBIÓ**
+
+El semáforo evita el choque. Lo que evita **releer** es la sección que la ronda
+agrega al lado: los commits de los últimos dos días por repositorio, con los
+archivos que tocó cada uno, y una lista de **CALIENTES** — los archivos tocados
+por más de un commit, que es exactamente donde dos trabajos se cruzaron.
+
+Sale de `git log` y **no de algo que alguien escriba**, por el mismo motivo por
+el que el estado de las reglas se deriva: un dato que hay que acordarse de
+anotar es un dato que va a quedar viejo. Y mira las carpetas hermanas, no una
+lista: una lista sería un cuarto lugar donde dar de alta un proyecto.
+
+Si no hay git, o la carpeta no es un repositorio, se saltea en silencio. **Esto
+informa; no mide, y no puede voltear la ronda.**
+
 ### 2.1 quater · Las ramas que la plataforma abre igual, y cómo se cierran
 
 Decidido por Mauro el **2026-09-14**: *«haz el empuje hacia el main en forma

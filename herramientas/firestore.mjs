@@ -77,6 +77,12 @@ const PROYECTOS = {
     apiKey: "AIzaSyAxWOM9ZEHt6CXh8Nf1qU6FvL2uh1wFbug",
     mail: "FB_PANEL_MAIL",
     clave: "FB_PANEL_CLAVE",
+    /* `reservas` NO está acá a propósito, y no es un olvido. `colecciones` es
+       lo que se lleva el respaldo, y una reserva es un candado efímero: al
+       restaurar un respaldo viejo se resucitarían bloqueos de chats que
+       murieron hace semanas, y nadie sabría a quién preguntarle. Lo que hay
+       que poder restaurar es el estado y el reglamento; el semáforo se
+       reconstruye solo en noventa minutos. */
     colecciones: ["lineas", "proyectos", "pendientes", "protocolos", "tandas", "fichas"],
     /* `claves` es la bóveda, desde el día uno y para siempre: es lo que ABRE
        algo — contraseñas, códigos de recuperación, segundos factores.

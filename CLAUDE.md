@@ -207,7 +207,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (34 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (46 casos, sin npm ni red) para la ronda de apertura, que desde el
+  (62 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
@@ -290,6 +290,21 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   las muestra al navegador. Todo lo que muestra y copia es el archivo del
   repositorio — el que hay que publicar. Es una pregunta que ya se hizo dos
   veces: que la pantalla lo diga con esas palabras es parte del trabajo.
+- **Y antes de EDITAR un repositorio se lo RESERVA** (§ 2.1 sexies, desde el
+  2026-09-22). Una línea dice *por qué* se trabaja; una reserva dice *qué
+  repositorio* está ocupado y *hasta cuándo*. Las dos hacen falta: el 22-sep
+  dos chats con líneas distintas y legítimas editaron el mismo
+  `herramientas/ronda.mjs` y terminó en un rebase con conflicto — una línea
+  reserva un propósito, no una superficie.
+  `node herramientas/ronda.mjs reservar <repo>` · `soltar <repo>`. **Vence a
+  los 90 minutos**, que es lo que a `lineas.tomada` le falta: un chat que muere
+  sin soltar la trababa para siempre. Y **se rompe hacia el verde** — una
+  reserva sin plazo legible se trata como vencida, porque un semáforo trabado
+  es peor que un choque.
+- **La ronda abre con QUÉ CAMBIÓ**, derivado de `git log` y no de lo que
+  alguien se haya acordado de anotar: los commits de los últimos dos días por
+  repositorio y los archivos **CALIENTES**, tocados por más de un commit. Es
+  para no releer lo que otra sesión ya hizo.
 - **Antes de tocar código se TOMA una línea de trabajo, y si ya está tomada por
   otro chat no se toca.** Es la regla que ordena a todas las demás, y existe
   porque el 2026-09-14 dos sesiones trabajaron en paralelo sin enterarse. Las

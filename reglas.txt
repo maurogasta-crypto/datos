@@ -138,6 +138,29 @@ service cloud.firestore {
     // títulos de trabajo, no datos de nadie.
     match /lineas/{id}     { allow read, write: if equipo(); }
 
+    // `reservas/` entra el 2026-09-22, y NO reemplaza a `lineas/`: las dos
+    // hacen falta y dicen cosas distintas.
+    //
+    //   una LÍNEA   dice POR QUÉ se trabaja, y agrupa pendientes.
+    //   una RESERVA dice QUÉ REPOSITORIO se está tocando, y HASTA CUÁNDO.
+    //
+    // El motivo es un caso real del 2026-09-22: dos chats tenían líneas
+    // distintas y legítimas, y los dos editaron `herramientas/ronda.mjs` el
+    // mismo día. Terminó en un rebase con conflicto. Una línea reserva un
+    // propósito; no reserva una superficie, y por eso no lo vio nadie hasta
+    // el push.
+    //
+    // Y LLEVA VENCIMIENTO, que es lo que a `lineas.tomada` le falta: un chat
+    // que muere sin soltar deja la línea trabada para siempre. Es la falla
+    // clásica de todo bloqueo cooperativo, y se arregla con un plazo que se
+    // renueva mientras haya alguien vivo del otro lado.
+    //
+    // Es COOPERATIVO y no obligatorio, a propósito: ninguna regla de Firestore
+    // puede frenar un `git push`. Lo que lo hace funcionar es que la ronda lo
+    // muestre arriba de todo, que es la misma apuesta que ya ganó con las
+    // líneas contra las ramas.
+    match /reservas/{id}   { allow read, write: if equipo(); }
+
     // ── El estado de los proyectos y el reglamento ──
     // No es sensible. Lo genera el agente y también lo escribe: es lo que
     // saca de encima el toque de Mauro por tanda.

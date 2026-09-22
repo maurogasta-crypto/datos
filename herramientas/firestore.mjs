@@ -145,7 +145,7 @@ const PROYECTOS = {
        Es la primera base del ecosistema donde el agente escribe algo, y la
        separación en dos colecciones es lo que lo hace seguro: si un análisis
        sale mal, se rehace sin tocar el dato medido. */
-    colecciones: ["reportes", "analisis"],
+    colecciones: ["reportes", "recorridos", "analisis"],
     /* **Y por eso `reportes` de acá NO es lo mismo que en los otros tres.**
        En remate, CasaYourte y Casa Verde un documento de `reportes` es una
        PERSONA diciendo que algo se rompió, y la ronda lo levanta para que se
@@ -165,9 +165,29 @@ const PROYECTOS = {
        Mauro el mismo día. Sin esta línea, `reportes` se asume fallas, que es
        lo que vale para los tres sitios. */
     reportesSon: "viajes",
-    /* Ninguna. Acá no hay credenciales, ni datos de terceros, ni recorrido:
-       lo que sube es el reporte SIN coordenadas, el mismo que se puede mandar
-       por un chat. El recorrido no sale del teléfono por ningún canal. */
+    /* **`recorridos` entró el 2026-09-21 y da vuelta lo que decía acá.**
+       Hasta esa fecha este comentario decía «el recorrido no sale del
+       teléfono por ningún canal», que era cierto y era la regla de fondo del
+       proyecto. Mauro la cambió a propósito —«por más que haya puntos o
+       coordenadas»— porque en esta etapa quiere poder cruzar TODOS los datos
+       desde el chat, y sin el recorrido la mitad de las preguntas no se
+       pueden contestar: el relieve del camino, cuándo el motor hace fuerza,
+       cuándo frena.
+
+       Un documento por viaje, con los puntos en columnas paralelas y en
+       deltas —unos 22 bytes por punto, 117 KiB para un viaje de 70 km— más
+       la ficha del viaje al lado. El formato está en
+       `sitd-hilux/lib/features/nube/recorrido.dart`, con las escalas
+       adentro de cada documento para que uno viejo se siga leyendo.
+
+       El agente lo LEE y no lo escribe, igual que `reportes`. Lo escribe el
+       teléfono cuando Mauro toca el botón: no sube solo, y eso es a
+       propósito. */
+    /* Ninguna. Acá no hay credenciales ni datos de terceros. El recorrido SÍ
+       está, desde el 2026-09-21 y por pedido explícito de Mauro — ver arriba.
+       Si algún día se quiere volver a sellar, se agrega "recorridos" acá Y se
+       le saca el `allow read` al agente en `firestore.rules` del proyecto: el
+       archivo da el mensaje claro, la regla da la garantía. */
     selladas: []
   },
 

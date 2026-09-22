@@ -197,12 +197,26 @@ await prueba("las cinco bases están, y ninguna comparte projectId con otra", ()
   }
 });
 
-await prueba("hilux no sella nada porque el recorrido no sube, y se comprueba", () => {
+await prueba("hilux no sella nada, y el recorrido SÍ se baja — cambió el 2026-09-21", () => {
   const h = PROYECTOS.hilux;
   assert.deepEqual(h.selladas, []);
-  /* Las dos colecciones y ninguna más: si alguien agrega una tercera, tiene
-     que venir acá y decidir si sella. */
-  assert.deepEqual(h.colecciones, ["reportes", "analisis"]);
+  /* Las tres colecciones y ninguna más: si alguien agrega una cuarta, tiene
+     que venir acá y decidir si sella.
+
+     **`recorridos` entró el 2026-09-21 y esta prueba decía lo contrario.**
+     Su nombre era «hilux no sella nada PORQUE EL RECORRIDO NO SUBE», que era
+     cierto y era la regla de fondo de ese proyecto: dónde estuvo la camioneta
+     no salía del teléfono por ningún canal. Mauro la dio vuelta a propósito
+     —«por más que haya puntos o coordenadas»— para poder cruzar todos los
+     datos desde el chat en esta etapa.
+
+     Se deja escrito acá y no sólo en el `CLAUDE.md` de hilux porque es
+     exactamente el tipo de cambio que alguien deshace de buena fe creyendo
+     que fue un descuido. Si algún día se quiere volver a sellar, se agrega
+     "recorridos" a `selladas` Y se le saca el `allow read` al agente en el
+     `firestore.rules` de ese proyecto: el archivo da el mensaje claro, la
+     regla da la garantía. */
+  assert.deepEqual(h.colecciones, ["reportes", "recorridos", "analisis"]);
 });
 await prueba("ninguna colección de `bajar` está sellada — el respaldo no se cuelga", async () => {
   for (const [n, p] of Object.entries(PROYECTOS)) {

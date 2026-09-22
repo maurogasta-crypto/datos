@@ -461,6 +461,12 @@ function imprimir(d) {
     L.push(`      ${r._proy}:reportes/${r.id}  [${marca}]  ${r.pagina || "?"}`);
     L.push(`          ${primera} : ${corto(r.texto, 140)}`);
     if (r.esperaba) L.push(`          ${esPedido(r) ? "para qué" : "esperaba"} : ${corto(r.esperaba, 140)}`);
+    /* Desde `nucleo-21` un reporte puede traer una imagen: una captura de la
+       falla, o una referencia de lo que se está pidiendo. Se imprime el
+       identificador de Cloudinary y no una URL armada acá, porque el nombre de
+       la cuenta es de cada proyecto y esta función no lo conoce — inventarle un
+       cuarto lugar donde vive ese dato es justo lo que este repo evita. */
+    if (r.imagen) L.push(`          imagen   : ${r.imagen}`);
     L.push(`          origen   : ${origenDe(r._proy, r.id)}`);
   };
 

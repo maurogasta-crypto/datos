@@ -15,12 +15,13 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { origenDe, cruzar, letrasEnUso, ordenarAbiertos,
+import { origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
          CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA,
          vivaL, diasTomada, lineasVivas,
          tieneCircuito, esPedido, MINUTOS_RESERVA, reservaViva, reservasDe,
-         minutosQueQuedan, archivosTocados } from "../../herramientas/ronda.mjs";
+         minutosQueQuedan, archivosTocados, CAMPOS_PENDIENTE, CAMPOS_LINEA,
+         CAMPOS_PROYECTO, SOLO_NOMBRES } from "../../herramientas/ronda.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -520,6 +521,116 @@ prueba("el comando exige identidad y lee con el decodificador correcto", () => {
     "no vuelve el par listar+deFirestore, que devolvía null por documento");
   assert.match(src, /if \(!leidas\.ok\)/,
     "si no puede leer las reservas, NO reserva: a ciegas es peor que no hacerlo");
+});
+
+/* ── LAS MÁSCARAS ────────────────────────────────────────────────────────── */
+titulo("Las máscaras de campos: traer menos sin mentir");
+
+const fuente = readFileSync(new URL("../../herramientas/ronda.mjs", import.meta.url), "utf8");
+const cuerpoDe = (nombre) => {
+  const i = fuente.search(new RegExp(`^(const|function|async function) ${nombre}\\b`, "m"));
+  if (i < 0) return "";
+  return fuente.slice(i, fuente.indexOf("\n}", i));
+};
+
+prueba("TODO campo de un pendiente que la ronda lee está en la máscara", () => {
+  /* LA PRUEBA QUE HACE SEGURO EL AHORRO, y el primer intento estuvo MAL: barría
+     el texto buscando `p.campo`, pero `tocados` es una línea que usa `x`, así
+     que no veía `pregunta` ni `tocado` y pasaba con la máscara rota. Una prueba
+     que no puede fallar es peor que ninguna, porque da permiso.
+
+     Ésta es de COMPORTAMIENTO: se arma un pendiente completo y el mismo
+     pendiente con SÓLO los campos de la máscara, y se exige que las siete
+     funciones decidan igual con los dos. Si a la máscara le falta un campo que
+     alguna mira, las decisiones se separan y esto falla. */
+  const completo = {
+    id: "casayourte:T1", clave: "T1", proyecto: "casayourte", estado: "abierto",
+    prioridad: "alta", quien: "mauro", titulo: "un título", tocado: true,
+    pregunta: "¿y?", respuesta: "", esperaA: "", linea: "L-taller",
+    origen: "casayourte:reportes/abc",
+    // Los que la máscara deja afuera. Si alguno hiciera falta, se nota abajo.
+    detalle: "x".repeat(500), historia: ["a", "b"], porQue: "el motivo",
+    actualizadoEn: "2026-09-22"
+  };
+  const permitidos = new Set([...CAMPOS_PENDIENTE, "id"]);
+  const enmascarado = Object.fromEntries(
+    Object.entries(completo).filter(([k]) => permitidos.has(k)));
+  assert.ok(Object.keys(enmascarado).length < Object.keys(completo).length,
+    "si no sacó nada, la prueba no está comparando dos cosas distintas");
+
+  const ids = (l) => (l || []).map((x) => x.id);
+  const con = (f) => [f([completo]), f([enmascarado])];
+
+  for (const [nombre, f] of [["tocados", tocados], ["sinResponder", sinResponder],
+                             ["ordenarAbiertos", ordenarAbiertos]]) {
+    const [a, b] = con(f);
+    assert.deepEqual(ids(a), ids(b), `${nombre} decide distinto sin los campos de más`);
+  }
+  assert.equal(pesoDe(completo), pesoDe(enmascarado), "pesoDe cambia el orden");
+  assert.deepEqual(letrasEnUso([completo], "casayourte"),
+                   letrasEnUso([enmascarado], "casayourte"), "letrasEnUso cambia");
+  assert.deepEqual(porProyecto([completo], []).map((g) => g.proyecto),
+                   porProyecto([enmascarado], []).map((g) => g.proyecto), "porProyecto cambia");
+  const r = [{ id: "abc" }];
+  assert.deepEqual(ids(cruzar("casayourte", r, [completo]).nuevos),
+                   ids(cruzar("casayourte", r, [enmascarado]).nuevos),
+                   "cruzar traería dos veces el mismo reporte");
+});
+
+prueba("las máscaras NO piden los campos largos, que es de dónde sale el ahorro", () => {
+  /* Medido el 2026-09-22: con estos tres afuera la corrida pasó de 1087 KiB a
+     239 KiB. Si alguien los vuelve a meter «por las dudas», el ahorro se va. */
+  for (const c of ["detalle", "historia", "porQue"])
+    assert.ok(!CAMPOS_PENDIENTE.includes(c), `un pendiente no necesita ${c}`);
+  assert.ok(!CAMPOS_LINEA.includes("bitacora"),
+    "la bitácora son 23 de los 26 KiB de las líneas y la ronda no la imprime");
+  for (const c of ["tecnica", "sitio", "empaquetado"])
+    assert.ok(!CAMPOS_PROYECTO.includes(c), `la ronda no mira ${c} de un proyecto`);
+});
+
+prueba("pero sí piden lo que la ronda imprime de una línea y de un proyecto", () => {
+  for (const c of ["titulo", "alcance", "objetivo", "proyectos", "estado", "tomada"])
+    assert.ok(CAMPOS_LINEA.includes(c), `la ronda imprime ${c} de una línea`);
+  /* `acceso` es de donde sale «reglas sin publicar», que encabeza «Lo primero»:
+     sin él, la ronda diría que no hay reglas esperando y eso es lo único de esa
+     lista que está perdiendo trabajo mientras se lee. */
+  assert.ok(CAMPOS_PROYECTO.includes("acceso"));
+  assert.ok(CAMPOS_PROYECTO.includes("reportes"), "de acá sale si el sitio tiene circuito");
+});
+
+prueba("contar una base no baja su contenido", () => {
+  /* Los `reportes` de hilux son viajes con vectores de vibración: 461 KiB que
+     se bajaban para tirarlos y quedarse con el número. */
+  assert.deepEqual(SOLO_NOMBRES, ["__name__"]);
+});
+
+/* ── EL ACOTE ────────────────────────────────────────────────────────────── */
+titulo("Acotar a un sitio: menos vueltas, sin perder el semáforo");
+
+prueba("el panel NUNCA se acota, y es la parte que no se negocia", () => {
+  /* Un semáforo que sólo mira el repositorio propio no es un semáforo. El
+     acote saca las bases de los SITIOS —cada una es un login más un listado—
+     y deja el panel entero. */
+  const j = cuerpoDe("juntar");
+  assert.match(j, /if \(soloSitio && nombre !== soloSitio\) continue;/,
+    "el acote tiene que estar en el lazo de las bases de sitio");
+  for (const c of ["pendientes", "lineas", "reservas", "proyectos"])
+    assert.ok(new RegExp(`listarSuave\\(cfgPanel, sesionPanel, "${c}"`).test(j),
+      `${c} del panel se trae siempre, acotado o no`);
+});
+
+prueba("un sitio que no existe se rechaza, no corre contra nada", () => {
+  const a = cuerpoDe("acotar");
+  assert.match(a, /!PROYECTOS\[s\]/, "tiene que validar contra la lista de siempre");
+  assert.match(a, /s === "panel"/, "el panel no es un sitio");
+  assert.match(a, /process\.exit\(1\)/, "y frenar, en vez de seguir en silencio");
+});
+
+prueba("y la salida DICE que está acotada", () => {
+  /* Un listado corto sin ese renglón se lee como «no hay nada pendiente», que
+     es la conclusión opuesta a la verdadera. */
+  assert.match(fuente, /ACOTADA A/);
+  assert.match(fuente, /las otras bases NO se consultaron/);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

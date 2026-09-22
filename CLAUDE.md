@@ -207,7 +207,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (34 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (64 casos, sin npm ni red) para la ronda de apertura, que desde el
+  (71 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
@@ -304,6 +304,16 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sin soltar la trababa para siempre. Y **se rompe hacia el verde** — una
   reserva sin plazo legible se trata como vencida, porque un semáforo trabado
   es peor que un choque.
+- **La ronda pide MÁSCARAS de campos, y acotarla a un sitio es `--sitio <id>`**
+  (§ 2.1 septies, auditado el 2026-09-22: de 1087 KiB a 239, y a 142 acotada).
+  Los pendientes no traen `detalle`, `historia` ni `porQue`; una línea no trae
+  `bitacora`; un proyecto no trae `tecnica`. Una base que sólo se cuenta —los
+  viajes de hilux— se pide **sólo por nombres**: eran 461 KiB para descartar.
+  **Una máscara a la que le falta un campo no rompe, miente**: llega
+  `undefined` y la ronda decide distinto en silencio. Por eso el banco corre las
+  siete funciones con un pendiente completo y con uno enmascarado y exige que
+  decidan igual. **Y el panel nunca se acota** — es lo que dice si otro chat
+  está tocando algo.
 - **La ronda abre con QUÉ CAMBIÓ**, derivado de `git log` y no de lo que
   alguien se haya acordado de anotar: los commits de los últimos dos días por
   repositorio y los archivos **CALIENTES**, tocados por más de un commit. Es

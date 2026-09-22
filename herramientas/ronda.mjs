@@ -377,7 +377,8 @@ export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, origenDe, cruzar, letrasE
          tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
          vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido,
          MINUTOS_RESERVA, reservaViva, reservasDe, minutosQueQuedan,
-         queCambio, archivosTocados, DIAS_CAMBIOS };
+         queCambio, archivosTocados, DIAS_CAMBIOS,
+         CAMPOS_PENDIENTE, CAMPOS_LINEA, CAMPOS_PROYECTO, SOLO_NOMBRES };
 
 /* ── Lo que sí toca la red ───────────────────────────────────────────────────
    `firestore.mjs` corta el proceso ante un 403, que es lo correcto cuando una
@@ -389,12 +390,50 @@ const RAIZ = (p) => `https://firestore.googleapis.com/v1/projects/${p}/databases
 const objeto = (f) => Object.fromEntries(
   Object.entries(f || {}).map(([k, v]) => [k, deFirestore(v)]));
 
-async function listarSuave(cfg, sesion, coleccion) {
+/* LOS CAMPOS QUE LA RONDA MIRA DE UN PENDIENTE, y ninguno más.
+   Medido el 2026-09-22: traer los pendientes enteros son 492 KiB y 1,1 s; con
+   esta máscara son 92 KiB y 0,2 s. La diferencia son `detalle`, `historia` y
+   `porQue` — los tres largos, y los tres que la ronda NO lee nunca: imprime
+   títulos y preguntas, no el cuerpo.
+
+   La lista salió de leer QUÉ campo toca cada función (`cruzar`, `tocados`,
+   `sinResponder`, `ordenarAbiertos`, `porProyecto`, `pesoDe`, `letrasEnUso`) y
+   NO de adivinar, porque una máscara a la que le falta un campo no rompe: ese
+   campo llega `undefined` y la ronda miente en silencio. El banco compara esta
+   lista contra los accesos reales del archivo y falla si se separan.
+
+   `id` no va: sale del nombre del documento y llega siempre. */
+const CAMPOS_PENDIENTE = ["clave", "esperaA", "estado", "linea", "origen",
+  "pregunta", "prioridad", "proyecto", "quien", "respuesta", "titulo", "tocado"];
+
+/* Lo mismo para las otras dos del panel, y por el mismo motivo medido.
+
+   De una LÍNEA se deja afuera `bitacora`, que son 23 de sus 26 KiB y la ronda
+   no imprime nunca: es el registro que se lee ENTERO cuando se toma la línea,
+   con `firestore.mjs panel leer lineas <id>`, no en el resumen de apertura.
+   `porQue` sí se trae aunque tampoco se imprima hoy: son 3 KiB y es lo que el
+   § 2.1 quinquies llama «la especificación» — el día que la ronda lo muestre,
+   ya está.
+
+   De un PROYECTO se dejan afuera `tecnica`, `sitio` y `empaquetado`: 14 KiB
+   que son para las pantallas del panel, no para esto. La ronda mira `acceso`
+   —de ahí sale si las reglas están sin publicar—, `reportes` y el orden. */
+const CAMPOS_LINEA = ["titulo", "alcance", "objetivo", "proyectos", "estado",
+  "tomada", "porQue", "abierta"];
+const CAMPOS_PROYECTO = ["acceso", "reportes", "orden", "nombre"];
+
+/* Para una colección que sólo hay que CONTAR. Pedir un campo que no existe
+   devuelve los documentos sin cuerpo: los nombres alcanzan para contarlos.
+   Medido: los `reportes` de hilux pasan de 461 KiB a 1 KiB. */
+const SOLO_NOMBRES = ["__name__"];
+
+async function listarSuave(cfg, sesion, coleccion, campos) {
   const salida = [];
   let token = "";
+  const mascara = (campos || []).map((c) => "&mask.fieldPaths=" + encodeURIComponent(c)).join("");
   try {
     do {
-      const q = "?pageSize=300" + (token ? "&pageToken=" + encodeURIComponent(token) : "");
+      const q = "?pageSize=300" + mascara + (token ? "&pageToken=" + encodeURIComponent(token) : "");
       const r = await fetch(RAIZ(cfg.projectId) + "/" + coleccion + q,
         { headers: { Authorization: "Bearer " + sesion.token } });
       const j = await r.json().catch(() => ({}));
@@ -411,7 +450,37 @@ async function listarSuave(cfg, sesion, coleccion) {
   return { ok: true, motivo: "", docs: salida };
 }
 
-async function juntar() {
+/* ── ACOTAR EL RANGO ─────────────────────────────────────────────────────────
+   `abrir --sitio casayourte` hace que la ronda hable con UNA base de sitio en
+   vez de las cuatro. Lo pidió Mauro el 2026-09-22: «si yo quiero intervenir
+   sobre un solo sitio tiene que haber un mapa que permita reducir el rango».
+
+   QUÉ SE ACOTA Y QUÉ NO, y la diferencia importa:
+
+   · SE ACOTA el ida y vuelta con las bases de los SITIOS. Es lo caro: cada una
+     es un login más un listado.
+   · NO SE ACOTA el panel. Los pendientes, las líneas, las reservas y los
+     proyectos se traen siempre y enteros, porque son justamente lo que dice si
+     OTRO chat está tocando algo — y un semáforo que sólo mira el repositorio
+     propio no es un semáforo. Acotar eso sería ahorrar en lo único que no se
+     puede ahorrar.
+
+   El nombre que se pasa es el del proyecto en `PROYECTOS`, que es la misma
+   lista de siempre: no hay un mapa nuevo que mantener. Uno que no existe se
+   rechaza con la lista al lado, en vez de correr en silencio contra nada. */
+function acotar(args) {
+  const i = args.indexOf("--sitio");
+  if (i < 0) return null;
+  const s = args[i + 1];
+  if (!s || !PROYECTOS[s] || s === "panel") {
+    console.error(`\n✖ «${s || ""}» no es un sitio conocido.`
+      + `\n  Son: ${CON_REPORTES.join(", ")}\n`);
+    process.exit(1);
+  }
+  return s;
+}
+
+async function juntar(soloSitio) {
   const fuentes = [];
 
   const cfgPanel = PROYECTOS.panel;
@@ -425,9 +494,9 @@ async function juntar() {
     return { fatal: "el panel no dejó entrar — " + ePanel.motivo, fuentes };
   }
   const sesionPanel = ePanel.sesion;
-  const pend = await listarSuave(cfgPanel, sesionPanel, "pendientes");
-  const proy = await listarSuave(cfgPanel, sesionPanel, "proyectos");
-  const lin = await listarSuave(cfgPanel, sesionPanel, "lineas");
+  const pend = await listarSuave(cfgPanel, sesionPanel, "pendientes", CAMPOS_PENDIENTE);
+  const proy = await listarSuave(cfgPanel, sesionPanel, "proyectos", CAMPOS_PROYECTO);
+  const lin = await listarSuave(cfgPanel, sesionPanel, "lineas", CAMPOS_LINEA);
   fuentes.push({ base: "panel", coleccion: "lineas", ok: lin.ok, motivo: lin.motivo,
                  cuantos: lin.docs.length });
   const res = await listarSuave(cfgPanel, sesionPanel, "reservas");
@@ -449,6 +518,10 @@ async function juntar() {
   /* Se recorren TODAS las bases y no sólo las de fallas: una que se caiga
      tiene que salir en FUENTES aunque lo que guarde no se cruce con nada. */
   for (const nombre of BASES_CON_REPORTES) {
+    /* El acote: las demás bases no se tocan. No se las pone en FUENTES como
+       caídas —no fallaron, no se les preguntó—, y la ronda lo dice arriba para
+       que nadie lea un listado corto como «no hay nada». */
+    if (soloSitio && nombre !== soloSitio) continue;
     const cfg = PROYECTOS[nombre];
     if (!cfg) continue;
     /* `entrarSuave` y no `entrar`: el try/catch que había acá NO servía, porque
@@ -463,7 +536,12 @@ async function juntar() {
                      motivo: "no se pudo entrar: " + e.motivo.split("\n")[0], cuantos: 0 });
       continue;
     }
-    const r = await listarSuave(cfg, e.sesion, "reportes");
+    /* Si lo que guarda no son fallas, la ronda sólo la CUENTA para FUENTES:
+       no cruza nada contra los pendientes. Bajarse el contenido entero para
+       tirarlo era el segundo gasto más grande de la corrida — los viajes de
+       hilux traen vectores de vibración. */
+    const r = await listarSuave(cfg, e.sesion, "reportes",
+                                guarda === "fallas" ? null : SOLO_NOMBRES);
     fuentes.push({ base: nombre, coleccion: comoSeLlama, ok: r.ok, motivo: r.motivo,
                    cuantos: r.docs.length,
                    /* El 0 que no quiere decir lo que parece sólo aplica a las
@@ -484,6 +562,7 @@ async function juntar() {
   return {
     fecha: new Date().toISOString().slice(0, 10),
     pendientes,
+    soloSitio: soloSitio || null,
     lineas: lin.ok ? lin.docs : [],
     reservas: res.ok ? res.docs : [],
     cambios: queCambio(),
@@ -542,6 +621,13 @@ function imprimir(d) {
          `${reglas.length} con las reglas sin publicar`);
   L.push(`  (${cerrados + retirados} cerrados y fuera de la cuenta: ` +
          `${cerrados} hechos, ${retirados} retirados)`);
+  /* QUE SE VEA QUE ESTÁ ACOTADA. Un listado corto sin este renglón se lee como
+     «no hay nada pendiente», que es la conclusión opuesta a la verdadera. */
+  if (d.soloSitio) {
+    L.push(`  ⌖ ACOTADA A «${d.soloSitio}» — las otras bases NO se consultaron.`);
+    L.push(`    El panel sí se trajo entero: si otro chat está tocando algo, se ve igual.`);
+    L.push(`    Sin el acote: node herramientas/ronda.mjs abrir`);
+  }
   L.push(`  ${lineasVivas(d.lineas).length} líneas abiertas · ` +
          `${lineasVivas(d.lineas).filter((l) => l.tomada && l.tomada.desde).length} tomadas`);
 
@@ -696,7 +782,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const [, , cmd, ...args] = process.argv;
 
   if (cmd === "abrir") {
-    const d = await juntar();
+    const d = await juntar(acotar(args));
     if (d.fatal) {
       console.error(`\n✖ ${d.fatal}\n`);
       process.exit(1);
@@ -801,9 +887,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   } else {
     console.log(`
-  node herramientas/ronda.mjs abrir [--json]
+  node herramientas/ronda.mjs abrir [--json] [--sitio <id>]
       Junta el panel y los reportes de los sitios, los cruza y los ordena
       como pide el § 8 del PROTOCOLO-GENERAL. No escribe nada.
+
+      Con --sitio habla con UNA base de sitio en vez de las cuatro, para
+      cuando se va a intervenir sobre uno solo. El panel se trae SIEMPRE
+      entero: es lo que dice si otro chat está tocando algo.
 
   node herramientas/ronda.mjs claves <proyecto>
       Las letras de clave en uso en ese proyecto y la próxima libre de cada

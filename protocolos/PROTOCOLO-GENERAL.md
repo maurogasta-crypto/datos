@@ -415,6 +415,64 @@ lista: una lista sería un cuarto lugar donde dar de alta un proyecto.
 Si no hay git, o la carpeta no es un repositorio, se saltea en silencio. **Esto
 informa; no mide, y no puede voltear la ronda.**
 
+### 2.1 septies · Acotar la ronda a un sitio, y qué no se acota nunca
+
+Auditado el **2026-09-22** con la corrida instrumentada, porque Mauro preguntó
+si no había consultas de más. Los números de esa medición:
+
+| | antes | después |
+|---|---|---|
+| Llamadas de red | 13 | 13 (7 acotada) |
+| Bajado | **1087 KiB** | **239 KiB** (142 acotada) |
+
+**De dónde salía el gasto, y las dos causas son distintas:**
+
+1. **Se bajaban campos que nadie lee.** Los pendientes venían enteros —492 KiB—
+   con `detalle`, `historia` y `porQue`, que la ronda **no imprime nunca**:
+   muestra títulos y preguntas, no el cuerpo. Lo mismo la `bitacora` de una
+   línea (23 de sus 26 KiB) y la `tecnica` de un proyecto.
+2. **Se bajaba una colección entera para tirarla.** Los `reportes` de `hilux`
+   son viajes con vectores de vibración: **461 KiB** que se traían para contar
+   seis documentos y descartarlos, porque esa base no guarda fallas.
+
+Se arregla con **máscaras de campos** declaradas en `ronda.mjs`
+(`CAMPOS_PENDIENTE`, `CAMPOS_LINEA`, `CAMPOS_PROYECTO`) y con pedir **sólo los
+nombres** de una colección que únicamente se cuenta.
+
+**Y una máscara mal hecha no rompe: miente.** Un campo que falta llega
+`undefined` y la ronda decide distinto en silencio —un pendiente sin `tocado`
+deja de aparecer en la sección 1 y nadie se entera—. Por eso el banco no
+compara listas: arma un pendiente completo y otro con sólo los campos de la
+máscara, y exige que las siete funciones **decidan igual con los dos**.
+
+> La primera versión de esa prueba barría el texto buscando `p.campo` y no veía
+> `tocados`, que es una línea y usa `x`: pasaba con la máscara rota. **Una
+> prueba que no puede fallar es peor que ninguna, porque da permiso.** Se
+> comprobó a mano que la de ahora falla al sacarle cada campo.
+
+#### El acote
+
+```
+node herramientas/ronda.mjs abrir --sitio casayourte
+```
+
+Habla con **una** base de sitio en vez de las cuatro: de trece llamadas a
+siete, y de cinco logins a dos.
+
+**Lo que NO se acota nunca es el panel.** Los pendientes, las líneas, las
+reservas y los proyectos se traen siempre, porque son justamente lo que dice si
+otro chat está tocando algo — y un semáforo que sólo mira el repositorio propio
+no es un semáforo. Acotar eso sería ahorrar en lo único que no se puede
+ahorrar.
+
+**Y la salida dice que está acotada**, con el encabezado `⌖ ACOTADA A «…» — las
+otras bases NO se consultaron`. Sin ese renglón un listado corto se lee como
+«no hay nada pendiente», que es la conclusión opuesta a la verdadera.
+
+El nombre del sitio sale de `PROYECTOS` en `herramientas/firestore.mjs`, que es
+la lista de siempre: **no hay un mapa nuevo que mantener.** Uno que no existe se
+rechaza con la lista al lado.
+
 ### 2.1 quater · Las ramas que la plataforma abre igual, y cómo se cierran
 
 Decidido por Mauro el **2026-09-14**: *«haz el empuje hacia el main en forma

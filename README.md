@@ -450,10 +450,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-28` |
+| `index.html` | `P.PANEL` | `panel-29` |
 | `estilos.css` | (en el comentario) | `estilos-12` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v19` |
+| `sw.js` | `VERSION` | `panel-shell-v20` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
@@ -642,8 +642,19 @@ estaba en el código y no en la pantalla.
   que sirve el archivo pelado **y** manda `Access-Control-Allow-Origin`. La que
   guarda `proyectos/` es la de mirarlo, y se convierte en el momento. Los
   repositorios son públicos, así que esto no necesita ningún servidor.
-- Se baja **al tocar**, no al pintar la pantalla: son cinco archivos de varios
-  kilobytes y bajarlos todos para copiar uno es regalar la conexión.
+- Se baja **al tocar «Copiar»** y, desde `panel-29`, **también al abrir la
+  ficha de ESE sitio** — uno solo, unos 12 KiB, y no los cinco al abrir el
+  panel, que sería regalar la conexión. Si cambió, se anota y el chip se
+  repinta; si no cambió, no se escribe nada; sin señal queda como estaba.
+
+  **Antes de `panel-29` se bajaba sólo al copiar, y el chip mentía.** El
+  2026-09-28 un chat agregó a las reglas de SITD-Hilux el bloque de
+  `respaldos`, y la ficha siguió diciendo «al día — igual a lo que publicaste
+  el 2026-09-22»: comparaba el archivo viejo, que era el último que el panel
+  había bajado, contra lo publicado. Mauro borró el historial del navegador
+  creyendo que era una caché; el dato vive en la base. Es `hilux:R3` al revés:
+  el chip es un registro de la última vez que alguien miró, y se leía como una
+  medición.
 - **La base del propio panel ya no es una excepción.** Su `reglas.txt` es una
   plantilla con marcadores —ese repositorio es público y no puede guardar un UID
   real—, así que el botón **arma el texto ahí mismo**, con el UID de Mauro y el
@@ -850,6 +861,33 @@ archivo.
 barra de cuánto está hecho, y marca en rojo los que tienen **reglas sin
 publicar**. La pregunta que contesta es «¿por dónde sigo?», y por eso lo
 primero de cada fila es el número y no el nombre.
+
+### Cómo entra la app a su base (`panel-29`)
+
+Pedido de Mauro el 2026-09-28: la configuración que se pega en una app para
+que entre a su base, **con un botón, como las reglas**. Hasta ese día la armaba
+un chat con la clave vacía y había que completarla a mano en cada instalación.
+
+La tarjeta aparece en la ficha de un sitio cuando su documento de `proyectos/`
+trae `app: { apiKey, mail }` y `acceso.base`. Nada de acá nombra a `hilux`.
+
+| Dato | Dónde vive | Quién lo escribe |
+|---|---|---|
+| `proyecto` | `acceso.base` | el agente |
+| `apiKey`, `mail` | `app` del proyecto. No abren nada solos: la clave de API es pública por diseño | el agente |
+| **la contraseña** | **`claves/app-<id>`** — la bóveda | **sólo Mauro**, desde la misma tarjeta |
+
+**«Copiar la configuración para la app»** lee ESE documento de la bóveda en el
+momento de tocar —no la colección, y no al pintar— y deja en el portapapeles
+los cuatro campos que lee `Credencial` de la app. **La contraseña no se muestra
+nunca en la pantalla**, no pasa por un chat, y el agente no la puede leer: las
+reglas le niegan `claves/`. Si todavía no se guardó, el botón **no copia una
+configuración a medias** —la app la aceptaría y fallaría recién al subir, con
+un mensaje que no dice lo que pasó— y dice dónde guardarla.
+
+**Lo que hay que saber:** copiar la pone en el portapapeles del teléfono, donde
+la puede leer el teclado. Es lo mismo que pegándola a mano, y del otro lado dura
+poco: la app la usa una vez, guarda el token del login y la borra.
 
 ## La ficha técnica de cada app
 

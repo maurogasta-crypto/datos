@@ -442,11 +442,14 @@
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-4";
 /* `writeBatch` se fue con el parte: era lo único que escribía de a cientos.
    Lo que queda escribe de a un documento. */
+/* `getDoc` entró en `panel-29`, y para UNA sola cosa: leer la contraseña de la
+   app de su documento de `claves/` en el momento de copiarla. Se trae ese
+   documento y no la colección: la bóveda no se lista para buscar algo. */
 import {
-  doc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
+  doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-28";
+P.PANEL = "panel-29";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2585,6 +2588,42 @@ async function marcarPublicadas(pr, pendienteId, boton) {
    que esta tanda vino a cerrar. */
 function repintarReglas() { pintar(); pintarSitios(); }
 
+/* ── EL ARCHIVO SE RELEE AL ABRIR LA FICHA DEL SITIO (`panel-29`) ──────────
+   Hasta `panel-28` el panel bajaba el archivo de reglas SÓLO al tocar «Copiar
+   para publicar». Así que cuando un chat cambiaba las reglas, `acceso.repo`
+   seguía guardando el archivo viejo, el chip comparaba lo viejo contra lo
+   viejo y decía «al día». Pasó el 2026-09-28 con `sitd-34`: el archivo nuevo
+   tenía el bloque de `respaldos` y la ficha de SITD-Hilux mostraba «al día —
+   igual a lo que publicaste el 2026-09-22». Mauro borró el historial del
+   navegador creyendo que era una caché; el estado vive en la base, no ahí.
+
+   Es el mismo error que `hilux:R3` al revés: el chip es un REGISTRO de la
+   última vez que alguien miró, y se leía como una medición.
+
+   Por qué acá y no al abrir el panel: al abrir serían los cinco archivos, en
+   datos móviles, para mirar quizás ninguno. Al abrir UNA ficha es uno solo
+   —unos 12 KiB— y es justo cuando alguien va a leer ese chip. Se relee una vez
+   por proyecto y por carga de la página, y si no cambió no se escribe nada.
+   Si no baja (sin señal), el chip queda como estaba: no es peor que antes. */
+const RELEIDAS = new Set();
+async function releerReglas(pr) {
+  if (!tieneReglas(pr) || RELEIDAS.has(pr.id)) return;
+  RELEIDAS.add(pr.id);
+  let m;
+  try { m = medirReglas((await bajarReglasDe(pr)).texto); }
+  catch (e) {
+    /* Sin señal, o una plantilla sin UID anotados: el botón amarillo dice
+       cuál cuando alguien lo toca. Se deja volver a intentar. */
+    RELEIDAS.delete(pr.id);
+    return;
+  }
+  const antes = ((pr.acceso || {}).repo || {}).huella;
+  if (antes === m.huella) return;
+  try { await anotarRepo(pr, m); }
+  catch (e) { P.aviso("El archivo de reglas cambió, pero no pude anotarlo: " + P.explicar(e), "error"); return; }
+  repintarReglas();
+}
+
 /* LOS BOTONES, uno solo para las dos pantallas que los muestran: la ficha del
    sitio y el pendiente que pide publicar. Que sean los MISMOS es el pedido
    entero — dos juegos de botones iguales en dos lugares se desincronizan, y
@@ -2839,6 +2878,121 @@ function pintarEmpaquetado(pr) {
   return h;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   CÓMO ENTRA LA APP A SU BASE (`panel-29`, 2026-09-28)
+
+   Pedido de Mauro: «las credenciales para copiar en la apk para que pueda
+   loguearse tendrían que ser accesibles con un botón, como las reglas de
+   Firebase». Hasta hoy la configuración de la nube de SITD-Hilux se armaba a
+   mano cada vez que se instalaba en un teléfono: un chat daba la plantilla
+   con la clave vacía, y había que acordarse del identificador del proyecto,
+   de la clave de API, del mail y buscar la contraseña.
+
+   LAS DOS MITADES VAN A DOS LUGARES, y ésa es la decisión entera:
+
+     · `proyectos/{id}.app` = { apiKey, mail }. NO abren nada solos —la clave
+       de API es pública por diseño y el mail es un nombre de usuario—, así
+       que viven con el resto de la ficha y los escribe el agente.
+     · la CONTRASEÑA sí abre algo, y va a `claves/app-{id}`: la bóveda, que
+       las reglas le niegan al agente de lectura y de escritura. La escribe
+       Mauro desde esta tarjeta, una vez, y el botón la lee de ahí en el
+       momento de copiar. **No aparece nunca en la pantalla**, no pasa por un
+       chat, y no queda guardada en ningún otro lado del panel.
+
+   Lo que sí hay que saber: copiar la pone en el PORTAPAPELES del teléfono,
+   donde puede leerla el teclado. Es lo mismo que pasaba pegándola a mano, y
+   dura poco del otro lado: la app la usa UNA vez, guarda el token que le
+   devuelve el login y la borra (`sitd-19`).
+
+   ES GENÉRICA, como los botones de reglas y la tarjeta del empaquetado: nada
+   de acá nombra a `hilux`. Un proyecto la tiene cuando su documento trae
+   `app` y `acceso.base`.
+   ═══════════════════════════════════════════════════════════ */
+const idDeClaveApp = (pr) => "app-" + pr.id;
+
+function pintarConfigApp(pr) {
+  const app = pr.app || {};
+  const base = (pr.acceso || {}).base;
+  if (!base || !app.apiKey || !app.mail) return "";
+  const id = P.esc(pr.id);
+  return '<div class="tarj"><h2 style="margin:.1rem 0 .5rem">Cómo entra la app a su base</h2>'
+    + '<div class="sit-fila"><div class="ft-k">Base</div><div class="ft-v mono">' + P.esc(base) + "</div></div>"
+    + '<div class="sit-fila"><div class="ft-k">Usuario</div><div class="ft-v mono">' + P.esc(app.mail) + "</div></div>"
+    + '<div class="sit-fila"><div class="ft-k">Contraseña</div><div class="ft-v">'
+    + "Vive en la bóveda, en <code>claves/" + P.esc(idDeClaveApp(pr)) + "</code>. "
+    + '<div class="ft-nota">No se muestra nunca: el botón la lee de ahí al copiar, y si '
+    + "todavía no la guardaste te lo dice en vez de copiar una a medias. "
+    + "El agente no la puede leer — las reglas le niegan la bóveda.</div></div></div>"
+    + '<div class="fila-btn"><button class="btn p" data-app-copiar="' + id + '">'
+    + "Copiar la configuración para la app</button></div>"
+    + '<p class="gris" style="margin:.2rem 0 .6rem;font-size:.78rem">En la app: Sacar los '
+    + "datos → Configurar la nube → pegar. Queda en el portapapeles del teléfono hasta "
+    + "que copies otra cosa; la app la usa una vez y la borra.</p>"
+    + "<details><summary class=\"gris\" style=\"font-size:.82rem\">Guardar o cambiar la contraseña</summary>"
+    + '<input type="password" class="mono" autocomplete="new-password" data-app-clave="' + id + '" '
+    + 'placeholder="la contraseña de ese usuario en ' + P.esc(base) + '" style="margin:.5rem 0">'
+    + '<div class="fila-btn"><button class="btn" data-app-guardar="' + id + '">Guardar en la bóveda</button></div>'
+    + '<p class="gris" style="margin:.2rem 0 0;font-size:.78rem">Va sólo a la bóveda. Si '
+    + "la cambiaste en Firebase, guardala acá de nuevo y volvé a pegar la configuración "
+    + "en la app.</p></details></div>";
+}
+
+/* Lo que se pega en la app: los cuatro campos que lee `Credencial` en
+   `sitd-hilux/lib/features/nube/credencial.dart`, con esos nombres. */
+function armarConfigApp(pr, clave) {
+  const app = pr.app || {};
+  return JSON.stringify({
+    proyecto: (pr.acceso || {}).base || "",
+    apiKey: app.apiKey || "",
+    mail: app.mail || "",
+    clave: clave || ""
+  }, null, 2);
+}
+
+async function copiarConfigApp(pr, boton) {
+  const antes = boton.textContent;
+  boton.disabled = true; boton.textContent = "Leyendo la bóveda…";
+  try {
+    const d = await getDoc(doc(db, "claves", idDeClaveApp(pr)));
+    const clave = d.exists() ? String((d.data() || {}).clave || "") : "";
+    /* Sin contraseña NO se copia a medias. Una configuración con la clave
+       vacía se pega igual, la app la acepta, y falla recién al subir con «el
+       usuario o la contraseña no son correctos» — que no es lo que pasó. */
+    if (!clave) {
+      P.aviso("Todavía no guardaste la contraseña en la bóveda: abrí «Guardar o "
+        + "cambiar la contraseña», acá abajo.", "error");
+      return;
+    }
+    await copiar(armarConfigApp(pr, clave), "Configuración copiada, con la contraseña. "
+      + "En la app: Sacar los datos → Configurar la nube → pegar.");
+  } catch (e) {
+    P.aviso("No se pudo leer la bóveda: " + P.explicar(e), "error");
+  } finally {
+    boton.disabled = false; boton.textContent = antes;
+  }
+}
+
+async function guardarClaveApp(pr, boton) {
+  const caja = $("s-cuerpo").querySelector('[data-app-clave="' + pr.id + '"]');
+  const clave = String((caja && caja.value) || "");
+  if (!clave.trim()) { P.aviso("Escribí la contraseña primero.", "error"); return; }
+  boton.disabled = true;
+  try {
+    /* `merge`: si Mauro ya tenía un documento con ese nombre, no se le borra
+       nada más que la clave. */
+    await setDoc(doc(db, "claves", idDeClaveApp(pr)), {
+      clave, para: "La app de " + (pr.nombre || pr.id) + " entrando a " + ((pr.acceso || {}).base || ""),
+      guardada: P.hoy()
+    }, { merge: true });
+    if (caja) caja.value = "";
+    P.aviso("Guardada en la bóveda. Ya se puede copiar la configuración.");
+  } catch (e) {
+    P.aviso("No se pudo guardar: " + P.explicar(e), "error");
+  } finally {
+    boton.disabled = false;
+  }
+}
+
 function pintarUnSitio(pr) {
   const s = pr.sitio || {};
   const a = pr.acceso || {};
@@ -2969,6 +3123,9 @@ function pintarUnSitio(pr) {
         tiene nada que decir acá y no le sale una tarjeta vacía. */
   h += pintarEmpaquetado(pr);
 
+  /* 4 quater · CÓMO ENTRA LA APP A SU BASE. Ver `pintarConfigApp()`. */
+  h += pintarConfigApp(pr);
+
   /* 4 bis · EN QUÉ ESTAMOS ACÁ. Las líneas de este sitio, más las globales que
         lo tocan. Es la «visualización por sitio» que pidió Mauro el 2026-09-14
         —«para poder tener yo un control sobre lo que voy buscando desarrollar
@@ -3083,6 +3240,7 @@ function pintarSitios() {
      vista global en vez de dejar la pantalla vacía sin decir por qué. */
   if (!pr) { SITIO = "*"; pintarSitios(); return; }
   $("s-cuerpo").innerHTML = pintarUnSitio(pr);
+  releerReglas(pr);
 }
 
 /* Un solo listener para toda la sección: el cuerpo se repinta entero al
@@ -3117,6 +3275,18 @@ $("s-cuerpo").addEventListener("click", (e) => {
   if (pb) {
     const pr = PROYECTOS.find((x) => x.id === pb.dataset.publicadas);
     if (pr) marcarPublicadas(pr, pb.dataset.pend || "", pb);
+    return;
+  }
+  const ac = e.target.closest("[data-app-copiar]");
+  if (ac) {
+    const pr = PROYECTOS.find((x) => x.id === ac.dataset.appCopiar);
+    if (pr) copiarConfigApp(pr, ac);
+    return;
+  }
+  const ag = e.target.closest("[data-app-guardar]");
+  if (ag) {
+    const pr = PROYECTOS.find((x) => x.id === ag.dataset.appGuardar);
+    if (pr) guardarClaveApp(pr, ag);
     return;
   }
   const pu = e.target.closest("[data-puerta]");

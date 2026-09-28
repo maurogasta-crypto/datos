@@ -49,6 +49,15 @@ const escribir = (ref, datos, opts) => {
     : clonar(datos);
 };
 const setDoc = async (ref, datos, opts) => escribir(ref, datos, opts);
+/* `getDoc` entró con `panel-29`, para leer UN documento de `claves/`. Cuenta
+   las lecturas para poder comprobar que la bóveda se lee de a un documento y
+   sólo cuando se toca el botón. */
+const lecturas = [];
+const getDoc = async (r) => {
+  lecturas.push(r.__c + "/" + r.__id);
+  const d = (BASE[r.__c] || {})[r.__id];
+  return { exists: () => !!d, data: () => (d ? clonar(d) : undefined) };
+};
 const deleteDoc = async (ref) => { delete (BASE[ref.__c] || {})[ref.__id]; };
 const serverTimestamp = () => "2026-09-09";
 const writeBatch = () => {
@@ -97,8 +106,8 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 /* ---- el módulo de index.html ---- */
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
-  "getDocs","serverTimestamp","writeBatch","firebaseConfig",
-  modSrc + "\n return { pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
+  "getDocs","serverTimestamp","writeBatch","firebaseConfig","getDoc",
+  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -109,7 +118,7 @@ P.quienEntra = async () => ({ uid: "uid-de-prueba" });
    reglas son una plantilla con marcadores. Acá se le pasa el mismo projectId
    que usa la siembra de abajo. */
 const api = correr(P, $, {}, {}, doc, setDoc, deleteDoc, collection,
-  getDocs, serverTimestamp, writeBatch, { projectId: "datos-830f8" });
+  getDocs, serverTimestamp, writeBatch, { projectId: "datos-830f8" }, getDoc);
 
 /* ---- sembrar la base ----
    HASTA `panel-15` LOS DATOS DE PRUEBA ENTRABAN POR LA SOLAPA «PARTE»: se
@@ -1433,6 +1442,124 @@ ok(conCabeza.split("\n").filter((l) => l.trim().startsWith("//")).length === 3,
 ok(conCabeza.includes(".matches('https://res[.]cloudinary[.]com/dnwfu8ffn/.*')"),
    "con las reglas enteras debajo");
 ok(conCabeza.length < cv.length + 200, "y el encabezado pesa lo que pesa: tres renglones");
+
+
+console.log("\n38 · cómo entra la app a su base: la contraseña, en la bóveda");
+/* Pedido de Mauro el 2026-09-28: la configuración de la app «accesible con un
+   botón, como las reglas». Lo que hay que probar es lo que, si falla, cuesta:
+
+     · que la contraseña vaya a `claves/` y a NINGÚN otro lado — ni al
+       documento del proyecto, ni a la pantalla;
+     · que la bóveda se lea de a UN documento, y sólo al tocar el botón;
+     · que sin contraseña guardada NO se copie una configuración a medias, que
+       la app aceptaría y fallaría recién al subir con un mensaje engañoso;
+     · que lo copiado tenga exactamente los cuatro campos que lee la app. */
+BASE.proyectos = {}; BASE.pendientes = {}; BASE.lineas = {}; BASE.claves = {};
+await sembrar({ proyectos: [
+  { id: "app1", nombre: "La app", orden: 1,
+    acceso: { base: "base-de-la-app" },
+    app: { apiKey: "clave-publica-de-mentira", mail: "telefono@ejemplo.invalido" } },
+  { id: "sitio2", nombre: "Un sitio", orden: 2, acceso: { base: "otra-base" } }
+] });
+api.verSitio("app1"); api.pintarSitios(); await esperar();
+const ficha = () => $("s-cuerpo");
+ok(ficha().textContent.includes("Cómo entra la app a su base"),
+   "un proyecto con `app` tiene la tarjeta");
+ok(ficha().textContent.includes("telefono@ejemplo.invalido"), "y muestra el usuario");
+ok(ficha().textContent.includes("claves/app-app1"), "y dice DÓNDE vive la contraseña");
+api.verSitio("sitio2"); api.pintarSitios(); await esperar();
+ok(!ficha().textContent.includes("Cómo entra la app"),
+   "un sitio sin `app` no tiene una tarjeta vacía");
+ok(lecturas.length === 0, "pintar la ficha NO lee la bóveda");
+
+/* Sin contraseña guardada: no se copia nada. */
+api.verSitio("app1"); api.pintarSitios(); await esperar();
+copiado = null;
+await api.copiarConfigApp(proy("app1"), ficha().querySelector("[data-app-copiar]"));
+ok(copiado === null, "sin contraseña en la bóveda NO se copia una configuración a medias");
+ok(String(($("aviso") || {}).textContent || "").includes("Todavía no guardaste"),
+   "y dice qué falta y dónde se hace");
+ok(lecturas.length === 1 && lecturas[0] === "claves/app-app1",
+   "y leyó UN documento de la bóveda, el suyo, no la colección");
+
+/* Guardarla. */
+const CLAVE = "contrasena-inventada-para-el-banco";
+BASE.claves["app-app1"] = { nota: "algo que Mauro ya tenía acá" };
+ficha().querySelector("[data-app-clave]").value = CLAVE;
+await api.guardarClaveApp(proy("app1"), ficha().querySelector("[data-app-guardar]"));
+ok(BASE.claves["app-app1"].clave === CLAVE, "la contraseña va a `claves/app-app1`");
+ok(BASE.claves["app-app1"].nota === "algo que Mauro ya tenía acá",
+   "mezclando: no se borra lo que ese documento ya tuviera");
+ok(!JSON.stringify(BASE.proyectos).includes(CLAVE),
+   "y NO va al documento del proyecto, que el agente sí lee");
+ok(ficha().querySelector("[data-app-clave]").value === "",
+   "la caja se vacía al guardar");
+api.pintarSitios(); await esperar();
+ok(!ficha().innerHTML.includes(CLAVE), "y la pantalla no la muestra nunca");
+
+/* Copiarla. */
+copiado = null;
+await api.copiarConfigApp(proy("app1"), ficha().querySelector("[data-app-copiar]"));
+let cfgApp = null;
+try { cfgApp = JSON.parse(copiado); } catch (e) { /* queda null */ }
+ok(cfgApp && Object.keys(cfgApp).join(",") === "proyecto,apiKey,mail,clave",
+   "copia los CUATRO campos que lee la app, con sus nombres (credencial.dart)");
+ok(cfgApp && cfgApp.proyecto === "base-de-la-app" && cfgApp.apiKey === "clave-publica-de-mentira"
+   && cfgApp.mail === "telefono@ejemplo.invalido" && cfgApp.clave === CLAVE,
+   "y cada uno sale de su lugar: la base de `acceso`, lo público de `app`, la clave de la bóveda");
+
+/* Una caja vacía no pisa lo guardado. */
+ficha().querySelector("[data-app-clave]").value = "   ";
+await api.guardarClaveApp(proy("app1"), ficha().querySelector("[data-app-guardar]"));
+ok(BASE.claves["app-app1"].clave === CLAVE, "guardar con la caja vacía no borra la contraseña");
+
+console.log("\n39 · el archivo de reglas se relee al abrir la ficha");
+/* El 2026-09-28 la ficha de SITD-Hilux decía «al día» con un archivo que
+   había cambiado ese mismo día: el panel sólo lo releía al tocar «Copiar».
+   Esto prueba que alcanza con ABRIR la ficha, y que eso cuesta un solo
+   pedido por proyecto. */
+const VIEJAS = "match /a/{id} { allow read: if true; }\n";
+const NUEVAS = VIEJAS + "match /respaldos/{id} { allow read: if true; }\n";
+const m0 = api.medirReglas(VIEJAS);
+BASE.proyectos = {};
+await sembrar({ proyectos: [
+  { id: "rel", nombre: "Relectura", orden: 1,
+    acceso: { base: "b-rel", reglasUrl: "https://github.com/x/y/blob/main/firestore.rules",
+              repo: { ...m0, visto: "2026-09-22" }, publicado: { ...m0, fecha: "2026-09-22" } } },
+  { id: "igual", nombre: "Sin cambios", orden: 2,
+    acceso: { base: "b-igual", reglasUrl: "https://github.com/x/z/blob/main/firestore.rules",
+              repo: { ...m0, visto: "2026-09-22" }, publicado: { ...m0, fecha: "2026-09-22" } } }
+] });
+ok(api.estadoReglas(proy("rel")).chip === "al día", "arranca «al día», como la del 28");
+let bajadas = 0;
+globalThis.fetch = async (u) => {
+  bajadas++;
+  return { ok: true, text: async () => (String(u).includes("/y/") ? NUEVAS : VIEJAS) };
+};
+api.verSitio("rel"); api.pintarSitios(); await esperar(); await esperar(); await esperar();
+ok(api.estadoReglas(proy("rel")).chip === "falta publicar",
+   "con SÓLO abrir la ficha, el chip se entera de que el archivo cambió");
+ok(BASE.proyectos.rel.acceso.repo.huella === api.medirReglas(NUEVAS).huella,
+   "y queda anotado en la base, sin tocar «Copiar para publicar»");
+ok(ficha().textContent.includes("falta publicar"), "y la ficha se repinta sola");
+const tras = bajadas;
+api.pintarSitios(); await esperar(); await esperar();
+ok(bajadas === tras, "volver a pintar la misma ficha no lo baja otra vez");
+
+api.verSitio("igual"); api.pintarSitios(); await esperar(); await esperar(); await esperar();
+ok(BASE.proyectos.igual.acceso.repo.visto === "2026-09-22",
+   "si el archivo NO cambió, no se escribe nada en la base");
+
+BASE.proyectos.igual.acceso.repo = { ...m0, visto: "2026-09-22" };
+globalThis.fetch = async () => { throw new Error("sin señal"); };
+await sembrar({ proyectos: [
+  { id: "mudo", nombre: "Sin señal", orden: 3,
+    acceso: { base: "b-m", reglasUrl: "https://github.com/x/w/blob/main/firestore.rules",
+              repo: { ...m0 }, publicado: { ...m0, fecha: "2026-09-22" } } }
+] });
+api.verSitio("mudo"); api.pintarSitios(); await esperar(); await esperar();
+ok(api.estadoReglas(proy("mudo")).chip === "al día",
+   "sin señal el chip queda como estaba: no inventa un cambio");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

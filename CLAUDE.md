@@ -255,6 +255,17 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   con un solo escritor: el 2026-09-14, con el campo escrito a mano, el tablero y
   la ficha del sitio dijeron cosas distintas del mismo hecho. **Nadie más vuelve
   a derivarlo** — `ronda.mjs` lee el campo, no la regla.
+
+  **Y desde `panel-29` el archivo se relee al abrir la ficha del sitio**, no
+  sólo al tocar «Copiar». Hasta ahí, cuando un chat cambiaba unas reglas, el
+  chip seguía comparando el archivo viejo y decía «al día»: pasó con
+  `sitd-34` el 2026-09-28. Uno por ficha, no los cinco al abrir.
+- **La configuración que una app pega para entrar a su base sale de un botón**
+  (`panel-29`), en la ficha del sitio. Lo público —`acceso.base` y
+  `app: { apiKey, mail }`— lo escribe el agente en `proyectos/`; **la
+  contraseña va a `claves/app-<id>`, la escribe Mauro desde esa tarjeta, y el
+  botón la lee de ahí al copiar.** El agente no la ve nunca y la pantalla
+  tampoco. Si no está guardada, no se copia una configuración a medias.
 - **Un sitio nuevo no se agrega en ningún lado de este camino.** Con
   `acceso.base` y `acceso.reglasUrl` en su documento de `proyectos/` ya tiene los
   botones, el chip y el reconocimiento de sus pendientes; y con su entrada en

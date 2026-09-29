@@ -5,7 +5,8 @@
 //   node herramientas/telefono.mjs whatsapp --vigilar  una pasada por minuto, hasta cortarlo
 //
 // Pedido de Mauro, 29-sep-2026: «falta incorporar la lectura de mensajes para
-// preparar las respuestas en los WhatsApp». Eligió TODOS los chats.
+// preparar las respuestas en los WhatsApp». Eligió TODOS los chats. Y el mismo
+// día, los de AIRBNB, para completar las reservas de Casa Verde.
 //
 // ── CÓMO LEE, Y POR QUÉ ASÍ ──────────────────────────────────────────────────
 // Por las NOTIFICACIONES, no por la aplicación. `termux-notification-list`
@@ -36,7 +37,11 @@ import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import * as Bodega from "./telefono-bodega.mjs";
 
-const PAQUETES = new Set(["com.whatsapp", "com.whatsapp.w4b"]);
+/* WhatsApp, WhatsApp Business y, desde el 29-sep-2026, AIRBNB: los mensajes
+   de los huéspedes llegan como notificación de su app, y son los que
+   completan las reservas de Casa Verde (`herramientas/reservas.mjs`). */
+const APP_DE = { "com.whatsapp": "whatsapp", "com.whatsapp.w4b": "business", "com.airbnb.android": "airbnb" };
+const PAQUETES = new Set(Object.keys(APP_DE));
 const VISTOS = path.join(os.homedir(), ".config", "bodega", "whatsapp-vistos.json");
 const TOPE_VISTOS = 5000;
 
@@ -44,7 +49,7 @@ const TOPE_VISTOS = 5000;
    son mensajes: son la tapa del grupo de notificaciones. */
 const esResumen = (n) =>
   !n.content || /^\d+ (mensajes|messages|mensagens)/i.test(n.content) ||
-  /^(WhatsApp|WhatsApp Business)$/i.test(String(n.title || "").trim()) ||
+  /^(WhatsApp|WhatsApp Business|Airbnb)$/i.test(String(n.title || "").trim()) ||
   /(buscando|checking for) (nuevos )?mensajes/i.test(n.content);
 
 /* De lo que devuelve `termux-notification-list`, sólo WhatsApp y sólo lo que
@@ -60,7 +65,7 @@ function mensajesDe(notificaciones) {
       // `lines` trae los últimos mensajes cuando se juntan varios del mismo chat.
       lineas: Array.isArray(n.lines) ? n.lines.map((l) => String(l).slice(0, 1000)).slice(0, 20) : [],
       cuando: String(n.when || ""),
-      app: n.packageName === "com.whatsapp.w4b" ? "business" : "whatsapp",
+      app: APP_DE[n.packageName],
     }));
 }
 

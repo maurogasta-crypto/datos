@@ -171,6 +171,34 @@ de reporte no se confundan, que una clave con nombre no genere un número
 inventado, y que el orden de los abiertos ponga lo trabado después y lo que no
 declaró prioridad al fondo y no al tope.
 
+## `reservas.mjs`
+
+Completar las reservas de Casa Verde con lo que dicen los mensajes de los
+huéspedes —WhatsApp y Airbnb, capturados en el teléfono— (29-sep-2026, fase 0
+de `L-agente-casaverde`).
+
+```
+node herramientas/reservas.mjs estado                          lo que le falta a cada reserva que viene
+node herramientas/reservas.mjs vincular --bodega <dir> [--dias N]   cada chat, con la reserva a la que se refiere
+node herramientas/reservas.mjs completar <reservaId> <archivo.json> [--seco]
+```
+
+El archivo dice de dónde salió y qué completar:
+`{"fuente": "WhatsApp de Amparo", "cliente": {"nombre", "telefono", "email",
+"pais", "idioma"}, "adultos": 5, "ninos": 1, "llegada": "19:30", "nota": "…"}`.
+
+**Completa, no decide.** Crea el cliente si no hay (con el país del prefijo del
+teléfono) o llena lo vacío o dudoso de uno que exista —lo que escribió una
+persona no se pisa—; cambia adultos, niños y la hora de entrada; agrega una
+nota con sello. **Rechaza, diciendo por qué**, las fechas, la cabaña, el estado
+y la plata: eso lo decide Mauro, y un mensaje es un dato de un tercero. Cada
+cambio deja su copia en `_historial/` (se deshace con `firestore.mjs casaverde
+deshacer`) y un renglón en el `historial` de la reserva, como los de la
+pantalla. Ese renglón se agrega **crudo** (`leerCrudo` y `$crudo` de
+`firestore.mjs`): los anteriores son fechas de Firestore, y reescribirlos como
+texto rompería la pantalla. Banco: `node pruebas/herramientas/reservas.mjs`
+(23 casos, sin red).
+
 ## `ACCESO-A-LAS-BASES.md`
 
 El paso a paso para dar de alta al agente en una base, hecho para seguirse

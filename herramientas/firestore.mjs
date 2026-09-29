@@ -381,7 +381,20 @@ async function entrarSuave(cfg) {
    Firestore REST no acepta JSON a secas: cada valor va etiquetado con su tipo.
    Estas dos funciones son la única parte fea del archivo y están juntas a
    propósito, para que se lean como un par. */
+/* Dos formas especiales, para escribir SIN cambiarle el tipo a lo que ya está
+   (29-sep-2026, para completar reservas de Casa Verde):
+   · { $timestamp: "2026-09-29T12:00:00Z" } → una fecha de Firestore, no un
+     texto. El historial de una reserva guarda fechas, y la pantalla de Casa
+     Verde las lee con `.toDate()`: un texto ahí la rompe.
+   · { $crudo: <valor de Firestore> } → se manda tal cual. Es lo que deja
+     AGREGAR un renglón a una lista sin reescribir los anteriores: se leen
+     crudos (`leerCrudo`) y se devuelven crudos, con sus tipos intactos. */
 function aFirestore(v) {
+  if (v && typeof v === "object" && !Array.isArray(v)) {
+    const k = Object.keys(v);
+    if (k.length === 1 && k[0] === "$timestamp") return { timestampValue: new Date(v.$timestamp).toISOString() };
+    if (k.length === 1 && k[0] === "$crudo") return v.$crudo;
+  }
   if (v === null || v === undefined) return { nullValue: null };
   if (typeof v === "boolean") return { booleanValue: v };
   if (typeof v === "number")
@@ -445,6 +458,14 @@ async function listar(cfg, sesion, coleccion) {
   } while (token);
   return salida;
 }
+
+/* El documento CRUDO, con los tipos de Firestore: para agregarle a una
+   lista sin tocar lo que ya tiene (ver `$crudo` en aFirestore). */
+const leerCrudo = async (cfg, sesion, coleccion, id) => {
+  guardia(cfg, coleccion, id);
+  const d = await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`);
+  return d ? (d.fields || {}) : null;
+};
 
 const leerUno = async (cfg, sesion, coleccion, id) => {
   guardia(cfg, coleccion, id);
@@ -554,7 +575,7 @@ async function deshacer(cfg, sesion, hid) {
 }
 
 export { HISTORIAL, deshacer, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
-         entrar, entrarSuave, listar, leerUno, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
+         entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/
 if (import.meta.url === `file://${process.argv[1]}`) {

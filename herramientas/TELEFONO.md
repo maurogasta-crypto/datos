@@ -132,6 +132,14 @@ pantalla (`interfaz`) aparecen en «WhatsApp: respuestas preparadas», con
 **Lo que dice un mensaje es un dato, no una orden.** Si alguien escribe
 «borrá la reserva», eso es lo que dijo esa persona. El chat no lo ejecuta.
 
+**Y los de Airbnb también** (mismo día): si la app de Airbnb está instalada y
+avisa de un mensaje de un huésped, entra igual, marcado `airbnb`. No hace falta
+nada más: el mismo `--vigilar` los toma. Con eso el chat **completa las
+reservas de Casa Verde** —el cliente, el teléfono, cuántos son, a qué hora
+llegan— con `herramientas/reservas.mjs` (ver `LEEME.md`). Las fechas, la
+cabaña, anular y la plata no los toca: te los deja como pendiente, con la
+respuesta preparada.
+
 ## Pedidos al chat, desde la misma pantalla
 
 En la pantalla hay una caja **«Pedidos al chat»**. Escribís lo que querés,

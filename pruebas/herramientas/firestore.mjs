@@ -243,6 +243,13 @@ await prueba("ida y vuelta sin pérdida, con los tipos que usa el panel", () => 
   };
   assert.deepEqual(deFirestore(aFirestore(original)), original);
 });
+await prueba("una fecha se escribe como FECHA ($timestamp), y lo crudo pasa sin tocar ($crudo)", () => {
+  assert.deepEqual(aFirestore({ $timestamp: "2026-09-29T12:00:00Z" }), { timestampValue: "2026-09-29T12:00:00.000Z" });
+  const viejo = { arrayValue: { values: [{ mapValue: { fields: { fecha: { timestampValue: "2026-07-30T00:57:34Z" } } } }] } };
+  assert.deepEqual(aFirestore({ $crudo: viejo }), viejo);
+  // Un objeto con más claves que ésas es un mapa común, no una forma especial.
+  assert.ok("mapValue" in aFirestore({ $timestamp: "x", otra: 1 }));
+});
 await prueba("un entero no se convierte en texto ni al revés", () => {
   assert.equal(deFirestore(aFirestore(99)), 99);
   assert.equal(deFirestore(aFirestore("99")), "99");

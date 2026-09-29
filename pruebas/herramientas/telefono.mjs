@@ -855,6 +855,14 @@ prueba("sólo WhatsApp (y Business), sin los resúmenes ni las vacías", () => {
   assert.deepEqual(m[1].lineas, ["Flor: compro pan", "Juan: dale"]);
 });
 
+prueba("los mensajes de Airbnb también entran, marcados como airbnb, y su resumen no", () => {
+  const m = W.mensajesDe([
+    { packageName: "com.airbnb.android", title: "Amparo", content: "Llegamos a las 19:30, somos 5", when: "11:00" },
+    { packageName: "com.airbnb.android", title: "Airbnb", content: "Tenés 2 mensajes nuevos", when: "11:01" },
+    { packageName: "com.airbnb.android.otra", title: "Otra", content: "no", when: "11:02" }]);
+  assert.deepEqual(m.map((x) => [x.app, x.chat]), [["airbnb", "Amparo"]]);
+});
+
 prueba("lo ya visto no se manda dos veces, aunque WhatsApp le cambie la hora", () => {
   const m1 = W.nuevos(W.mensajesDe(NOTIS), []);
   const vistos = m1.map((x) => x.id);

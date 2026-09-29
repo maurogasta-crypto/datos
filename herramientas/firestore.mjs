@@ -205,19 +205,23 @@ const PROYECTOS = {
     /* `reportes` entra el 2026-09-15 con el circuito de reportar una falla.
        El agente la LEE y no la escribe, igual que en los otros dos sitios. */
     colecciones: ["cabanas", "espacios_comunes", "disponibilidad", "actividades",
-                  "grupos", "recuerdos", "usuarios", "reportes"],
-    /* Tres familias, por el mismo motivo cada una:
-       · credenciales — `claves_recuerdos` es la clave del QR del huésped, y
-         `config/integraciones` guarda claves de terceros (lo dice la regla);
-       · el libro del negocio — dinero, honorarios y el régimen impositivo;
-       · gente — huéspedes, clientes, reservas y lo que se escriben entre
-         ellos. Nada de eso hace falta para comparar la base con el código. */
+                  "grupos", "recuerdos", "usuarios", "reportes",
+                  "reservas", "chequeos", "clientes", "huespedes", "comunicaciones",
+                  "pagos", "movimientos", "liquidaciones", "cierres", "honorarios"],
+    /* Hasta el 29-sep-2026 eran tres familias selladas: credenciales, el
+       libro del negocio y la gente. Ese día Mauro abrió las dos últimas
+       —«para poder ayudar a gestionar, y planificar»— y quedó sellado sólo
+       lo que ABRE algo:
+       · `claves_recuerdos` — la clave del QR del huésped;
+       · `config/integraciones` — claves de terceros; `config/airbnb` — las
+         direcciones .ics, que llevan su propia clave. La REGLA cierra
+         `config` entero salvo `config/fiscal`; acá se nombran los dos que
+         abren algo, para que el mensaje diga por qué;
+       · `avisos_contacto` — la clave de CallMeBot de cada persona.
+       Lo que se abrió son datos de personas (LGPD): se leen para trabajar,
+       no se copian enteros a un chat. */
     selladas: [
-      "claves_recuerdos", "config/integraciones", "config/fiscal",
-      "movimientos", "liquidaciones", "cierres", "pagos", "honorarios",
-      "clientes", "huespedes", "reservas", "chequeos",
-      "recuerdos_contactos", "avisos_contacto",
-      "comunicaciones", "comunicaciones_lecturas"
+      "claves_recuerdos", "config/integraciones", "config/airbnb", "avisos_contacto"
     ]
   }
 };

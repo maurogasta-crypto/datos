@@ -337,14 +337,19 @@ await prueba("«calculos» está sellada en casayourte — costos y datos de cli
 await prueba("«productos» de remate se lee sin problema: es el catálogo público", async () => {
   assert.ok(!(await frena(() => listar(PROYECTOS.remate, sesion, "productos"))));
 });
-await prueba("el dinero de casaverde no se toca", async () => {
-  for (const c of ["movimientos", "liquidaciones", "honorarios", "pagos", "cierres"]) {
+// Desde el 29-sep-2026 el agente lee la operación, la gente y la plata de
+// Casa Verde (pedido de Mauro, para gestionar y planificar). Lo que sigue
+// sellado es lo que ABRE algo.
+await prueba("casaverde: lo que abre algo sigue sellado", async () => {
+  for (const c of ["claves_recuerdos", "avisos_contacto"]) {
     assert.ok(await frena(() => listar(cv, sesion, c)), `«${c}» pasó el guardia`);
   }
+  assert.ok(await frena(() => leerUno(cv, sesion, "config", "airbnb")), "config/airbnb pasó el guardia");
 });
-await prueba("la gente de casaverde tampoco", async () => {
-  for (const c of ["huespedes", "clientes", "reservas", "comunicaciones", "claves_recuerdos"]) {
-    assert.ok(await frena(() => listar(cv, sesion, c)), `«${c}» pasó el guardia`);
+await prueba("casaverde: la operación, la gente y la plata ya se leen", async () => {
+  for (const c of ["reservas", "chequeos", "clientes", "huespedes", "comunicaciones",
+                   "pagos", "movimientos", "liquidaciones", "cierres", "honorarios"]) {
+    assert.ok(!(await frena(() => listar(cv, sesion, c))), `«${c}» se frenó y no debía`);
   }
 });
 

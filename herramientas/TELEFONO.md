@@ -58,6 +58,41 @@ Respalda los repositorios, trae las apps que tengan versión nueva, mira
 Descargas **sin tocar nada**, y abre el informe. Es lo que conviene correr
 todos los días, y lo que corre solo si se programa (más abajo).
 
+## Decidir desde una pantalla
+
+```
+node herramientas/telefono.mjs interfaz
+```
+
+Abre en el navegador del teléfono una pantalla con tres partes:
+
+- **Lo que hay.** Cuántos archivos hay, cuánto pesan, cuántos de cada tipo
+  y cuáles pesan más. Se miran nombres, tamaños y fechas: **los archivos
+  no se abren**.
+- **Sugerencias.** Lo que proponen las reglas, agrupado por regla, cada cosa
+  con su casilla. Se destilda lo que no va, y con «no proponer más» no vuelve
+  a aparecer. Se aplica con el botón de abajo, y **todo se puede deshacer**
+  desde «Lo que ya se hizo».
+- **Reglas.** Cada una tiene tres estados: **Propone** (aparece y se aplica
+  si la tildás), **Automática** (la rutina diaria la aplica sola) y
+  **Apagada**. Ahí también se cambian los días de «instaladores viejos» y el
+  nombre de la carpeta de cada tipo. Todas empiezan en «Propone»: **nada
+  anda solo hasta que lo pongas en Automática.**
+
+Lo que elegís queda en `Respaldos/bodega-ajustes.json`, y la rutina lo lee
+de ahí.
+
+**Termux tiene que quedar abierto mientras la usás**, porque la pantalla le
+habla a un servidor chiquito que corre ahí. Se cierra con el botón del
+final, o sola a la media hora sin uso.
+
+**Por qué es seguro que un servidor mueva archivos.** Hay tres cerraduras.
+Escucha sólo adentro del teléfono (`127.0.0.1`). Cada vez que arranca
+inventa una llave al azar, que va en la dirección, y sin ella no contesta.
+Y rechaza los pedidos que vengan de otra página. Aparte de eso, lo que se
+pide se cruza contra el plan del momento: una ruta que no esté propuesta no
+se toca, venga de donde venga. El banco prueba las cuatro cosas.
+
 ## Limpiar Descargas
 
 ```
@@ -77,7 +112,7 @@ con el mismo nombre, no lo pisa: lo devuelto queda al lado, con
 « (restaurado)». Borrar de verdad es `vaciar`, que sólo toca lotes de más de
 30 días (`--dias N` para cambiarlo), contados desde el día en que se botaron.
 
-### Qué bota
+### Qué propone, regla por regla
 
 | Qué | Cómo lo reconoce |
 |---|---|
@@ -87,6 +122,8 @@ con el mismo nombre, no lo pisa: lo devuelto queda al lado, con
 | Archivo vacío | 0 bytes |
 | Restos de otros sistemas | `Thumbs.db`, `.DS_Store`, `desktop.ini`, `~$…` |
 | Carpeta vacía | la que queda sin nada después de todo lo anterior |
+| Instalador viejo | un `.apk` suelto con más de 30 días (se cambia en la pantalla). Las apps al día están en `Respaldos/Instalar/` |
+| **Ordenar** (no bota) | cada archivo suelto en la raíz de Descargas va a una carpeta según su tipo: Documentos, Imágenes, Videos, Audio, Comprimidos, Instaladores. Lo que ya está adentro de una carpeta no se toca: alguien la armó así. Si en el destino ya hay uno con el mismo nombre, no se pisa, se avisa |
 
 **Entre dos iguales, cuál se queda.** Primero el que no tiene marca de copia
 (`(1)`, «Copia de», «- copia», «copy»). Si empatan, el más viejo; después, el
@@ -185,6 +222,10 @@ sv-enable crond
 crontab -e
 # y agregar esta línea, que sincroniza todos los días a las 4:17:
 17 4 * * * cd ~/datos && git pull -q && node herramientas/telefono.mjs sincronizar --sin-abrir
+
+La rutina respalda, trae las apps nuevas, **aplica sólo las reglas que
+pusiste en Automática** y deja el informe con lo demás propuesto. Lo que
+aplicó queda en un lote y se deshace desde la pantalla.
 ```
 
 Para que HyperOS no mate a Termux, Termux necesita lo mismo que la app de la
@@ -197,15 +238,15 @@ Hilux: Autostart encendido y batería «Sin restricciones».
   lugar más donde vive una credencial. Se decide aparte.
 - **El chat no lee lo que pasa en el teléfono.** Si querés que opine sobre
   una limpieza, mandale el informe o lo que imprimió `descargas`.
-- **El informe no tiene botones que ejecuten nada**: un archivo abierto en
+- **El informe de la rutina no tiene botones que ejecuten nada**: un archivo abierto en
   el navegador no puede mover archivos del teléfono, y está bien que no
-  pueda. Dice qué se va a hacer y con qué comando.
+  pueda. Para eso está `interfaz`, y el informe te lo dice.
 - **El iPad no entra**: en iOS no hay forma de que algo corra solo sobre la
   carpeta Descargas.
 
 ## Banco
 
-`node pruebas/herramientas/telefono.mjs`: 45 casos, sin red ni dependencias.
+`node pruebas/herramientas/telefono.mjs`: 69 casos, sin red ni dependencias.
 Arma carpetas de mentira, las limpia y las deshace de verdad, y compara el
 disco antes y después byte por byte. También cubre que el manifiesto no
 lleve nada de más, que una app se baje una sola vez por versión y que sin red

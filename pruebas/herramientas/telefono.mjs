@@ -16,7 +16,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { planificar, aplicar, deshacer, lotes, vencidos, motivoBasura, esProtegido,
+import http from "node:http";
+import { crearInterfaz } from "../../herramientas/telefono-interfaz.mjs";
+import { planificar, aplicar, normalizarAjustes, tipoDe, destinoValido, deshacer, lotes, vencidos, motivoBasura, esProtegido,
          tieneMarcaDeCopia, elegirQueQueda, PAPELERA,
          manifiestoDesde, leerManifiesto, hayQueBajar, rotar, actualizarApks, informeHtml
        } from "../../herramientas/telefono.mjs";
@@ -62,6 +64,11 @@ function foto(raiz) {
   ver("");
   return out;
 }
+
+/* Los casos de limpieza se miran SIN ordenar, que es otra regla y tiene sus
+   propios casos más abajo: si no, cada archivo suelto aparecería dos veces. */
+const SIN_ORDENAR = { reglas: { ordenar: { estado: "apagada" } } };
+const planSolo = (r) => planificar(r, Date.now(), SIN_ORDENAR);
 
 const rutas = (plan) => plan.mover.filter((m) => !m.viajaCon).map((m) => m.ruta).sort();
 
@@ -123,14 +130,14 @@ titulo("El plan");
 
 prueba("dos archivos iguales: sale la copia, queda el original", () => {
   const r = armar({ "factura.pdf": "AAA", "factura (1).pdf": "AAA", "otra.pdf": "BBB" });
-  const p = planificar(r);
+  const p = planSolo(r);
   assert.deepEqual(rutas(p), ["factura (1).pdf"]);
   assert.equal(p.mover[0].igualA, "factura.pdf");
 });
 
 prueba("mismo tamaño y distinto contenido NO son repetidos", () => {
   const r = armar({ "a.txt": "AAA", "b.txt": "BBB" });
-  assert.deepEqual(rutas(planificar(r)), []);
+  assert.deepEqual(rutas(planSolo(r)), []);
 });
 
 prueba("una carpeta repetida sale entera, con otro nombre y todo", () => {
@@ -138,7 +145,7 @@ prueba("una carpeta repetida sale entera, con otro nombre y todo", () => {
     "Fotos/uno.jpg": "1", "Fotos/sub/dos.jpg": "22",
     "Fotos (1)/uno.jpg": "1", "Fotos (1)/sub/dos.jpg": "22",
   });
-  const p = planificar(r);
+  const p = planSolo(r);
   assert.deepEqual(rutas(p), ["Fotos (1)"]);
   assert.equal(p.mover[0].tipo, "carpeta");
   // Lo de adentro no aparece dos veces.
@@ -147,7 +154,7 @@ prueba("una carpeta repetida sale entera, con otro nombre y todo", () => {
 
 prueba("dos carpetas con los mismos archivos pero OTROS nombres adentro no son la misma", () => {
   const r = armar({ "A/uno.jpg": "1", "B/otro.jpg": "1" });
-  const p = planificar(r);
+  const p = planSolo(r);
   // Se detecta el archivo repetido, y NO como carpeta repetida. (La carpeta
   // que queda vacía después sí se va, pero por eso y no por ser copia.)
   assert.equal(p.mover.filter((m) => m.motivo === "carpeta repetida").length, 0);
@@ -156,13 +163,13 @@ prueba("dos carpetas con los mismos archivos pero OTROS nombres adentro no son l
 
 prueba("una carpeta con un archivo de más no es copia de la otra", () => {
   const r = armar({ "A/uno.jpg": "1", "B/uno.jpg": "1", "B/extra.txt": "xyzw" });
-  const p = planificar(r);
+  const p = planSolo(r);
   assert.equal(p.mover.filter((m) => m.tipo === "carpeta").length, 0);
 });
 
 prueba("un .db repetido NO se mueve: se avisa", () => {
   const r = armar({ "sitd.db": "BASE", "sitd (1).db": "BASE" });
-  const p = planificar(r);
+  const p = planSolo(r);
   assert.deepEqual(rutas(p), []);
   assert.equal(p.avisos.length, 1);
   assert.equal(p.avisos[0].ruta, "sitd (1).db");
@@ -170,19 +177,19 @@ prueba("un .db repetido NO se mueve: se avisa", () => {
 
 prueba("una carpeta repetida con una clave de firma adentro NO se mueve", () => {
   const r = armar({ "K/firma.jks": "JKS", "K (1)/firma.jks": "JKS" });
-  const p = planificar(r);
+  const p = planSolo(r);
   assert.deepEqual(rutas(p), []);
   assert.ok(p.avisos.some((a) => a.ruta === "K (1)"));
 });
 
 prueba("la papelera y las carpetas ocultas no se miran", () => {
   const r = armar({ "a.txt": "AAA", [`${PAPELERA}/x/a.txt`]: "AAA", ".thumbnails/a.txt": "AAA" });
-  assert.deepEqual(rutas(planificar(r)), []);
+  assert.deepEqual(rutas(planSolo(r)), []);
 });
 
 prueba("una carpeta que queda vacía después de botar se va también, y lo de adentro viaja con ella", () => {
   const r = armar({ "a.pdf": "AAA", "Vieja/a (1).pdf": "AAA", "Vacia/": "" });
-  const p = planificar(r);
+  const p = planSolo(r);
   assert.deepEqual(rutas(p), ["Vacia", "Vieja"]);
   const adentro = p.mover.find((m) => m.ruta === "Vieja/a (1).pdf");
   assert.equal(adentro.viajaCon, "Vieja");
@@ -190,12 +197,12 @@ prueba("una carpeta que queda vacía después de botar se va también, y lo de a
 
 prueba("la carpeta que se queda nunca se marca vacía", () => {
   const r = armar({ "Fotos/uno.jpg": "1", "Fotos (1)/uno.jpg": "1" });
-  assert.deepEqual(rutas(planificar(r)), ["Fotos (1)"]);
+  assert.deepEqual(rutas(planSolo(r)), ["Fotos (1)"]);
 });
 
 prueba("sin nada raro, el plan está vacío", () => {
   const r = armar({ "a.txt": "A", "b/c.txt": "CC" });
-  const p = planificar(r);
+  const p = planSolo(r);
   assert.equal(p.mover.length, 0);
   assert.equal(p.avisos.length, 0);
 });
@@ -216,7 +223,7 @@ const MEZCLA = {
 
 prueba("aplicar saca todo lo del plan y deja lo protegido", () => {
   const r = armar(MEZCLA);
-  const p = planificar(r);
+  const p = planSolo(r);
   const res = aplicar(r, p, "20260929-120000");
   assert.equal(res.fallas.length, 0);
   const f = foto(r);
@@ -229,7 +236,7 @@ prueba("aplicar saca todo lo del plan y deja lo protegido", () => {
 prueba("deshacer devuelve todo, byte por byte", () => {
   const r = armar(MEZCLA);
   const antes = foto(r);
-  aplicar(r, planificar(r), "20260929-120000");
+  aplicar(r, planSolo(r), "20260929-120000");
   const res = deshacer(r, "20260929-120000");
   assert.equal(res.fallas.length, 0, JSON.stringify(res.fallas));
   assert.deepEqual(foto(r), antes);
@@ -238,13 +245,13 @@ prueba("deshacer devuelve todo, byte por byte", () => {
 
 prueba("correr el plan dos veces seguidas: la segunda no encuentra nada", () => {
   const r = armar(MEZCLA);
-  aplicar(r, planificar(r), "20260929-120000");
-  assert.equal(planificar(r).mover.length, 0);
+  aplicar(r, planSolo(r), "20260929-120000");
+  assert.equal(planSolo(r).mover.length, 0);
 });
 
 prueba("si al deshacer ya hay otro con el mismo nombre, no se pisa", () => {
   const r = armar({ "a.pdf": "AAA", "a (1).pdf": "AAA" });
-  aplicar(r, planificar(r), "20260929-120000");
+  aplicar(r, planSolo(r), "20260929-120000");
   fs.writeFileSync(path.join(r, "a (1).pdf"), "NUEVO");
   const res = deshacer(r, "20260929-120000");
   assert.equal(res.fallas.length, 0);
@@ -254,7 +261,7 @@ prueba("si al deshacer ya hay otro con el mismo nombre, no se pisa", () => {
 
 prueba("el lote.json dice de dónde salió cada cosa y por qué", () => {
   const r = armar({ "a.pdf": "AAA", "a (1).pdf": "AAA" });
-  aplicar(r, planificar(r), "20260929-120000");
+  aplicar(r, planSolo(r), "20260929-120000");
   const reg = JSON.parse(fs.readFileSync(path.join(r, PAPELERA, "20260929-120000", "lote.json"), "utf8"));
   assert.equal(reg.movidos.length, 1);
   assert.equal(reg.movidos[0].ruta, "a (1).pdf");
@@ -278,7 +285,7 @@ prueba("un lote de hace 40 días vence a los 30; uno de hoy, no", () => {
 
 prueba("un archivo viejo botado hoy NO vence hoy", () => {
   const r = armar({ "a.pdf": { c: "AAA", dias: 400 }, "a (1).pdf": { c: "AAA", dias: 400 } });
-  const { lote } = aplicar(r, planificar(r));
+  const { lote } = aplicar(r, planSolo(r));
   assert.ok(lotes(r).includes(lote));
   assert.deepEqual(vencidos(r, 30), []);
 });
@@ -424,7 +431,236 @@ prueba("dice que todavía no se movió nada, y cómo hacerlo", () => {
   const h = informeHtml({ fecha: "hoy", man: MAN, apks: [], repos: [], deposito: { archivos: 0, bytes: 0 },
     plan: { archivos: 2, carpetas: 0, avisos: [], mover: [{ ruta: "a (1).pdf", tipo: "archivo", motivo: "repetido", bytes: 1 }] } });
   assert.ok(h.includes("no se movió nada"));
-  assert.ok(h.includes("descargas --aplicar"));
+  assert.ok(h.includes("telefono.mjs interfaz"));
+});
+
+/* ── Reglas que se prenden, se apagan y se cambian ──────────────────────── */
+titulo("Las reglas");
+
+prueba("todas empiezan en «propone»: nada anda solo hasta que alguien lo diga", () => {
+  const a = normalizarAjustes(null);
+  for (const e of Object.values(a.reglas)) assert.equal(e.estado, "propone");
+});
+
+prueba("un estado inventado vuelve a «propone», nunca a «automatica»", () => {
+  const a = normalizarAjustes({ reglas: { basura: { estado: "borrar-todo" } } });
+  assert.equal(a.reglas.basura.estado, "propone");
+});
+
+prueba("un destino que saldría de Descargas o entraría a la papelera no se acepta", () => {
+  for (const d of ["../fuera", "a/b", "_Papelera", ".oculta", "..", "", "   "])
+    assert.equal(destinoValido(d), false, JSON.stringify(d));
+  assert.equal(destinoValido("Mis facturas"), true);
+  const a = normalizarAjustes({ destinos: { documentos: "../../sdcard" } });
+  assert.equal(a.destinos.documentos, "Documentos");
+});
+
+prueba("una regla apagada no propone nada", () => {
+  const r = armar({ "a.pdf": "AAA", "a (1).pdf": "AAA" });
+  const p = planificar(r, Date.now(), { reglas: { repetidos: { estado: "apagada" }, ordenar: { estado: "apagada" } } });
+  assert.equal(p.mover.length, 0);
+});
+
+prueba("lo que se pidió no volver a proponer, no vuelve", () => {
+  const r = armar({ "a.pdf": "AAA", "a (1).pdf": "AAA", "Fotos/x": "1", "Fotos (1)/x": "1" });
+  const p = planificar(r, Date.now(), { ...SIN_ORDENAR, ignorar: ["a (1).pdf", "Fotos (1)"] });
+  assert.equal(p.mover.length, 0);
+});
+
+prueba("ordenar pone lo suelto de la raíz en la carpeta de su tipo, y no toca lo de adentro de carpetas", () => {
+  const r = armar({ "factura.pdf": "A", "foto.JPG": "BB", "Viaje/otra.pdf": "CCC", "raro.xyz": "DDDD", "sitd.db": "E" });
+  const p = planificar(r);
+  const o = Object.fromEntries(p.mover.filter((m) => m.regla === "ordenar").map((m) => [m.ruta, m.hacia]));
+  assert.deepEqual(o, { "factura.pdf": "Documentos/factura.pdf", "foto.JPG": "Imágenes/foto.JPG" });
+});
+
+prueba("un tipo con la carpeta en blanco se queda donde está", () => {
+  const r = armar({ "factura.pdf": "A" });
+  const p = planificar(r, Date.now(), { destinos: { documentos: "" } });
+  assert.equal(p.mover.length, 0);
+});
+
+prueba("si ya hay uno con ese nombre en la carpeta de destino, no se pisa: se avisa", () => {
+  const r = armar({ "factura.pdf": "A", "Documentos/factura.pdf": "OTRO" });
+  const p = planificar(r);
+  assert.equal(p.mover.filter((m) => m.regla === "ordenar").length, 0);
+  assert.ok(p.avisos.some((a) => a.ruta === "factura.pdf"));
+});
+
+prueba("un instalador viejo se propone; uno nuevo, no", () => {
+  const r = armar({ "vieja.apk": { c: "A", dias: 60 }, "nueva.apk": { c: "BB", dias: 2 } });
+  const p = planificar(r, Date.now(), SIN_ORDENAR);
+  assert.deepEqual(p.mover.map((m) => m.ruta), ["vieja.apk"]);
+  assert.equal(p.mover[0].regla, "apk-viejas");
+});
+
+prueba("el tipo sale de la extensión, en cualquier mayúscula", () => {
+  assert.equal(tipoDe("a.PDF"), "documentos");
+  assert.equal(tipoDe("b.heic"), "imagenes");
+  assert.equal(tipoDe("c.apk"), "instaladores");
+  assert.equal(tipoDe("d"), "otros");
+});
+
+prueba("el resumen cuenta por tipo y dice cuánto pesa todo", () => {
+  const r = armar({ "a.pdf": "AAAA", "b.jpg": "BB", "Sub/c.jpg": "C" });
+  const p = planificar(r);
+  assert.equal(p.resumen.bytes, 7);
+  assert.equal(p.resumen.porTipo.imagenes.archivos, 2);
+  assert.equal(p.resumen.pesados[0].ruta, "a.pdf");
+});
+
+titulo("Aplicar lo tildado");
+
+prueba("sólo se mueve lo tildado", () => {
+  const r = armar({ "a.pdf": "AAA", "a (1).pdf": "AAA", "b.txt": "", "c.txt": "" });
+  const p = planSolo(r);
+  aplicar(r, p, "20260929-120000", new Set(["a (1).pdf"]));
+  const f = foto(r);
+  assert.ok(!("a (1).pdf" in f));
+  assert.ok("b.txt" in f && "c.txt" in f);
+});
+
+prueba("tildar una «carpeta vacía» se la lleva con lo de adentro, que ya estaba propuesto", () => {
+  const r = armar({ "a.pdf": "AAA", "Vieja/a (1).pdf": "AAA" });
+  const p = planSolo(r);
+  aplicar(r, p, "20260929-120000", new Set(["Vieja"]));
+  assert.equal(fs.existsSync(path.join(r, "Vieja")), false);
+  const res = deshacer(r, "20260929-120000");
+  assert.equal(res.fallas.length, 0);
+  assert.equal(fs.readFileSync(path.join(r, "Vieja/a (1).pdf"), "utf8"), "AAA");
+});
+
+prueba("con la carpeta destildada, se puede botar sólo lo de adentro", () => {
+  const r = armar({ "a.pdf": "AAA", "Vieja/a (1).pdf": "AAA" });
+  aplicar(r, planSolo(r), "20260929-120000", new Set(["Vieja/a (1).pdf"]));
+  assert.equal(fs.existsSync(path.join(r, "Vieja/a (1).pdf")), false);
+  assert.equal(fs.existsSync(path.join(r, "Vieja")), true);
+});
+
+prueba("ordenar y botar en el mismo lote, y deshacer lo devuelve todo byte por byte", () => {
+  const r = armar({ ...MEZCLA, "suelto.pdf": "S", "cancion.mp3": "M" });
+  const antes = foto(r);
+  const p = planificar(r);
+  assert.ok(p.mover.some((m) => m.regla === "ordenar"));
+  aplicar(r, p, "20260929-120000");
+  assert.equal(fs.readFileSync(path.join(r, "Documentos/suelto.pdf"), "utf8"), "S");
+  const res = deshacer(r, "20260929-120000");
+  assert.equal(res.fallas.length, 0, JSON.stringify(res.fallas));
+  // Las carpetas de destino quedan creadas y vacías: es lo único que sobra.
+  const despues = foto(r);
+  for (const k of Object.keys(despues)) if (!(k in antes)) assert.ok(k.endsWith("/"), k);
+  for (const [k, v] of Object.entries(antes)) assert.equal(despues[k], v, k);
+});
+
+prueba("con nada tildado no queda un lote vacío en la papelera", () => {
+  const r = armar({ "a.pdf": "AAA", "a (1).pdf": "AAA" });
+  aplicar(r, planSolo(r), "20260929-120000", new Set());
+  assert.deepEqual(lotes(r), []);
+});
+
+/* ── La interfaz: un servidor que mueve archivos tiene que estar cerrado ── */
+titulo("La interfaz y sus cerraduras");
+
+function levantar(arbol) {
+  const raiz = armar(arbol);
+  const aj = path.join(armar({}), "ajustes.json");
+  const i = crearInterfaz({ carpeta: raiz, archivoAjustes: aj });
+  return new Promise((ok) => i.servidor.listen(0, "127.0.0.1", () => ok({ ...i, raiz, aj,
+    puerto: i.servidor.address().port })));
+}
+
+function pedirA(i, { ruta = "/estado", llave = i.llave, metodo = "GET", cuerpo, host, origen,
+                      tipo = "application/json" } = {}) {
+  return new Promise((ok, mal) => {
+    const headers = { Host: host || `127.0.0.1:${i.puerto}` };
+    if (cuerpo !== undefined) headers["Content-Type"] = tipo;
+    if (origen) headers.Origin = origen;
+    const req = http.request({ host: "127.0.0.1", port: i.puerto, path: `/${llave}${ruta}`, method: metodo, headers },
+      (res) => { let b = ""; res.on("data", (c) => (b += c)); res.on("end", () => {
+        let j = null; try { j = JSON.parse(b); } catch {}
+        ok({ status: res.statusCode, json: j, texto: b }); }); });
+    req.on("error", mal);
+    if (cuerpo !== undefined) req.write(typeof cuerpo === "string" ? cuerpo : JSON.stringify(cuerpo));
+    req.end();
+  });
+}
+
+pruebaA("con la llave, contesta la página y el estado", async () => {
+  const i = await levantar({ "a.pdf": "AAA", "a (1).pdf": "AAA" });
+  try {
+    const pag = await pedirA(i, { ruta: "/" });
+    assert.equal(pag.status, 200);
+    assert.ok(pag.texto.includes("Ordenar Descargas"));
+    const e = await pedirA(i);
+    assert.equal(e.status, 200);
+    assert.ok(e.json.plan.mover.some((m) => m.ruta === "a (1).pdf"));
+  } finally { i.servidor.close(); }
+});
+
+pruebaA("sin la llave, o con otra, 404", async () => {
+  const i = await levantar({});
+  try {
+    assert.equal((await pedirA(i, { llave: "otra" })).status, 404);
+    assert.equal((await pedirA(i, { llave: "" })).status, 404);
+  } finally { i.servidor.close(); }
+});
+
+pruebaA("con otro Host (el truco de apuntar un nombre a 127.0.0.1), 404", async () => {
+  const i = await levantar({});
+  try { assert.equal((await pedirA(i, { host: "malo.com" })).status, 404); }
+  finally { i.servidor.close(); }
+});
+
+pruebaA("un POST desde otra página (otro Origin), 403; y sin JSON, 415", async () => {
+  const i = await levantar({ "a.pdf": "AAA", "a (1).pdf": "AAA" });
+  try {
+    assert.equal((await pedirA(i, { ruta: "/aplicar", metodo: "POST", cuerpo: { rutas: ["a (1).pdf"] },
+      origen: "https://malo.com" })).status, 403);
+    assert.equal((await pedirA(i, { ruta: "/aplicar", metodo: "POST", cuerpo: "rutas=x",
+      tipo: "text/plain" })).status, 415);
+    assert.ok(fs.existsSync(path.join(i.raiz, "a (1).pdf")));
+  } finally { i.servidor.close(); }
+});
+
+pruebaA("aplicar mueve SÓLO lo que el plan de ahora propone: una ruta inventada no se toca", async () => {
+  const i = await levantar({ "a.pdf": "AAA", "a (1).pdf": "AAA", "importante.xyz": "NO" });
+  try {
+    const r = await pedirA(i, { ruta: "/aplicar", metodo: "POST",
+      cuerpo: { rutas: ["a (1).pdf", "importante.xyz", "../../fuera"] } });
+    assert.equal(r.status, 200);
+    assert.ok(!fs.existsSync(path.join(i.raiz, "a (1).pdf")));
+    assert.equal(fs.readFileSync(path.join(i.raiz, "importante.xyz"), "utf8"), "NO");
+  } finally { i.servidor.close(); }
+});
+
+pruebaA("apagar una regla desde la interfaz la saca del plan, y queda guardado", async () => {
+  const i = await levantar({ "a.pdf": "AAA", "a (1).pdf": "AAA" });
+  try {
+    const e = (await pedirA(i)).json;
+    e.ajustes.reglas.repetidos.estado = "apagada";
+    const r = await pedirA(i, { ruta: "/ajustes", metodo: "POST", cuerpo: { ajustes: e.ajustes } });
+    assert.ok(!r.json.plan.mover.some((m) => m.regla === "repetidos"));
+    assert.equal(JSON.parse(fs.readFileSync(i.aj, "utf8")).reglas.repetidos.estado, "apagada");
+  } finally { i.servidor.close(); }
+});
+
+pruebaA("deshacer desde la interfaz devuelve el lote", async () => {
+  const i = await levantar({ "a.pdf": "AAA", "a (1).pdf": "AAA" });
+  try {
+    const r = await pedirA(i, { ruta: "/aplicar", metodo: "POST", cuerpo: { rutas: ["a (1).pdf"] } });
+    const lote = r.json.resultado.lote;
+    const d = await pedirA(i, { ruta: "/deshacer", metodo: "POST", cuerpo: { lote } });
+    assert.equal(d.status, 200);
+    assert.equal(fs.readFileSync(path.join(i.raiz, "a (1).pdf"), "utf8"), "AAA");
+    assert.equal((await pedirA(i, { ruta: "/deshacer", metodo: "POST", cuerpo: { lote: "../../x" } })).status, 404);
+  } finally { i.servidor.close(); }
+});
+
+pruebaA("el script de la página parsea, y escribe lo del disco como texto", async () => {
+  const { PAGINA } = await import("../../herramientas/telefono-interfaz.mjs");
+  const js = PAGINA.match(/<script>([\s\S]*)<\/script>/)[1];
+  new Function(js);
+  assert.ok(!/innerHTML/.test(js));
 });
 
 for (const [n, f] of pruebasAsync) {

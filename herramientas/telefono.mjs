@@ -135,6 +135,108 @@ function recorrer(raiz) {
 
 const dentroDe = (ruta, carpeta) => ruta.startsWith(carpeta + "/");
 
+/* ── Las reglas: qué se propone, y cuáles andan solas ─────────────────────────
+   Pedido de Mauro, 2026-09-29: sugerencias «que se puedan activar, modificar
+   o desactivar desde la interfaz». Cada regla tiene tres estados:
+
+     propone     aparece en el resumen y se aplica si la tildás
+     automatica  la rutina diaria la aplica sola (y queda en un lote, así que
+                 se deshace igual que lo demás)
+     apagada     no se propone
+
+   Todas empiezan en «propone». Nada anda solo hasta que alguien lo diga.
+
+   Las que botan mandan a la papelera. «ordenar» es la única que no bota: pone
+   cada archivo suelto de la raíz de Descargas en una carpeta según su tipo,
+   y el nombre de esa carpeta se cambia desde la interfaz. */
+const REGLAS = [
+  { id: "carpetas-repetidas", titulo: "Carpetas repetidas", accion: "papelera",
+    detalle: "Una carpeta con exactamente lo mismo que otra. Queda la que no tiene marca de copia." },
+  { id: "repetidos", titulo: "Archivos repetidos", accion: "papelera",
+    detalle: "Mismo contenido byte por byte, aunque tengan otro nombre." },
+  { id: "basura", titulo: "Basura y carpetas vacías", accion: "papelera",
+    detalle: "Descargas a medias de más de un día, archivos de 0 bytes, restos de Windows y Mac, y las carpetas que quedan vacías." },
+  { id: "apk-viejas", titulo: "Instaladores viejos", accion: "papelera",
+    detalle: "Archivos .apk sueltos en Descargas con más días que los indicados. Las apps al día están en Respaldos/Instalar." },
+  { id: "ordenar", titulo: "Ordenar lo suelto por tipo", accion: "mover",
+    detalle: "Cada archivo suelto en la raíz de Descargas va a una carpeta según su tipo. Una carpeta en blanco deja ese tipo donde está." },
+];
+
+const TIPOS = {
+  documentos: { nombre: "Documentos", ext: [".pdf", ".doc", ".docx", ".odt", ".txt", ".rtf", ".xls", ".xlsx", ".ods", ".csv", ".ppt", ".pptx", ".odp", ".md", ".json", ".html", ".htm", ".epub"] },
+  imagenes: { nombre: "Imágenes", ext: [".jpg", ".jpeg", ".png", ".gif", ".webp", ".heic", ".heif", ".bmp", ".svg", ".avif"] },
+  videos: { nombre: "Videos", ext: [".mp4", ".mov", ".mkv", ".webm", ".avi", ".3gp", ".m4v"] },
+  audio: { nombre: "Audio", ext: [".mp3", ".m4a", ".ogg", ".opus", ".wav", ".flac", ".aac", ".amr"] },
+  comprimidos: { nombre: "Comprimidos", ext: [".zip", ".rar", ".7z", ".tar", ".gz", ".tgz", ".bundle"] },
+  instaladores: { nombre: "Instaladores", ext: [".apk", ".apks", ".xapk"] },
+};
+const tipoDe = (nombre) => {
+  const e = extDe(nombre);
+  for (const [id, t] of Object.entries(TIPOS)) if (t.ext.includes(e)) return id;
+  return "otros";
+};
+
+const AJUSTES_BASE = () => ({
+  reglas: Object.fromEntries(REGLAS.map((r) => [r.id, { estado: "propone" }])),
+  diasApk: 30,
+  destinos: Object.fromEntries(Object.entries(TIPOS).map(([id, t]) => [id, t.nombre])),
+  ignorar: [],
+});
+
+/* Un nombre de carpeta que viene de la interfaz no puede sacar nada de
+   Descargas ni meterse en la papelera: sin barras, sin «..», sin empezar con
+   punto o guion bajo. Si no cumple, ese tipo queda sin ordenar. */
+const destinoValido = (d) => typeof d === "string" && d.trim().length > 0 && d.length <= 60 &&
+  !/[\/\\\0]/.test(d) && !/^[._]/.test(d.trim()) && d.trim() !== "..";
+
+/* Todo lo que llega de afuera —el archivo, la interfaz— pasa por acá. Lo que
+   no se entiende vuelve al valor de base: una regla con un estado inventado
+   no puede quedar en «automática» por accidente. */
+function normalizarAjustes(a) {
+  const base = AJUSTES_BASE();
+  const x = a && typeof a === "object" ? a : {};
+  for (const r of REGLAS) {
+    const e = x.reglas && x.reglas[r.id] && x.reglas[r.id].estado;
+    if (["propone", "automatica", "apagada"].includes(e)) base.reglas[r.id].estado = e;
+  }
+  const d = Number(x.diasApk);
+  if (Number.isFinite(d) && d >= 1 && d <= 3650) base.diasApk = Math.round(d);
+  for (const id of Object.keys(TIPOS)) {
+    if (!x.destinos || !(id in x.destinos)) continue;
+    const v = x.destinos[id];
+    base.destinos[id] = v === "" || v === null ? "" : destinoValido(v) ? v.trim() : base.destinos[id];
+  }
+  if (Array.isArray(x.ignorar))
+    base.ignorar = [...new Set(x.ignorar.filter((r) => typeof r === "string" && r.length < 1000))];
+  return base;
+}
+
+const AJUSTES = path.join(os.homedir(), "storage", "shared", "Respaldos", "bodega-ajustes.json");
+function leerAjustes(archivo = AJUSTES) {
+  try { return normalizarAjustes(JSON.parse(fs.readFileSync(archivo, "utf8"))); }
+  catch { return normalizarAjustes(null); }
+}
+function guardarAjustes(ajustes, archivo = AJUSTES) {
+  fs.mkdirSync(path.dirname(archivo), { recursive: true });
+  const n = normalizarAjustes(ajustes);
+  fs.writeFileSync(archivo, JSON.stringify(n, null, 2));
+  return n;
+}
+
+/* El resumen del análisis: qué hay, por tipo, y lo más pesado. Mira nombres,
+   tamaños y fechas —NO abre los archivos—, y así lo dice la interfaz. */
+function analizar(archivos) {
+  const porTipo = {};
+  for (const a of archivos) {
+    const t = tipoDe(a.ruta);
+    porTipo[t] = porTipo[t] || { archivos: 0, bytes: 0 };
+    porTipo[t].archivos++; porTipo[t].bytes += a.bytes;
+  }
+  const pesados = archivos.slice().sort((a, b) => b.bytes - a.bytes).slice(0, 8)
+    .map((a) => ({ ruta: a.ruta, bytes: a.bytes, fecha: new Date(a.mtimeMs).toISOString().slice(0, 10) }));
+  return { porTipo, pesados, bytes: archivos.reduce((s, a) => s + a.bytes, 0) };
+}
+
 /* El plan: qué se mueve y por qué. No toca nada — sólo lee y calcula huellas.
 
    Las huellas se calculan SÓLO para archivos cuyo tamaño se repite: dos
@@ -146,7 +248,10 @@ const dentroDe = (ruta, carpeta) => ruta.startsWith(carpeta + "/");
    —«Fotos (1)» es copia de «Fotos»— pero los de adentro sí. Un archivo de
    tamaño único lleva una firma que no se puede repetir, así que la carpeta
    que lo tiene no empareja con nadie, que es lo correcto. */
-function planificar(raiz, ahora = Date.now()) {
+function planificar(raiz, ahora = Date.now(), ajustes = null) {
+  const aj = normalizarAjustes(ajustes);
+  const activa = (id) => aj.reglas[id].estado !== "apagada";
+  const ignorada = (r) => aj.ignorar.some((i) => r === i || dentroDe(r, i));
   const { archivos, carpetas } = recorrer(raiz);
   const porTam = new Map();
   for (const a of archivos) if (a.bytes > 0) {
@@ -198,8 +303,9 @@ function planificar(raiz, ahora = Date.now()) {
         avisos.push({ ruta: c, motivo: "carpeta repetida, pero tiene algo protegido adentro", igualA: queda });
         continue;
       }
-      mover.push({ ruta: c, tipo: "carpeta", motivo: "carpeta repetida", igualA: queda,
-                   bytes: firmas.get(c).bytes });
+      if (!activa("carpetas-repetidas") || ignorada(c)) continue;
+      mover.push({ ruta: c, tipo: "carpeta", regla: "carpetas-repetidas", motivo: "carpeta repetida",
+                   igualA: queda, bytes: firmas.get(c).bytes });
       movidas.add(c);
     }
   }
@@ -218,16 +324,26 @@ function planificar(raiz, ahora = Date.now()) {
         avisos.push({ ruta: a.ruta, motivo: "repetido, pero protegido", igualA: queda });
         continue;
       }
-      mover.push({ ruta: a.ruta, tipo: "archivo", motivo: "repetido", igualA: queda, bytes: a.bytes });
+      if (!activa("repetidos") || ignorada(a.ruta)) continue;
+      mover.push({ ruta: a.ruta, tipo: "archivo", regla: "repetidos", motivo: "repetido", igualA: queda, bytes: a.bytes });
       movidas.add(a.ruta);
     }
   }
 
   // 3 · Basura, entre lo que queda.
   for (const a of archivos) {
-    if (yaSale(a.ruta)) continue;
+    if (!activa("basura") || yaSale(a.ruta) || ignorada(a.ruta)) continue;
     const m = motivoBasura(path.basename(a.ruta), a.bytes, a.mtimeMs, ahora);
-    if (m) { mover.push({ ruta: a.ruta, tipo: "archivo", motivo: m, bytes: a.bytes }); movidas.add(a.ruta); }
+    if (m) { mover.push({ ruta: a.ruta, tipo: "archivo", regla: "basura", motivo: m, bytes: a.bytes }); movidas.add(a.ruta); }
+  }
+
+  // 3 bis · Instaladores viejos: un .apk suelto que ya se instaló hace rato.
+  for (const a of archivos) {
+    if (!activa("apk-viejas") || yaSale(a.ruta) || ignorada(a.ruta)) continue;
+    if (extDe(a.ruta) !== ".apk" || ahora - a.mtimeMs <= aj.diasApk * UN_DIA_MS) continue;
+    mover.push({ ruta: a.ruta, tipo: "archivo", regla: "apk-viejas",
+                 motivo: `instalador de hace más de ${aj.diasApk} días`, bytes: a.bytes });
+    movidas.add(a.ruta);
   }
 
   // 4 · Carpetas que quedan vacías después de todo lo anterior. De la más
@@ -235,7 +351,7 @@ function planificar(raiz, ahora = Date.now()) {
   //     también se va.
   const quedaAlgo = (c) => archivos.some((a) => dentroDe(a.ruta, c) && !yaSale(a.ruta));
   for (const c of carpetas.slice().sort((a, b) => b.split("/").length - a.split("/").length)) {
-    if (yaSale(c) || quedaAlgo(c)) continue;
+    if (!activa("basura") || yaSale(c) || quedaAlgo(c) || ignorada(c)) continue;
     const sub = carpetas.filter((o) => dentroDe(o, c));
     if (sub.every((o) => yaSale(o))) {
       // Lo que ya estaba en el plan adentro de ésta VIAJA CON ELLA: se mueve
@@ -243,12 +359,30 @@ function planificar(raiz, ahora = Date.now()) {
       // Moverlas por separado dejaría la carpeta ya creada en la papelera y
       // el último movimiento chocaría contra ella.
       for (const m of mover) if (dentroDe(m.ruta, c)) m.viajaCon = c;
-      mover.push({ ruta: c, tipo: "carpeta", motivo: "carpeta vacía", bytes: 0 });
+      mover.push({ ruta: c, tipo: "carpeta", regla: "basura", motivo: "carpeta vacía", bytes: 0 });
       movidas.add(c);
     }
   }
 
-  return { mover, avisos, archivos: archivos.length, carpetas: carpetas.length };
+  // 5 · Ordenar: lo que quedó SUELTO en la raíz, a la carpeta de su tipo.
+  //     Sólo la raíz: una carpeta que alguien armó ya está ordenada a su
+  //     manera, y no se la desarma. Lo protegido tampoco se mueve acá.
+  if (activa("ordenar")) for (const a of archivos) {
+    if (a.ruta.includes("/") || yaSale(a.ruta) || ignorada(a.ruta) || esProtegido(a.ruta)) continue;
+    const t = tipoDe(a.ruta);
+    const dest = aj.destinos[t];
+    if (!dest) continue;
+    const hacia = `${dest}/${a.ruta}`;
+    if (fs.existsSync(path.join(raiz, hacia))) {
+      avisos.push({ ruta: a.ruta, motivo: `no se ordena: ya hay uno con ese nombre en ${dest}/`, igualA: hacia });
+      continue;
+    }
+    mover.push({ ruta: a.ruta, tipo: "archivo", regla: "ordenar", motivo: `a ${dest}/`, hacia, bytes: a.bytes });
+    movidas.add(a.ruta);
+  }
+
+  return { mover, avisos, archivos: archivos.length, carpetas: carpetas.length,
+           resumen: analizar(archivos) };
 }
 
 /* Mover sin perder nada. `rename` no cruza sistemas de archivos: si falla con
@@ -267,24 +401,42 @@ function moverSeguro(desde, hacia) {
 const nombreDeLote = (d = new Date()) =>
   d.toISOString().replace(/\.\d+Z$/, "").replace(/[-:]/g, "").replace("T", "-");
 
-/* Aplica un plan: cada cosa a `_Papelera/<lote>/<su ruta de antes>`. El
-   `lote.json` se escribe DESPUÉS de cada movimiento, no al final: si el
+/* Aplica un plan: lo que se bota a `_Papelera/<lote>/contenido/<ruta>`, y lo
+   que se ordena a su carpeta. `seleccion` son las rutas tildadas; sin ella,
+   todo el plan.
+
+   Lo que está adentro de una carpeta que también se va VIAJA CON ELLA, y se
+   anota así. Tildar una carpeta es tildar lo de adentro: una «carpeta vacía»
+   del plan sólo existe porque TODO lo suyo ya estaba propuesto, así que
+   llevársela entera no se lleva nada que no se haya propuesto.
+
+   El `lote.json` se escribe DESPUÉS de cada movimiento, no al final: si el
    proceso muere a la mitad, lo que ya se movió igual se puede deshacer. */
-function aplicar(raiz, plan, lote = nombreDeLote()) {
+function aplicar(raiz, plan, lote = nombreDeLote(), seleccion = null) {
+  const tildada = (m) => !seleccion || seleccion.has(m.ruta);
+  const elegidos = plan.mover.filter((m) => tildada(m) ||
+    plan.mover.some((c) => c.tipo === "carpeta" && !c.hacia && tildada(c) && dentroDe(m.ruta, c.ruta)));
+  const carpetas = elegidos.filter((m) => m.tipo === "carpeta" && !m.hacia);
+  const padre = (m) => carpetas.find((c) => c !== m && dentroDe(m.ruta, c.ruta));
+
   const dir = path.join(raiz, PAPELERA, lote);
   const registro = { lote, carpeta: raiz, creado: new Date().toISOString(), movidos: [] };
   fs.mkdirSync(dir, { recursive: true });
   const guardar = () => fs.writeFileSync(path.join(dir, "lote.json"), JSON.stringify(registro, null, 2));
   guardar();
   const fallas = [];
-  for (const m of plan.mover) {
-    if (m.viajaCon) continue;
+  const sueltos = elegidos.filter((m) => !padre(m));
+  for (const m of sueltos) {
+    const destino = m.hacia || `${PAPELERA}/${lote}/contenido/${m.ruta}`;
     try {
-      moverSeguro(path.join(raiz, m.ruta), path.join(dir, "contenido", m.ruta));
-      registro.movidos.push(...plan.mover.filter((o) => o.viajaCon === m.ruta), m);
+      moverSeguro(path.join(raiz, m.ruta), path.join(raiz, destino));
+      const hijos = elegidos.filter((o) => padre(o) === m)
+        .map((o) => ({ ...o, viajaCon: m.ruta }));
+      registro.movidos.push(...hijos, { ...m, viajaCon: undefined, destino });
       guardar();
     } catch (e) { fallas.push({ ruta: m.ruta, error: e.message }); }
   }
+  if (!registro.movidos.length) fs.rmSync(dir, { recursive: true, force: true });
   return { lote, movidos: registro.movidos.filter((m) => !m.viajaCon).length, fallas };
 }
 
@@ -304,7 +456,7 @@ function deshacer(raiz, lote) {
   // después que su contenido vuelve antes.
   for (const m of reg.movidos.slice().reverse()) {
     if (m.viajaCon) continue;          // vuelve adentro de su carpeta
-    const desde = path.join(dir, "contenido", m.ruta);
+    const desde = m.destino ? path.join(raiz, m.destino) : path.join(dir, "contenido", m.ruta);
     let hacia = path.join(raiz, m.ruta);
     if (fs.existsSync(hacia)) {
       const ext = m.tipo === "archivo" ? path.extname(hacia) : "";
@@ -512,7 +664,7 @@ async function actualizarApks(man, destino, { consultar: preguntar = consultar, 
 const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-function informeHtml({ fecha, man, apks, repos, plan, deposito }) {
+function informeHtml({ fecha, man, apks, repos, plan, deposito, automatico = null }) {
   const total = plan ? plan.mover.reduce((s, m) => s + m.bytes, 0) : 0;
   const tarj = (t, cuerpo, extra = "") => `<section${extra}><h2>${t}</h2>${cuerpo}</section>`;
   const vacio = (t) => `<p class="tenue">${esc(t)}</p>`;
@@ -543,11 +695,13 @@ function informeHtml({ fecha, man, apks, repos, plan, deposito }) {
         <b>${m.tipo === "carpeta" ? "📁 " : ""}${esc(m.ruta)}</b>
         <span>${esc(m.motivo)}${m.igualA ? ` — igual a <i>${esc(m.igualA)}</i>` : ""}
         ${m.viajaCon ? " · se va con su carpeta" : ` · ${mb(m.bytes)}`}</span></li>`;
-    bloquePlan = (plan.mover.length
+    bloquePlan = (automatico ? `<p class="aviso-auto">Las reglas automáticas ya movieron
+         <b>${automatico.movidos}</b> (lote ${esc(automatico.lote)}). Se deshace desde la interfaz.</p>` : "") +
+      (plan.mover.length
       ? `<p class="gordo">${plan.mover.filter((m) => !m.viajaCon).length} cosas para botar · ${mb(total)}</p>
          <ul class="lista">${plan.mover.map(fila).join("")}</ul>
-         <p>Todavía <b>no se movió nada</b>. Para botarlo, en Termux:</p>
-         <pre>cd ~/datos && node herramientas/telefono.mjs descargas --aplicar</pre>
+         <p>Todavía <b>no se movió nada</b>. Para elegir qué se hace, tildando, en Termux:</p>
+         <pre>cd ~/datos && node herramientas/telefono.mjs interfaz</pre>
          <p class="tenue">Va a <code>Download/_Papelera/</code>. Se devuelve con
          <code>node herramientas/telefono.mjs deshacer</code>.</p>`
       : `<p class="gordo">Descargas está limpia.</p>`) +
@@ -612,6 +766,13 @@ function opcion(args, nombre, porDefecto) {
 
 /* Abre el informe en el navegador del teléfono. `termux-open` viene con
    Termux; en cualquier otro lado no existe, y no pasa nada. */
+function abrirDireccion(url) {
+  for (const c of ["termux-open-url", "termux-open"]) {
+    try { execFileSync(c, [url], { stdio: "ignore" }); return true; } catch {}
+  }
+  return false;
+}
+
 function abrir(archivo) {
   try { execFileSync("termux-open", [archivo], { stdio: "ignore" }); return true; }
   catch { return false; }
@@ -648,6 +809,7 @@ async function main(args) {
   const destino = path.resolve(opcion(args, "--destino", RESPALDOS));
   const aplica = args.includes("--aplicar");
   const silencioso = args.includes("--sin-abrir");
+  const archivoAjustes = path.join(destino, "bodega-ajustes.json");
 
   if (cmd === "manifiesto") {
     // Lo corre una SESIÓN, con la credencial del agente. El teléfono no.
@@ -660,6 +822,22 @@ async function main(args) {
     return;
   }
 
+  if (cmd === "interfaz") {
+    if (!fs.existsSync(carpeta)) {
+      console.log(`✖ no encuentro ${carpeta}.\n  En Termux, corré primero: termux-setup-storage`);
+      process.exit(1);
+    }
+    const { crearInterfaz } = await import("./telefono-interfaz.mjs");
+    const { servidor, direccion } = crearInterfaz({ carpeta, archivoAjustes,
+      alCerrar: () => console.log("\n  Pantalla cerrada.\n") });
+    servidor.listen(0, "127.0.0.1", () => {
+      console.log(`\n  Abrí esto en el navegador del teléfono:\n  ${direccion()}\n`);
+      console.log("  Termux tiene que quedar abierto. Se cierra sola a la media hora sin uso.");
+      if (!silencioso) abrirDireccion(direccion());
+    });
+    return;
+  }
+
   if (cmd === "sincronizar") {
     const man = leerManifiesto();
     fs.mkdirSync(destino, { recursive: true });
@@ -669,8 +847,22 @@ async function main(args) {
     const apks = await actualizarApks(man, destino);
     for (const a of apks) console.log(a.error ? `  ✖ ${a.nombre}  ·  ${a.error}`
       : `  ${a.nueva ? "★" : "✓"} ${a.nombre}  ·  ${(a.fecha || "").slice(0, 10)}  ·  ${mb(a.bytes)}${a.nueva ? "  (nueva)" : ""}`);
-    const plan = fs.existsSync(carpeta) ? planificar(carpeta) : null;
-    const archivo = escribirInforme(destino, { man, apks, repos, plan });
+    // Las reglas que Mauro puso en «automática» se aplican acá, y nada más.
+    let automatico = null;
+    const ajustes = leerAjustes(archivoAjustes);
+    if (fs.existsSync(carpeta)) {
+      const autos = new Set(REGLAS.filter((r) => ajustes.reglas[r.id].estado === "automatica").map((r) => r.id));
+      if (autos.size) {
+        const p0 = planificar(carpeta, Date.now(), ajustes);
+        const sel = new Set(p0.mover.filter((m) => autos.has(m.regla)).map((m) => m.ruta));
+        if (sel.size) {
+          automatico = aplicar(carpeta, p0, nombreDeLote(), sel);
+          console.log(`\n  AUTOMÁTICO: ${automatico.movidos} (lote ${automatico.lote})`);
+        }
+      }
+    }
+    const plan = fs.existsSync(carpeta) ? planificar(carpeta, Date.now(), ajustes) : null;
+    const archivo = escribirInforme(destino, { man, apks, repos, plan, automatico });
     console.log(`\n  Informe: ${archivo}`);
     if (!silencioso) abrir(archivo);
     return;
@@ -681,7 +873,7 @@ async function main(args) {
       console.log(`✖ no encuentro ${carpeta}.\n  En Termux, corré primero: termux-setup-storage`);
       process.exit(1);
     }
-    const plan = planificar(carpeta);
+    const plan = planificar(carpeta, Date.now(), leerAjustes(archivoAjustes));
     const total = plan.mover.reduce((s, m) => s + m.bytes, 0);
     console.log(`\n  DESCARGAS · ${carpeta}`);
     console.log(`  ${plan.archivos} archivos, ${plan.carpetas} carpetas mirados`);
@@ -755,7 +947,8 @@ async function main(args) {
   Sin --aplicar no se toca nada. Todo en herramientas/TELEFONO.md.`);
 }
 
-export { planificar, aplicar, deshacer, lotes, vencidos, motivoBasura, esProtegido,
+export { REGLAS, TIPOS, tipoDe, normalizarAjustes, leerAjustes, guardarAjustes, analizar, destinoValido,
+         planificar, aplicar, deshacer, lotes, vencidos, motivoBasura, esProtegido,
          tieneMarcaDeCopia, elegirQueQueda, nombreDeLote, PAPELERA,
          manifiestoDesde, leerManifiesto, hayQueBajar, rotar, actualizarApks, informeHtml, esc, MANIFIESTO };
 

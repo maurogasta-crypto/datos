@@ -178,7 +178,8 @@ prueba("de un mensaje de Airbnb: crea el cliente con el país del prefijo, y la 
   assert.equal(p.clienteNuevo.telefono, "+54 342 516-5677");
   assert.equal(p.clienteNuevo.pais, "Argentina");
   assert.equal(p.clienteNuevo.llegoPor, "airbnb");
-  assert.equal(p.reserva.horaEntrada, "19:30");
+  assert.equal(p.reserva.llegadaEstimada, "19:30");
+  assert.equal(p.reserva.horaEntrada, undefined, "la hora de entrada es la de la casa, no la del huésped");
   assert.deepEqual(p.rechazados, []);
 });
 prueba("«cambiame al martes», «anulá» y «haceme precio» REBOTAN, con el motivo", () => {
@@ -213,11 +214,82 @@ prueba("la nota se AGREGA con sello, y la misma nota dos veces no se repite", ()
   assert.equal(planCompletar({ ...DIRECTA, notas: p.reserva.notas }, CLI_D, { nota: "llevan una perrita" }).vacio, true);
 });
 prueba("lo que ya estaba igual no cuenta como cambio", () => {
-  assert.equal(planCompletar(DIRECTA, CLI_D, { adultos: 4, ninos: 0, llegada: "14:00" }).vacio, true);
+  assert.equal(planCompletar({ ...DIRECTA, llegadaEstimada: "14:00" }, CLI_D, { adultos: 4, ninos: 0, llegada: "14:00" }).vacio, true);
 });
 prueba("la lista de lo permitido y lo de Mauro no se pisan", () => {
   for (const k of PERMITIDOS) assert.ok(!(k in DE_MAURO), k);
   for (const k of ["checkIn", "checkOut", "cabanaId", "estado", "precio"]) assert.ok(k in DE_MAURO, k);
+});
+
+titulo("Lo que sabemos del huésped (reservas-4)");
+prueba("bebés, mascota, llegada y pedidos se completan", () => {
+  const p = planCompletar(DIRECTA, CLI_D, { bebes: 1, mascotas: "1 perrita", llegada: "21:00", pedidos: ["cuna", "  cuna "] },
+    { fuente: "WhatsApp", ahora: "2026-12-10T10:00:00Z" });
+  assert.equal(p.reserva.bebes, 1);
+  assert.equal(p.reserva.mascotas, "1 perrita");
+  assert.equal(p.reserva.llegadaEstimada, "21:00");
+  assert.deepEqual(p.reserva.pedidos, [{ texto: "cuna", estado: "pendiente", fuente: "whatsapp", fecha: "2026-12-10" }]);
+  assert.deepEqual(p.rechazados, []);
+});
+prueba("un pedido que ya está no se repite, y los anteriores se conservan con su estado", () => {
+  const r = { ...DIRECTA, pedidos: [{ texto: "Cuna", estado: "resuelto", fuente: "panel", fecha: "2026-12-01" }] };
+  assert.equal(planCompletar(r, CLI_D, { pedidos: ["cuna"] }).vacio, true);
+  const p = planCompletar(r, CLI_D, { pedidos: "toallas extra" });
+  assert.equal(p.reserva.pedidos.length, 2);
+  assert.equal(p.reserva.pedidos[0].estado, "resuelto");
+});
+prueba("la mascota que escribió una persona no se pisa; la llegada nueva del huésped sí", () => {
+  const r = { ...DIRECTA, mascotas: "un gato", llegadaEstimada: "18:00" };
+  const p = planCompletar(r, CLI_D, { mascotas: "dos perros", llegada: "20:00" });
+  assert.ok(p.rechazados.some((x) => /mascotas/.test(x)));
+  assert.equal(p.reserva.llegadaEstimada, "20:00");
+});
+prueba("cantidades y horas raras rebotan", () => {
+  const p = planCompletar(DIRECTA, CLI_D, { bebes: -1, llegada: "25:00", contacto: { canal: "telegram", idioma: "klingon", telefono: "123" } });
+  assert.equal(p.vacio, true);
+  for (const k of ["bebes", "llegada", "contacto.canal", "contacto.idioma", "contacto.telefono"]) assert.ok(p.rechazados.some((x) => x.startsWith(k)), k);
+});
+prueba("el teléfono del chat va al contacto de la reserva Y a la ficha del cliente que no lo tiene", () => {
+  const cli = { id: "cN", nombre: "Natalia" };
+  const r = { ...AIRBNB, clienteId: "cN", clienteNombre: "Airbnb · HM2DNEZXSP Natalia" };
+  const p = planCompletar(r, cli, { contacto: { telefono: "+55 48 99912-3456", canal: "whatsapp", idioma: "pt" } });
+  assert.equal(p.reserva.contacto.telefono, "+55 48 99912-3456");
+  assert.equal(p.reserva.contacto.canal, "whatsapp");
+  assert.equal(p.reserva.contacto.idioma, "pt");
+  assert.equal(p.clienteCambios.telefono, "+55 48 99912-3456");
+  assert.equal(p.clienteCambios.pais, "Brasil");
+});
+prueba("un teléfono de contacto distinto al que ya está no se pisa; el mismo escrito distinto no es conflicto", () => {
+  const r = { ...DIRECTA, contacto: { telefono: "+54 9 3547 55-1234", canal: "whatsapp", idioma: "" } };
+  assert.ok(planCompletar(r, CLI_D, { contacto: { telefono: "+54 11 5555-0000" } }).rechazados.some((x) => /contacto.telefono/.test(x)));
+  const p = planCompletar(r, CLI_D, { contacto: { telefono: "3547551234", idioma: "es" } });
+  assert.deepEqual(p.rechazados, []);
+  assert.deepEqual(p.reserva.contacto, { telefono: "+54 9 3547 55-1234", canal: "whatsapp", idioma: "es" });
+});
+prueba("sin teléfono en ningún lado, faltantes pide pedírselo; con el de contacto, no falta", () => {
+  const r = { ...AIRBNB, notas: "sin nada" };
+  const f = faltantes(r, null, {}).find((x) => x.campo === "telefono");
+  assert.ok(f && f.pedir);
+  assert.ok(!faltantes({ ...r, contacto: { telefono: "+55 48 99912-3456" } }, null, {}).some((x) => x.campo === "telefono"));
+});
+prueba("un bebé en las notas se cuenta como bebé, no como niño", () => {
+  const r = { ...DIRECTA, notas: "vienen con 1 bebé", ninos: 0 };
+  const f = faltantes(r, CLI_D, {}).map((x) => x.campo);
+  assert.ok(f.includes("bebes")); assert.ok(!f.includes("ninos"));
+  assert.ok(!faltantes({ ...r, bebes: 1 }, CLI_D, {}).some((x) => x.campo === "bebes"));
+});
+prueba("la llegada ya sabida (en llegadaEstimada) no se vuelve a pedir", () => {
+  assert.ok(!faltantes({ ...DIRECTA, llegadaEstimada: "20:00" }, CLI_D, { hoy: "2026-12-05" }).some((x) => x.campo === "llegada"));
+});
+prueba("vincular devuelve el teléfono del chat sólo si la reserva no lo tiene; si el chat es agendado, lo dice", () => {
+  const r = { ...AIRBNB, id: "n1", clienteNombre: "Airbnb · HM2DNEZXSP Natalia", notas: "Phone Number (Last 4 Digits): 3456", checkIn: "2026-11-20", checkOut: "2026-11-22" };
+  const v = vincular({ app: "whatsapp", chat: "+55 48 99912-3456", textos: ["Oi, sou a Natalia"] }, [r], [], "2026-10-01");
+  assert.equal(v.reserva.id, "n1");
+  assert.equal(v.telefono, "+55 48 99912-3456");
+  const v2 = vincular({ app: "whatsapp", chat: "Natalia Airbnb", textos: ["Oi"] }, [r], [], "2026-10-01");
+  assert.equal(v2.reserva.id, "n1"); assert.equal(v2.telefono, ""); assert.equal(v2.agendado, true);
+  const v3 = vincular({ app: "whatsapp", chat: "+55 48 99912-3456", textos: [] }, [{ ...r, contacto: { telefono: "+55 48 99912-3456" } }], [], "2026-10-01");
+  assert.equal(v3.telefono, "");
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

@@ -212,7 +212,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
   falla**: si eso cambiara, los reportes viejos desaparecerían de la sección 3
-  sin que nadie lo note; `node pruebas/herramientas/reservas.mjs` (34 casos, sin npm ni red) para
+  sin que nadie lo note; `node pruebas/herramientas/reservas.mjs` (44 casos, sin npm ni red) para
   el completado de reservas, que sobre todo prueba lo que NO completa; `node
   pruebas/herramientas/telefono.mjs` (97 casos, sin
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
@@ -437,7 +437,9 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 - **Las reservas de Casa Verde se COMPLETAN con los mensajes, y nada más**
   (`herramientas/reservas.mjs`, 29-sep-2026; las notificaciones de Airbnb
   entran por la misma captura). El agente llena el cliente, la cantidad, la
-  hora de llegada y notas; **las fechas, la cabaña, el estado y la plata los
+  hora de llegada y notas, y desde `reservas-4` lo que sabemos del huésped
+  —bebés, mascotas, contacto y pedidos—; **el teléfono lo levanta del chat**
+  y, si no está en ningún lado, prepara el borrador que se lo pide; **las fechas, la cabaña, el estado y la plata los
   rechaza la herramienta** y van a Mauro como pendiente. Cada cambio con su
   copia en `_historial/` y un renglón en el historial de la reserva, agregado
   crudo para no convertir en texto las fechas de los anteriores. **Dentro de

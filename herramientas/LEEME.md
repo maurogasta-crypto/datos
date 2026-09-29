@@ -186,7 +186,24 @@ node herramientas/reservas.mjs capturas --bodega <dir> [--leida <archivo>]   las
 
 El archivo dice de dónde salió y qué completar:
 `{"fuente": "WhatsApp de Amparo", "cliente": {"nombre", "telefono", "email",
-"pais", "idioma"}, "adultos": 5, "ninos": 1, "llegada": "19:30", "nota": "…"}`.
+"pais", "idioma"}, "adultos": 5, "ninos": 1, "bebes": 1, "mascotas": "1 perrita",
+"llegada": "19:30", "contacto": {"telefono", "canal", "idioma"}, "pedidos":
+["cuna"], "nota": "…"}`.
+
+**Lo que sabemos del huésped** (`reservas-4`, con `reservas-ical-7` de Casa
+Verde): bebés, mascotas, la hora a la que dijo que llega (`llegadaEstimada` —
+**no** `horaEntrada`, que es la de la casa y hasta `reservas-3` se pisaba),
+`contacto {telefono, canal, idioma}` y `pedidos`, que se SUMAN pendientes y
+los tilda una persona en la ficha. El teléfono de `contacto` va también a la
+ficha del cliente si no lo tiene.
+
+**El teléfono sale del chat, no de las capturas** (pedido de Mauro, mismo
+día). Un chat de WhatsApp de alguien no agendado trae el número en el título;
+un huésped de Airbnb a veces lo escribe. Si la reserva no tiene teléfono,
+`vincular` lo imprime listo para `completar`. Si el chat tiene un **nombre**
+(contacto agendado), el número no viaja en la notificación: se le recuerda a
+Mauro que lo guarde en la reserva. Y si no hay ni chat, `estado` dice «pedíselo
+al huésped» y la ronda deja el borrador que se lo pide.
 
 **Los avisos de Airbnb se leen por fechas y alojamiento** (`reservas-2`): no
 traen teléfono, traen el anuncio («Loft en Canasvieiras…») y el período. Si un
@@ -212,7 +229,7 @@ deshacer`) y un renglón en el `historial` de la reserva, como los de la
 pantalla. Ese renglón se agrega **crudo** (`leerCrudo` y `$crudo` de
 `firestore.mjs`): los anteriores son fechas de Firestore, y reescribirlos como
 texto rompería la pantalla. Banco: `node pruebas/herramientas/reservas.mjs`
-(34 casos, sin red).
+(44 casos, sin red).
 
 ## `ACCESO-A-LAS-BASES.md`
 

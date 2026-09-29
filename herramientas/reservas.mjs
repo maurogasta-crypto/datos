@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // reservas.mjs — Completar las reservas de Casa Verde con lo que dicen los
-// mensajes (WhatsApp y Airbnb). Sello: reservas-1
+// mensajes (WhatsApp y Airbnb). Sello: reservas-4
 //
 //   node herramientas/reservas.mjs estado
 //       Las reservas que vienen, con lo que les falta.
@@ -21,7 +21,19 @@
 // ── LO QUE EL AGENTE COMPLETA, Y LO QUE NO ──────────────────────────────────
 // COMPLETA (`completar`): el cliente de la reserva —nombre, teléfono, mail,
 // país, idioma; lo crea si no hay, y sólo llena lo vacío o lo dudoso—, cuántos
-// adultos y niños, la hora de llegada, y una nota.
+// adultos y niños, la hora de llegada, y una nota. Desde reservas-4 (con
+// `reservas-ical-7` de Casa Verde) también lo que sabemos del huésped: bebés,
+// mascotas, `contacto {telefono, canal, idioma}` y pedidos especiales.
+//
+// ── EL TELÉFONO, DEL CHAT (reservas-4, pedido de Mauro) ─────────────────────
+// «Levantar el teléfono de contacto del mensaje en el chat, para no tener que
+// revisar las capturas.» Un chat de WhatsApp de alguien que Mauro no agendó
+// lleva el número en el título; un huésped de Airbnb a veces lo escribe en el
+// texto. `vincular` lo devuelve, y `vincular` por consola dice si a la reserva
+// le falta. Si el chat tiene un NOMBRE (contacto agendado) el número no viaja
+// en la notificación: entonces lo tiene Mauro en su teléfono, y lo que se hace
+// es recordarle que lo guarde en la reserva. Y si no hay chat ni número, se
+// prepara el borrador que se lo pide al huésped.
 // NO TOCA, aunque un mensaje lo pida: las fechas, la cabaña, el estado (anular
 // o confirmar), la plata. Eso lo decide Mauro: la herramienta lo rechaza con
 // nombre y apellido, y la ronda lo anota como pendiente y le prepara la
@@ -94,16 +106,23 @@ export function faltantes(r, cliente, { grupo = null, hoy } = {}) {
   if (!r.clienteId) out.push({ campo: "cliente", texto: "no tiene cliente asociado" });
   const nombre = (cliente && cliente.nombre) || r.clienteNombre;
   if (esDudoso(nombre) || /\?/.test(r.clienteNombre || "")) out.push({ campo: "nombre", texto: `el nombre es dudoso («${limpiar(r.clienteNombre)}»)` });
-  const tel = (cliente && cliente.telefono) || telefonoEn(r.notas);
-  if (!tel) out.push({ campo: "telefono", texto: "no hay teléfono" });
-  else if (!(cliente && cliente.telefono)) out.push({ campo: "telefono", texto: `el teléfono está sólo en las notas (${telefonoEn(r.notas)})` });
+  const telR = (r.contacto && r.contacto.telefono) || "";
+  const tel = (cliente && cliente.telefono) || telR || telefonoEn(r.notas);
+  if (!tel) out.push({ campo: "telefono", pedir: true, texto: "no hay teléfono: pedíselo al huésped (o guardalo, si ya te escribió por WhatsApp)" });
+  else if (!(cliente && cliente.telefono) && !telR) out.push({ campo: "telefono", texto: `el teléfono está sólo en las notas (${telefonoEn(r.notas)})` });
   const nota = String(r.notas || "");
-  const m = nota.match(/(\d+)\s*(niñ[oa]s?|nenes?|chicos|menores|bebés?)/i);
+  // Un bebé cuenta en `bebes` (reservas-4), no en niños: pide cuna, no cama.
+  const m = nota.match(/(\d+)\s*(niñ[oa]s?|nenes?|chicos|menores)/i);
   if (m && Number(r.ninos || 0) !== Number(m[1])) out.push({ campo: "ninos", texto: `las notas hablan de ${m[1]} ${m[2]} y la reserva dice ${r.ninos || 0}` });
-  else if (/\b(niñ[oa]s?|nenes|bebé|menores)\b/i.test(nota) && !Number(r.ninos)) out.push({ campo: "ninos", texto: "las notas mencionan chicos y la reserva dice 0" });
+  else if (/\b(niñ[oa]s?|nenes|menores)\b/i.test(nota) && !Number(r.ninos)) out.push({ campo: "ninos", texto: "las notas mencionan chicos y la reserva dice 0" });
+  const mb = nota.match(/(\d+)\s*beb[ée]s?/i);
+  if (mb && Number(r.bebes || 0) !== Number(mb[1])) out.push({ campo: "bebes", texto: `las notas hablan de ${mb[1]} bebé(s) y la reserva dice ${r.bebes || 0}` });
+  else if (!mb && /\bbeb[ée]s?\b/i.test(nota) && !Number(r.bebes)) out.push({ campo: "bebes", texto: "las notas mencionan un bebé y la reserva dice 0" });
   // La hora de llegada se pide cuando falta poco (tres semanas): antes, casi
   // nadie la sabe, y catorce avisos iguales enseñan a no leerlos.
-  if ((r.horaEntrada || "14:00") === "14:00" && hoy && r.checkIn >= hoy && r.checkIn <= sumar(hoy, 21) && !/llegada/i.test(nota))
+  // «Se sabe» si está en `llegadaEstimada` o —como se guardaba antes de
+  // reservas-4— si la hora de entrada ya no es la de la casa.
+  if (!r.llegadaEstimada && (r.horaEntrada || "14:00") === "14:00" && hoy && r.checkIn >= hoy && r.checkIn <= sumar(hoy, 21) && !/llegada/i.test(nota))
     out.push({ campo: "llegada", texto: "no se sabe a qué hora llegan (figura la de siempre, 14:00)" });
   if (grupo && !(Number(grupo.total) > 0)) out.push({ campo: "precio", texto: "el acuerdo no tiene precio" });
   // El importador de Airbnb pone 2 adultos porque el calendario no dice
@@ -183,7 +202,7 @@ export function vincular(chat, reservas, clientes, hoy, cabanas = []) {
   const puntos = vivas.map((r) => {
     const c = cli[r.clienteId] || {};
     let p = 0; const por = [];
-    const telR = c.telefono || telefonoEn(r.notas);
+    const telR = c.telefono || (r.contacto && r.contacto.telefono) || telefonoEn(r.notas);
     if (telChat && telR && mismoTelefono(telChat, telR)) { p += 3; por.push("teléfono"); }
     else if (telChat && ultimos4(r.notas) && digitos(telChat).endsWith(ultimos4(r.notas))) { p += 2; por.push("últimos 4 del teléfono"); }
     if (cod && limpiar(r.clienteNombre).includes(cod)) { p += 3; por.push("código Airbnb"); }
@@ -209,19 +228,32 @@ export function vincular(chat, reservas, clientes, hoy, cabanas = []) {
   const empate = puntos.filter((x) => x.p === puntos[0].p);
   const clientesEmpate = new Set(empate.map((x) => x.r.clienteId || x.r.id));
   if (clientesEmpate.size > 1) return { reserva: null, motivo: "se parece a varias: " + empate.map((x) => x.r.id).join(", "), candidatas: empate.map((x) => x.r) };
-  return { reserva: puntos[0].r, todas: empate.map((x) => x.r), por: puntos[0].por };
+  const r0 = puntos[0].r, c0 = cli[r0.clienteId] || {};
+  const tieneTel = !!(c0.telefono || (r0.contacto && r0.contacto.telefono));
+  // El teléfono del chat, si la reserva no lo tiene: es lo que Mauro pidió
+  // levantar de los mensajes. `agendado` = el chat tiene nombre y no número,
+  // así que el número está en los contactos de Mauro y no en la notificación.
+  const telefono = !tieneTel && telChat ? telChat : "";
+  const agendado = !tieneTel && !telChat && chat.app === "whatsapp";
+  return { reserva: r0, todas: empate.map((x) => x.r), por: puntos[0].por, telefono, agendado };
 }
 const sumar = (iso, n) => { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
-export const PERMITIDOS = ["cliente", "adultos", "ninos", "llegada", "nota"];
+export const PERMITIDOS = ["cliente", "adultos", "ninos", "bebes", "mascotas", "llegada", "contacto", "pedidos", "nota"];
 export const DE_MAURO = { checkIn: "las fechas", checkOut: "las fechas", cabanaId: "la cabaña", estado: "el estado",
   precio: "la plata", total: "la plata", monto: "la plata", grupoId: "el acuerdo", origen: "el origen" };
 const CAMPOS_CLIENTE = ["nombre", "telefono", "email", "pais", "idioma"];
+export const CANALES = ["whatsapp", "airbnb", "telefono", "mail"];
+export const IDIOMAS = ["es", "pt", "en", "otro"];
+const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /* El plan de un completado. No escribe nada: dice qué se escribiría, qué se
    rechaza y por qué. `cambios` es lo que se sacó del mensaje:
-     { cliente: {nombre, telefono, email, pais, idioma}, adultos, ninos,
-       llegada: "18:30", nota: "llevan una perrita" } */
+     { cliente: {nombre, telefono, email, pais, idioma}, adultos, ninos, bebes,
+       mascotas: "1 perrita", llegada: "18:30",
+       contacto: {telefono, canal, idioma}, pedidos: ["cuna"], nota: "…" }
+   El teléfono de `contacto` va también a la ficha del cliente si la ficha no
+   tiene: es el mismo huésped. */
 export function planCompletar(r, cliente, cambios, { fuente = "mensaje", ahora = new Date().toISOString() } = {}) {
   const rechazados = [], lineas = [], reserva = {};
   let clienteNuevo = null, clienteCambios = null;
@@ -229,7 +261,10 @@ export function planCompletar(r, cliente, cambios, { fuente = "mensaje", ahora =
     if (DE_MAURO[k]) rechazados.push(`${k}: ${DE_MAURO[k]} las decide Mauro, no un mensaje`);
     else if (!PERMITIDOS.includes(k)) rechazados.push(`${k}: no es un campo que el agente complete`);
   }
-  const c = (cambios && cambios.cliente) || null;
+  let c = (cambios && cambios.cliente) || null;
+  const con = (cambios && cambios.contacto) || null;
+  if (con && String(con.telefono || "").trim() && !(c && c.telefono) && (cliente || (c && c.nombre)))
+    c = { ...(c || {}), telefono: con.telefono };
   if (c) {
     const limpio = {};
     for (const k of CAMPOS_CLIENTE) if (String(c[k] ?? "").trim()) limpio[k] = limpiar(c[k]).slice(0, k === "nombre" ? 80 : 120);
@@ -271,10 +306,55 @@ export function planCompletar(r, cliente, cambios, { fuente = "mensaje", ahora =
       else if (Number(r[k] ?? 0) !== n) { reserva[k] = n; lineas.push(`${k === "ninos" ? "niños" : k} ${r[k] ?? 0} → ${n}`); }
     }
   }
+  if (cambios && "bebes" in cambios) {
+    const n = Number(cambios.bebes);
+    if (!Number.isInteger(n) || n < 0 || n > 10) rechazados.push(`bebes: «${cambios.bebes}» no es una cantidad`);
+    else if (Number(r.bebes ?? 0) !== n) { reserva.bebes = n; lineas.push(`bebés ${r.bebes ?? 0} → ${n}`); }
+  }
+  // La mascota se llena si estaba vacía; si una persona ya escribió otra
+  // cosa, no se pisa.
+  if (cambios && String(cambios.mascotas || "").trim()) {
+    const m = limpiar(cambios.mascotas).slice(0, 60);
+    if (!String(r.mascotas || "").trim()) { reserva.mascotas = m; lineas.push("mascotas: " + m); }
+    else if (limpiar(r.mascotas) !== m) rechazados.push(`mascotas: ya dice «${r.mascotas}»; no se pisa lo que escribió una persona`);
+  }
+  // La llegada es la hora que DIJO el huésped (`llegadaEstimada`), no la de
+  // entrada de la casa: hasta reservas-3 se escribía en `horaEntrada`. Si el
+  // huésped la cambia, vale la última que dijo.
   if (cambios && cambios.llegada) {
     const h = String(cambios.llegada).trim();
-    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(h)) rechazados.push(`llegada: «${h}» no es una hora (HH:MM)`);
-    else if ((r.horaEntrada || "14:00") !== h) { reserva.horaEntrada = h; lineas.push(`llegada ${r.horaEntrada || "14:00"} → ${h}`); }
+    if (!HORA.test(h)) rechazados.push(`llegada: «${h}» no es una hora (HH:MM)`);
+    else if ((r.llegadaEstimada || "") !== h) { reserva.llegadaEstimada = h; lineas.push(`llegada ${r.llegadaEstimada ? "~" + r.llegadaEstimada : "(sin dato)"} → ~${h}`); }
+  }
+  if (con) {
+    const antes = r.contacto || {}, nuevo = { ...antes }, cam = [];
+    const tel = limpiar(con.telefono || "");
+    if (tel) {
+      if (digitos(tel).length < 8) rechazados.push(`contacto.telefono: «${tel}» no es un teléfono`);
+      else if (!String(antes.telefono || "").trim()) { nuevo.telefono = tel; cam.push("teléfono " + tel); }
+      else if (!mismoTelefono(antes.telefono, tel)) rechazados.push(`contacto.telefono: ya dice «${antes.telefono}»; no se pisa lo que escribió una persona`);
+    }
+    for (const [k, lista] of [["canal", CANALES], ["idioma", IDIOMAS]]) {
+      const v = String(con[k] || "").trim().toLowerCase();
+      if (!v) continue;
+      if (!lista.includes(v)) rechazados.push(`contacto.${k}: «${v}» no es uno de ${lista.join("/")}`);
+      else if (!antes[k]) { nuevo[k] = v; cam.push(`${k} ${v}`); }
+    }
+    if (cam.length) { reserva.contacto = { telefono: "", canal: "", idioma: "", ...nuevo }; lineas.push("contacto: " + cam.join(", ")); }
+  }
+  // Los pedidos se SUMAN, pendientes; uno que ya está (mismo texto) no se
+  // repite. Tildarlos lo hace una persona, en la ficha.
+  if (cambios && "pedidos" in cambios) {
+    const lista = Array.isArray(cambios.pedidos) ? cambios.pedidos : [cambios.pedidos];
+    const ya = new Set((r.pedidos || []).map((p) => limpiar(p.texto).toLowerCase()));
+    const nuevos = [];
+    for (const x of lista) {
+      const t = limpiar(typeof x === "string" ? x : x && x.texto).slice(0, 200);
+      if (!t || ya.has(t.toLowerCase())) continue;
+      ya.add(t.toLowerCase());
+      nuevos.push({ texto: t, estado: "pendiente", fuente: String(fuente).toLowerCase(), fecha: ahora.slice(0, 10) });
+    }
+    if (nuevos.length) { reserva.pedidos = [...(r.pedidos || []), ...nuevos]; lineas.push("pedidos: " + nuevos.map((p) => p.texto).join(" · ")); }
   }
   if (cambios && String(cambios.nota || "").trim()) {
     const n = limpiar(cambios.nota).slice(0, 400);
@@ -334,6 +414,8 @@ async function vincularCli(dir, dias) {
     console.log(v.reserva ? `      → reserva ${v.reserva.id} (${limpiar(v.reserva.clienteNombre)}, ${v.reserva.checkIn}) por ${v.por.join(" y ")}${v.todas.length > 1 ? ` · y ${v.todas.length - 1} más del mismo grupo` : ""}`
                           : v.nueva ? `      ⚠ ${v.motivo}: ${v.nueva.desde} → ${v.nueva.hasta}${v.nueva.cabanaId ? " en " + v.nueva.cabanaId : ""}. En Casa Verde: Reservas → «Airbnb» → «Sincronizar ahora».`
                           : `      → ninguna: ${v.motivo}`);
+    if (v.telefono) console.log(`      📞 el chat trae un teléfono y la reserva no tiene: completar con {"contacto":{"telefono":"${v.telefono}","canal":"${c.app}"}}`);
+    else if (v.agendado) console.log("      📞 la reserva no tiene teléfono y el chat es de un contacto agendado: recordarle a Mauro que lo guarde en la reserva");
     for (const t of [...new Set(c.textos)].slice(-6)) console.log(`        «${limpiar(t).slice(0, 160)}»`);
   }
   console.log("");

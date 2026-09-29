@@ -39,6 +39,9 @@ let ultimoLogin = null;
    rompió fue otra, la del respaldo. Una prueba que pasa por el motivo
    equivocado es peor que una que falla. */
 const NIEGA_LA_BASE = ["claves"];
+/* Para probar que sin copia no hay cambio: se puede hacer que la base niegue
+   el historial. */
+let niegaHistorial = false;
 globalThis.fetch = async (url, op = {}) => {
   const u = String(url);
   const ok = (j) => ({ ok: true, status: 200, json: async () => j });
@@ -55,7 +58,8 @@ globalThis.fetch = async (url, op = {}) => {
 
   const ruta = u.split("/documents")[1].split("?")[0];
   const [, col, id] = ruta.split("/");
-  if (NIEGA_LA_BASE.includes(col)) return mal(403, "Missing or insufficient permissions.");
+  if (NIEGA_LA_BASE.includes(col) || (niegaHistorial && col === "_historial"))
+    return mal(403, "Missing or insufficient permissions.");
 
   if (!id) {
     const m = BASE[col] || {};
@@ -71,7 +75,8 @@ globalThis.fetch = async (url, op = {}) => {
 };
 
 const { PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
-        entrar, entrarSuave, listar, leerUno, escribir, borrar, aFirestore, deFirestore } =
+        entrar, entrarSuave, listar, leerUno, escribir, fusionar, borrar, aFirestore, deFirestore,
+        deshacer, HISTORIAL } =
   await import("../../herramientas/firestore.mjs");
 const cfg = PROYECTOS.panel;
 
@@ -353,6 +358,78 @@ await prueba("casaverde: la operación, la gente y la plata ya se leen", async (
                    "pagos", "movimientos", "liquidaciones", "cierres", "honorarios"]) {
     assert.ok(!(await frena(() => listar(cv, sesion, c))), `«${c}» se frenó y no debía`);
   }
+});
+
+/* ── El historial ──────────────────────────────────────────────────────── */
+titulo("Ningún cambio del agente sin su copia de antes");
+const cvh = PROYECTOS.casaverde;
+const entradas = () => Object.keys(BASE[HISTORIAL] || {}).length;
+
+await prueba("escribir guarda antes cómo estaba, CRUDO, y después cambia", async () => {
+  BASE.reservas = { r1: { total: { integerValue: "100" }, checkIn: { timestampValue: "2026-10-01T00:00:00Z" } } };
+  const n = entradas();
+  await escribir(cvh, sesion, "reservas", "r1", { total: 200 });
+  assert.equal(entradas(), n + 1);
+  const h = Object.values(BASE[HISTORIAL]).at(-1);
+  assert.equal(h.coleccion.stringValue, "reservas");
+  assert.ok(h.antes.stringValue.includes("timestampValue"), "la copia perdió el tipo");
+  assert.equal(BASE.reservas.r1.total.integerValue, "200");
+});
+
+await prueba("deshacer lo devuelve EXACTO, con la fecha como fecha", async () => {
+  const hid = Object.keys(BASE[HISTORIAL]).at(-1);
+  await deshacer(cvh, sesion, hid);
+  assert.deepEqual(BASE.reservas.r1, { total: { integerValue: "100" }, checkIn: { timestampValue: "2026-10-01T00:00:00Z" } });
+});
+
+await prueba("y el deshacer también deja su entrada: se puede deshacer", async () => {
+  const h = Object.values(BASE[HISTORIAL]).at(-1);
+  assert.ok(h.op.stringValue.startsWith("deshacer:"));
+});
+
+await prueba("borrar guarda la copia y deshacer lo vuelve a crear", async () => {
+  BASE.chequeos = { c1: { nota: { stringValue: "faltan toallas" } } };
+  await borrar(cvh, sesion, "chequeos", "c1");
+  assert.equal(BASE.chequeos.c1, undefined);
+  await deshacer(cvh, sesion, Object.keys(BASE[HISTORIAL]).at(-1));
+  assert.equal(BASE.chequeos.c1.nota.stringValue, "faltan toallas");
+});
+
+await prueba("crear algo nuevo anota «no existía», y deshacer lo borra", async () => {
+  await escribir(cvh, sesion, "reservas", "nueva", { total: 1 });
+  const hid = Object.keys(BASE[HISTORIAL]).at(-1);
+  assert.equal(BASE[HISTORIAL][hid].antes.nullValue, null);
+  await deshacer(cvh, sesion, hid);
+  assert.equal(BASE.reservas.nueva, undefined);
+});
+
+await prueba("SIN copia no hay cambio: si el historial se niega, el documento queda como estaba", async () => {
+  BASE.pagos = { p1: { monto: { integerValue: "5" } } };
+  niegaHistorial = true;
+  try { assert.ok(await frena(() => fusionar(cvh, sesion, "pagos", "p1", { monto: 999 }))); }
+  finally { niegaHistorial = false; }
+  assert.equal(BASE.pagos.p1.monto.integerValue, "5");
+});
+
+await prueba("los cierres de Casa Verde no se escriben: son inmutables", async () => {
+  assert.ok(await frena(() => escribir(cvh, sesion, "cierres", "k", { a: 1 })));
+  assert.ok(await frena(() => borrar(cvh, sesion, "cierres", "k")));
+});
+
+await prueba("el historial no se escribe ni se borra a mano, ni siquiera por el agente", async () => {
+  assert.ok(await frena(() => escribir(cvh, sesion, HISTORIAL, "x", { a: 1 })));
+  assert.ok(await frena(() => borrar(cvh, sesion, HISTORIAL, Object.keys(BASE[HISTORIAL])[0])));
+});
+
+await prueba("una base sin historial (el panel) escribe como siempre, sin entradas", async () => {
+  const n = entradas();
+  await escribir(cfg, sesion, "pendientes", "z", { t: 1 });
+  assert.equal(entradas(), n);
+});
+
+await prueba("Casa Verde y Tiempos llevan historial", () => {
+  assert.equal(PROYECTOS.casaverde.historial, true);
+  assert.equal(PROYECTOS.tiempos.historial, true);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

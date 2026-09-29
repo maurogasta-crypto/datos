@@ -616,7 +616,7 @@ export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA, orige
          queCambio, archivosTocados, DIAS_CAMBIOS, raizDeLosRepos,
          repoDeCadaProyecto, trabasVivas, desbloquea, hayComando,
          HERRAMIENTA_QUE_PIDE, herramientaQueFalta, porQueNoSeToca, queTocarAhora,
-         CAMPOS_PENDIENTE, CAMPOS_LINEA, CAMPOS_PROYECTO, SOLO_NOMBRES };
+         CAMPOS_PENDIENTE, CAMPOS_LINEA, CAMPOS_PROYECTO, SOLO_NOMBRES, listarSuave };
 
 /* ── Lo que sí toca la red ───────────────────────────────────────────────────
    `firestore.mjs` corta el proceso ante un 403, que es lo correcto cuando una

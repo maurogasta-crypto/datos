@@ -875,7 +875,12 @@ function delChat(trabajo = Bodega.TRABAJO) {
 const NO_SE_DEPOSITA = { hilux: ["recorridos"] };
 
 async function depositar(dirBodega) {
-  const { PROYECTOS, entrarSuave, listar } = await import("./firestore.mjs");
+  const { PROYECTOS, entrarSuave } = await import("./firestore.mjs");
+  /* `listarSuave` y no `listar`: `listar` corta el proceso entero ante un
+     «no» de las reglas, y un respaldo no puede morirse porque UNA colección
+     no contestó. Pasó el primer día: tiempos todavía no tenía publicado el
+     bloque del historial y se llevaba puesto el respaldo de las seis bases. */
+  const { listarSuave } = await import("./ronda.mjs");
   const salida = path.join(dirBodega, "bases");
   fs.mkdirSync(salida, { recursive: true });
   const filas = [];
@@ -885,8 +890,8 @@ async function depositar(dirBodega) {
     const todo = { proyecto: id, bajadoEn: new Date().toISOString() };
     const cols = (cfg.colecciones || []).filter((c) => !(NO_SE_DEPOSITA[id] || []).includes(c));
     for (const c of cols) {
-      try { todo[c] = await listar(cfg, e.sesion, c); }
-      catch (x) { todo[c] = { error: String(x && x.message || x) }; }
+      const r = await listarSuave(cfg, e.sesion, c);
+      todo[c] = r.ok ? r.docs : { error: r.motivo };
     }
     fs.writeFileSync(path.join(salida, `${id}.json`), JSON.stringify(todo, null, 2) + "\n");
     filas.push(`✓ ${id}: ` + cols.map((c) => `${Array.isArray(todo[c]) ? todo[c].length : "✖"} ${c}`).join(", "));

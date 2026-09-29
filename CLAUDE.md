@@ -205,7 +205,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   el otro en la misma tanda.
 - **Hay cinco bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
-  pruebas/herramientas/firestore.mjs` (39 casos, sin npm ni red) para la
+  pruebas/herramientas/firestore.mjs` (49 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
   (108 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
@@ -414,6 +414,17 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   chat se valida en el teléfono como si la hubiera escrito cualquiera, y nace
   en «propone». El token del teléfono abre ese repositorio y ningún otro, y
   no pasa por ningún chat.
+- **En Casa Verde y en Tiempos el agente ESCRIBE, y ningún cambio suyo existe
+  sin su copia de antes** (29-sep-2026, pedido de Mauro: «gestionar y editar
+  todo, teniendo respaldos»). `escribir`, `fusionar` y `borrar` de
+  `herramientas/firestore.mjs` guardan primero el documento crudo en
+  `_historial/` de esa base (`historial: true` en `PROYECTOS`); si la copia no
+  se puede guardar, el cambio no se hace. Las reglas dejan crear ahí y nunca
+  editar ni borrar. `historial [n]` los lista y `deshacer <id>` vuelve atrás.
+  **Y todas las bases se copian enteras a la bodega cada madrugada**, con una
+  rutina propia («Respaldo diario de las bases a la bodega», 05:13 de
+  Montevideo), porque el prompt de la ronda diaria sólo se cambia desde su
+  propia conversación.
 
 ## Protocolos
 

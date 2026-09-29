@@ -207,13 +207,17 @@ const PROYECTOS = {
     /* El agente lee lo común y las horas, y ESCRIBE `miembros/` al aprobar
        una solicitud: es lo único que escribe. Las tareas personales se las
        niega la regla (no hay cómo sellarlas por colección: es por campo). */
-    colecciones: ["miembros", "solicitudes", "sesiones"],
+    /* `tareas` no está: el agente sólo puede leer las COMUNES, y listar la
+       colección entera la regla lo rechaza (no puede probar que no hay una
+       personal adentro). Respaldarlas pide una consulta filtrada; pendiente. */
+    colecciones: ["miembros", "solicitudes", "sesiones", "_historial"],
     /* No hay `reportes` de nadie: lo que la ronda cuenta para saber que la
        base está viva son las sesiones del cronómetro. Sólo se cuentan, no se
        cruzan con los pendientes. */
     reportesSon: "sesiones",
     coleccionVigilada: "sesiones",
-    selladas: []
+    selladas: [],
+    historial: true
   },
 
   casaverde: {
@@ -226,7 +230,8 @@ const PROYECTOS = {
     colecciones: ["cabanas", "espacios_comunes", "disponibilidad", "actividades",
                   "grupos", "recuerdos", "usuarios", "reportes",
                   "reservas", "chequeos", "clientes", "huespedes", "comunicaciones",
-                  "pagos", "movimientos", "liquidaciones", "cierres", "honorarios"],
+                  "pagos", "movimientos", "liquidaciones", "cierres", "honorarios",
+                  "_historial"],
     /* Hasta el 29-sep-2026 eran tres familias selladas: credenciales, el
        libro del negocio y la gente. Ese día Mauro abrió las dos últimas
        —«para poder ayudar a gestionar, y planificar»— y quedó sellado sólo
@@ -241,7 +246,12 @@ const PROYECTOS = {
        no se copian enteros a un chat. */
     selladas: [
       "claves_recuerdos", "config/integraciones", "config/airbnb", "avisos_contacto"
-    ]
+    ],
+    /* Desde el 29-sep-2026 el agente ESCRIBE acá (pedido de Mauro: «gestionar
+       y editar todo»), con historial de cada cambio. Los `cierres` no: son
+       el registro de los balances y la regla los hace inmutables para todos. */
+    historial: true,
+    soloLectura: ["cierres"]
   }
 };
 
@@ -433,11 +443,63 @@ const leerUno = async (cfg, sesion, coleccion, id) => {
   return d ? { id, ...objeto(d.fields || {}) } : null;
 };
 
+/* ── El historial: ningún cambio del agente sin su copia de antes ────────────
+   Pedido de Mauro, 2026-09-29: «quiero que el agente pueda gestionar y editar
+   todo, teniendo respaldos de los registros para evitar perder datos en caso
+   de un descontrol».
+
+   En las bases con `historial: true`, ANTES de escribir, fusionar o borrar,
+   la herramienta guarda en `_historial/` cómo estaba el documento —crudo, con
+   sus tipos de Firestore, para que volver atrás devuelva una fecha como fecha
+   y no como texto— y recién después hace el cambio. **Si la copia no se puede
+   guardar, el cambio no se hace**: un error acá corta antes de tocar nada.
+
+   Las reglas de cada base dejan al agente CREAR en `_historial/` y nada más:
+   no lo puede editar ni borrar, ni siquiera él. Un descontrol del agente no
+   puede tapar sus propias huellas. Y `deshacer <id>` devuelve el documento a
+   como estaba, dejando a su vez su propia entrada. */
+const HISTORIAL = "_historial";
+const TOPE_HISTORIAL = 900000;             // un documento de Firestore no pasa de 1 MiB
+
+const idHistorial = (d = new Date()) =>
+  d.toISOString().replace(/[-:]/g, "").replace("T", "-").replace(/\..*$/, "")
+  + "-" + Math.random().toString(36).slice(2, 8);
+
+async function anotar(cfg, sesion, op, coleccion, id, cambio) {
+  if (!cfg.historial) return null;
+  const crudo = await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`);
+  const antes = crudo ? JSON.stringify(crudo.fields || {}) : null;
+  const pedido = cambio == null ? null : JSON.stringify(cambio);
+  if ((antes || "").length + (pedido || "").length > TOPE_HISTORIAL)
+    ex(`${coleccion}/${id} es demasiado grande para guardar su copia en el historial.\n`
+     + `  No se cambió nada. Bajá un respaldo entero con «bajar» y cambialo a mano.`);
+  const hid = idHistorial();
+  await pedir(cfg, sesion, `/${HISTORIAL}/${hid}?currentDocument.exists=false`, {
+    method: "PATCH",
+    body: JSON.stringify({ fields: campos({
+      coleccion, docId: String(id), op, antes, pedido,
+      en: new Date().toISOString(), quien: sesion.mail || "agente" }) }) });
+  return hid;
+}
+
+/* Lo que el agente no escribe aunque pueda leerlo: lo sellado (que no lee),
+   lo inmutable por diseño de cada base (`soloLectura`, p. ej. los `cierres`
+   de Casa Verde) y el historial mismo, que sólo se escribe por `anotar`. */
+function guardiaEscritura(cfg, coleccion, id) {
+  guardia(cfg, coleccion, id);
+  const raiz = String(coleccion || "").split("/")[0];
+  if (raiz === HISTORIAL)
+    ex(`«${HISTORIAL}» no se escribe a mano: es la copia de lo que cambió el agente.`);
+  if ((cfg.soloLectura || []).includes(raiz))
+    ex(`«${raiz}» es de sólo lectura para el agente en ${cfg.projectId}: es inmutable por diseño.`);
+}
+
 /* `escribir` REEMPLAZA el documento entero, como el `setDoc` sin merge del
    panel: si un campo se sacó, tiene que desaparecer de la base. Un documento
    que no se puede achicar no sirve. */
 const escribir = async (cfg, sesion, coleccion, id, datos) => {
-  guardia(cfg, coleccion, id);
+  guardiaEscritura(cfg, coleccion, id);
+  await anotar(cfg, sesion, "escribir", coleccion, id, datos);
   return pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`,
     { method: "PATCH", body: JSON.stringify({ fields: campos(datos) }) });
 };
@@ -451,7 +513,8 @@ const escribir = async (cfg, sesion, coleccion, id, datos) => {
    La diferencia con `escribir` es el `updateMask`: sin él, Firestore entiende
    que el documento es exactamente lo que le mandaste. */
 const fusionar = async (cfg, sesion, coleccion, id, datos) => {
-  guardia(cfg, coleccion, id);
+  guardiaEscritura(cfg, coleccion, id);
+  await anotar(cfg, sesion, "fusionar", coleccion, id, datos);
   const mascara = Object.keys(datos)
     .map((k) => "updateMask.fieldPaths=" + encodeURIComponent(k)).join("&");
   return pedir(cfg, sesion,
@@ -460,11 +523,28 @@ const fusionar = async (cfg, sesion, coleccion, id, datos) => {
 };
 
 const borrar = async (cfg, sesion, coleccion, id) => {
-  guardia(cfg, coleccion, id);
+  guardiaEscritura(cfg, coleccion, id);
+  await anotar(cfg, sesion, "borrar", coleccion, id, null);
   return pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`, { method: "DELETE" });
 };
 
-export { PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
+/* Devuelve un documento a como estaba antes de un cambio del historial. Se
+   restaura CRUDO —con los tipos de Firestore— y deja su propia entrada: un
+   deshacer también se puede deshacer. */
+async function deshacer(cfg, sesion, hid) {
+  if (!cfg.historial) ex(`${cfg.projectId} no lleva historial.`);
+  const h = await pedir(cfg, sesion, `/${HISTORIAL}/${encodeURIComponent(hid)}`);
+  if (!h) ex(`no hay una entrada «${hid}» en el historial.`);
+  const e = objeto(h.fields || {});
+  guardiaEscritura(cfg, e.coleccion, e.docId);
+  await anotar(cfg, sesion, "deshacer:" + hid, e.coleccion, e.docId, e.antes ? JSON.parse(e.antes) : null);
+  const ruta = `/${e.coleccion}/${encodeURIComponent(e.docId)}`;
+  if (e.antes == null) await pedir(cfg, sesion, ruta, { method: "DELETE" });
+  else await pedir(cfg, sesion, ruta, { method: "PATCH", body: JSON.stringify({ fields: JSON.parse(e.antes) }) });
+  return e;
+}
+
+export { HISTORIAL, deshacer, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
          entrar, entrarSuave, listar, leerUno, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/
@@ -508,6 +588,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(JSON.stringify(id ? await leerUno(cfg, sesion, coleccion, id)
                                   : await listar(cfg, sesion, coleccion), null, 2));
 
+  } else if (cmd === "deshacer") {
+    const [hid] = args;
+    if (!hid) ex("falta el id de la entrada del historial");
+    const e = await deshacer(cfg, sesion, hid);
+    console.log(`  ${e.coleccion}/${e.docId} vuelve a como estaba antes de «${e.op}» (${e.en})`);
+
+  } else if (cmd === "historial") {
+    const todo = (await listar(cfg, sesion, HISTORIAL)).sort((a, b) => (a.id < b.id ? 1 : -1));
+    for (const h of todo.slice(0, Number(args[0]) || 20))
+      console.log(`  ${h.id}  ${String(h.op).padEnd(9)} ${h.coleccion}/${h.docId}`);
+
   } else if (cmd === "escribir" || cmd === "fusionar" || cmd === "borrar") {
     const [coleccion, id, archivo] = args;
     if (!coleccion || !id) ex("faltan la colección y el id");
@@ -531,7 +622,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     bajar [colecciones...]         respaldo a respaldos/<fecha>-<proyecto>.json
     leer <coleccion> [id]          a la salida estándar, como JSON
     escribir <coleccion> <id> <archivo.json>
+    fusionar <coleccion> <id> <archivo.json>
     borrar <coleccion> <id>
+    historial [n]                  los últimos cambios del agente (bases con historial)
+    deshacer <id-del-historial>    devuelve un documento a como estaba
 
   Proyectos: ${Object.keys(PROYECTOS).join(", ")}
   Alta en una base nueva: herramientas/ACCESO-A-LAS-BASES.md

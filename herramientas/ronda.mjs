@@ -97,12 +97,16 @@ import { PROYECTOS, entrar, entrarSuave, deFirestore, escribir, borrar } from ".
    «reportes nuevos»: nadie reportó nada. El que no declara nada guarda
    fallas, que es lo que vale para los tres sitios, y sigue entrando solo. */
 const QUE_GUARDA = (p) => (PROYECTOS[p] && PROYECTOS[p].reportesSon) || "fallas";
+/* Y QUÉ colección se cuenta. Casi siempre `reportes`; `tiempos` (29-sep-2026)
+   no tiene reportes de nadie, y lo que dice que la base está viva son sus
+   `sesiones`. Se declara al lado de `reportesSon`, en PROYECTOS. */
+const COLECCION_VIGILADA = (p) => (PROYECTOS[p] && PROYECTOS[p].coleccionVigilada) || "reportes";
 const BASES_CON_REPORTES = Object.keys(PROYECTOS).filter((p) => p !== "panel");
 const CON_REPORTES = BASES_CON_REPORTES.filter((p) => QUE_GUARDA(p) === "fallas");
 
 /* Cómo se llama en pantalla lo que guarda cada colección. Sale de acá y no de
    un `if` en el que imprime: agregar una clase nueva es agregar un renglón. */
-const NOMBRE_DE_LO_QUE_GUARDA = { fallas: "reportes", viajes: "viajes" };
+const NOMBRE_DE_LO_QUE_GUARDA = { fallas: "reportes", viajes: "viajes", sesiones: "sesiones" };
 
 /* Cómo se escribe de dónde salió un pendiente. Lo fijó REPORTES.md y es lo
    único que evita traer dos veces el mismo reporte: el agente no escribe en la
@@ -605,7 +609,7 @@ function porProyecto(pendientes, fichas) {
     );
 }
 
-export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
+export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
          vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido,
          MINUTOS_RESERVA, reservaViva, reservasDe, minutosQueQuedan,
@@ -793,7 +797,7 @@ async function juntar(soloSitio) {
        no cruza nada contra los pendientes. Bajarse el contenido entero para
        tirarlo era el segundo gasto más grande de la corrida — los viajes de
        hilux traen vectores de vibración. */
-    const r = await listarSuave(cfg, e.sesion, "reportes",
+    const r = await listarSuave(cfg, e.sesion, COLECCION_VIGILADA(nombre),
                                 guarda === "fallas" ? null : SOLO_NOMBRES);
     fuentes.push({ base: nombre, coleccion: comoSeLlama, ok: r.ok, motivo: r.motivo,
                    cuantos: r.docs.length,

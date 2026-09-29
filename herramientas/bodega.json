@@ -81,6 +81,15 @@
       "url": "https://rematetaller.github.io/remate/",
       "apk": null,
       "resumen": "Catálogo por invitación y panel interno del remate. Estático, más una función en Vercel que prende las luces del depósito."
+    },
+    {
+      "id": "tiempos",
+      "nombre": "Tiempos",
+      "repo": "maurogasta-crypto/tiempos",
+      "respaldar": true,
+      "url": "https://maurogasta-crypto.github.io/tiempos/",
+      "apk": null,
+      "resumen": "Un solo cronómetro para Mauro y Florencia: lo de la familia (base propia) y lo de Casa Verde (por su propio código). Horas por tipo y la carga de cada uno; el reparto de la plata, cuando lo acuerden."
     }
   ]
 }

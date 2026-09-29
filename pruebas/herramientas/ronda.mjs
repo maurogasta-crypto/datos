@@ -17,7 +17,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
-         CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA,
+         CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA,
          vivaL, diasTomada, lineasVivas,
          tieneCircuito, esPedido, MINUTOS_RESERVA, reservaViva, reservasDe,
          minutosQueQuedan, archivosTocados, CAMPOS_PENDIENTE, CAMPOS_LINEA,
@@ -230,6 +230,13 @@ prueba("se ENTRA a todas las bases menos el panel, diga lo que diga", () => {
      FUENTES. Leerla no cuesta nada que no se pagara ya. */
   assert.deepEqual([...BASES_CON_REPORTES].sort(),
     Object.keys(PROYECTOS).filter((x) => x !== "panel").sort());
+});
+
+prueba("tiempos se cuenta por sus sesiones y no se cruza: no tiene reportes de nadie", () => {
+  assert.equal(COLECCION_VIGILADA("tiempos"), "sesiones");
+  assert.equal(COLECCION_VIGILADA("remate"), "reportes");
+  assert.ok(!CON_REPORTES.includes("tiempos"));
+  assert.ok(BASES_CON_REPORTES.includes("tiempos"));
 });
 
 prueba("pero sólo se CRUZAN contra los pendientes las que guardan fallas", () => {

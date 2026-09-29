@@ -182,12 +182,14 @@ await prueba("y si están los dos pares, gana el nombre bueno", () => {
 
    Si algún día sube algo más, deja de estar exenta y sella lo que
    corresponda. */
-const SIN_NADA_QUE_SELLAR = new Set(["hilux"]);
+// `tiempos` tampoco sella por colección: lo personal es por CAMPO (una tarea
+// «personal»), y eso sólo lo puede cortar la regla, no una lista.
+const SIN_NADA_QUE_SELLAR = new Set(["hilux", "tiempos"]);
 
-await prueba("las cinco bases están, y ninguna comparte projectId con otra", () => {
+await prueba("las seis bases están, y ninguna comparte projectId con otra", () => {
   const ids = Object.values(PROYECTOS).map((p) => p.projectId);
-  assert.equal(ids.length, 5);
-  assert.equal(new Set(ids).size, 5);
+  assert.equal(ids.length, 6);
+  assert.equal(new Set(ids).size, 6);
   for (const [n, p] of Object.entries(PROYECTOS)) {
     assert.ok(p.apiKey && p.projectId, `${n} sin identificadores`);
     if (!SIN_NADA_QUE_SELLAR.has(n)) {

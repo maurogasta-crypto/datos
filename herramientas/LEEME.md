@@ -17,7 +17,7 @@ node herramientas/firestore.mjs <proyecto> escribir <coleccion> <id> <archivo.js
 node herramientas/firestore.mjs <proyecto> borrar <coleccion> <id>
 ```
 
-### Las cinco bases
+### Las seis bases
 
 | Proyecto | Firebase | Estado al 2026-09-20 |
 |---|---|---|
@@ -26,6 +26,7 @@ node herramientas/firestore.mjs <proyecto> borrar <coleccion> <id>
 | `casayourte` | `casayourte-mauro` | entra y lee |
 | `casaverde` | `casaverde-20` | entra y lee |
 | `hilux` | `hilux-1b6f1` | **NO entra**: el usuario del agente todavía no está dado de alta en esa base |
+| `tiempos` | `tiempos-71d42` | **NO entra todavía**: falta dar de alta al usuario del agente (29-sep-2026). Lee lo común y las horas; escribe sólo `miembros/` al aprobar una solicitud |
 
 Harmonía no está porque no tiene base: todo su estado vive en el
 `localStorage` del teléfono.

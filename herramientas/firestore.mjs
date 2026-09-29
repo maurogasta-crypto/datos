@@ -197,6 +197,25 @@ const PROYECTOS = {
     selladas: []
   },
 
+  tiempos: {
+    projectId: "tiempos-71d42",
+    /* La app de tiempos de Mauro y Florencia (29-sep-2026, línea L-tiempos).
+       Pública por diseño, como las otras. */
+    apiKey: "AIzaSyAjf8dxZMljfPDRcbyrUIkP0p_y0lNoCyI",
+    mail: "FB_TIEMPOS_MAIL",
+    clave: "FB_TIEMPOS_CLAVE",
+    /* El agente lee lo común y las horas, y ESCRIBE `miembros/` al aprobar
+       una solicitud: es lo único que escribe. Las tareas personales se las
+       niega la regla (no hay cómo sellarlas por colección: es por campo). */
+    colecciones: ["miembros", "solicitudes", "sesiones"],
+    /* No hay `reportes` de nadie: lo que la ronda cuenta para saber que la
+       base está viva son las sesiones del cronómetro. Sólo se cuentan, no se
+       cruzan con los pendientes. */
+    reportesSon: "sesiones",
+    coleccionVigilada: "sesiones",
+    selladas: []
+  },
+
   casaverde: {
     projectId: "casaverde-20",
     apiKey: "AIzaSyDG12FsMYyGVzkodq07N1SSWQfMcTJ-3yM",

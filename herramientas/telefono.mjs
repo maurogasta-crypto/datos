@@ -107,10 +107,10 @@ function huella(archivo) {
 }
 
 /* Recorre la carpeta. Rutas RELATIVAS a la raíz, con «/». Se saltean la
-   papelera, las carpetas ocultas (`.thumbnails`, `.trash`: son del sistema) y
-   los enlaces simbólicos, que podrían sacar el recorrido de Descargas. */
+   papelera, las carpetas y los archivos ocultos (`.thumbnails`, `.trashed-…`:
+   son del sistema) y los enlaces simbólicos, que podrían sacar el recorrido de Descargas. */
 function recorrer(raiz) {
-  const archivos = [], carpetas = [];
+  const archivos = [], carpetas = [], ocultos = [];
   const visitar = (rel) => {
     const abs = path.join(raiz, rel);
     let entradas;
@@ -125,13 +125,20 @@ function recorrer(raiz) {
         carpetas.push(r);
         visitar(r);
       } else if (e.isFile()) {
+        // Un archivo oculto es del sistema, no de Mauro, y no se mira. El caso
+        // que lo enseñó (29-sep-2026): la papelera de Android no borra, RENOMBRA
+        // a `.trashed-<fecha>-nombre` y borra a los 30 días. «Ordenar» los
+        // movía a Imágenes/ y Videos/, sacándolos de donde el sistema los
+        // busca. La única excepción son los restos conocidos (`.DS_Store`),
+        // que son basura y se proponen como tal.
+        if (e.name.startsWith(".") && !NOMBRES_BASURA.has(e.name.toLowerCase())) { ocultos.push(r); continue; }
         const st = fs.statSync(path.join(raiz, r));
         archivos.push({ ruta: r, bytes: st.size, mtimeMs: st.mtimeMs });
       }
     }
   };
   visitar("");
-  return { archivos, carpetas };
+  return { archivos, carpetas, ocultos };
 }
 
 const dentroDe = (ruta, carpeta) => ruta.startsWith(carpeta + "/");
@@ -305,7 +312,10 @@ function planificar(raiz, ahora = Date.now(), ajustes = null, reglasChat = []) {
   const aj = normalizarAjustes(ajustes);
   const activa = (id) => !aj.reglas[id] || aj.reglas[id].estado !== "apagada";
   const ignorada = (r) => aj.ignorar.some((i) => r === i || dentroDe(r, i));
-  const { archivos, carpetas } = recorrer(raiz);
+  const { archivos, carpetas, ocultos } = recorrer(raiz);
+  // Una carpeta con algo oculto adentro no está vacía ni se mueve entera:
+  // se llevaría lo del sistema.
+  const conOculto = (c) => ocultos.some((o) => dentroDe(o, c));
   const porTam = new Map();
   for (const a of archivos) if (a.bytes > 0) {
     if (!porTam.has(a.bytes)) porTam.set(a.bytes, []);
@@ -322,7 +332,7 @@ function planificar(raiz, ahora = Date.now(), ajustes = null, reglasChat = []) {
     const de = archivos.filter((a) => dentroDe(a.ruta, c));
     if (!de.length) continue;
     const lista = de.map((a) => `${a.ruta.slice(c.length + 1)}\t${firmaDe(a)}`).sort();
-    const protegida = de.some((a) => esProtegido(a.ruta));
+    const protegida = de.some((a) => esProtegido(a.ruta)) || conOculto(c);
     firmas.set(c, { firma: crypto.createHash("sha256").update(lista.join("\n")).digest("hex"),
                     protegida, bytes: de.reduce((s, a) => s + a.bytes, 0), n: de.length });
   }
@@ -428,7 +438,7 @@ function planificar(raiz, ahora = Date.now(), ajustes = null, reglasChat = []) {
   // 4 · Carpetas que quedan vacías después de todo lo anterior. De la más
   //     honda a la más alta, así una carpeta con sólo carpetas vacías adentro
   //     también se va.
-  const quedaAlgo = (c) => archivos.some((a) => dentroDe(a.ruta, c) && !yaSale(a.ruta));
+  const quedaAlgo = (c) => conOculto(c) || archivos.some((a) => dentroDe(a.ruta, c) && !yaSale(a.ruta));
   for (const c of carpetas.slice().sort((a, b) => b.split("/").length - a.split("/").length)) {
     if (!activa("basura") || yaSale(c) || quedaAlgo(c) || ignorada(c)) continue;
     const sub = carpetas.filter((o) => dentroDe(o, c));

@@ -206,7 +206,12 @@ actualización de la Hilux, y un `.db` de este ecosistema suele ser un
 respaldo de la Hilux, con el recorrido. Una carpeta repetida que tenga
 alguno de esos adentro tampoco se mueve.
 
-Tampoco mira las carpetas ocultas (`.thumbnails` y parecidas, que son del
+**Tampoco mira los archivos ocultos**, y lo aprendió por las malas el
+29-sep-2026. La papelera de Android no borra en el momento: renombra el
+archivo a `.trashed-<fecha>-nombre` y lo borra a los 30 días. «Ordenar»
+movía esos archivos a `Imágenes/` y `Videos/`, afuera de donde el sistema los
+busca. Ahora un archivo oculto no se mira, y una carpeta que tenga uno no
+cuenta como vacía ni se mueve entera. Tampoco mira las carpetas ocultas (`.thumbnails` y parecidas, que son del
 sistema) ni sigue enlaces que lleven afuera de Descargas.
 
 ## Lo último para instalar
@@ -312,7 +317,7 @@ Hilux: Autostart encendido y batería «Sin restricciones».
 
 ## Banco
 
-`node pruebas/herramientas/telefono.mjs`: 84 casos, sin red ni dependencias.
+`node pruebas/herramientas/telefono.mjs`: 86 casos, sin red ni dependencias.
 Arma carpetas de mentira, las limpia y las deshace de verdad, y compara el
 disco antes y después byte por byte. También cubre que el manifiesto no
 lleve nada de más, que una app se baje una sola vez por versión y que sin red

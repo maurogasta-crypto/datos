@@ -212,7 +212,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
   falla**: si eso cambiara, los reportes viejos desaparecerían de la sección 3
-  sin que nadie lo note; `node pruebas/herramientas/telefono.mjs` (84 casos, sin
+  sin que nadie lo note; `node pruebas/herramientas/telefono.mjs` (86 casos, sin
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; y `pruebas/panel/banco.mjs` (con `npm install`
   una vez) para el panel entero. En `pruebas/casayourte/` hay dos más

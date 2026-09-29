@@ -185,6 +185,19 @@ prueba("una carpeta repetida con una clave de firma adentro NO se mueve", () => 
   assert.ok(p.avisos.some((a) => a.ruta === "K (1)"));
 });
 
+prueba("lo que Android mandó a SU papelera (.trashed-…) no se mira ni se ordena", () => {
+  const r = armar({ ".trashed-1792692733-VID_2022.mp4": "V", ".trashed-1792692781-x.pdf": "P",
+                    "Imágenes/.trashed-1-foto.jpg": "F", ".exmu-cfg1.data": "C", "foto.jpg": "F" });
+  const p = planificar(r);
+  assert.deepEqual(p.mover.map((m) => m.ruta), ["foto.jpg"]);
+  assert.equal(p.archivos, 1);
+});
+
+prueba("pero .DS_Store sí se propone como basura", () => {
+  const r = armar({ ".DS_Store": "x" });
+  assert.deepEqual(planSolo(r).mover.map((m) => m.ruta), [".DS_Store"]);
+});
+
 prueba("la papelera y las carpetas ocultas no se miran", () => {
   const r = armar({ "a.txt": "AAA", [`${PAPELERA}/x/a.txt`]: "AAA", ".thumbnails/a.txt": "AAA" });
   assert.deepEqual(rutas(planSolo(r)), []);

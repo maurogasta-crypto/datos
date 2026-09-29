@@ -214,7 +214,11 @@ const PROYECTOS = {
        están los chicos (`familia`, `turnos`) y sus actividades (`eventos`).
        Todo eso lo ven los dos y el agente. La agenda de cada uno (`agendas`)
        NO: es de su dueño, y la regla se la niega al agente. */
+    /* v4 (app-4): los acuerdos de tiempo, la plata, lo que propone el agente
+       y sus observaciones. La plata el agente la LEE; lo que quiere agregar
+       lo escribe en `propuestas` y una persona lo aprueba desde la app. */
     colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
+                  "bloques", "movimientos", "recurrentes", "propuestas", "auditoria",
                   "_historial"],
     /* No hay `reportes` de nadie: lo que la ronda cuenta para saber que la
        base está viva son las sesiones del cronómetro. Sólo se cuentan, no se

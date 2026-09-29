@@ -9,6 +9,7 @@ panel —que necesita `jsdom` para tener un DOM de verdad— y trae su
 | `reportes.mjs` | el circuito «Reportar una falla» en **los tres sitios**: que la regla de Firestore y el código que escribe digan lo mismo |
 | `panel/banco.mjs` | el panel entero contra un DOM real y un Firestore de mentira |
 | `herramientas/ronda.mjs` | las funciones puras de la ronda de apertura |
+| `herramientas/telefono.mjs` | la limpieza de Descargas del teléfono: que botar y deshacer dejen el disco como estaba, y que lo protegido no se mueva |
 | `herramientas/firestore.mjs` | el guardia de la bóveda y la conversión de tipos |
 | `casayourte/esc.mjs` | que las cuatro funciones de escape de los cuatro proyectos escapen igual |
 | `casayourte/permisos.mjs` | el menú real de CasaYourte contra su modelo de permisos |

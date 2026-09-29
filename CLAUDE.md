@@ -203,7 +203,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay cuatro bancos de pruebas, y se corren antes de subir.** `node
+- **Hay cinco bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (34 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
@@ -212,8 +212,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
   falla**: si eso cambiara, los reportes viejos desaparecerían de la sección 3
-  sin que nadie lo note; y `pruebas/panel/banco.mjs` (con `npm install` una vez) para el
-  panel entero. En `pruebas/casayourte/` hay dos más
+  sin que nadie lo note; `node pruebas/herramientas/telefono.mjs` (28 casos, sin
+  npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
+  verdad en el teléfono de Mauro; y `pruebas/panel/banco.mjs` (con `npm install`
+  una vez) para el panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.
 - **`reglas.txt` es la plantilla, y es la ÚNICA copia del texto de las reglas.**
   Los dos UID van como marcadores (`TU-UID-ACA`, `UID-DEL-AGENTE`) porque este
@@ -385,6 +387,14 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
 - **La historia de un pendiente se suma, nunca se pisa.** Es lo único que no se
   puede reconstruir.
 - **Acá no se sube ningún dato**, ni de ejemplo. Este repositorio es público.
+- **`herramientas/telefono.mjs` corre en el TELÉFONO, no en una sesión**
+  (29-sep-2026, línea `L-telefono`). Limpia Descargas y guarda respaldos de los
+  repositorios, desde Termux. Tiene tres reglas que no se deshacen, y están
+  en `herramientas/TELEFONO.md`: sin `--aplicar` no toca nada; botar es mover
+  a `_Papelera/` con un `lote.json` que permite deshacer, y borrar de verdad
+  es `vaciar`; y claves de firma y bases de datos no se mueven nunca, aunque
+  estén repetidas. **Un chat no puede entrar al teléfono**, así que lo que
+  el teléfono hace lo hace él.
 
 ## Protocolos
 

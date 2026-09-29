@@ -1,5 +1,9 @@
 # herramientas — lo que una sesión corre contra las bases
 
+> **Y una que corre en el teléfono:** `telefono.mjs` limpia Descargas y guarda
+> respaldos de los repositorios, desde Termux. Tiene su propio documento:
+> `TELEFONO.md`.
+
 ## `firestore.mjs`
 
 Leer y escribir Firestore desde una sesión de Claude Code, sin dependencias:

@@ -164,6 +164,23 @@ function guardarYSubir({ ruta, contenido, mensaje, trabajo = TRABAJO, token = le
   return subir(git, trabajo);
 }
 
+/* Lo mismo con archivos que ya existen (las capturas de Airbnb): se copian
+   a la copia de trabajo, un solo commit, y se suben. */
+function guardarArchivosYSubir({ archivos, mensaje, trabajo = TRABAJO, token = leerToken(),
+                                 remoto = `https://github.com/${REPO_BODEGA}.git` }) {
+  if (!token && remoto.startsWith("https://")) throw new Error("falta el token: corré «node herramientas/telefono.mjs token»");
+  const git = gitCon(token);
+  if (!fs.existsSync(path.join(trabajo, ".git"))) actualizarTrabajo({ remoto, trabajo, token });
+  for (const a of archivos) {
+    const abs = path.join(trabajo, a.ruta);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.copyFileSync(a.desde, abs);
+    git(["add", a.ruta], trabajo);
+  }
+  git([...IDENTIDAD, "commit", "-q", "-m", mensaje], trabajo);
+  return subir(git, trabajo);
+}
+
 /* Los pedidos que hay en la copia de trabajo, del más nuevo al más viejo, con
    la respuesta del chat si ya la escribió en `reglas.json`. */
 function pedidos(trabajo = TRABAJO, respuestas = {}) {
@@ -191,4 +208,4 @@ function leerReglasCrudas(trabajo = TRABAJO) {
 }
 
 export { REPO_BODEGA, ARCHIVO_TOKEN, TRABAJO, leerToken, guardarToken, entornoGit,
-         actualizarTrabajo, traerBodega, enviarPedido, pedidos, leerReglasCrudas, guardarYSubir };
+         actualizarTrabajo, traerBodega, enviarPedido, pedidos, leerReglasCrudas, guardarYSubir, guardarArchivosYSubir };

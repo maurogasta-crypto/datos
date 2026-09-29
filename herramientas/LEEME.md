@@ -181,6 +181,7 @@ de `L-agente-casaverde`).
 node herramientas/reservas.mjs estado                          lo que le falta a cada reserva que viene
 node herramientas/reservas.mjs vincular --bodega <dir> [--dias N]   cada chat, con la reserva a la que se refiere
 node herramientas/reservas.mjs completar <reservaId> <archivo.json> [--seco]
+node herramientas/reservas.mjs capturas --bodega <dir> [--leida <archivo>]   las capturas de Airbnb sin leer
 ```
 
 El archivo dice de dónde salió y qué completar:
@@ -193,6 +194,14 @@ aviso dice que hay una reserva **confirmada** que Casa Verde no tiene, `vincular
 lo marca con ⚠ y dice cómo traerla: Reservas → «Airbnb» → «Sincronizar ahora».
 Una consulta o una solicitud no son una reserva y no se marcan.
 
+**Las reservas de Airbnb entran con el código solo** (`Airbnb · HM2DNEZXSP`) y
+con 2 adultos de relleno: `estado` avisa que falta confirmar cuántos son, y al
+darle cliente, el título suma el nombre **conservando el código**
+(`Airbnb · HM2DNEZXSP Natalia`), también en su acuerdo. Del calendario sale
+además `ultimos4`, los últimos 4 dígitos del teléfono, que confirman un
+teléfono que llega por otro lado. Las **capturas de Airbnb** que sube el
+teléfono se leen en la sesión (son imágenes) y se anotan con `--leida`.
+
 **Completa, no decide.** Crea el cliente si no hay (con el país del prefijo del
 teléfono) o llena lo vacío o dudoso de uno que exista —lo que escribió una
 persona no se pisa—; cambia adultos, niños y la hora de entrada; agrega una
@@ -203,7 +212,7 @@ deshacer`) y un renglón en el `historial` de la reserva, como los de la
 pantalla. Ese renglón se agrega **crudo** (`leerCrudo` y `$crudo` de
 `firestore.mjs`): los anteriores son fechas de Firestore, y reescribirlos como
 texto rompería la pantalla. Banco: `node pruebas/herramientas/reservas.mjs`
-(29 casos, sin red).
+(34 casos, sin red).
 
 ## `ACCESO-A-LAS-BASES.md`
 

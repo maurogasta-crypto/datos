@@ -9,8 +9,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { limpiar, digitos, telefonoEn, mismoTelefono, paisDeTelefono, codigoAirbnb, nombreDeAirbnb,
-         faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO, fechasEn, cabanaDeAnuncio, esConfirmacion } from "../../herramientas/reservas.mjs";
+         faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO, fechasEn, cabanaDeAnuncio, esConfirmacion, ultimos4, capturasSinLeer } from "../../herramientas/reservas.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); }
@@ -130,6 +133,42 @@ prueba("y cuando ya entró, el mismo aviso se vincula por fechas y alojamiento",
   assert.equal(v.reserva.id, "n1"); assert.ok(v.por.includes("fechas y alojamiento"));
   // La misma fecha en OTRA cabaña no es ésta.
   assert.equal(vincular({ chat: "20–22 nov • Loft", textos: [] }, [{ ...NAT, cabanaId: "c1" }], [], "2026-09-29", CABS).reserva, null);
+});
+
+titulo("Lo que trae el importador de Airbnb (el caso de Natalia)");
+const NATI = { id: "n1", origen: "airbnb", estado: "confirmada", cabanaId: "c2", checkIn: "2026-11-20", checkOut: "2026-11-22",
+  clienteId: null, clienteNombre: "Airbnb · HM2DNEZXSP", adultos: 2, ninos: 0, horaEntrada: "14:00",
+  notas: "Reservation URL: https://www.airbnb.com/hosting/reservations/details/HM2DNEZXSP\\nPhone Number (Last 4 Digits): 2041",
+  historial: [{ autorNombre: "Sync Airbnb", cambio: "importada desde Airbnb" }] };
+prueba("los últimos 4 dígitos del teléfono salen de las notas del calendario", () => {
+  assert.equal(ultimos4(NATI.notas), "2041");
+  assert.equal(ultimos4("sin nada"), "");
+});
+prueba("los 2 adultos del importador se marcan como no confirmados; si alguien los tocó, no", () => {
+  assert.ok(faltantes(NATI, null, {}).some((x) => x.campo === "personas"));
+  assert.ok(!faltantes({ ...NATI, historial: [...NATI.historial, { autorNombre: "Florencia", cambio: "adultos 2 → 2" }] }, null, {}).some((x) => x.campo === "personas"));
+  assert.ok(!faltantes({ ...NATI, adultos: 4 }, null, {}).some((x) => x.campo === "personas"));
+});
+prueba("al darle cliente a una de Airbnb, el título suma el nombre y CONSERVA el código", () => {
+  const p = planCompletar(NATI, null, { cliente: { nombre: "Natalia" } });
+  assert.equal(p.reserva.clienteNombre, "Airbnb · HM2DNEZXSP Natalia");
+  // Si ya tiene nombre, no se toca.
+  assert.equal(planCompletar({ ...NATI, clienteNombre: "Airbnb · HM2DNEZXSP Nati" }, null, { cliente: { nombre: "Natalia" } }).reserva.clienteNombre, undefined);
+});
+prueba("un teléfono que termina en esos 4 dígitos apunta a esa reserva", () => {
+  const v = vincular({ chat: "+55 48 99123-2041", textos: ["oi, chegamos às 16h"] }, [NATI], [], "2026-10-01", []);
+  assert.equal(v.reserva.id, "n1"); assert.ok(v.por.includes("últimos 4 del teléfono"));
+});
+
+titulo("Las capturas de Airbnb");
+prueba("se listan las que no se leyeron; lo anotado en leidas.json no vuelve", () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), "cap-"));
+  fs.mkdirSync(path.join(d, "capturas", "2026-09-29"), { recursive: true });
+  fs.writeFileSync(path.join(d, "capturas", "2026-09-29", "a_com.airbnb.android.jpg"), "x");
+  fs.writeFileSync(path.join(d, "capturas", "2026-09-29", "b_com.airbnb.android.jpg"), "x");
+  fs.writeFileSync(path.join(d, "capturas", "leidas.json"), JSON.stringify([path.join("2026-09-29", "a_com.airbnb.android.jpg")]));
+  assert.deepEqual(capturasSinLeer(d).map((f) => path.basename(f)), ["b_com.airbnb.android.jpg"]);
+  assert.deepEqual(capturasSinLeer(path.join(d, "no-existe")), []);
 });
 
 titulo("Completar: lo que sí y lo que NO");

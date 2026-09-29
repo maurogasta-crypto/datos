@@ -140,6 +140,16 @@ llegan— con `herramientas/reservas.mjs` (ver `LEEME.md`). Las fechas, la
 cabaña, anular y la plata no los toca: te los deja como pendiente, con la
 respuesta preparada.
 
+**Y las capturas de Airbnb** (mismo día). El teléfono del huésped y cuántos son
+sólo los muestra la app de Airbnb, en la reserva → «Administrar reservación».
+Automatizar esos toques no se hace (Airbnb puede suspender una cuenta que
+maneja un programa). Lo que se hace: abrís esa pantalla y **sacás una
+captura**. `--vigilar` mira `DCIM/Screenshots` cada minuto y sube a la bodega
+**sólo las capturas de la app de Airbnb** —lo sabe porque Android pone
+`com.airbnb.android` en el nombre del archivo—; las de cualquier otra app no
+salen del teléfono. La primera vez, sólo las de la última semana. La ronda de
+la mañana las lee y completa la reserva.
+
 ## Pedidos al chat, desde la misma pantalla
 
 En la pantalla hay una caja **«Pedidos al chat»**. Escribís lo que querés,

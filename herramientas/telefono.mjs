@@ -972,10 +972,17 @@ async function main(args) {
 
   if (cmd === "whatsapp") {
     const W = await import("./telefono-whatsapp.mjs");
+    const C = await import("./telefono-capturas.mjs");
     const pasada = () => {
+      const hora = new Date().toLocaleTimeString("es-UY");
+      // Las capturas de Airbnb van aparte y primero: si leer las
+      // notificaciones falla, igual suben.
+      try {
+        const c = C.capturar();
+        if (c.nuevas) console.log(`  ${hora} · ${c.nuevas} captura(s) de Airbnb${c.subido ? " · subidas" : " (no se pudieron subir: suben en la próxima)"}`);
+      } catch (e) { console.log("  ✖ capturas: " + String(e.message).split("\n")[0]); }
       try {
         const r = W.capturar();
-        const hora = new Date().toLocaleTimeString("es-UY");
         if (r.nuevos) console.log(`  ${hora} · ${r.nuevos} mensajes nuevos${r.subido ? " · subidos" : " (no se pudieron subir: quedan guardados y suben en la próxima)"}`);
         return true;
       } catch (e) { console.log("  ✖ " + e.message); return false; }
@@ -985,7 +992,7 @@ async function main(args) {
     // Una pasada por minuto. `termux-wake-lock` para que Android no duerma a
     // Termux con la pantalla apagada; si no está, sigue igual.
     try { execFileSync("termux-wake-lock", { stdio: "ignore" }); } catch {}
-    console.log("  Leyendo WhatsApp cada minuto. Para cortar: Ctrl+C.");
+    console.log("  Leyendo WhatsApp y Airbnb cada minuto (y las capturas de Airbnb). Para cortar: Ctrl+C.");
     // Lo que quedó sin subir de una vuelta anterior (un rechazo, un corte de
     // red) sube ahora, sin esperar a que llegue un mensaje nuevo.
     try {

@@ -21,6 +21,7 @@ import { crearInterfaz } from "../../herramientas/telefono-interfaz.mjs";
 import { execFileSync } from "node:child_process";
 import * as Bodega from "../../herramientas/telefono-bodega.mjs";
 import * as W from "../../herramientas/telefono-whatsapp.mjs";
+import * as CAP from "../../herramientas/telefono-capturas.mjs";
 import { normalizarReglaChat, reglasChatValidas, globARegex, delChat } from "../../herramientas/telefono.mjs";
 import { planificar, aplicar, normalizarAjustes, tipoDe, destinoValido, deshacer, lotes, vencidos, motivoBasura, esProtegido,
          tieneMarcaDeCopia, elegirQueQueda, PAPELERA,
@@ -808,6 +809,31 @@ prueba("si el chat subió algo mientras tanto, el teléfono lo trae y sube igual
   g(["pull", "-q"], b.chat);
   assert.ok(fs.existsSync(path.join(b.chat, "mensajes", "2026-09-29.json")), "el mensaje llegó");
   assert.ok(fs.existsSync(path.join(b.trabajo, "borradores.json")), "y el teléfono tiene lo del chat");
+});
+
+prueba("capturas: sólo las de la app de Airbnb suben; las del banco o de un chat no salen del teléfono", () => {
+  const b = bodegaDePrueba();
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  const dir = armar({ "Screenshot_2026-09-29-18-12-34-123_com.airbnb.android.jpg": "img1",
+    "Screenshot_2026-09-29-18-13-00-001_com.whatsapp.jpg": "chat", "Screenshot_2026-09-29-18-14-00-001_com.mibanco.jpg": "banco",
+    "Screenshot_2026-09-29-18-15-00-001_com.airbnb.android.txt": "no es imagen" });
+  const vistas = path.join(armar({}), "vistas.json");
+  const r = CAP.capturar({ carpetas: [dir, path.join(dir, "no-existe")], trabajo: b.trabajo, remoto: b.remoto, token: null, archivoVistas: vistas });
+  assert.equal(r.nuevas, 1); assert.equal(r.subido, true);
+  g(["pull", "-q"], b.chat);
+  const subidas = fs.readdirSync(path.join(b.chat, "capturas"), { recursive: true }).filter((x) => /\.jpg$/.test(x));
+  assert.equal(subidas.length, 1); assert.ok(/airbnb/.test(subidas[0]));
+  // La segunda pasada no vuelve a subir lo mismo.
+  assert.equal(CAP.capturar({ carpetas: [dir], trabajo: b.trabajo, remoto: b.remoto, token: null, archivoVistas: vistas }).nuevas, 0);
+});
+
+prueba("capturas: la primera vez, sólo la última semana (no un año de capturas viejas)", () => {
+  const dir = armar({ "Screenshot_vieja_com.airbnb.android.png": "v", "Screenshot_nueva_com.airbnb.android.png": "n" });
+  const hace30 = (Date.now() - 30 * 86400000) / 1000;
+  fs.utimesSync(path.join(dir, "Screenshot_vieja_com.airbnb.android.png"), hace30, hace30);
+  assert.deepEqual(CAP.nuevas([dir], null).map((c) => c.nombre), ["Screenshot_nueva_com.airbnb.android.png"]);
+  // Con la lista de vistas ya empezada, lo no visto sube aunque sea viejo.
+  assert.equal(CAP.nuevas([dir], []).length, 2);
 });
 
 prueba("sin token, contra GitHub no se intenta nada y se dice", () => {

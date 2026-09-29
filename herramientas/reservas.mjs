@@ -9,6 +9,10 @@
 //       que parece referirse (o ninguna, y por qué).
 //   node herramientas/reservas.mjs completar <reservaId> <archivo.json> [--seco]
 //       Aplica lo que se sacó de un mensaje. Con --seco muestra y no escribe.
+//   node herramientas/reservas.mjs capturas --bodega <dir> [--leida <archivo>]
+//       Las capturas de Airbnb que subió el teléfono y todavía no se leyeron
+//       (reservas-3). Las lee la sesión —es una imagen— y con --leida se
+//       anotan en `capturas/leidas.json` de la bodega para no leerlas dos veces.
 //
 // Pedido de Mauro, 29-sep-2026: «sigue con la conexión de los mensajes de
 // WhatsApp y de Airbnb para editar y completar la información de las
@@ -50,6 +54,11 @@ export function telefonoEn(texto) {
   const m = limpiar(texto).match(/\+\d[\d\s().-]{6,}\d|\b\d[\d\s().-]{7,}\d\b/);
   return m ? m[0].replace(/\s+/g, " ").trim() : "";
 }
+/* Airbnb pone en el calendario sólo los ÚLTIMOS 4 dígitos del teléfono del
+   huésped («Phone Number (Last 4 Digits): 2041»). No alcanzan para escribirle,
+   pero sí para confirmar que un teléfono que llega por otro lado es el suyo. */
+export const ultimos4 = (notas) => ((limpiar(notas).match(/Last 4 Digits\)?:?\s*(\d{4})/i) || [])[1] || "");
+
 /* Dos teléfonos son el mismo si coinciden los últimos 8 dígitos: uno viene con
    +54 9 y el otro sin el 9, o sin el código de país. */
 export const mismoTelefono = (a, b) => {
@@ -97,6 +106,11 @@ export function faltantes(r, cliente, { grupo = null, hoy } = {}) {
   if ((r.horaEntrada || "14:00") === "14:00" && hoy && r.checkIn >= hoy && r.checkIn <= sumar(hoy, 21) && !/llegada/i.test(nota))
     out.push({ campo: "llegada", texto: "no se sabe a qué hora llegan (figura la de siempre, 14:00)" });
   if (grupo && !(Number(grupo.total) > 0)) out.push({ campo: "precio", texto: "el acuerdo no tiene precio" });
+  // El importador de Airbnb pone 2 adultos porque el calendario no dice
+  // cuántos son: es un número de relleno hasta que alguien lo confirme.
+  const soloSync = Array.isArray(r.historial) && r.historial.every((h) => /Sync Airbnb/.test(h.autorNombre || "") || !/adultos|niños/.test(h.cambio || ""));
+  if (r.origen === "airbnb" && Number(r.adultos) === 2 && !Number(r.ninos) && soloSync)
+    out.push({ campo: "personas", texto: "los 2 adultos los puso el importador de Airbnb: falta confirmar cuántos son" });
   return out;
 }
 
@@ -171,6 +185,7 @@ export function vincular(chat, reservas, clientes, hoy, cabanas = []) {
     let p = 0; const por = [];
     const telR = c.telefono || telefonoEn(r.notas);
     if (telChat && telR && mismoTelefono(telChat, telR)) { p += 3; por.push("teléfono"); }
+    else if (telChat && ultimos4(r.notas) && digitos(telChat).endsWith(ultimos4(r.notas))) { p += 2; por.push("últimos 4 del teléfono"); }
     if (cod && limpiar(r.clienteNombre).includes(cod)) { p += 3; por.push("código Airbnb"); }
     const palabras = [c.nombre, nombreDeAirbnb(r.clienteNombre)].join(" ").toLowerCase()
       .split(/[^a-záéíóúñü]+/).filter((w) => w.length >= 4 && !["airbnb", "uruguay", "argentina", "brasil"].includes(w));
@@ -238,6 +253,15 @@ export function planCompletar(r, cliente, cambios, { fuente = "mensaje", ahora =
       }
       if (Object.keys(cam).length) { clienteCambios = cam; lineas.push("cliente completado: " + Object.entries(cam).map(([k, v]) => `${k} ${v}`).join(", ")); }
     }
+  }
+  // Una reserva de Airbnb entra sólo con el código («Airbnb · HM2DNEZXSP»):
+  // se le agrega el nombre, conservando el código, que es con lo que se la
+  // busca en Airbnb. Es lo que se ve en la lista de reservas de Casa Verde.
+  const nombreNuevo = (clienteNuevo && clienteNuevo.nombre) || (clienteCambios && clienteCambios.nombre) || (c && c.nombre && limpiar(c.nombre));
+  if (nombreNuevo && r.origen === "airbnb" && !nombreDeAirbnb(r.clienteNombre)) {
+    const cod = codigoAirbnb(r.clienteNombre);
+    reserva.clienteNombre = `Airbnb${cod ? " · " + cod : ""} ${nombreNuevo}`.trim();
+    lineas.push(`título: «${limpiar(r.clienteNombre)}» → «${reserva.clienteNombre}»`);
   }
   for (const k of ["adultos", "ninos"]) {
     if (cambios && k in cambios) {
@@ -341,7 +365,12 @@ async function completarCli(id, archivo, seco) {
     // toma de ahí para las estadías de varias cabañas.
     if (r.grupoId) {
       const g = await F.leerUno(cfg, sesion, "grupos", r.grupoId);
-      if (g && !g.clienteId) await F.fusionar(cfg, sesion, "grupos", r.grupoId, { clienteId, actualizadoEn: marca });
+      // El acuerdo lleva el mismo título que la reserva: si lo tenía igual,
+      // cambia con ella.
+      const cambioG = {};
+      if (g && !g.clienteId) cambioG.clienteId = clienteId;
+      if (g && plan.reserva.clienteNombre && g.clienteNombre === r.clienteNombre) cambioG.clienteNombre = plan.reserva.clienteNombre;
+      if (Object.keys(cambioG).length) await F.fusionar(cfg, sesion, "grupos", r.grupoId, { ...cambioG, actualizadoEn: marca });
     }
   } else if (plan.clienteCambios) {
     await F.fusionar(cfg, sesion, "clientes", clienteId, { ...plan.clienteCambios, actualizadoEn: marca });
@@ -356,12 +385,40 @@ async function completarCli(id, archivo, seco) {
   console.log(`\n  Escrito. Se deshace con: node herramientas/firestore.mjs casaverde historial 5  →  deshacer <id>\n`);
 }
 
+/* Las capturas que todavía no se leyeron, del registro de la bodega. */
+export function capturasSinLeer(dir) {
+  const raiz = path.join(dir, "capturas");
+  if (!fs.existsSync(raiz)) return [];
+  let leidas = [];
+  try { leidas = JSON.parse(fs.readFileSync(path.join(raiz, "leidas.json"), "utf8")); } catch { leidas = []; }
+  const ya = new Set(leidas);
+  return fs.readdirSync(raiz, { recursive: true }).map(String)
+    .filter((f) => /\.(jpe?g|png|webp)$/i.test(f) && !ya.has(f)).sort().map((f) => path.join(raiz, f));
+}
+function marcarLeida(dir, archivo) {
+  const raiz = path.join(dir, "capturas");
+  const reg = path.join(raiz, "leidas.json");
+  let leidas = [];
+  try { leidas = JSON.parse(fs.readFileSync(reg, "utf8")); } catch { leidas = []; }
+  const rel = path.relative(raiz, path.resolve(archivo));
+  if (rel.startsWith("..")) throw new Error("esa captura no está en la bodega");
+  if (!leidas.includes(rel)) leidas.push(rel);
+  fs.writeFileSync(reg, JSON.stringify(leidas, null, 1));
+  console.log(`  anotada como leída: ${rel}  (falta commit y push de la bodega)`);
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [cmd, ...args] = process.argv.slice(2);
   const opt = (n, def) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : def; };
   const run = cmd === "estado" ? estado()
     : cmd === "vincular" ? vincularCli(opt("--bodega", path.join(AQUI, "..", "..", "bodega")), Number(opt("--dias", 2)))
     : cmd === "completar" && args[0] && args[1] ? completarCli(args[0], args[1], args.includes("--seco"))
-    : Promise.reject(new Error("uso: estado | vincular --bodega <dir> [--dias N] | completar <reservaId> <archivo.json> [--seco]"));
+    : cmd === "capturas" ? (async () => {
+        const dir = opt("--bodega", path.join(AQUI, "..", "..", "bodega"));
+        if (opt("--leida")) return marcarLeida(dir, opt("--leida"));
+        const l = capturasSinLeer(dir);
+        console.log(l.length ? `\n  ${l.length} captura(s) de Airbnb sin leer:\n` + l.map((f) => "    " + f).join("\n") + "\n" : "\n  No hay capturas de Airbnb sin leer.\n");
+      })()
+    : Promise.reject(new Error("uso: estado | vincular --bodega <dir> [--dias N] | completar <reservaId> <archivo.json> [--seco] | capturas --bodega <dir> [--leida <archivo>]"));
   run.catch((e) => { console.error("\n✖ " + e.message + "\n"); process.exit(1); });
 }

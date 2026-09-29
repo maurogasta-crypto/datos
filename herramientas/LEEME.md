@@ -219,6 +219,17 @@ además `ultimos4`, los últimos 4 dígitos del teléfono, que confirman un
 teléfono que llega por otro lado. Las **capturas de Airbnb** que sube el
 teléfono se leen en la sesión (son imágenes) y se anotan con `--leida`.
 
+**Las llegadas** (`reservas-5`): `llegadas [--dias 3] [--bodega <dir>]` junta
+las reservas confirmadas que llegan en los próximos tres días y no se avisaron
+(un acuerdo de varias cabañas es una llegada) y arma el aviso para quien
+recibe: nombre, cuándo, cabañas, cuántos, qué falta saber, y el enlace a la
+**ficha de llegada** de Casa Verde (`interno/llegada.html?r=…`), que pide la
+sesión y trae la reserva, el huésped, su historia, la plata y la bienvenida
+lista para mandar. **El aviso no lleva el teléfono ni la plata**: eso queda
+detrás del login. Con `--bodega` lo deja como borrador y marca
+`bienvenida.avisadaEn` en la reserva para no repetirlo; la ficha marca
+`bienvenida.enviadaEn` cuando se manda la bienvenida.
+
 **Completa, no decide.** Crea el cliente si no hay (con el país del prefijo del
 teléfono) o llena lo vacío o dudoso de uno que exista —lo que escribió una
 persona no se pisa—; cambia adultos, niños y la hora de entrada; agrega una
@@ -229,7 +240,7 @@ deshacer`) y un renglón en el `historial` de la reserva, como los de la
 pantalla. Ese renglón se agrega **crudo** (`leerCrudo` y `$crudo` de
 `firestore.mjs`): los anteriores son fechas de Firestore, y reescribirlos como
 texto rompería la pantalla. Banco: `node pruebas/herramientas/reservas.mjs`
-(44 casos, sin red).
+(48 casos, sin red).
 
 ## `ACCESO-A-LAS-BASES.md`
 

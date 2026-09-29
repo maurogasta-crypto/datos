@@ -13,7 +13,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { limpiar, digitos, telefonoEn, mismoTelefono, paisDeTelefono, codigoAirbnb, nombreDeAirbnb,
-         faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO, fechasEn, cabanaDeAnuncio, esConfirmacion, ultimos4, capturasSinLeer } from "../../herramientas/reservas.mjs";
+         faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO, fechasEn, cabanaDeAnuncio, esConfirmacion, ultimos4, capturasSinLeer,
+         llegadasPorAvisar, avisoDeLlegada, cuandoLlega } from "../../herramientas/reservas.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); }
@@ -290,6 +291,37 @@ prueba("vincular devuelve el teléfono del chat sólo si la reserva no lo tiene;
   assert.equal(v2.reserva.id, "n1"); assert.equal(v2.telefono, ""); assert.equal(v2.agendado, true);
   const v3 = vincular({ app: "whatsapp", chat: "+55 48 99912-3456", textos: [] }, [{ ...r, contacto: { telefono: "+55 48 99912-3456" } }], [], "2026-10-01");
   assert.equal(v3.telefono, "");
+});
+
+titulo("Las llegadas: el aviso para quien recibe (reservas-5)");
+const LL = (o) => ({ id: "x", estado: "confirmada", cabanaId: "c2", checkIn: "2026-10-02", checkOut: "2026-10-04", adultos: 2, ninos: 0, horaEntrada: "14:00", ...o });
+prueba("entran las confirmadas de los próximos 3 días que no se avisaron; un acuerdo es UNA llegada", () => {
+  const rs = [LL({ id: "a" }), LL({ id: "b", estado: "presupuesto" }), LL({ id: "c", checkIn: "2026-10-05" }),
+    LL({ id: "d", bienvenida: { avisadaEn: "2026-09-28" } }), LL({ id: "e", bienvenida: { enviadaEn: "2026-09-28" } }),
+    LL({ id: "f", checkIn: "2026-09-28" }), LL({ id: "g1", grupoId: "G", cabanaId: "c1" }), LL({ id: "g2", grupoId: "G", cabanaId: "c3" }),
+    LL({ id: "h1", grupoId: "H" }), LL({ id: "h2", grupoId: "H", bienvenida: { avisadaEn: "2026-09-29" } })];
+  const l = llegadasPorAvisar(rs, "2026-09-29");
+  assert.deepEqual(l.map((g) => g.map((r) => r.id)), [["g1", "g2"], ["a"]]);   // por fecha y cabaña
+});
+prueba("el aviso lleva nombre, cuándo, cabañas, gente, lo que falta y el enlace — y NO el teléfono", () => {
+  const r = LL({ id: "r1", clienteNombre: "Airbnb · HM2DNEZXSP Natalia", clienteId: null, notas: "+55 48 99912-3456", bebes: 1, mascotas: "perro",
+    pedidos: [{ texto: "cuna", estado: "pendiente" }, { texto: "x", estado: "resuelto" }] });
+  const t = avisoDeLlegada([r], { cabanas: [{ id: "c2", nombre: { es: "Loft con terraza" } }], hoy: "2026-10-01" });
+  assert.ok(t.includes("llega Natalia mañana"), t);
+  assert.ok(t.includes("Loft con terraza · 2 noches · 2 adultos + 1 bebé + mascota · 1 pedido"), t);
+  assert.ok(t.includes("a qué hora llegan"), t);
+  assert.ok(t.endsWith("https://casaverdecanas.com.br/interno/llegada.html?r=r1"), t);
+  assert.ok(!/\d{4}/.test(t.replace(/https:\S+/, "")), "ningún número largo fuera del enlace");
+});
+prueba("con teléfono y llegada sabidos, el aviso no pide nada", () => {
+  const t = avisoDeLlegada([LL({ clienteId: "cD", clienteNombre: "Darío", llegadaEstimada: "20:00" })], { clientes: [CLI_D], hoy: "2026-09-25" });
+  assert.ok(!t.includes("Falta"), t);
+  assert.ok(t.includes("llega Darío Américo Morini el vie 02/10"), t);
+});
+prueba("cuándo: hoy, mañana, o el día con fecha", () => {
+  assert.equal(cuandoLlega("2026-10-02", "2026-10-02"), "hoy");
+  assert.equal(cuandoLlega("2026-10-03", "2026-10-02"), "mañana");
+  assert.equal(cuandoLlega("2026-10-04", "2026-10-02"), "el dom 04/10");
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // reservas.mjs — Completar las reservas de Casa Verde con lo que dicen los
-// mensajes (WhatsApp y Airbnb). Sello: reservas-4
+// mensajes (WhatsApp y Airbnb). Sello: reservas-5
 //
 //   node herramientas/reservas.mjs estado
 //       Las reservas que vienen, con lo que les falta.
@@ -9,6 +9,12 @@
 //       que parece referirse (o ninguna, y por qué).
 //   node herramientas/reservas.mjs completar <reservaId> <archivo.json> [--seco]
 //       Aplica lo que se sacó de un mensaje. Con --seco muestra y no escribe.
+//   node herramientas/reservas.mjs llegadas [--dias N] [--bodega <dir>]
+//       Las llegadas de los próximos N días (3) que todavía no se avisaron,
+//       con el aviso para quien recibe: el enlace a la FICHA DE LLEGADA de
+//       Casa Verde (llegada.html, detrás del login), que trae la reserva, el
+//       huésped, su historia, la plata y la bienvenida lista para mandar.
+//       Con --bodega deja cada aviso como borrador y la marca como avisada.
 //   node herramientas/reservas.mjs capturas --bodega <dir> [--leida <archivo>]
 //       Las capturas de Airbnb que subió el teléfono y todavía no se leyeron
 //       (reservas-3). Las lee la sesión —es una imagen— y con --leida se
@@ -239,6 +245,60 @@ export function vincular(chat, reservas, clientes, hoy, cabanas = []) {
 }
 const sumar = (iso, n) => { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 
+/* ── Las llegadas (reservas-5, 29-sep-2026) ──────────────────────────────────
+   Pedido de Mauro: que quien recibe —Florencia— tenga por WhatsApp, antes de
+   cada llegada, un enlace a todo lo de esa reserva y la bienvenida lista.
+   El aviso lleva el nombre y la fecha y NADA más del huésped: el teléfono, la
+   plata y la historia se ven en la ficha, que pide la sesión de Casa Verde.
+   Un acuerdo de varias cabañas es UNA llegada: un aviso, con todas. */
+export const SITIO_INTERNO = "https://casaverdecanas.com.br/interno/";
+export const DIAS_ANTES = 3;
+const yaAvisada = (r) => !!(r.bienvenida && (r.bienvenida.avisadaEn || r.bienvenida.enviadaEn));
+export function llegadasPorAvisar(reservas, hoy, dias = DIAS_ANTES) {
+  const vienen = (reservas || []).filter((r) => r.estado === "confirmada" && r.checkIn >= hoy && r.checkIn <= sumar(hoy, dias));
+  const grupos = new Map();
+  for (const r of vienen.sort((a, b) => `${a.checkIn}${a.cabanaId}`.localeCompare(`${b.checkIn}${b.cabanaId}`))) {
+    const k = r.grupoId || r.id;
+    if (!grupos.has(k)) grupos.set(k, []);
+    grupos.get(k).push(r);
+  }
+  // Si UNA cabaña del acuerdo ya se avisó, se avisó la llegada.
+  return [...grupos.values()].filter((rs) => !rs.some(yaAvisada));
+}
+const DIAS_SEM = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+export function cuandoLlega(checkIn, hoy) {
+  if (checkIn === hoy) return "hoy";
+  if (checkIn === sumar(hoy, 1)) return "mañana";
+  const d = new Date(checkIn + "T12:00:00Z");
+  return `el ${DIAS_SEM[d.getUTCDay()]} ${checkIn.slice(8, 10)}/${checkIn.slice(5, 7)}`;
+}
+export function avisoDeLlegada(rs, { cabanas = [], clientes = [], hoy, base = SITIO_INTERNO } = {}) {
+  const r = rs[0];
+  const cli = (clientes || []).find((c) => c.id === r.clienteId) || null;
+  const nombre = (cli && cli.nombre) || nombreDeAirbnb(r.clienteNombre) || limpiar(r.clienteNombre) || "un huésped";
+  const cab = (id) => { const n = ((cabanas || []).find((c) => c.id === id) || {}).nombre; return (n && typeof n === "object" ? n.es : n) || id; };
+  const noches = Math.max(0, Math.round((new Date(r.checkOut) - new Date(r.checkIn)) / 86400000));
+  const suma = (k) => rs.reduce((x, y) => x + Number(y[k] || 0), 0);
+  const gente = [`${suma("adultos")} adulto${suma("adultos") === 1 ? "" : "s"}`,
+    suma("ninos") ? `${suma("ninos")} niño${suma("ninos") === 1 ? "" : "s"}` : "",
+    suma("bebes") ? `${suma("bebes")} bebé${suma("bebes") === 1 ? "" : "s"}` : "",
+    rs.some((x) => x.mascotas) ? "mascota" : ""].filter(Boolean).join(" + ");
+  const falta = [];
+  const f = faltantes(r, cli, { hoy }).map((x) => x.campo);
+  if (f.includes("telefono")) falta.push("su teléfono");
+  if (!r.llegadaEstimada && (r.horaEntrada || "14:00") === "14:00") falta.push("a qué hora llegan");
+  if (f.includes("personas")) falta.push("cuántos son");
+  const pend = rs.flatMap((x) => (x.pedidos || []).filter((p) => p.estado !== "resuelto")).length;
+  const url = `${base}llegada.html?r=${encodeURIComponent(r.id)}`;
+  return [
+    `🏡 Casa Verde · llega ${nombre} ${cuandoLlega(r.checkIn, hoy)}`,
+    `${rs.map((x) => cab(x.cabanaId)).join(" + ")} · ${noches} noche${noches === 1 ? "" : "s"} · ${gente}${pend ? ` · ${pend} pedido${pend === 1 ? "" : "s"}` : ""}`,
+    falta.length ? `Falta saber: ${falta.join(", ")}.` : "",
+    `Ficha y bienvenida para mandarle (entrá con tu cuenta):`,
+    url
+  ].filter(Boolean).join("\n");
+}
+
 export const PERMITIDOS = ["cliente", "adultos", "ninos", "bebes", "mascotas", "llegada", "contacto", "pedidos", "nota"];
 export const DE_MAURO = { checkIn: "las fechas", checkOut: "las fechas", cabanaId: "la cabaña", estado: "el estado",
   precio: "la plata", total: "la plata", monto: "la plata", grupoId: "el acuerdo", origen: "el origen" };
@@ -467,6 +527,31 @@ async function completarCli(id, archivo, seco) {
   console.log(`\n  Escrito. Se deshace con: node herramientas/firestore.mjs casaverde historial 5  →  deshacer <id>\n`);
 }
 
+async function llegadasCli(dias, dir) {
+  const { F, cfg, sesion } = await base();
+  const [rs, cs, cabs] = await Promise.all(["reservas", "clientes", "cabanas"].map((c) => F.listar(cfg, sesion, c)));
+  const hoy = hoyISO();
+  const lista = llegadasPorAvisar(rs, hoy, dias);
+  if (!lista.length) { console.log(`\n  No hay llegadas sin avisar en los próximos ${dias} días.\n`); return; }
+  const avisos = lista.map((g) => ({ rs: g, texto: avisoDeLlegada(g, { cabanas: cabs, clientes: cs, hoy }) }));
+  for (const a of avisos) console.log("\n" + a.texto.split("\n").map((l) => "  " + l).join("\n"));
+  if (!dir) { console.log("\n  (sin --bodega: no se dejó nada ni se marcó nada)\n"); return; }
+  // Hasta que haya camino directo al WhatsApp de quien recibe, el aviso va
+  // como borrador a la pantalla del teléfono de Mauro, que lo reenvía.
+  const archivo = path.join(dir, "borradores.json");
+  let bs = [];
+  try { bs = JSON.parse(fs.readFileSync(archivo, "utf8")); } catch { bs = []; }
+  if (!Array.isArray(bs)) bs = [];
+  for (const a of avisos) {
+    const idB = "llegada-" + a.rs[0].id;
+    if (!bs.some((b) => b && b.id === idB)) bs.push({ id: idB, para: "Florencia (aviso de llegada)", canal: "whatsapp",
+      contexto: "Reenviáselo a Florencia: el enlace abre la ficha de llegada con su cuenta.", texto: a.texto, numero: "", creado: hoy });
+    for (const r of a.rs) await F.fusionar(cfg, sesion, "reservas", r.id, { bienvenida: { ...(r.bienvenida || {}), avisadaEn: hoy } });
+  }
+  fs.writeFileSync(archivo, JSON.stringify(bs, null, 2) + "\n");
+  console.log(`\n  ${avisos.length} aviso(s) en ${archivo} y marcados como avisados. Falta commit y push de la bodega.\n`);
+}
+
 /* Las capturas que todavía no se leyeron, del registro de la bodega. */
 export function capturasSinLeer(dir) {
   const raiz = path.join(dir, "capturas");
@@ -495,12 +580,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const run = cmd === "estado" ? estado()
     : cmd === "vincular" ? vincularCli(opt("--bodega", path.join(AQUI, "..", "..", "bodega")), Number(opt("--dias", 2)))
     : cmd === "completar" && args[0] && args[1] ? completarCli(args[0], args[1], args.includes("--seco"))
+    : cmd === "llegadas" ? llegadasCli(Number(opt("--dias", DIAS_ANTES)), opt("--bodega"))
     : cmd === "capturas" ? (async () => {
         const dir = opt("--bodega", path.join(AQUI, "..", "..", "bodega"));
         if (opt("--leida")) return marcarLeida(dir, opt("--leida"));
         const l = capturasSinLeer(dir);
         console.log(l.length ? `\n  ${l.length} captura(s) de Airbnb sin leer:\n` + l.map((f) => "    " + f).join("\n") + "\n" : "\n  No hay capturas de Airbnb sin leer.\n");
       })()
-    : Promise.reject(new Error("uso: estado | vincular --bodega <dir> [--dias N] | completar <reservaId> <archivo.json> [--seco] | capturas --bodega <dir> [--leida <archivo>]"));
+    : Promise.reject(new Error("uso: estado | vincular --bodega <dir> [--dias N] | completar <reservaId> <archivo.json> [--seco] | llegadas [--dias N] [--bodega <dir>] | capturas --bodega <dir> [--leida <archivo>]"));
   run.catch((e) => { console.error("\n✖ " + e.message + "\n"); process.exit(1); });
 }

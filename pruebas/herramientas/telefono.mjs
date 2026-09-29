@@ -855,6 +855,13 @@ prueba("sólo WhatsApp (y Business), sin los resúmenes ni las vacías", () => {
   assert.deepEqual(m[1].lineas, ["Flor: compro pan", "Juan: dale"]);
 });
 
+prueba("si no puede leer notificaciones, dice CUÁL paso falta, en una línea corta", () => {
+  assert.match(W.causaDe({ code: "ENOENT" }), /pkg install termux-api/);
+  assert.match(W.causaDe({ code: "ETIMEDOUT" }), /APP Termux:API/);
+  assert.match(W.causaDe({ status: 1 }), /Acceso a notificaciones/);
+  for (const c of [{ code: "ENOENT" }, { code: "ETIMEDOUT" }, {}]) assert.ok(W.causaDe(c).length < 110);
+});
+
 prueba("los mensajes de Airbnb también entran, marcados como airbnb, y su resumen no", () => {
   const m = W.mensajesDe([
     { packageName: "com.airbnb.android", title: "Amparo", content: "Llegamos a las 19:30, somos 5", when: "11:00" },

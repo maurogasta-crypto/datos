@@ -99,11 +99,18 @@ function leerNotificaciones() {
   try {
     return JSON.parse(execFileSync("termux-notification-list", { encoding: "utf8", timeout: 20000 }));
   } catch (e) {
-    const err = new Error("no se pudieron leer las notificaciones. Hace falta: pkg install termux-api, "
-      + "la app Termux:API, y darle «Acceso a notificaciones» en los ajustes de Android.");
-    err.causa = e;
-    throw err;
+    throw new Error(causaDe(e));
   }
+}
+
+/* Cuál de los tres pasos falta, y no los tres de una: en la pantalla del
+   teléfono un mensaje largo se corta y no se lee (pasó el 29-sep). */
+export function causaDe(e) {
+  if (e && e.code === "ENOENT")
+    return "falta termux-api. Corré:  pkg install termux-api";
+  if (e && (e.code === "ETIMEDOUT" || e.signal === "SIGTERM"))
+    return "Termux:API no contesta. Instalá la APP Termux:API (del mismo lugar que Termux) y abrila una vez.";
+  return "Android no deja leer las notificaciones. Ajustes → Acceso a notificaciones → Termux:API → permitir.";
 }
 
 /* Una pasada: lee, se queda con lo nuevo, lo agrega al archivo del día en el
@@ -148,5 +155,5 @@ function borradores(trabajo = Bodega.TRABAJO) {
    pregunta a quién: igual sirve. */
 const enlaceWhatsapp = (b) => `https://wa.me/${b.numero || ""}?text=${encodeURIComponent(b.texto)}`;
 
-export { mensajesDe, nuevos, huella, esResumen, capturar, borradores, enlaceWhatsapp,
+export { leerNotificaciones, mensajesDe, nuevos, huella, esResumen, capturar, borradores, enlaceWhatsapp,
          leerVistos, guardarVistos, VISTOS };

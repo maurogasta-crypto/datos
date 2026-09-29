@@ -980,7 +980,8 @@ async function main(args) {
         return true;
       } catch (e) { console.log("  ✖ " + e.message); return false; }
     };
-    if (!args.includes("--vigilar")) { pasada(); return; }
+    // «--vigilar.» con un punto al final también vale: se copia de un mensaje.
+    if (!args.some((a) => a.replace(/[.,;]+$/, "") === "--vigilar")) { pasada(); return; }
     // Una pasada por minuto. `termux-wake-lock` para que Android no duerma a
     // Termux con la pantalla apagada; si no está, sigue igual.
     try { execFileSync("termux-wake-lock", { stdio: "ignore" }); } catch {}

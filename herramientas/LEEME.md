@@ -187,6 +187,12 @@ El archivo dice de dónde salió y qué completar:
 `{"fuente": "WhatsApp de Amparo", "cliente": {"nombre", "telefono", "email",
 "pais", "idioma"}, "adultos": 5, "ninos": 1, "llegada": "19:30", "nota": "…"}`.
 
+**Los avisos de Airbnb se leen por fechas y alojamiento** (`reservas-2`): no
+traen teléfono, traen el anuncio («Loft en Canasvieiras…») y el período. Si un
+aviso dice que hay una reserva **confirmada** que Casa Verde no tiene, `vincular`
+lo marca con ⚠ y dice cómo traerla: Reservas → «Airbnb» → «Sincronizar ahora».
+Una consulta o una solicitud no son una reserva y no se marcan.
+
 **Completa, no decide.** Crea el cliente si no hay (con el país del prefijo del
 teléfono) o llena lo vacío o dudoso de uno que exista —lo que escribió una
 persona no se pisa—; cambia adultos, niños y la hora de entrada; agrega una
@@ -197,7 +203,7 @@ deshacer`) y un renglón en el `historial` de la reserva, como los de la
 pantalla. Ese renglón se agrega **crudo** (`leerCrudo` y `$crudo` de
 `firestore.mjs`): los anteriores son fechas de Firestore, y reescribirlos como
 texto rompería la pantalla. Banco: `node pruebas/herramientas/reservas.mjs`
-(23 casos, sin red).
+(29 casos, sin red).
 
 ## `ACCESO-A-LAS-BASES.md`
 

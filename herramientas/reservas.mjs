@@ -100,15 +100,72 @@ export function faltantes(r, cliente, { grupo = null, hoy } = {}) {
   return out;
 }
 
+/* ── Los avisos de Airbnb (reservas-2, 29-sep-2026) ──────────────────────────
+   Un aviso de Airbnb no trae el teléfono: trae el ANUNCIO y las FECHAS
+   («Natalia ha reservado «Loft en Canasvieiras…» para el periodo del 20 de
+   noviembre de 2026 al 22 de noviembre de 2026»). Se leen esas dos cosas. */
+const MES = { ene: 1, jan: 1, feb: 2, fev: 2, mar: 3, abr: 4, apr: 4, may: 5, mai: 5, jun: 6, jul: 7,
+  ago: 8, aug: 8, sep: 9, set: 9, oct: 10, out: 10, nov: 11, dic: 12, dez: 12, dec: 12 };
+const mesDe = (t) => MES[String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").slice(0, 3)];
+const iso = (a, m, d) => `${a}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+
+/* Las fechas de un aviso. Sin año, el próximo en que caen desde hoy. */
+export function fechasEn(texto, hoy) {
+  const t = limpiar(texto).replace(/[–—]/g, "-");
+  const anioDe = (m, d) => {
+    const base = Number((hoy || "2026-01-01").slice(0, 4));
+    return iso(base, m, d) >= (hoy || "") ? base : base + 1;
+  };
+  // «del 20 de noviembre de 2026 al 22 de noviembre de 2026»
+  let m = t.match(/(\d{1,2}) de ([a-záéíóúç]+)\.?(?: de (\d{4}))? (?:al|a|até) (?:el )?(\d{1,2}) de ([a-záéíóúç]+)\.?(?: de (\d{4}))?/i);
+  if (m && mesDe(m[2]) && mesDe(m[5])) {
+    const a1 = m[3] ? Number(m[3]) : anioDe(mesDe(m[2]), Number(m[1]));
+    const a2 = m[6] ? Number(m[6]) : (mesDe(m[5]) < mesDe(m[2]) ? a1 + 1 : a1);
+    return { desde: iso(a1, mesDe(m[2]), m[1]), hasta: iso(a2, mesDe(m[5]), m[4]) };
+  }
+  // «20 nov - 2 dic 2026»
+  m = t.match(/(\d{1,2}) ([a-záéíóúç]{3,})\.? ?- ?(\d{1,2}) (?:de )?([a-záéíóúç]{3,})\.?(?: (?:de )?(\d{4}))?/i);
+  if (m && mesDe(m[2]) && mesDe(m[4])) {
+    const a2 = m[5] ? Number(m[5]) : anioDe(mesDe(m[4]), Number(m[3]));
+    const a1 = mesDe(m[2]) > mesDe(m[4]) ? a2 - 1 : a2;
+    return { desde: iso(a1, mesDe(m[2]), m[1]), hasta: iso(a2, mesDe(m[4]), m[3]) };
+  }
+  // «20–22 nov 2026», «20-22 de nov.»
+  m = t.match(/(\d{1,2}) ?- ?(\d{1,2}) (?:de )?([a-záéíóúç]{3,})\.?(?: (?:de )?(\d{4}))?/i);
+  if (m && mesDe(m[3])) {
+    const a = m[4] ? Number(m[4]) : anioDe(mesDe(m[3]), Number(m[1]));
+    return { desde: iso(a, mesDe(m[3]), m[1]), hasta: iso(a, mesDe(m[3]), m[2]) };
+  }
+  return null;
+}
+
+/* Qué cabaña es un anuncio de Airbnb: una palabra de su nombre (en
+   cualquiera de los tres idiomas) que aparezca en el título del anuncio. */
+export function cabanaDeAnuncio(texto, cabanas) {
+  const t = limpiar(texto).toLowerCase();
+  const hits = (cabanas || []).filter((c) => {
+    const n = c.nombre && typeof c.nombre === "object" ? Object.values(c.nombre).join(" ") : String(c.nombre || "");
+    return n.toLowerCase().split(/[^a-záéíóúñçã]+/).filter((w) => w.length >= 4 && !["para", "with", "com", "cabaña", "cabana", "cabin"].includes(w))
+      .some((w) => t.includes(w));
+  });
+  return hits.length === 1 ? hits[0].id : null;
+}
+
+/* ¿El aviso dice que hay una reserva confirmada? (y no una consulta o una
+   solicitud, que todavía no son reserva). */
+export const esConfirmacion = (texto) => /\b(ha reservado|reserva confirmada|confirmó|reservou|reserva confirmada|booked|is confirmed)\b/i.test(limpiar(texto));
+
 /* A qué reserva se refiere un chat. Puntaje, no adivinanza: teléfono (+3),
    código de Airbnb (+3), una palabra del nombre en el título del chat (+2).
    Sólo se vincula si hay UNA mejor con 2 o más; si empatan, se dice. */
-export function vincular(chat, reservas, clientes, hoy) {
+export function vincular(chat, reservas, clientes, hoy, cabanas = []) {
   const texto = limpiar([chat.chat, ...(chat.textos || [])].join(" "));
   const cod = codigoAirbnb(texto);
   const telChat = telefonoEn(chat.chat) || telefonoEn(texto);
   const cli = Object.fromEntries((clientes || []).map((c) => [c.id, c]));
   const vivas = (reservas || []).filter((r) => r.estado !== "anulada" && (!hoy || String(r.checkOut) >= sumar(hoy, -3)));
+  const fechas = fechasEn(texto, hoy);
+  const cabana = cabanaDeAnuncio(texto, cabanas);
   const puntos = vivas.map((r) => {
     const c = cli[r.clienteId] || {};
     let p = 0; const por = [];
@@ -119,9 +176,19 @@ export function vincular(chat, reservas, clientes, hoy) {
       .split(/[^a-záéíóúñü]+/).filter((w) => w.length >= 4 && !["airbnb", "uruguay", "argentina", "brasil"].includes(w));
     const titulo = limpiar(chat.chat).toLowerCase();
     if (palabras.some((w) => titulo.includes(w))) { p += 2; por.push("nombre"); }
+    if (fechas && r.checkIn === fechas.desde && r.checkOut === fechas.hasta && (!cabana || r.cabanaId === cabana)) {
+      p += cabana ? 4 : 2; por.push(cabana ? "fechas y alojamiento" : "fechas");
+    }
     return { r, p, por };
   }).filter((x) => x.p > 0).sort((a, b) => b.p - a.p);
-  if (!puntos.length || puntos[0].p < 2) return { reserva: null, motivo: "no se parece a ninguna reserva que viene" };
+  if (!puntos.length || puntos[0].p < 2) {
+    // Un aviso de reserva CONFIRMADA con fechas que Casa Verde no tiene: es
+    // una reserva nueva que todavía no entró (se trae con «Sincronizar» de
+    // Airbnb en Casa Verde). Se dice como tal, no como «no se parece a nada».
+    if (fechas && esConfirmacion(texto) && !vivas.some((r) => r.checkIn === fechas.desde && (!cabana || r.cabanaId === cabana)))
+      return { reserva: null, nueva: { ...fechas, cabanaId: cabana }, motivo: "reserva confirmada que Casa Verde todavía no tiene" };
+    return { reserva: null, motivo: "no se parece a ninguna reserva que viene" };
+  }
   // Varias reservas del mismo cliente (un grupo en tres cabañas) no son un
   // empate: son la misma estadía.
   const empate = puntos.filter((x) => x.p === puntos[0].p);
@@ -236,11 +303,12 @@ async function vincularCli(dir, dias) {
   const chats = Object.values(porChat);
   if (!chats.length) { console.log("\n  No hay mensajes capturados en esos días. ¿Está corriendo «telefono.mjs whatsapp --vigilar» en el teléfono?\n"); return; }
   const { F, cfg, sesion } = await base();
-  const [rs, cs] = await Promise.all(["reservas", "clientes"].map((c) => F.listar(cfg, sesion, c)));
+  const [rs, cs, cabs] = await Promise.all(["reservas", "clientes", "cabanas"].map((c) => F.listar(cfg, sesion, c)));
   for (const c of chats) {
-    const v = vincular(c, rs, cs, hoyISO());
+    const v = vincular(c, rs, cs, hoyISO(), cabs);
     console.log(`\n  [${c.app}] ${c.chat}`);
     console.log(v.reserva ? `      → reserva ${v.reserva.id} (${limpiar(v.reserva.clienteNombre)}, ${v.reserva.checkIn}) por ${v.por.join(" y ")}${v.todas.length > 1 ? ` · y ${v.todas.length - 1} más del mismo grupo` : ""}`
+                          : v.nueva ? `      ⚠ ${v.motivo}: ${v.nueva.desde} → ${v.nueva.hasta}${v.nueva.cabanaId ? " en " + v.nueva.cabanaId : ""}. En Casa Verde: Reservas → «Airbnb» → «Sincronizar ahora».`
                           : `      → ninguna: ${v.motivo}`);
     for (const t of [...new Set(c.textos)].slice(-6)) console.log(`        «${limpiar(t).slice(0, 160)}»`);
   }

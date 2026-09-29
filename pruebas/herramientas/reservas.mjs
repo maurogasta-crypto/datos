@@ -10,7 +10,7 @@
 
 import assert from "node:assert/strict";
 import { limpiar, digitos, telefonoEn, mismoTelefono, paisDeTelefono, codigoAirbnb, nombreDeAirbnb,
-         faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO } from "../../herramientas/reservas.mjs";
+         faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO, fechasEn, cabanaDeAnuncio, esConfirmacion } from "../../herramientas/reservas.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); }
@@ -94,6 +94,42 @@ prueba("un chat que no se parece a nada no se vincula, y lo dice", () => {
 prueba("una reserva que ya terminó hace días no se toma, y una anulada tampoco", () => {
   const v = vincular({ chat: "Amparo", textos: [] }, [{ ...AIRBNB, checkOut: "2026-11-01" }, { ...AIRBNB, id: "x", estado: "anulada" }], [], "2026-12-01");
   assert.equal(v.reserva, null);
+});
+
+titulo("Los avisos de Airbnb: fechas y alojamiento, no teléfono (el caso del 29-sep)");
+const CABS = [{ id: "c1", nombre: { es: "Cabaña con vista al bosque" } }, { id: "c2", nombre: { es: "Loft con terraza", pt: "Loft com terraço" } },
+              { id: "c3", nombre: { es: "Departamento para familias" } }];
+prueba("las fechas, en los tres formatos que manda Airbnb", () => {
+  assert.deepEqual(fechasEn("para el periodo del 20 de noviembre de 2026 al 22 de noviembre de 2026 (2 noches)", "2026-09-29"), { desde: "2026-11-20", hasta: "2026-11-22" });
+  assert.deepEqual(fechasEn("20–22 nov • Loft en Canasvieiras", "2026-09-29"), { desde: "2026-11-20", hasta: "2026-11-22" });
+  assert.deepEqual(fechasEn("el día 20–22 nov 2026", "2026-09-29"), { desde: "2026-11-20", hasta: "2026-11-22" });
+  assert.deepEqual(fechasEn("30 dic – 3 ene", "2026-09-29"), { desde: "2026-12-30", hasta: "2027-01-03" });
+  assert.equal(fechasEn("Nueva consulta", "2026-09-29"), null);
+});
+prueba("sin año, el próximo en que caen: en noviembre, «5–8 feb» es el año que viene", () => {
+  assert.deepEqual(fechasEn("5–8 feb", "2026-11-10"), { desde: "2027-02-05", hasta: "2027-02-08" });
+});
+prueba("el anuncio de Airbnb se reconoce por una palabra del nombre de la cabaña", () => {
+  assert.equal(cabanaDeAnuncio("Loft en Canasvieiras cerquita de la playa", CABS), "c2");
+  assert.equal(cabanaDeAnuncio("Casa linda en la playa", CABS), null);
+});
+prueba("una consulta o una solicitud no son una reserva; «ha reservado» sí", () => {
+  assert.ok(esConfirmacion("Natalia ha reservado «Loft…»"));
+  assert.ok(!esConfirmacion("A Natalia le gustaría reservar tu espacio"));
+  assert.ok(!esConfirmacion("Nueva consulta para una reserva"));
+});
+prueba("una reserva confirmada que Casa Verde no tiene se avisa como NUEVA, con fechas y cabaña", () => {
+  const v = vincular({ chat: "Nueva reserva confirmada", textos: ["Natalia ha reservado «Loft en Canasvieiras cerquita de la playa» para el periodo del 20 de noviembre de 2026 al 22 de noviembre de 2026 (2 noches)."] },
+    RS, [CLI_D], "2026-09-29", CABS);
+  assert.equal(v.reserva, null);
+  assert.deepEqual(v.nueva, { desde: "2026-11-20", hasta: "2026-11-22", cabanaId: "c2" });
+});
+prueba("y cuando ya entró, el mismo aviso se vincula por fechas y alojamiento", () => {
+  const NAT = { id: "n1", origen: "airbnb", estado: "confirmada", cabanaId: "c2", checkIn: "2026-11-20", checkOut: "2026-11-22", clienteId: null, clienteNombre: "Airbnb · HMABCDEF12" };
+  const v = vincular({ chat: "20–22 nov • Loft en Canasvieiras cerquita de la playa: Natalia", textos: ["¿A qué hora es el check-in?"] }, [...RS, NAT], [CLI_D], "2026-09-29", CABS);
+  assert.equal(v.reserva.id, "n1"); assert.ok(v.por.includes("fechas y alojamiento"));
+  // La misma fecha en OTRA cabaña no es ésta.
+  assert.equal(vincular({ chat: "20–22 nov • Loft", textos: [] }, [{ ...NAT, cabanaId: "c1" }], [], "2026-09-29", CABS).reserva, null);
 });
 
 titulo("Completar: lo que sí y lo que NO");

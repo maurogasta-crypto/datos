@@ -93,6 +93,72 @@ Y rechaza los pedidos que vengan de otra página. Aparte de eso, lo que se
 pide se cruza contra el plan del momento: una ruta que no esté propuesta no
 se toca, venga de donde venga. El banco prueba las cuatro cosas.
 
+## Pedidos al chat, desde la misma pantalla
+
+En la pantalla hay una caja **«Pedidos al chat»**. Escribís lo que querés,
+como se lo dirías a una persona («las facturas de UTE y Antel, a
+Facturas/2026»), y tocás «Enviar al chat». El pedido viaja al depósito
+privado (abajo) junto con la **lista** de lo que hay en Descargas: nombres,
+tamaños y fechas, **no el contenido**.
+
+Después le decís al chat **«mirá mis pedidos del teléfono»**. El chat los lee,
+los traduce a reglas y te contesta. En la próxima sincronización, o al
+volver a abrir la pantalla, las reglas aparecen en «Reglas» con la marca
+«del chat» y en estado **Propone**, y la respuesta aparece debajo del pedido.
+Nada se aplica sin que lo tildes, y que una regla ande sola lo decidís vos.
+
+**Una regla del chat es un dato, no una orden**, y el teléfono la valida
+antes de usarla, como si la hubiera escrito cualquiera:
+
+- tiene sólo dos acciones: a la papelera, o mover a una carpeta de Descargas;
+- el patrón es un comodín sobre el nombre (`*antel*.pdf`);
+- el destino no puede salir de Descargas ni entrar a la papelera;
+- lo protegido no se toca nunca.
+
+Una regla que no cumple no aparece.
+
+## El depósito del chat
+
+Un repositorio **privado**, `maurogasta-crypto/bodega`, que usan los dos
+lados:
+
+| Qué | Quién lo escribe | Adónde llega |
+|---|---|---|
+| `bases/<proyecto>.json` | el chat, con `depositar` | `Respaldos/Deposito/chat/`, en cada sincronización |
+| `pedidos/<fecha>.json` | el teléfono, con «Enviar al chat» | el chat, con `pedidos` |
+| `reglas.json` | el chat: reglas y respuestas | la pantalla del teléfono |
+
+Las copias de las bases llegan solas al teléfono. En el depósito queda
+además el historial de cada una, así que una copia vieja se puede recuperar.
+**No se depositan** lo sellado (las reglas de cada base ya se lo niegan al
+agente) ni `recorridos` de la Hilux, que es dónde estuvo la camioneta punto
+por punto: ya vive en su base y en el respaldo de la app, y un tercer lugar
+sería un lugar más por donde filtrarse.
+
+**La credencial del teléfono** es un token de GitHub **de grano fino**, con
+acceso a ese repositorio y a ningún otro. Se pega una vez:
+
+```
+node herramientas/telefono.mjs token
+```
+
+Queda en `~/.config/bodega/token`, con permisos 600, en la carpeta privada
+de Termux. No se escribe nunca en `.git/config` ni en la línea de comandos:
+git lo recibe por variables de entorno en cada llamada. **No pasa por ningún
+chat.**
+
+**Desde una sesión**, con el repositorio agregado a la sesión:
+
+```
+git clone https://github.com/maurogasta-crypto/bodega /tmp/bodega
+node herramientas/telefono.mjs depositar --bodega /tmp/bodega   # y commit + push
+node herramientas/telefono.mjs pedidos   --bodega /tmp/bodega   # los que esperan respuesta
+```
+
+Para contestar un pedido, el chat edita `reglas.json` y hace commit y push.
+Ese archivo tiene `reglas`, con las reglas en el formato que valida
+`normalizarReglaChat`, y `respuestas`, que va de id del pedido a texto.
+
 ## Limpiar Descargas
 
 ```
@@ -233,9 +299,9 @@ Hilux: Autostart encendido y batería «Sin restricciones».
 
 ## Lo que todavía no hace
 
-- **Las bases de Firestore no se respaldan desde el teléfono.** Para eso
-  Termux necesitaría la contraseña del usuario del agente, y eso es sumar un
-  lugar más donde vive una credencial. Se decide aparte.
+- **Las bases no las baja el teléfono**: las deposita un chat, que es el que
+  tiene la credencial del agente. Con eso, el teléfono sólo necesita un
+  token que abre un solo repositorio.
 - **El chat no lee lo que pasa en el teléfono.** Si querés que opine sobre
   una limpieza, mandale el informe o lo que imprimió `descargas`.
 - **El informe de la rutina no tiene botones que ejecuten nada**: un archivo abierto en
@@ -246,7 +312,7 @@ Hilux: Autostart encendido y batería «Sin restricciones».
 
 ## Banco
 
-`node pruebas/herramientas/telefono.mjs`: 69 casos, sin red ni dependencias.
+`node pruebas/herramientas/telefono.mjs`: 84 casos, sin red ni dependencias.
 Arma carpetas de mentira, las limpia y las deshace de verdad, y compara el
 disco antes y después byte por byte. También cubre que el manifiesto no
 lleve nada de más, que una app se baje una sola vez por versión y que sin red

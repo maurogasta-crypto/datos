@@ -39,6 +39,7 @@ import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import * as Bodega from "./telefono-bodega.mjs";
 
 const PAPELERA = "_Papelera";
 
@@ -199,6 +200,11 @@ function normalizarAjustes(a) {
     const e = x.reglas && x.reglas[r.id] && x.reglas[r.id].estado;
     if (["propone", "automatica", "apagada"].includes(e)) base.reglas[r.id].estado = e;
   }
+  // Las del chat: sólo su estado, y «automatica» sólo si se eligió acá.
+  if (x.reglas && typeof x.reglas === "object") for (const [id, v] of Object.entries(x.reglas)) {
+    if (!ID_CHAT.test(id) || !v) continue;
+    if (["propone", "automatica", "apagada"].includes(v.estado)) base.reglas[id] = { estado: v.estado };
+  }
   const d = Number(x.diasApk);
   if (Number.isFinite(d) && d >= 1 && d <= 3650) base.diasApk = Math.round(d);
   for (const id of Object.keys(TIPOS)) {
@@ -222,6 +228,53 @@ function guardarAjustes(ajustes, archivo = AJUSTES) {
   fs.writeFileSync(archivo, JSON.stringify(n, null, 2));
   return n;
 }
+
+/* ── Las reglas que escribe el chat ──────────────────────────────────────────
+   Cuando Mauro pide algo desde la pantalla («mové las facturas de Antel a
+   una carpeta»), el chat lo traduce a una regla y la deja en `reglas.json`
+   del depósito. El teléfono la baja y la muestra junto a las de siempre.
+
+   **Una regla del chat es un DATO, no una orden**, y se valida acá, del lado
+   del teléfono, como si la hubiera escrito cualquiera:
+   - sólo dos acciones: a la papelera, o mover a una carpeta de Descargas;
+   - el patrón es un comodín sobre el NOMBRE (`*antel*.pdf`), no una
+     expresión regular, así que no puede colgar al teléfono;
+   - la carpeta de destino pasa por `destinoValido`, igual que las de la
+     pantalla;
+   - lo protegido no se toca nunca, venga la regla de donde venga;
+   - y **nace en «propone»**: que ande sola lo decide Mauro en la pantalla. */
+const ID_CHAT = /^chat-[a-z0-9-]{1,40}$/;
+
+function globARegex(glob) {
+  const re = String(glob).split("").map((c) =>
+    c === "*" ? "[^/]*" : c === "?" ? "[^/]" : c.replace(/[.+^${}()|[\]\\]/g, "\\$&")).join("");
+  return new RegExp(`^${re}$`, "i");
+}
+
+const carpetaValida = (c) => typeof c === "string" && c.length <= 200 &&
+  c.split("/").every((p) => destinoValido(p) && p === p.trim());
+
+function normalizarReglaChat(r) {
+  if (!r || typeof r !== "object" || !ID_CHAT.test(r.id)) return null;
+  if (typeof r.nombre !== "string" || !r.nombre.trim() || r.nombre.length > 100 || /[\/\\]/.test(r.nombre)) return null;
+  if (!["papelera", "mover"].includes(r.accion)) return null;
+  if (r.accion === "mover" && !carpetaValida(r.destino)) return null;
+  if (r.dentroDe != null && r.dentroDe !== "" && !carpetaValida(r.dentroDe)) return null;
+  const dias = Number(r.masDeDias);
+  return { id: r.id, deChat: true, accion: r.accion,
+    titulo: String(r.titulo || r.id).slice(0, 80),
+    detalle: String(r.detalle || "").slice(0, 300),
+    pedido: typeof r.pedido === "string" ? r.pedido.slice(0, 40) : "",
+    nombre: r.nombre.trim(), dentroDe: r.dentroDe == null ? null : r.dentroDe,
+    masDeDias: Number.isFinite(dias) && dias > 0 ? dias : 0,
+    destino: r.accion === "mover" ? r.destino : null };
+}
+
+const reglasChatValidas = (lista) => {
+  const vistas = new Set();
+  return (Array.isArray(lista) ? lista : []).map(normalizarReglaChat)
+    .filter((r) => r && !vistas.has(r.id) && vistas.add(r.id)).slice(0, 50);
+};
 
 /* El resumen del análisis: qué hay, por tipo, y lo más pesado. Mira nombres,
    tamaños y fechas —NO abre los archivos—, y así lo dice la interfaz. */
@@ -248,9 +301,9 @@ function analizar(archivos) {
    —«Fotos (1)» es copia de «Fotos»— pero los de adentro sí. Un archivo de
    tamaño único lleva una firma que no se puede repetir, así que la carpeta
    que lo tiene no empareja con nadie, que es lo correcto. */
-function planificar(raiz, ahora = Date.now(), ajustes = null) {
+function planificar(raiz, ahora = Date.now(), ajustes = null, reglasChat = []) {
   const aj = normalizarAjustes(ajustes);
-  const activa = (id) => aj.reglas[id].estado !== "apagada";
+  const activa = (id) => !aj.reglas[id] || aj.reglas[id].estado !== "apagada";
   const ignorada = (r) => aj.ignorar.some((i) => r === i || dentroDe(r, i));
   const { archivos, carpetas } = recorrer(raiz);
   const porTam = new Map();
@@ -344,6 +397,32 @@ function planificar(raiz, ahora = Date.now(), ajustes = null) {
     mover.push({ ruta: a.ruta, tipo: "archivo", regla: "apk-viejas",
                  motivo: `instalador de hace más de ${aj.diasApk} días`, bytes: a.bytes });
     movidas.add(a.ruta);
+  }
+
+  // 3 ter · Las reglas que escribió el chat a pedido de Mauro.
+  for (const r of reglasChatValidas(reglasChat)) {
+    if (!activa(r.id)) continue;
+    const re = globARegex(r.nombre);
+    for (const a of archivos) {
+      if (yaSale(a.ruta) || ignorada(a.ruta) || esProtegido(a.ruta)) continue;
+      const dir = a.ruta.includes("/") ? a.ruta.slice(0, a.ruta.lastIndexOf("/")) : "";
+      const base = path.basename(a.ruta);
+      if (r.dentroDe != null && dir !== r.dentroDe) continue;
+      if (!re.test(base)) continue;
+      if (r.masDeDias && ahora - a.mtimeMs <= r.masDeDias * UN_DIA_MS) continue;
+      if (r.accion === "mover") {
+        const hacia = `${r.destino}/${base}`;
+        if (hacia === a.ruta) continue;
+        if (fs.existsSync(path.join(raiz, hacia))) {
+          avisos.push({ ruta: a.ruta, motivo: `no se mueve: ya hay uno con ese nombre en ${r.destino}/`, igualA: hacia });
+          continue;
+        }
+        mover.push({ ruta: a.ruta, tipo: "archivo", regla: r.id, motivo: `${r.titulo} → ${r.destino}/`, hacia, bytes: a.bytes });
+      } else {
+        mover.push({ ruta: a.ruta, tipo: "archivo", regla: r.id, motivo: r.titulo, bytes: a.bytes });
+      }
+      movidas.add(a.ruta);
+    }
   }
 
   // 4 · Carpetas que quedan vacías después de todo lo anterior. De la más
@@ -664,7 +743,7 @@ async function actualizarApks(man, destino, { consultar: preguntar = consultar, 
 const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-function informeHtml({ fecha, man, apks, repos, plan, deposito, automatico = null }) {
+function informeHtml({ fecha, man, apks, repos, plan, deposito, automatico = null, bodega = null }) {
   const total = plan ? plan.mover.reduce((s, m) => s + m.bytes, 0) : 0;
   const tarj = (t, cuerpo, extra = "") => `<section${extra}><h2>${t}</h2>${cuerpo}</section>`;
   const vacio = (t) => `<p class="tenue">${esc(t)}</p>`;
@@ -712,7 +791,13 @@ function informeHtml({ fecha, man, apks, repos, plan, deposito, automatico = nul
   }
 
   const bloqueDeposito = `<p>Lo que pongas en <code>Respaldos/Deposito/</code> no lo toca ninguna
-    limpieza.</p><p class="tenue">${deposito.archivos} archivos · ${mb(deposito.bytes)}</p>`;
+    limpieza.</p><p class="tenue">${deposito.archivos} archivos · ${mb(deposito.bytes)}</p>` +
+    (!bodega ? "" : bodega.sinToken
+      ? `<p class="tenue">Las copias de las bases que deja el chat todavía no bajan: falta el token
+         (<code>node herramientas/telefono.mjs token</code>).</p>`
+      : bodega.error ? `<p class="mal">El depósito del chat no contestó: ${esc(bodega.error)}</p>`
+      : `<p>Copias de las bases que dejó el chat, en <code>Respaldos/Deposito/chat/</code>:
+         <b>${bodega.archivos.length}</b> · ${esc(bodega.ultimo)}</p>`);
 
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -751,6 +836,52 @@ function medirCarpeta(dir) {
   };
   ver(dir);
   return { archivos, bytes };
+}
+
+/* El inventario que viaja con un pedido: nombres, tamaños y fechas de lo que
+   hay en Descargas. NUNCA el contenido. */
+function inventario(raiz) {
+  const { archivos } = recorrer(raiz);
+  return archivos.map((a) => ({ ruta: a.ruta, bytes: a.bytes,
+    fecha: new Date(a.mtimeMs).toISOString().slice(0, 10) }));
+}
+
+/* Lo que el chat dejó en el depósito, ya validado. Si no hay depósito todavía,
+   no hay reglas del chat y todo sigue andando igual. */
+function delChat(trabajo = Bodega.TRABAJO) {
+  const crudo = Bodega.leerReglasCrudas(trabajo);
+  return { reglas: reglasChatValidas(crudo.reglas), pedidos: Bodega.pedidos(trabajo, crudo.respuestas) };
+}
+
+/* ── Lo que corre en una SESIÓN, no en el teléfono ────────────────────────────
+   `depositar` baja las bases y las deja en el depósito. Las credenciales son
+   las del agente, que ya viven en la sesión; el teléfono no las ve nunca, ve
+   el JSON que quedó en el repositorio privado.
+
+   Lo que NO se deposita: lo sellado —las reglas de cada base ya se lo niegan
+   al agente— y `recorridos` de la Hilux, que es dónde estuvo la camioneta
+   punto por punto. Ya vive en su base y en el respaldo que sube la propia
+   app; un tercer lugar no agrega nada y sí agrega dónde filtrarse. */
+const NO_SE_DEPOSITA = { hilux: ["recorridos"] };
+
+async function depositar(dirBodega) {
+  const { PROYECTOS, entrarSuave, listar } = await import("./firestore.mjs");
+  const salida = path.join(dirBodega, "bases");
+  fs.mkdirSync(salida, { recursive: true });
+  const filas = [];
+  for (const [id, cfg] of Object.entries(PROYECTOS)) {
+    const e = await entrarSuave(cfg);
+    if (!e.ok) { filas.push(`✖ ${id}: ${e.motivo}`); continue; }
+    const todo = { proyecto: id, bajadoEn: new Date().toISOString() };
+    const cols = (cfg.colecciones || []).filter((c) => !(NO_SE_DEPOSITA[id] || []).includes(c));
+    for (const c of cols) {
+      try { todo[c] = await listar(cfg, e.sesion, c); }
+      catch (x) { todo[c] = { error: String(x && x.message || x) }; }
+    }
+    fs.writeFileSync(path.join(salida, `${id}.json`), JSON.stringify(todo, null, 2) + "\n");
+    filas.push(`✓ ${id}: ` + cols.map((c) => `${Array.isArray(todo[c]) ? todo[c].length : "✖"} ${c}`).join(", "));
+  }
+  return filas;
 }
 
 /* ── Línea de comandos ───────────────────────────────────────────────────── */
@@ -811,6 +942,38 @@ async function main(args) {
   const silencioso = args.includes("--sin-abrir");
   const archivoAjustes = path.join(destino, "bodega-ajustes.json");
 
+  if (cmd === "token") {
+    // Se pega en Termux y no pasa por ningún chat. No se muestra al tipear.
+    const rl = (await import("node:readline")).createInterface({ input: process.stdin, output: process.stdout });
+    rl._writeToOutput = (t) => { if (t.includes("Pegá")) process.stdout.write(t); };
+    const token = await new Promise((ok) => rl.question("  Pegá el token de la bodega y tocá Enter: ", ok));
+    rl.close();
+    Bodega.guardarToken(token);
+    console.log(`\n  ✓ guardado en ${Bodega.ARCHIVO_TOKEN}, sólo lo lee Termux.`);
+    const r = Bodega.traerBodega({ destino });
+    console.log(r.error ? `  ✖ ${r.error}` : `  ✓ el depósito contesta: ${r.archivos.length} copias · ${r.ultimo}`);
+    return;
+  }
+
+  if (cmd === "depositar") {
+    // En una SESIÓN: --bodega <copia local de maurogasta-crypto/bodega>
+    const dir = opcion(args, "--bodega", null);
+    if (!dir || !fs.existsSync(path.join(dir, ".git"))) { console.log("✖ falta --bodega <copia del repositorio>"); process.exit(1); }
+    for (const f of await depositar(dir)) console.log("  " + f);
+    return;
+  }
+
+  if (cmd === "pedidos") {
+    // En una SESIÓN: los pedidos del teléfono que todavía no tienen respuesta.
+    const dir = opcion(args, "--bodega", null);
+    if (!dir) { console.log("✖ falta --bodega <copia del repositorio>"); process.exit(1); }
+    const lista = delChat(dir).pedidos;
+    const sin = lista.filter((p) => !p.respuesta);
+    console.log(`\n  ${lista.length} pedidos, ${sin.length} sin respuesta\n`);
+    for (const p of sin) console.log(`  ▸ ${p.id}\n    ${p.texto.replace(/\n/g, "\n    ")}\n`);
+    return;
+  }
+
   if (cmd === "manifiesto") {
     // Lo corre una SESIÓN, con la credencial del agente. El teléfono no.
     const { PROYECTOS, entrar, listar } = await import("./firestore.mjs");
@@ -829,6 +992,8 @@ async function main(args) {
     }
     const { crearInterfaz } = await import("./telefono-interfaz.mjs");
     const { servidor, direccion } = crearInterfaz({ carpeta, archivoAjustes,
+      delChat: () => delChat(),
+      enviarPedido: (texto) => Bodega.enviarPedido({ texto, inventario: inventario(carpeta) }),
       alCerrar: () => console.log("\n  Pantalla cerrada.\n") });
     servidor.listen(0, "127.0.0.1", () => {
       console.log(`\n  Abrí esto en el navegador del teléfono:\n  ${direccion()}\n`);
@@ -847,13 +1012,23 @@ async function main(args) {
     const apks = await actualizarApks(man, destino);
     for (const a of apks) console.log(a.error ? `  ✖ ${a.nombre}  ·  ${a.error}`
       : `  ${a.nueva ? "★" : "✓"} ${a.nombre}  ·  ${(a.fecha || "").slice(0, 10)}  ·  ${mb(a.bytes)}${a.nueva ? "  (nueva)" : ""}`);
+    console.log("\n  DEPÓSITO DEL CHAT");
+    let deposito = null;
+    try {
+      deposito = Bodega.traerBodega({ destino });
+      console.log(deposito.error ? `  · ${deposito.sinToken ? "sin token todavía: node herramientas/telefono.mjs token" : deposito.error}`
+        : `  ✓ ${deposito.archivos.length} copias · ${deposito.ultimo}`);
+    } catch (e) { deposito = { error: String(e.stderr || e.message).trim().split("\n").pop() }; console.log(`  ✖ ${deposito.error}`); }
+    const chat = delChat();
+
     // Las reglas que Mauro puso en «automática» se aplican acá, y nada más.
     let automatico = null;
     const ajustes = leerAjustes(archivoAjustes);
     if (fs.existsSync(carpeta)) {
-      const autos = new Set(REGLAS.filter((r) => ajustes.reglas[r.id].estado === "automatica").map((r) => r.id));
+      const autos = new Set([...REGLAS, ...chat.reglas].map((r) => r.id)
+        .filter((id) => ajustes.reglas[id] && ajustes.reglas[id].estado === "automatica"));
       if (autos.size) {
-        const p0 = planificar(carpeta, Date.now(), ajustes);
+        const p0 = planificar(carpeta, Date.now(), ajustes, chat.reglas);
         const sel = new Set(p0.mover.filter((m) => autos.has(m.regla)).map((m) => m.ruta));
         if (sel.size) {
           automatico = aplicar(carpeta, p0, nombreDeLote(), sel);
@@ -861,8 +1036,8 @@ async function main(args) {
         }
       }
     }
-    const plan = fs.existsSync(carpeta) ? planificar(carpeta, Date.now(), ajustes) : null;
-    const archivo = escribirInforme(destino, { man, apks, repos, plan, automatico });
+    const plan = fs.existsSync(carpeta) ? planificar(carpeta, Date.now(), ajustes, chat.reglas) : null;
+    const archivo = escribirInforme(destino, { man, apks, repos, plan, automatico, bodega: deposito });
     console.log(`\n  Informe: ${archivo}`);
     if (!silencioso) abrir(archivo);
     return;
@@ -873,7 +1048,7 @@ async function main(args) {
       console.log(`✖ no encuentro ${carpeta}.\n  En Termux, corré primero: termux-setup-storage`);
       process.exit(1);
     }
-    const plan = planificar(carpeta, Date.now(), leerAjustes(archivoAjustes));
+    const plan = planificar(carpeta, Date.now(), leerAjustes(archivoAjustes), delChat().reglas);
     const total = plan.mover.reduce((s, m) => s + m.bytes, 0);
     console.log(`\n  DESCARGAS · ${carpeta}`);
     console.log(`  ${plan.archivos} archivos, ${plan.carpetas} carpetas mirados`);
@@ -937,17 +1112,22 @@ async function main(args) {
   }
 
   console.log(`
-  node herramientas/telefono.mjs sincronizar             TODO: respaldos, APK al día e informe
+  node herramientas/telefono.mjs sincronizar             TODO: respaldos, APK, depósito e informe
+  node herramientas/telefono.mjs interfaz                la pantalla: decidir, reglas y pedidos al chat
+  node herramientas/telefono.mjs token                   pegar el token del depósito (una vez)
   node herramientas/telefono.mjs descargas [--aplicar]    repetidos y basura de Descargas
   node herramientas/telefono.mjs deshacer [<lote>]        devuelve lo último que se botó
   node herramientas/telefono.mjs vaciar [--dias 30] [--aplicar]   borra de verdad lo viejo
   node herramientas/telefono.mjs respaldar                sólo los repositorios
   node herramientas/telefono.mjs manifiesto               (en una sesión) la lista, desde el panel
+  node herramientas/telefono.mjs depositar --bodega <dir> (en una sesión) las bases al depósito
+  node herramientas/telefono.mjs pedidos --bodega <dir>   (en una sesión) los pedidos sin respuesta
 
   Sin --aplicar no se toca nada. Todo en herramientas/TELEFONO.md.`);
 }
 
-export { REGLAS, TIPOS, tipoDe, normalizarAjustes, leerAjustes, guardarAjustes, analizar, destinoValido,
+export { inventario, delChat, depositar, NO_SE_DEPOSITA, normalizarReglaChat, reglasChatValidas, globARegex,
+         REGLAS, TIPOS, tipoDe, normalizarAjustes, leerAjustes, guardarAjustes, analizar, destinoValido,
          planificar, aplicar, deshacer, lotes, vencidos, motivoBasura, esProtegido,
          tieneMarcaDeCopia, elegirQueQueda, nombreDeLote, PAPELERA,
          manifiestoDesde, leerManifiesto, hayQueBajar, rotar, actualizarApks, informeHtml, esc, MANIFIESTO };

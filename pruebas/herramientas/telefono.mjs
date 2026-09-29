@@ -18,6 +18,9 @@ import path from "node:path";
 import os from "node:os";
 import http from "node:http";
 import { crearInterfaz } from "../../herramientas/telefono-interfaz.mjs";
+import { execFileSync } from "node:child_process";
+import * as Bodega from "../../herramientas/telefono-bodega.mjs";
+import { normalizarReglaChat, reglasChatValidas, globARegex, delChat } from "../../herramientas/telefono.mjs";
 import { planificar, aplicar, normalizarAjustes, tipoDe, destinoValido, deshacer, lotes, vencidos, motivoBasura, esProtegido,
          tieneMarcaDeCopia, elegirQueQueda, PAPELERA,
          manifiestoDesde, leerManifiesto, hayQueBajar, rotar, actualizarApks, informeHtml
@@ -661,6 +664,162 @@ pruebaA("el script de la página parsea, y escribe lo del disco como texto", asy
   const js = PAGINA.match(/<script>([\s\S]*)<\/script>/)[1];
   new Function(js);
   assert.ok(!/innerHTML/.test(js));
+});
+
+/* ── Las reglas que escribe el chat: un dato, no una orden ───────────────── */
+titulo("Las reglas del chat se validan en el teléfono");
+
+const RCHAT = { id: "chat-facturas", titulo: "Facturas de Antel", nombre: "*antel*.pdf",
+                accion: "mover", destino: "Facturas" };
+
+prueba("una regla buena pasa, y nace sin estado (o sea, «propone»)", () => {
+  const r = normalizarReglaChat(RCHAT);
+  assert.equal(r.id, "chat-facturas");
+  assert.equal(normalizarAjustes(null).reglas["chat-facturas"], undefined);
+});
+
+prueba("se rechaza la que saldría de Descargas, la que usa otra acción y la de id raro", () => {
+  for (const mala of [{ ...RCHAT, destino: "../fuera" }, { ...RCHAT, destino: "_Papelera" },
+                      { ...RCHAT, accion: "borrar" }, { ...RCHAT, id: "facturas" },
+                      { ...RCHAT, nombre: "../*" }, { ...RCHAT, dentroDe: "a/../../b" }, null, "x"])
+    assert.equal(normalizarReglaChat(mala), null, JSON.stringify(mala));
+});
+
+prueba("el comodín mira el nombre, sin importar mayúsculas, y no es una expresión regular", () => {
+  assert.ok(globARegex("*antel*.pdf").test("Factura-ANTEL-agosto.PDF"));
+  assert.ok(!globARegex("*antel*.pdf").test("antel.pdf.exe"));
+  assert.ok(globARegex("(a+)+$").test("(a+)+$"));
+  assert.ok(!globARegex("(a+)+$").test("aaaa"));
+});
+
+prueba("una regla del chat mueve lo que coincide, y NUNCA lo protegido", () => {
+  const r = armar({ "antel-ago.pdf": "A", "antel-firma.jks": "K", "otra.pdf": "B" });
+  const p = planificar(r, Date.now(), SIN_ORDENAR,
+    [RCHAT, { id: "chat-todo", titulo: "todo", nombre: "*", accion: "papelera" }]);
+  const m = Object.fromEntries(p.mover.map((x) => [x.ruta, x.regla]));
+  assert.equal(m["antel-ago.pdf"], "chat-facturas");
+  assert.equal(m["otra.pdf"], "chat-todo");
+  assert.equal(m["antel-firma.jks"], undefined);
+});
+
+prueba("apagada desde la pantalla, la regla del chat no propone", () => {
+  const r = armar({ "antel-ago.pdf": "A" });
+  const p = planificar(r, Date.now(), { ...SIN_ORDENAR, reglas: { ...SIN_ORDENAR.reglas, "chat-facturas": { estado: "apagada" } } }, [RCHAT]);
+  assert.equal(p.mover.length, 0);
+});
+
+prueba("«automatica» para una regla del chat sólo existe si se eligió en el teléfono", () => {
+  const a = normalizarAjustes({ reglas: { "chat-x": { estado: "automatica" }, "rara": { estado: "automatica" } } });
+  assert.equal(a.reglas["chat-x"].estado, "automatica");
+  assert.equal(a.reglas.rara, undefined);
+});
+
+prueba("repetidas o de más: queda la primera de cada id, y hasta 50", () => {
+  const muchas = Array.from({ length: 60 }, (_, i) => ({ ...RCHAT, id: "chat-" + i }));
+  assert.equal(reglasChatValidas([RCHAT, RCHAT]).length, 1);
+  assert.equal(reglasChatValidas(muchas).length, 50);
+});
+
+/* ── El depósito, contra un repositorio de prueba ───────────────────────── */
+titulo("El depósito");
+
+const g = (args, cwd) => execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", ...args],
+  { cwd, stdio: ["ignore", "pipe", "pipe"] }).toString().trim();
+
+function bodegaDePrueba() {
+  const raiz = armar({});
+  const remoto = path.join(raiz, "bodega.git");
+  g(["init", "-q", "--bare", "-b", "main", remoto]);
+  const chat = path.join(raiz, "chat");
+  g(["clone", "-q", remoto, chat]);
+  fs.mkdirSync(path.join(chat, "bases"));
+  fs.writeFileSync(path.join(chat, "bases", "panel.json"), '{"proyecto":"panel"}');
+  fs.writeFileSync(path.join(chat, "reglas.json"), JSON.stringify({ reglas: [RCHAT, { id: "mala", nombre: "*" }] }));
+  g(["add", "-A"], chat); g(["commit", "-q", "-m", "base"], chat); g(["push", "-q", "origin", "HEAD"], chat);
+  return { raiz, remoto, chat, trabajo: path.join(raiz, "trabajo"), destino: path.join(raiz, "Respaldos") };
+}
+
+prueba("traer baja las copias a Respaldos/Deposito/chat, como archivos comunes", () => {
+  const b = bodegaDePrueba();
+  const r = Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  assert.deepEqual(r.archivos.map((a) => a.archivo), ["panel.json"]);
+  assert.equal(fs.readFileSync(path.join(b.destino, "Deposito", "chat", "panel.json"), "utf8"), '{"proyecto":"panel"}');
+});
+
+prueba("de reglas.json sólo pasan las válidas", () => {
+  const b = bodegaDePrueba();
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  assert.deepEqual(delChat(b.trabajo).reglas.map((r) => r.id), ["chat-facturas"]);
+});
+
+prueba("un pedido sube con el inventario (sin contenido), y el chat lo ve con su respuesta", () => {
+  const b = bodegaDePrueba();
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  const r = Bodega.enviarPedido({ texto: "ordená las facturas", inventario: [{ ruta: "a.pdf", bytes: 3, fecha: "2026-09-29" }],
+    remoto: b.remoto, trabajo: b.trabajo, token: null, ahora: new Date("2026-09-29T12:00:00Z") });
+  assert.equal(r.subido, true);
+  g(["pull", "-q"], b.chat);
+  const subido = JSON.parse(fs.readFileSync(path.join(b.chat, "pedidos", `${r.id}.json`), "utf8"));
+  assert.equal(subido.texto, "ordená las facturas");
+  assert.deepEqual(Object.keys(subido.inventario[0]).sort(), ["bytes", "fecha", "ruta"]);
+  // El chat contesta en reglas.json y el teléfono lo ve al traer.
+  fs.writeFileSync(path.join(b.chat, "reglas.json"), JSON.stringify({ reglas: [RCHAT], respuestas: { [r.id]: "Listo: regla chat-facturas" } }));
+  g(["commit", "-q", "-am", "respuesta"], b.chat); g(["push", "-q"], b.chat);
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  assert.equal(delChat(b.trabajo).pedidos[0].respuesta, "Listo: regla chat-facturas");
+});
+
+prueba("un pedido escrito sin red no se pierde: sube en la próxima", () => {
+  const b = bodegaDePrueba();
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  // Sin red = el remoto no está.
+  fs.renameSync(b.remoto, b.remoto + ".lejos");
+  const r = Bodega.enviarPedido({ texto: "sin red", inventario: [], remoto: b.remoto, trabajo: b.trabajo, token: null });
+  assert.equal(r.subido, false);
+  fs.renameSync(b.remoto + ".lejos", b.remoto);
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  g(["pull", "-q"], b.chat);
+  assert.ok(fs.existsSync(path.join(b.chat, "pedidos", `${r.id}.json`)));
+});
+
+prueba("sin token, contra GitHub no se intenta nada y se dice", () => {
+  const r = Bodega.traerBodega({ trabajo: armar({}), destino: armar({}), token: null });
+  assert.equal(r.sinToken, true);
+});
+
+prueba("el token viaja por el entorno de git, nunca por la línea de comandos ni por .git/config", () => {
+  const e = Bodega.entornoGit("github_pat_ABCDEFGHIJKLMNOPQRSTUV");
+  assert.equal(e.GIT_CONFIG_KEY_0, "http.https://github.com/.extraheader");
+  assert.ok(e.GIT_CONFIG_VALUE_0.startsWith("AUTHORIZATION: basic "));
+  assert.ok(!e.GIT_CONFIG_VALUE_0.includes("github_pat_"));
+  assert.equal(e.GIT_TERMINAL_PROMPT, "0");
+  const b = bodegaDePrueba();
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: "github_pat_ABCDEFGHIJKLMNOPQRSTUV" });
+  assert.ok(!fs.readFileSync(path.join(b.trabajo, ".git", "config"), "utf8").includes("github_pat_"));
+});
+
+prueba("el token se guarda con permisos 600, y lo que no parece un token no se guarda", () => {
+  const f = path.join(armar({}), "cfg", "token");
+  Bodega.guardarToken("github_pat_ABCDEFGHIJKLMNOPQRSTUV", f);
+  assert.equal(fs.statSync(f).mode & 0o777, 0o600);
+  assert.throws(() => Bodega.guardarToken("hola que tal", f));
+  assert.equal(Bodega.leerToken(f), "github_pat_ABCDEFGHIJKLMNOPQRSTUV");
+});
+
+pruebaA("un pedido desde la pantalla llega a quien lo envía, y vacío no", async () => {
+  const raiz = armar({ "a.pdf": "A" });
+  const enviados = [];
+  const i = crearInterfaz({ carpeta: raiz, archivoAjustes: path.join(armar({}), "a.json"),
+    enviarPedido: (t) => { if (!String(t || "").trim()) throw new Error("el pedido está vacío"); enviados.push(t); return { id: "x", subido: true }; } });
+  await new Promise((ok) => i.servidor.listen(0, "127.0.0.1", ok));
+  const I = { ...i, puerto: i.servidor.address().port };
+  try {
+    const r = await pedirA(I, { ruta: "/pedido", metodo: "POST", cuerpo: { texto: "ordená las fotos" } });
+    assert.equal(r.status, 200);
+    assert.deepEqual(enviados, ["ordená las fotos"]);
+    assert.equal((await pedirA(I, { ruta: "/pedido", metodo: "POST", cuerpo: { texto: "  " } })).status, 500);
+    assert.equal((await pedirA(I, { ruta: "/pedido", metodo: "POST", cuerpo: { texto: "x" }, origen: "https://malo.com" })).status, 403);
+  } finally { i.servidor.close(); }
 });
 
 for (const [n, f] of pruebasAsync) {

@@ -62,7 +62,8 @@ function mismaLlave(a, b) {
 /* Arma el servidor. No lo pone a escuchar: eso lo hace quien llama, así el
    banco lo puede probar en un puerto cualquiera. */
 function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16).toString("hex"),
-                         alCerrar = () => {} }) {
+                         alCerrar = () => {}, delChat = () => ({ reglas: [], pedidos: [] }),
+                         enviarPedido = null }) {
   let puerto = 0;
   let reloj = null;
   const servidor = http.createServer(atender);
@@ -76,9 +77,11 @@ function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16)
 
   const estado = () => {
     const ajustes = leerAjustes(archivoAjustes);
-    const plan = planificar(carpeta, Date.now(), ajustes);
+    const chat = delChat();
+    const plan = planificar(carpeta, Date.now(), ajustes, chat.reglas);
     return { carpeta, ajustes, plan, lotes: lotes(carpeta).reverse(),
-             reglas: REGLAS, tipos: Object.fromEntries(Object.entries(TIPOS).map(([k, t]) => [k, t.nombre])) };
+             pedidos: chat.pedidos.slice(0, 10), puedePedir: !!enviarPedido,
+             reglas: [...REGLAS, ...chat.reglas], tipos: Object.fromEntries(Object.entries(TIPOS).map(([k, t]) => [k, t.nombre])) };
   };
 
   async function atender(req, res) {
@@ -119,7 +122,7 @@ function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16)
         const pedidas = new Set(Array.isArray(cuerpo.rutas) ? cuerpo.rutas.filter((r) => typeof r === "string") : []);
         // Se replanifica AHORA: lo que se mueve es lo que el plan de este
         // momento propone y además se tildó. Nada que venga sólo del pedido.
-        const plan = planificar(carpeta, Date.now(), leerAjustes(archivoAjustes));
+        const plan = planificar(carpeta, Date.now(), leerAjustes(archivoAjustes), delChat().reglas);
         const validas = new Set(plan.mover.map((m) => m.ruta).filter((r) => pedidas.has(r)));
         if (!validas.size) return responder(200, { resultado: { movidos: 0, fallas: [] }, ...estado() });
         const r = aplicar(carpeta, plan, nombreDeLote(), validas);
@@ -128,6 +131,11 @@ function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16)
       if (ruta === "/deshacer") {
         if (!lotes(carpeta).includes(cuerpo.lote)) return responder(404, { error: "no hay ese lote" });
         return responder(200, { deshecho: deshacer(carpeta, cuerpo.lote), ...estado() });
+      }
+      if (ruta === "/pedido") {
+        if (!enviarPedido) return responder(501, { error: "los pedidos no están disponibles" });
+        const r = enviarPedido(cuerpo.texto);
+        return responder(200, { pedido: r, ...estado() });
       }
       if (ruta === "/salir") { responder(200, { ok: true }); setTimeout(() => servidor.close(), 50); return; }
       return responder(404, { error: "no" });
@@ -170,12 +178,21 @@ section{background:var(--papel);border:1px solid var(--linea);border-radius:14px
 .barra div{max-width:680px;margin:0 auto;display:flex;gap:10px;align-items:center}
 .boton{border:0;border-radius:12px;background:var(--acento);color:var(--papel);padding:12px 16px;font:inherit;font-weight:700}
 .boton[disabled]{opacity:.45}.boton.sec{background:var(--suave);color:var(--tinta)}
+textarea{width:100%;padding:10px;border:1px solid var(--linea);border-radius:10px;background:var(--fondo);color:var(--tinta);font:inherit}
+.resp{border-left:3px solid var(--acento);padding-left:10px;margin-top:4px}
 .aviso-caja{background:var(--suave);border-radius:10px;padding:10px 12px;margin:10px 0}
 </style></head><body><main>
 <h1>Ordenar Descargas</h1><p class="tenue" id="donde">Mirando…</p>
 <section><h2>Lo que hay</h2><div id="resumen" class="tenue">Mirando la carpeta…</div>
 <p class="tenue">Se miran nombres, tamaños y fechas. Los archivos no se abren.</p></section>
 <section><h2>Sugerencias</h2><div id="res"></div><div id="sug"></div></section>
+<section><h2>Pedidos al chat</h2>
+<p class="tenue">Escribí qué querés que haga con tus archivos, como se lo dirías a una persona. Viaja al
+depósito privado junto con la lista de lo que hay en Descargas —nombres, tamaños y fechas; <b>no el
+contenido</b>—. El chat lo lee cuando le digas «mirá mis pedidos del teléfono», y te contesta con reglas
+nuevas que aparecen acá abajo, en «Propone». No se aplica nada sin que lo tildes.</p>
+<textarea id="pedido" rows="4" maxlength="4000" placeholder="Ej.: las facturas de UTE y Antel, a una carpeta Facturas/2026; los audios de WhatsApp de más de 3 meses, a la papelera"></textarea>
+<p><button class="boton" id="enviar">Enviar al chat</button></p><div id="pedidos"></div></section>
 <section><h2>Reglas</h2><p class="tenue"><b>Propone</b>: aparece arriba y se aplica si la tildás.
 <b>Automática</b>: la rutina diaria la aplica sola, y se deshace igual. <b>Apagada</b>: no se propone.</p><div id="reglas"></div></section>
 <section><h2>Lo que ya se hizo</h2><div id="lotes"></div></section>
@@ -210,7 +227,7 @@ function pintar(nuevo, conservar) {
       .map(([t, v]) => el("span", { class: "chip" }, (NOMBRE_TIPO[t] || t) + " · " + v.archivos + " · " + mb(v.bytes)))),
     R.pesados.length ? el("p", { class: "tenue" }, "Lo que más pesa:") : null,
     ...R.pesados.slice(0, 5).map((p) => el("div", { class: "tenue" }, "· " + p.ruta + " — " + mb(p.bytes) + " — " + p.fecha)));
-  pintarSugerencias(); pintarReglas(); pintarLotes(); contar();
+  pintarSugerencias(); pintarReglas(); pintarLotes(); pintarPedidos(); contar();
 }
 function pintarSugerencias() {
   const cont = $("sug"); cont.replaceChildren();
@@ -253,10 +270,12 @@ function pintarReglas() {
   const guardar = async () => { try { pintar(await pedir("ajustes", { ajustes: A }), true); } catch (e) { alert("No se guardó: " + e.message); } };
   for (const r of E.reglas) {
     const seg = el("div", { class: "seg" }, ...[["propone", "Propone"], ["automatica", "Automática"], ["apagada", "Apagada"]].map(([v, t]) =>
-      el("button", { "aria-pressed": String(A.reglas[r.id].estado === v), onclick: () => {
+      el("button", { "aria-pressed": String((A.reglas[r.id] || { estado: "propone" }).estado === v), onclick: () => {
         if (v === "automatica" && !confirm("«" + r.titulo + "» se va a aplicar sola en la rutina diaria. Se deshace igual desde «Lo que ya se hizo». ¿Seguro?")) return;
-        A.reglas[r.id].estado = v; guardar(); } }, t)));
-    const caja = el("div", { class: "regla" }, el("b", {}, r.titulo), el("div", { class: "tenue" }, r.detalle), seg);
+        A.reglas[r.id] = { estado: v }; guardar(); } }, t)));
+    const caja = el("div", { class: "regla" }, el("b", {}, r.titulo),
+      r.deChat ? el("span", { class: "chip" }, "del chat" + (r.pedido ? " · pedido " + r.pedido : "")) : null,
+      el("div", { class: "tenue" }, r.detalle || (r.deChat ? "«" + r.nombre + "»" + (r.dentroDe != null ? " en " + (r.dentroDe || "la raíz") : "") + (r.accion === "mover" ? " → " + r.destino + "/" : " → papelera") : "")), seg);
     if (r.id === "apk-viejas") {
       const i = el("input", { type: "number", min: "1", max: "3650", value: String(A.diasApk) });
       i.onchange = () => { A.diasApk = Number(i.value); guardar(); };
@@ -305,6 +324,22 @@ $("aplicar").onclick = async () => {
   try { const j = await pedir("aplicar", { rutas: [...marcadas] }); pintar(j);
     aviso("Hecho: " + j.resultado.movidos + (j.resultado.fallas.length ? " · no se pudo: " + j.resultado.fallas.map((f) => f.ruta).join(", ") : "") + ". Para volver atrás: «Lo que ya se hizo»."); }
   catch (e) { aviso("No se pudo: " + e.message); contar(); }
+};
+function pintarPedidos() {
+  const cont = $("pedidos"); cont.replaceChildren();
+  $("enviar").disabled = !E.puedePedir;
+  for (const p of E.pedidos) cont.append(el("div", { class: "item" }, el("span", { class: "txt" },
+    el("small", {}, new Date(p.fecha).toLocaleString()), el("div", {}, p.texto),
+    p.respuesta ? el("div", { class: "resp" }, el("small", {}, "El chat:"), p.respuesta)
+                : el("small", {}, "Sin respuesta todavía."))));
+}
+$("enviar").onclick = async () => {
+  const t = $("pedido").value.trim(); if (!t) return;
+  $("enviar").disabled = true;
+  try { const j = await pedir("pedido", { texto: t }); $("pedido").value = ""; pintar(j, true);
+    aviso(j.pedido.subido ? "Pedido enviado al depósito. Decile al chat «mirá mis pedidos del teléfono»."
+      : "Pedido guardado; sube con la próxima sincronización (ahora no hubo red).");
+  } catch (e) { aviso("No se pudo enviar: " + e.message); $("enviar").disabled = false; }
 };
 $("salir").onclick = async () => { await pedir("salir", {}); document.body.replaceChildren(el("main", {}, el("h1", {}, "Cerrado"), el("p", {}, "Podés volver a Termux."))); };
 pedir("estado").then((j) => pintar(j)).catch((e) => { $("resumen").textContent = "No se pudo leer: " + e.message; });

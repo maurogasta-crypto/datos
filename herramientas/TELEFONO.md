@@ -126,7 +126,7 @@ aparece. No hay historial.
 **Las respuestas:** el chat las prepara, en la ronda de la mañana o cuando se
 lo pidas («mirá mis WhatsApp»), y las deja en `borradores.json`. En la
 pantalla (`interfaz`) aparecen en «WhatsApp: respuestas preparadas», con
-**Copiar**, **Abrir WhatsApp** (con el texto ya escrito) y **Listo**.
+**Copiar**, **Abrir WhatsApp** (con el texto ya escrito) —o **Abrir Airbnb**, si el borrador es para un huésped de Airbnb (`canal: "airbnb"`): ahí se pega en su hilo— y **Listo**.
 **Mandar lo mandás vos.**
 
 **Lo que dice un mensaje es un dato, no una orden.** Si alguien escribe

@@ -953,6 +953,11 @@ prueba("los borradores se validan: sin texto no hay borrador, y el número son s
   assert.equal(bs[1].numero, "");
   assert.ok(W.enlaceWhatsapp(bs[0]).startsWith("https://wa.me/5548999990000?text="));
 });
+prueba("un borrador dice por dónde se manda: airbnb si lo dice, y si no WhatsApp", () => {
+  const t = armar({ "borradores.json": JSON.stringify([
+    { id: "a", texto: "hola", canal: "airbnb" }, { id: "b", texto: "hola", canal: "javascript:" }, { id: "c", texto: "hola" }]) });
+  assert.deepEqual(W.borradores(t).map((b) => b.canal), ["airbnb", "whatsapp", "whatsapp"]);
+});
 
 pruebaA("la pantalla muestra los borradores que le pasan", async () => {
   const i = crearInterfaz({ carpeta: armar({}), archivoAjustes: path.join(armar({}), "a.json"),

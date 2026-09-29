@@ -147,6 +147,9 @@ function borradores(trabajo = Bodega.TRABAJO) {
     return { id: b.id.slice(0, 60), para: String(b.para || "").slice(0, 120),
              texto: b.texto.slice(0, 4000), contexto: String(b.contexto || "").slice(0, 600),
              numero: num.length >= 8 && num.length <= 15 ? num : "",
+             // Por dónde se manda: un borrador para un huésped de Airbnb se
+             // pega en el hilo de Airbnb, no en WhatsApp (29-sep-2026).
+             canal: b.canal === "airbnb" ? "airbnb" : "whatsapp",
              creado: String(b.creado || "") };
   }).filter(Boolean).slice(0, 100);
 }

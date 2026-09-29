@@ -344,7 +344,9 @@ function pintarBorradores() {
       el("div", { class: "resp" }, b.texto),
       el("div", {}, el("button", { class: "link", onclick: async () => {
           try { await navigator.clipboard.writeText(b.texto); aviso("Copiado."); } catch { aviso("No se pudo copiar: mantené apretado el texto."); } } }, "Copiar"),
-        " · ", el("a", { class: "link", href: "https://wa.me/" + (b.numero || "") + "?text=" + encodeURIComponent(b.texto), target: "_blank", rel: "noopener" }, "Abrir WhatsApp"),
+        " · ", b.canal === "airbnb"
+          ? el("a", { class: "link", href: "https://www.airbnb.com/hosting/messages", target: "_blank", rel: "noopener" }, "Abrir Airbnb")
+          : el("a", { class: "link", href: "https://wa.me/" + (b.numero || "") + "?text=" + encodeURIComponent(b.texto), target: "_blank", rel: "noopener" }, "Abrir WhatsApp"),
         " · ", el("button", { class: "link", onclick: marcar }, "Listo")))));
   }
 }

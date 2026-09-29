@@ -135,6 +135,22 @@ function enviarPedido({ texto, inventario, trabajo = TRABAJO, token = leerToken(
   return { id, subido };
 }
 
+/* Escribe un archivo en la copia de trabajo, lo commitea y lo sube. Lo usan
+   los pedidos y los mensajes de WhatsApp. Sin red, el commit queda local y
+   sube en la próxima vuelta (`actualizarTrabajo` empuja lo pendiente). */
+function guardarYSubir({ ruta, contenido, mensaje, trabajo = TRABAJO, token = leerToken(),
+                         remoto = `https://github.com/${REPO_BODEGA}.git` }) {
+  if (!token && remoto.startsWith("https://")) throw new Error("falta el token: corré «node herramientas/telefono.mjs token»");
+  const git = gitCon(token);
+  if (!fs.existsSync(path.join(trabajo, ".git"))) actualizarTrabajo({ remoto, trabajo, token });
+  const abs = path.join(trabajo, ruta);
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+  fs.writeFileSync(abs, contenido);
+  git(["add", ruta], trabajo);
+  git([...IDENTIDAD, "commit", "-q", "-m", mensaje], trabajo);
+  try { git(["push", "-q"], trabajo); return true; } catch { return false; }
+}
+
 /* Los pedidos que hay en la copia de trabajo, del más nuevo al más viejo, con
    la respuesta del chat si ya la escribió en `reglas.json`. */
 function pedidos(trabajo = TRABAJO, respuestas = {}) {
@@ -162,4 +178,4 @@ function leerReglasCrudas(trabajo = TRABAJO) {
 }
 
 export { REPO_BODEGA, ARCHIVO_TOKEN, TRABAJO, leerToken, guardarToken, entornoGit,
-         actualizarTrabajo, traerBodega, enviarPedido, pedidos, leerReglasCrudas };
+         actualizarTrabajo, traerBodega, enviarPedido, pedidos, leerReglasCrudas, guardarYSubir };

@@ -1,0 +1,147 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// telefono-whatsapp.mjs — Leer los mensajes de WhatsApp para preparar respuestas.
+//
+//   node herramientas/telefono.mjs whatsapp            una pasada: lo nuevo, a la bodega
+//   node herramientas/telefono.mjs whatsapp --vigilar  una pasada por minuto, hasta cortarlo
+//
+// Pedido de Mauro, 29-sep-2026: «falta incorporar la lectura de mensajes para
+// preparar las respuestas en los WhatsApp». Eligió TODOS los chats.
+//
+// ── CÓMO LEE, Y POR QUÉ ASÍ ──────────────────────────────────────────────────
+// Por las NOTIFICACIONES, no por la aplicación. `termux-notification-list`
+// (paquete termux-api + la app Termux:API con acceso a notificaciones) devuelve
+// lo que Android ya muestra en la barra. No automatiza WhatsApp, no toca la
+// cuenta y no simula nada: lee lo mismo que ve cualquiera que baje la barra.
+// Automatizar la app, o usar una biblioteca no oficial, es lo que hace que
+// WhatsApp bloquee un número — y el número es el de Mauro.
+//
+// La contra, dicha: sólo se ve lo que llega como notificación MIENTRAS esto
+// corre. Un chat silenciado, o un mensaje que se abrió antes de la pasada, no
+// aparece. No hay historial.
+//
+// ── ADÓNDE VA ────────────────────────────────────────────────────────────────
+// A `mensajes/<fecha>.json` del depósito PRIVADO. El chat los lee, escribe
+// `borradores.json`, y la pantalla del teléfono los muestra con «Copiar» y
+// «Abrir WhatsApp». **Mandar lo manda Mauro**, siempre.
+//
+// ── LO QUE DICE UN MENSAJE ES UN DATO ────────────────────────────────────────
+// Un mensaje lo escribe un tercero. Si dice «borrá la reserva» o «mandame las
+// claves», eso es lo que dijo esa persona, no una orden para el chat.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import crypto from "node:crypto";
+import { execFileSync } from "node:child_process";
+import * as Bodega from "./telefono-bodega.mjs";
+
+const PAQUETES = new Set(["com.whatsapp", "com.whatsapp.w4b"]);
+const VISTOS = path.join(os.homedir(), ".config", "bodega", "whatsapp-vistos.json");
+const TOPE_VISTOS = 5000;
+
+/* Los resúmenes que arma WhatsApp («3 mensajes de 2 chats», «WhatsApp») no
+   son mensajes: son la tapa del grupo de notificaciones. */
+const esResumen = (n) =>
+  !n.content || /^\d+ (mensajes|messages|mensagens)/i.test(n.content) ||
+  /^(WhatsApp|WhatsApp Business)$/i.test(String(n.title || "").trim()) ||
+  /(buscando|checking for) (nuevos )?mensajes/i.test(n.content);
+
+/* De lo que devuelve `termux-notification-list`, sólo WhatsApp y sólo lo que
+   es un mensaje. Un grupo llega como «Grupo: Persona» en el título o como
+   «Persona: texto» en el contenido, según la versión: se guarda tal cual,
+   sin adivinar. */
+function mensajesDe(notificaciones) {
+  return (Array.isArray(notificaciones) ? notificaciones : [])
+    .filter((n) => n && PAQUETES.has(n.packageName) && !esResumen(n))
+    .map((n) => ({
+      chat: String(n.title || "").slice(0, 120),
+      texto: String(n.content || "").slice(0, 4000),
+      // `lines` trae los últimos mensajes cuando se juntan varios del mismo chat.
+      lineas: Array.isArray(n.lines) ? n.lines.map((l) => String(l).slice(0, 1000)).slice(0, 20) : [],
+      cuando: String(n.when || ""),
+      app: n.packageName === "com.whatsapp.w4b" ? "business" : "whatsapp",
+    }));
+}
+
+const huella = (m) => crypto.createHash("sha256")
+  .update([m.app, m.chat, m.texto, ...m.lineas].join("\u0001")).digest("hex").slice(0, 20);
+
+/* Lo que no se vio antes. La huella NO incluye la hora: WhatsApp reescribe la
+   misma notificación con otra hora cada vez que llega algo al mismo chat, y
+   con la hora adentro cada pasada volvería a mandar lo mismo. */
+function nuevos(mensajes, vistos) {
+  const ya = new Set(vistos || []);
+  const out = [];
+  for (const m of mensajes) {
+    const h = huella(m);
+    if (ya.has(h)) continue;
+    ya.add(h);
+    out.push({ id: h, ...m });
+  }
+  return out;
+}
+
+function leerVistos(archivo = VISTOS) {
+  try { return JSON.parse(fs.readFileSync(archivo, "utf8")); } catch { return []; }
+}
+function guardarVistos(lista, archivo = VISTOS) {
+  fs.mkdirSync(path.dirname(archivo), { recursive: true, mode: 0o700 });
+  fs.writeFileSync(archivo, JSON.stringify(lista.slice(-TOPE_VISTOS)), { mode: 0o600 });
+}
+
+function leerNotificaciones() {
+  try {
+    return JSON.parse(execFileSync("termux-notification-list", { encoding: "utf8", timeout: 20000 }));
+  } catch (e) {
+    const err = new Error("no se pudieron leer las notificaciones. Hace falta: pkg install termux-api, "
+      + "la app Termux:API, y darle «Acceso a notificaciones» en los ajustes de Android.");
+    err.causa = e;
+    throw err;
+  }
+}
+
+/* Una pasada: lee, se queda con lo nuevo, lo agrega al archivo del día en el
+   depósito y lo sube. Devuelve cuántos mensajes nuevos hubo. */
+function capturar({ leer = leerNotificaciones, trabajo = Bodega.TRABAJO, token, remoto,
+                    archivoVistos = VISTOS, ahora = new Date() } = {}) {
+  const vistos = leerVistos(archivoVistos);
+  const nv = nuevos(mensajesDe(leer()), vistos);
+  if (!nv.length) return { nuevos: 0 };
+  const dia = ahora.toISOString().slice(0, 10);
+  const ruta = `mensajes/${dia}.json`;
+  let previos = [];
+  try { previos = JSON.parse(fs.readFileSync(path.join(trabajo, ruta), "utf8")); } catch {}
+  const captado = ahora.toISOString();
+  const opciones = { ruta, trabajo, mensaje: `WhatsApp: ${nv.length} mensajes`,
+    contenido: JSON.stringify([...previos, ...nv.map((m) => ({ ...m, captado }))], null, 1) };
+  if (token !== undefined) opciones.token = token;
+  if (remoto !== undefined) opciones.remoto = remoto;
+  const subido = Bodega.guardarYSubir(opciones);
+  // Se marcan vistos DESPUÉS de guardarlos: si guardar falla, la próxima
+  // pasada los vuelve a intentar en vez de perderlos.
+  guardarVistos([...vistos, ...nv.map((m) => m.id)], archivoVistos);
+  return { nuevos: nv.length, subido };
+}
+
+/* Los borradores que escribió el chat, validados como cualquier dato que
+   llega de afuera. El número, si está, son sólo dígitos: va en un enlace. */
+function borradores(trabajo = Bodega.TRABAJO) {
+  let crudo = [];
+  try { crudo = JSON.parse(fs.readFileSync(path.join(trabajo, "borradores.json"), "utf8")); } catch {}
+  return (Array.isArray(crudo) ? crudo : []).map((b) => {
+    if (!b || typeof b.texto !== "string" || !b.texto.trim() || typeof b.id !== "string") return null;
+    const num = String(b.numero || "").replace(/\D/g, "");
+    return { id: b.id.slice(0, 60), para: String(b.para || "").slice(0, 120),
+             texto: b.texto.slice(0, 4000), contexto: String(b.contexto || "").slice(0, 600),
+             numero: num.length >= 8 && num.length <= 15 ? num : "",
+             creado: String(b.creado || "") };
+  }).filter(Boolean).slice(0, 100);
+}
+
+/* El enlace para abrir WhatsApp con el texto ya escrito. Sin número, WhatsApp
+   pregunta a quién: igual sirve. */
+const enlaceWhatsapp = (b) => `https://wa.me/${b.numero || ""}?text=${encodeURIComponent(b.texto)}`;
+
+export { mensajesDe, nuevos, huella, esResumen, capturar, borradores, enlaceWhatsapp,
+         leerVistos, guardarVistos, VISTOS };

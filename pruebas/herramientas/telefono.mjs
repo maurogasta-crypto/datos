@@ -20,6 +20,7 @@ import http from "node:http";
 import { crearInterfaz } from "../../herramientas/telefono-interfaz.mjs";
 import { execFileSync } from "node:child_process";
 import * as Bodega from "../../herramientas/telefono-bodega.mjs";
+import * as W from "../../herramientas/telefono-whatsapp.mjs";
 import { normalizarReglaChat, reglasChatValidas, globARegex, delChat } from "../../herramientas/telefono.mjs";
 import { planificar, aplicar, normalizarAjustes, tipoDe, destinoValido, deshacer, lotes, vencidos, motivoBasura, esProtegido,
          tieneMarcaDeCopia, elegirQueQueda, PAPELERA,
@@ -833,6 +834,78 @@ pruebaA("un pedido desde la pantalla llega a quien lo envía, y vacío no", asyn
     assert.equal((await pedirA(I, { ruta: "/pedido", metodo: "POST", cuerpo: { texto: "  " } })).status, 500);
     assert.equal((await pedirA(I, { ruta: "/pedido", metodo: "POST", cuerpo: { texto: "x" }, origen: "https://malo.com" })).status, 403);
   } finally { i.servidor.close(); }
+});
+
+/* ── WhatsApp: leer para preparar respuestas ────────────────────────────── */
+titulo("WhatsApp");
+
+const NOTIS = [
+  { packageName: "com.whatsapp", title: "Ana (huésped)", content: "¿A qué hora es el check-in?", when: "10:01" },
+  { packageName: "com.whatsapp", title: "WhatsApp", content: "3 mensajes de 2 chats", when: "10:01" },
+  { packageName: "com.whatsapp", title: "Familia", content: "Flor: compro pan", lines: ["Flor: compro pan", "Juan: dale"], when: "10:02" },
+  { packageName: "com.whatsapp.w4b", title: "Cliente", content: "Hola", when: "10:03" },
+  { packageName: "com.android.chrome", title: "divinity.es", content: "spam", when: "10:04" },
+  { packageName: "com.whatsapp", title: "Pedro", content: "", when: "10:05" },
+];
+
+prueba("sólo WhatsApp (y Business), sin los resúmenes ni las vacías", () => {
+  const m = W.mensajesDe(NOTIS);
+  assert.deepEqual(m.map((x) => x.chat), ["Ana (huésped)", "Familia", "Cliente"]);
+  assert.equal(m[2].app, "business");
+  assert.deepEqual(m[1].lineas, ["Flor: compro pan", "Juan: dale"]);
+});
+
+prueba("lo ya visto no se manda dos veces, aunque WhatsApp le cambie la hora", () => {
+  const m1 = W.nuevos(W.mensajesDe(NOTIS), []);
+  const vistos = m1.map((x) => x.id);
+  const otraHora = NOTIS.map((n) => ({ ...n, when: "11:00" }));
+  assert.equal(W.nuevos(W.mensajesDe(otraHora), vistos).length, 0);
+  const masUno = [...NOTIS, { packageName: "com.whatsapp", title: "Ana (huésped)", content: "Llegamos 18 hs", when: "11:01" }];
+  assert.equal(W.nuevos(W.mensajesDe(masUno), vistos).length, 1);
+});
+
+prueba("una pasada guarda lo nuevo en la bodega y la segunda no repite", () => {
+  const b = bodegaDePrueba();
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  const vistos = path.join(armar({}), "vistos.json");
+  const ahora = new Date("2026-09-29T12:00:00Z");
+  const r1 = W.capturar({ leer: () => NOTIS, trabajo: b.trabajo, remoto: b.remoto, token: null, archivoVistos: vistos, ahora });
+  assert.equal(r1.nuevos, 3); assert.equal(r1.subido, true);
+  const r2 = W.capturar({ leer: () => NOTIS, trabajo: b.trabajo, remoto: b.remoto, token: null, archivoVistos: vistos, ahora });
+  assert.equal(r2.nuevos, 0);
+  g(["pull", "-q"], b.chat);
+  const subidos = JSON.parse(fs.readFileSync(path.join(b.chat, "mensajes", "2026-09-29.json"), "utf8"));
+  assert.equal(subidos.length, 3);
+  assert.ok(!JSON.stringify(subidos).includes("divinity"), "se coló otra app");
+});
+
+prueba("si no se puede guardar, no se marca como visto (se reintenta)", () => {
+  const vistos = path.join(armar({}), "vistos.json");
+  assert.throws(() => W.capturar({ leer: () => NOTIS, trabajo: armar({}), token: null,
+    remoto: "https://github.com/x/y.git", archivoVistos: vistos }));
+  assert.deepEqual(W.leerVistos(vistos), []);
+});
+
+prueba("los borradores se validan: sin texto no hay borrador, y el número son sólo dígitos", () => {
+  const t = armar({ "borradores.json": JSON.stringify([
+    { id: "b1", para: "Ana", texto: "El check-in es a las 14 hs.", numero: "+55 (48) 99999-0000" },
+    { id: "b2", para: "x", texto: "" },
+    { id: "b3", texto: "hola", numero: "javascript:alert(1)" },
+    "basura"]) });
+  const bs = W.borradores(t);
+  assert.deepEqual(bs.map((b) => b.id), ["b1", "b3"]);
+  assert.equal(bs[0].numero, "5548999990000");
+  assert.equal(bs[1].numero, "");
+  assert.ok(W.enlaceWhatsapp(bs[0]).startsWith("https://wa.me/5548999990000?text="));
+});
+
+pruebaA("la pantalla muestra los borradores que le pasan", async () => {
+  const i = crearInterfaz({ carpeta: armar({}), archivoAjustes: path.join(armar({}), "a.json"),
+    borradores: async () => [{ id: "b1", para: "Ana", texto: "Hola", numero: "" }] });
+  await new Promise((ok) => i.servidor.listen(0, "127.0.0.1", ok));
+  const I = { ...i, puerto: i.servidor.address().port };
+  try { assert.equal((await pedirA(I)).json.borradores[0].para, "Ana"); }
+  finally { i.servidor.close(); }
 });
 
 for (const [n, f] of pruebasAsync) {

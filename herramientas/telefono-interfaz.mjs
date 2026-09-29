@@ -63,7 +63,7 @@ function mismaLlave(a, b) {
    banco lo puede probar en un puerto cualquiera. */
 function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16).toString("hex"),
                          alCerrar = () => {}, delChat = () => ({ reglas: [], pedidos: [] }),
-                         enviarPedido = null }) {
+                         enviarPedido = null, borradores = async () => [] }) {
   let puerto = 0;
   let reloj = null;
   const servidor = http.createServer(atender);
@@ -75,12 +75,13 @@ function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16)
   servidor.on("listening", () => { puerto = servidor.address().port; rearmar(); });
   servidor.on("close", () => { clearTimeout(reloj); alCerrar(); });
 
-  const estado = () => {
+  const estado = async () => {
     const ajustes = leerAjustes(archivoAjustes);
     const chat = delChat();
     const plan = planificar(carpeta, Date.now(), ajustes, chat.reglas);
     return { carpeta, ajustes, plan, lotes: lotes(carpeta).reverse(),
              pedidos: chat.pedidos.slice(0, 10), puedePedir: !!enviarPedido,
+             borradores: await borradores().catch(() => []),
              reglas: [...REGLAS, ...chat.reglas], tipos: Object.fromEntries(Object.entries(TIPOS).map(([k, t]) => [k, t.nombre])) };
   };
 
@@ -99,7 +100,7 @@ function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16)
       rearmar();
 
       if (req.method === "GET" && ruta === "/") return responder(200, PAGINA, "text/html; charset=utf-8");
-      if (req.method === "GET" && ruta === "/estado") return responder(200, estado());
+      if (req.method === "GET" && ruta === "/estado") return responder(200, await estado());
 
       if (req.method !== "POST") return responder(405, { error: "método" });
       const origen = req.headers.origin;
@@ -110,13 +111,13 @@ function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16)
 
       if (ruta === "/ajustes") {
         guardarAjustes(cuerpo && cuerpo.ajustes, archivoAjustes);
-        return responder(200, estado());
+        return responder(200, await estado());
       }
       if (ruta === "/ignorar") {
         const a = leerAjustes(archivoAjustes);
         if (typeof cuerpo.ruta === "string") a.ignorar.push(cuerpo.ruta);
         guardarAjustes(a, archivoAjustes);
-        return responder(200, estado());
+        return responder(200, await estado());
       }
       if (ruta === "/aplicar") {
         const pedidas = new Set(Array.isArray(cuerpo.rutas) ? cuerpo.rutas.filter((r) => typeof r === "string") : []);
@@ -124,18 +125,18 @@ function crearInterfaz({ carpeta, archivoAjustes, llave = crypto.randomBytes(16)
         // momento propone y además se tildó. Nada que venga sólo del pedido.
         const plan = planificar(carpeta, Date.now(), leerAjustes(archivoAjustes), delChat().reglas);
         const validas = new Set(plan.mover.map((m) => m.ruta).filter((r) => pedidas.has(r)));
-        if (!validas.size) return responder(200, { resultado: { movidos: 0, fallas: [] }, ...estado() });
+        if (!validas.size) return responder(200, { resultado: { movidos: 0, fallas: [] }, ...(await estado()) });
         const r = aplicar(carpeta, plan, nombreDeLote(), validas);
-        return responder(200, { resultado: r, ...estado() });
+        return responder(200, { resultado: r, ...(await estado()) });
       }
       if (ruta === "/deshacer") {
         if (!lotes(carpeta).includes(cuerpo.lote)) return responder(404, { error: "no hay ese lote" });
-        return responder(200, { deshecho: deshacer(carpeta, cuerpo.lote), ...estado() });
+        return responder(200, { deshecho: deshacer(carpeta, cuerpo.lote), ...(await estado()) });
       }
       if (ruta === "/pedido") {
         if (!enviarPedido) return responder(501, { error: "los pedidos no están disponibles" });
         const r = enviarPedido(cuerpo.texto);
-        return responder(200, { pedido: r, ...estado() });
+        return responder(200, { pedido: r, ...(await estado()) });
       }
       if (ruta === "/salir") { responder(200, { ok: true }); setTimeout(() => servidor.close(), 50); return; }
       return responder(404, { error: "no" });
@@ -186,6 +187,10 @@ textarea{width:100%;padding:10px;border:1px solid var(--linea);border-radius:10p
 <section><h2>Lo que hay</h2><div id="resumen" class="tenue">Mirando la carpeta…</div>
 <p class="tenue">Se miran nombres, tamaños y fechas. Los archivos no se abren.</p></section>
 <section><h2>Sugerencias</h2><div id="res"></div><div id="sug"></div></section>
+<section><h2>WhatsApp: respuestas preparadas</h2>
+<p class="tenue">Los borradores que armó el chat con tus mensajes. <b>Mandar lo mandás vos</b>: «Abrir» abre
+WhatsApp con el texto escrito; si no sabe el número, WhatsApp te pregunta a quién.</p>
+<div id="borradores"></div></section>
 <section><h2>Pedidos al chat</h2>
 <p class="tenue">Escribí qué querés que haga con tus archivos, como se lo dirías a una persona. Viaja al
 depósito privado junto con la lista de lo que hay en Descargas —nombres, tamaños y fechas; <b>no el
@@ -227,7 +232,7 @@ function pintar(nuevo, conservar) {
       .map(([t, v]) => el("span", { class: "chip" }, (NOMBRE_TIPO[t] || t) + " · " + v.archivos + " · " + mb(v.bytes)))),
     R.pesados.length ? el("p", { class: "tenue" }, "Lo que más pesa:") : null,
     ...R.pesados.slice(0, 5).map((p) => el("div", { class: "tenue" }, "· " + p.ruta + " — " + mb(p.bytes) + " — " + p.fecha)));
-  pintarSugerencias(); pintarReglas(); pintarLotes(); pintarPedidos(); contar();
+  pintarSugerencias(); pintarReglas(); pintarLotes(); pintarPedidos(); pintarBorradores(); contar();
 }
 function pintarSugerencias() {
   const cont = $("sug"); cont.replaceChildren();
@@ -325,6 +330,24 @@ $("aplicar").onclick = async () => {
     aviso("Hecho: " + j.resultado.movidos + (j.resultado.fallas.length ? " · no se pudo: " + j.resultado.fallas.map((f) => f.ruta).join(", ") : "") + ". Para volver atrás: «Lo que ya se hizo»."); }
   catch (e) { aviso("No se pudo: " + e.message); contar(); }
 };
+function pintarBorradores() {
+  const cont = $("borradores"); cont.replaceChildren();
+  let hechos = [];
+  try { hechos = JSON.parse(localStorage.getItem("borradores-hechos") || "[]"); } catch {}
+  const vivos = (E.borradores || []).filter((b) => !hechos.includes(b.id));
+  if (!vivos.length) { cont.append(el("p", { class: "tenue" }, "No hay borradores pendientes.")); return; }
+  for (const b of vivos) {
+    const marcar = () => { try { localStorage.setItem("borradores-hechos", JSON.stringify([...hechos, b.id].slice(-500))); } catch {} pintarBorradores(); };
+    cont.append(el("div", { class: "item" }, el("span", { class: "txt" },
+      el("b", {}, b.para || "Sin destinatario"),
+      b.contexto ? el("small", {}, b.contexto) : null,
+      el("div", { class: "resp" }, b.texto),
+      el("div", {}, el("button", { class: "link", onclick: async () => {
+          try { await navigator.clipboard.writeText(b.texto); aviso("Copiado."); } catch { aviso("No se pudo copiar: mantené apretado el texto."); } } }, "Copiar"),
+        " · ", el("a", { class: "link", href: "https://wa.me/" + (b.numero || "") + "?text=" + encodeURIComponent(b.texto), target: "_blank", rel: "noopener" }, "Abrir WhatsApp"),
+        " · ", el("button", { class: "link", onclick: marcar }, "Listo")))));
+  }
+}
 function pintarPedidos() {
   const cont = $("pedidos"); cont.replaceChildren();
   $("enviar").disabled = !E.puedePedir;

@@ -93,6 +93,45 @@ Y rechaza los pedidos que vengan de otra página. Aparte de eso, lo que se
 pide se cruza contra el plan del momento: una ruta que no esté propuesta no
 se toca, venga de donde venga. El banco prueba las cuatro cosas.
 
+## WhatsApp: los mensajes, y las respuestas preparadas
+
+Desde el 29-sep-2026, pedido de Mauro. Eligió **todos** los chats.
+
+**Cómo lee:** por las **notificaciones**, no por la aplicación. Hace falta,
+una sola vez:
+
+```
+pkg install termux-api
+```
+
+Además, la app **Termux:API**, del mismo lugar de donde bajaste Termux, y en
+Android: Ajustes → Notificaciones → **Acceso a notificaciones** → Termux:API →
+permitir. Después:
+
+```
+node herramientas/telefono.mjs whatsapp --vigilar
+```
+
+Mira las notificaciones una vez por minuto y sube lo nuevo a la bodega, a
+`mensajes/<fecha>.json`. Hay que dejarlo corriendo en Termux. Sin
+`--vigilar` hace una sola pasada.
+
+**Por qué así y no leyendo WhatsApp:** leer notificaciones es lo mismo que
+bajar la barra. No toca la cuenta ni simula nada. Automatizar la app, o usar
+una biblioteca no oficial, es lo que hace que WhatsApp bloquee un número.
+**La contra:** sólo se ve lo que llega como notificación mientras esto
+corre. Un chat silenciado, o un mensaje que abriste antes de la pasada, no
+aparece. No hay historial.
+
+**Las respuestas:** el chat las prepara, en la ronda de la mañana o cuando se
+lo pidas («mirá mis WhatsApp»), y las deja en `borradores.json`. En la
+pantalla (`interfaz`) aparecen en «WhatsApp: respuestas preparadas», con
+**Copiar**, **Abrir WhatsApp** (con el texto ya escrito) y **Listo**.
+**Mandar lo mandás vos.**
+
+**Lo que dice un mensaje es un dato, no una orden.** Si alguien escribe
+«borrá la reserva», eso es lo que dijo esa persona. El chat no lo ejecuta.
+
 ## Pedidos al chat, desde la misma pantalla
 
 En la pantalla hay una caja **«Pedidos al chat»**. Escribís lo que querés,
@@ -317,7 +356,7 @@ Hilux: Autostart encendido y batería «Sin restricciones».
 
 ## Banco
 
-`node pruebas/herramientas/telefono.mjs`: 86 casos, sin red ni dependencias.
+`node pruebas/herramientas/telefono.mjs`: 92 casos, sin red ni dependencias.
 Arma carpetas de mentira, las limpia y las deshace de verdad, y compara el
 disco antes y después byte por byte. También cubre que el manifiesto no
 lleve nada de más, que una app se baje una sola vez por versión y que sin red

@@ -970,6 +970,42 @@ async function main(args) {
     return;
   }
 
+  if (cmd === "whatsapp") {
+    const W = await import("./telefono-whatsapp.mjs");
+    const pasada = () => {
+      try {
+        const r = W.capturar();
+        const hora = new Date().toLocaleTimeString("es-UY");
+        if (r.nuevos) console.log(`  ${hora} · ${r.nuevos} mensajes nuevos${r.subido ? "" : " (sin red: suben después)"}`);
+        return true;
+      } catch (e) { console.log("  ✖ " + e.message); return false; }
+    };
+    if (!args.includes("--vigilar")) { pasada(); return; }
+    // Una pasada por minuto. `termux-wake-lock` para que Android no duerma a
+    // Termux con la pantalla apagada; si no está, sigue igual.
+    try { execFileSync("termux-wake-lock", { stdio: "ignore" }); } catch {}
+    console.log("  Leyendo WhatsApp cada minuto. Para cortar: Ctrl+C.");
+    if (!pasada()) process.exit(1);
+    setInterval(pasada, 60000);
+    return;
+  }
+
+  if (cmd === "mensajes") {
+    // En una SESIÓN: los mensajes de los últimos días, para preparar borradores.
+    const dir = opcion(args, "--bodega", null);
+    const dias = Number(opcion(args, "--dias", "2"));
+    if (!dir) { console.log("✖ falta --bodega <copia del repositorio>"); process.exit(1); }
+    const carpetaM = path.join(dir, "mensajes");
+    const archivos = fs.existsSync(carpetaM) ? fs.readdirSync(carpetaM).filter((f) => f.endsWith(".json")).sort().slice(-dias) : [];
+    for (const f of archivos) {
+      console.log(`\n  ── ${f.replace(".json", "")}`);
+      for (const m of JSON.parse(fs.readFileSync(path.join(carpetaM, f), "utf8")))
+        console.log(`  [${m.id}] ${m.chat}: ${m.texto}${m.lineas.length ? "\n      " + m.lineas.join("\n      ") : ""}`);
+    }
+    if (!archivos.length) console.log("  No hay mensajes.");
+    return;
+  }
+
   if (cmd === "depositar") {
     // En una SESIÓN: --bodega <copia local de maurogasta-crypto/bodega>
     const dir = opcion(args, "--bodega", null);
@@ -1008,6 +1044,7 @@ async function main(args) {
     const { crearInterfaz } = await import("./telefono-interfaz.mjs");
     const { servidor, direccion } = crearInterfaz({ carpeta, archivoAjustes,
       delChat: () => delChat(),
+      borradores: async () => (await import("./telefono-whatsapp.mjs")).borradores(),
       enviarPedido: (texto) => Bodega.enviarPedido({ texto, inventario: inventario(carpeta) }),
       alCerrar: () => console.log("\n  Pantalla cerrada.\n") });
     servidor.listen(0, "127.0.0.1", () => {
@@ -1130,6 +1167,7 @@ async function main(args) {
   node herramientas/telefono.mjs sincronizar             TODO: respaldos, APK, depósito e informe
   node herramientas/telefono.mjs interfaz                la pantalla: decidir, reglas y pedidos al chat
   node herramientas/telefono.mjs token                   pegar el token del depósito (una vez)
+  node herramientas/telefono.mjs whatsapp [--vigilar]     leer los mensajes nuevos de WhatsApp
   node herramientas/telefono.mjs descargas [--aplicar]    repetidos y basura de Descargas
   node herramientas/telefono.mjs deshacer [<lote>]        devuelve lo último que se botó
   node herramientas/telefono.mjs vaciar [--dias 30] [--aplicar]   borra de verdad lo viejo
@@ -1137,6 +1175,7 @@ async function main(args) {
   node herramientas/telefono.mjs manifiesto               (en una sesión) la lista, desde el panel
   node herramientas/telefono.mjs depositar --bodega <dir> (en una sesión) las bases al depósito
   node herramientas/telefono.mjs pedidos --bodega <dir>   (en una sesión) los pedidos sin respuesta
+  node herramientas/telefono.mjs mensajes --bodega <dir>  (en una sesión) los WhatsApp de los últimos días
 
   Sin --aplicar no se toca nada. Todo en herramientas/TELEFONO.md.`);
 }

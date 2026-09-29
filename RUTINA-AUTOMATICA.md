@@ -8,6 +8,19 @@ por él: le baja el costo de decidir.
 Hoy hay una, la **Ronda de control diaria**. Este documento describe el proceso
 entero para que la siguiente se arme igual y no haya que volver a razonarlo.
 
+
+> **Desde el 29-sep-2026 la ronda corre en el chat de Mauro, y es UNA.**
+> Lo pidió él: «quiero que las rutinas pasen a correr exclusivamente en este
+> chat trayendo todos los protocolos que desarrollamos, y continuar unificada
+> en un solo lugar». La rutina nueva es «Ronda diaria unificada (en el chat de
+> Mauro)», a las 07:47 de Montevideo, y suma a la ronda de siempre dos pasos:
+> **los pedidos del teléfono** (`telefono.mjs pedidos`) y **el respaldo de
+> todas las bases a la bodega** (`telefono.mjs depositar`). La ronda vieja
+> quedó PAUSADA (no borrada, para conservar su historial de corridas) y la
+> rutina suelta de respaldo, borrada: ahora es un paso de la unificada.
+> Lo que sigue abajo vale igual; donde dice «la sesión con los repos
+> adjuntos», ahora es esa conversación, con los repos en `/home/user`.
+
 ---
 
 ## 1 · Lo primero, porque es lo que motivó todo: no cuesta nada aparte

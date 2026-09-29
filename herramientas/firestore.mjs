@@ -219,12 +219,12 @@ const PROYECTOS = {
        lo escribe en `propuestas` y una persona lo aprueba desde la app. */
     colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
                   "bloques", "movimientos", "recurrentes", "propuestas", "auditoria",
-                  "_historial"],
-    /* No hay `reportes` de nadie: lo que la ronda cuenta para saber que la
-       base está viva son las sesiones del cronómetro. Sólo se cuentan, no se
-       cruzan con los pendientes. */
-    reportesSon: "sesiones",
-    coleccionVigilada: "sesiones",
+                  "reportes", "_historial"],
+    /* Desde app-5 (29-sep-2026) `tiempos` SÍ tiene reportes: el globo 💡 de
+       la app escribe sugerencias y fallas en `reportes/`, con la forma de los
+       sitios (`tipo` pedido/falla). Hasta entonces se vigilaban las
+       `sesiones`, sólo para saber que la base estaba viva; ahora se cruza
+       como cualquier sitio y cada uno entra como pendiente del panel. */
     selladas: ["agendas"],
     historial: true
   },

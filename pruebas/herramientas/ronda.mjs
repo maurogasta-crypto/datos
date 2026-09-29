@@ -232,10 +232,10 @@ prueba("se ENTRA a todas las bases menos el panel, diga lo que diga", () => {
     Object.keys(PROYECTOS).filter((x) => x !== "panel").sort());
 });
 
-prueba("tiempos se cuenta por sus sesiones y no se cruza: no tiene reportes de nadie", () => {
-  assert.equal(COLECCION_VIGILADA("tiempos"), "sesiones");
+prueba("tiempos se cruza como un sitio desde app-5: su globo 💡 escribe en reportes", () => {
+  assert.equal(COLECCION_VIGILADA("tiempos"), "reportes");
   assert.equal(COLECCION_VIGILADA("remate"), "reportes");
-  assert.ok(!CON_REPORTES.includes("tiempos"));
+  assert.ok(CON_REPORTES.includes("tiempos"));
   assert.ok(BASES_CON_REPORTES.includes("tiempos"));
 });
 

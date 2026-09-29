@@ -97,9 +97,10 @@ import { PROYECTOS, entrar, entrarSuave, deFirestore, escribir, borrar } from ".
    «reportes nuevos»: nadie reportó nada. El que no declara nada guarda
    fallas, que es lo que vale para los tres sitios, y sigue entrando solo. */
 const QUE_GUARDA = (p) => (PROYECTOS[p] && PROYECTOS[p].reportesSon) || "fallas";
-/* Y QUÉ colección se cuenta. Casi siempre `reportes`; `tiempos` (29-sep-2026)
-   no tiene reportes de nadie, y lo que dice que la base está viva son sus
-   `sesiones`. Se declara al lado de `reportesSon`, en PROYECTOS. */
+/* Y QUÉ colección se cuenta. Casi siempre `reportes`; una base que no tenga
+   la declara al lado de `reportesSon`, en PROYECTOS. (`tiempos` vigiló sus
+   `sesiones` hasta app-5, el mismo 29-sep-2026: ahora tiene su globo 💡 y sus
+   `reportes`, y se cruza como cualquier sitio.) */
 const COLECCION_VIGILADA = (p) => (PROYECTOS[p] && PROYECTOS[p].coleccionVigilada) || "reportes";
 const BASES_CON_REPORTES = Object.keys(PROYECTOS).filter((p) => p !== "panel");
 const CON_REPORTES = BASES_CON_REPORTES.filter((p) => QUE_GUARDA(p) === "fallas");

@@ -189,7 +189,7 @@ await prueba("y si están los dos pares, gana el nombre bueno", () => {
    corresponda. */
 // `tiempos` tampoco sella por colección: lo personal es por CAMPO (una tarea
 // «personal»), y eso sólo lo puede cortar la regla, no una lista.
-const SIN_NADA_QUE_SELLAR = new Set(["hilux", "tiempos"]);
+const SIN_NADA_QUE_SELLAR = new Set(["hilux"]);
 
 await prueba("las seis bases están, y ninguna comparte projectId con otra", () => {
   const ids = Object.values(PROYECTOS).map((p) => p.projectId);

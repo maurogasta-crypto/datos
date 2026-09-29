@@ -210,13 +210,18 @@ const PROYECTOS = {
     /* `tareas` no está: el agente sólo puede leer las COMUNES, y listar la
        colección entera la regla lo rechaza (no puede probar que no hay una
        personal adentro). Respaldarlas pide una consulta filtrada; pendiente. */
-    colecciones: ["miembros", "solicitudes", "sesiones", "_historial"],
+    /* v3 de las reglas (app-3, 29-sep-2026): lo cotidiano (`dias`), con quién
+       están los chicos (`familia`, `turnos`) y sus actividades (`eventos`).
+       Todo eso lo ven los dos y el agente. La agenda de cada uno (`agendas`)
+       NO: es de su dueño, y la regla se la niega al agente. */
+    colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
+                  "_historial"],
     /* No hay `reportes` de nadie: lo que la ronda cuenta para saber que la
        base está viva son las sesiones del cronómetro. Sólo se cuentan, no se
        cruzan con los pendientes. */
     reportesSon: "sesiones",
     coleccionVigilada: "sesiones",
-    selladas: [],
+    selladas: ["agendas"],
     historial: true
   },
 

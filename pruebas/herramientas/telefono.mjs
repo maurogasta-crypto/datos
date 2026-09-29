@@ -17,7 +17,9 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { planificar, aplicar, deshacer, lotes, vencidos, motivoBasura, esProtegido,
-         tieneMarcaDeCopia, elegirQueQueda, PAPELERA } from "../../herramientas/telefono.mjs";
+         tieneMarcaDeCopia, elegirQueQueda, PAPELERA,
+         manifiestoDesde, leerManifiesto, hayQueBajar, rotar, actualizarApks, informeHtml
+       } from "../../herramientas/telefono.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => {
@@ -285,6 +287,150 @@ prueba("una carpeta que no es un lote no se toca", () => {
   const r = armar({ [`${PAPELERA}/20200101-000000/cosa.txt`]: "x" });
   assert.deepEqual(vencidos(r, 30), []);
 });
+
+/* ── El manifiesto: lo que el panel dice que hay que tener ──────────────── */
+titulo("El manifiesto sale del panel y no lleva nada de más");
+
+const PANEL = [
+  { id: "hilux", nombre: "SITD-Hilux", app: { apiKey: "X", mail: "m@x" }, acceso: { base: "b" },
+    empaquetado: { secretos: ["FIRMA_JKS"] },
+    sitio: { repo: "maurogasta-crypto/sitd-hilux",
+             url: "https://github.com/maurogasta-crypto/sitd-hilux/releases/tag/ultimo",
+             descarga: "https://github.com/maurogasta-crypto/sitd-hilux/releases/download/ultimo/sitd-hilux.apk",
+             resumen: "app" } },
+  { id: "panel", nombre: "Panel", sitio: { repo: "maurogasta-crypto/datos", url: "https://x.github.io/datos/" } },
+  { id: "datos", nombre: "datos", sitio: { repo: "maurogasta-crypto/datos" } },
+  { id: "raro", sitio: { repo: "no es un repo; rm -rf", url: "javascript:alert(1)", descarga: "http://x/a.apk" } },
+  { id: "nada" },
+];
+
+prueba("sólo viajan los campos públicos: ni app, ni acceso, ni empaquetado", () => {
+  const texto = JSON.stringify(manifiestoDesde(PANEL));
+  for (const x of ["apiKey", "m@x", "acceso", "FIRMA_JKS", "empaquetado"]) assert.ok(!texto.includes(x), x);
+});
+
+prueba("cada proyecto trae sólo las claves conocidas", () => {
+  for (const p of manifiestoDesde(PANEL).proyectos)
+    assert.deepEqual(Object.keys(p).sort(), ["apk", "id", "nombre", "repo", "respaldar", "resumen", "url"]);
+});
+
+prueba("un repositorio compartido (panel y datos) se respalda UNA vez", () => {
+  const m = manifiestoDesde(PANEL).proyectos.filter((p) => p.repo === "maurogasta-crypto/datos");
+  assert.equal(m.length, 2);
+  assert.equal(m.filter((p) => p.respaldar).length, 1);
+});
+
+prueba("lo que no es un repo, una dirección https o un .apk https no entra", () => {
+  const m = manifiestoDesde(PANEL).proyectos;
+  assert.ok(!m.some((p) => p.id === "raro"));
+  assert.ok(!m.some((p) => p.id === "nada"));
+});
+
+prueba("una app cuya dirección es la página del release no figura como sitio", () => {
+  const h = manifiestoDesde(PANEL).proyectos.find((p) => p.id === "hilux");
+  assert.equal(h.url, null);
+  assert.ok(h.apk.endsWith(".apk"));
+});
+
+prueba("el bodega.json del repositorio se lee y cumple la misma forma", () => {
+  const m = leerManifiesto();
+  assert.ok(m.proyectos.length > 0);
+  for (const p of m.proyectos)
+    assert.deepEqual(Object.keys(p).sort(), ["apk", "id", "nombre", "repo", "respaldar", "resumen", "url"]);
+});
+
+/* ── APK al día ─────────────────────────────────────────────────────────── */
+titulo("Lo último para instalar");
+
+const REM = { url: "https://x/a.apk", bytes: 10, fecha: "2026-09-28T00:00:00.000Z", huella: "e1" };
+
+prueba("sin copia de acá, se baja", () => assert.equal(hayQueBajar(REM, REM, null), true));
+prueba("igual que la última vez, no se baja", () =>
+  assert.equal(hayQueBajar(REM, REM, { bytes: 10 }), false));
+prueba("mismo nombre pero otra huella —el release «ultimo» reemplazado—, se baja", () =>
+  assert.equal(hayQueBajar(REM, { ...REM, huella: "e2" }, { bytes: 10 }), true));
+prueba("una bajada cortada (otro tamaño acá), se vuelve a bajar", () =>
+  assert.equal(hayQueBajar(REM, REM, { bytes: 4 }), true));
+
+prueba("rotar deja las DOS anteriores más nuevas y nunca toca la de otro proyecto", () => {
+  const r = armar({ "anteriores/hilux-2026-09-01.apk": "1", "anteriores/hilux-2026-09-10.apk": "2",
+                    "anteriores/otra-2020-01-01.apk": "z", "hilux.apk": "3" });
+  rotar(r, "hilux", { fecha: "2026-09-20T00:00:00Z" });
+  assert.deepEqual(fs.readdirSync(path.join(r, "anteriores")).sort(),
+    ["hilux-2026-09-10.apk", "hilux-2026-09-20.apk", "otra-2020-01-01.apk"]);
+  assert.equal(fs.existsSync(path.join(r, "hilux.apk")), false);
+});
+
+const MAN = { generado: "hoy", proyectos: [
+  { id: "hilux", nombre: "Hilux", repo: "a/b", respaldar: true, url: null, apk: "https://x/a.apk", resumen: "" },
+  { id: "sitio", nombre: "Sitio", repo: "a/c", respaldar: true, url: "https://s/", apk: null, resumen: "" } ] };
+
+async function correrApks(dest, remoto, contenido = "APK") {
+  let bajadas = 0;
+  const filas = await actualizarApks(MAN, dest, {
+    consultar: async () => { if (remoto instanceof Error) throw remoto; return remoto; },
+    bajar: async (u, d) => { bajadas++; fs.writeFileSync(d, contenido); return contenido.length; } });
+  return { filas, bajadas };
+}
+
+const pruebasAsync = [];
+const pruebaA = (n, f) => pruebasAsync.push([n, f]);
+
+pruebaA("la primera vez baja; la segunda, igual, no; con versión nueva baja y guarda la anterior", async () => {
+  const d = armar({});
+  const r1 = { ...REM, bytes: 3 };
+  let x = await correrApks(d, r1);
+  assert.equal(x.bajadas, 1); assert.equal(x.filas.length, 1); assert.equal(x.filas[0].nueva, true);
+  x = await correrApks(d, r1);
+  assert.equal(x.bajadas, 0); assert.equal(x.filas[0].nueva, false);
+  x = await correrApks(d, { ...r1, huella: "nueva" }, "NEW");
+  assert.equal(x.bajadas, 1);
+  assert.equal(fs.readFileSync(path.join(d, "Instalar", "hilux.apk"), "utf8"), "NEW");
+  assert.equal(fs.readdirSync(path.join(d, "Instalar", "anteriores")).length, 1);
+});
+
+pruebaA("sin red, la copia que ya estaba NO se borra y se dice", async () => {
+  const d = armar({});
+  await correrApks(d, { ...REM, bytes: 3 });
+  const x = await correrApks(d, new Error("sin red"));
+  assert.equal(x.filas[0].error, "sin red");
+  assert.equal(x.filas[0].tieneCopia, true);
+  assert.equal(fs.readFileSync(path.join(d, "Instalar", "hilux.apk"), "utf8"), "APK");
+});
+
+pruebaA("un sitio sin descarga no pregunta nada", async () => {
+  const d = armar({});
+  const x = await correrApks(d, REM);
+  assert.ok(!x.filas.some((f) => f.id === "sitio"));
+});
+
+/* ── El informe ─────────────────────────────────────────────────────────── */
+titulo("El informe");
+
+prueba("un nombre de archivo con HTML adentro se muestra, no se ejecuta", () => {
+  const h = informeHtml({ fecha: "hoy", man: MAN, apks: [], repos: [], deposito: { archivos: 0, bytes: 0 },
+    plan: { archivos: 1, carpetas: 0, avisos: [],
+            mover: [{ ruta: "<img src=x onerror=alert(1)>.pdf", tipo: "archivo", motivo: "repetido", bytes: 1 }] } });
+  assert.ok(!h.includes("<img src=x"));
+  assert.ok(h.includes("&lt;img src=x"));
+});
+
+prueba("no pide nada de afuera: ni scripts ni letras", () => {
+  const h = informeHtml({ fecha: "hoy", man: MAN, apks: [], repos: [], plan: null, deposito: { archivos: 0, bytes: 0 } });
+  assert.ok(!/<script|<link/i.test(h));
+});
+
+prueba("dice que todavía no se movió nada, y cómo hacerlo", () => {
+  const h = informeHtml({ fecha: "hoy", man: MAN, apks: [], repos: [], deposito: { archivos: 0, bytes: 0 },
+    plan: { archivos: 2, carpetas: 0, avisos: [], mover: [{ ruta: "a (1).pdf", tipo: "archivo", motivo: "repetido", bytes: 1 }] } });
+  assert.ok(h.includes("no se movió nada"));
+  assert.ok(h.includes("descargas --aplicar"));
+});
+
+for (const [n, f] of pruebasAsync) {
+  try { await f(); pasadas++; console.log("  ✓ " + n); }
+  catch (e) { fallidas++; console.log("  ✗ " + n + "\n      " + e.message); }
+}
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);
 process.exit(fallidas ? 1 : 0);

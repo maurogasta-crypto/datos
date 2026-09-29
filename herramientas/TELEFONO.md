@@ -1,12 +1,20 @@
 # El teléfono como bodega
 
 `herramientas/telefono.mjs`, desde el **29-sep-2026** (línea `L-telefono`).
-Corre en **Termux**, en el Redmi 15. Hace dos cosas:
+Corre en **Termux**, en el Redmi 15. Hace cuatro cosas y las cuenta todas en
+una página, `Respaldos/informe.html`, que se abre sola al terminar:
 
 1. **Limpiar Descargas.** Encuentra archivos y carpetas repetidos, y también
    basura. Los mueve a una papelera de la que se pueden devolver.
-2. **Guardar respaldos.** Baja al teléfono una copia al día de los seis
-   repositorios del ecosistema, con **todas** sus ramas.
+2. **Tener la última versión de cada app para instalar**, en
+   `Respaldos/Instalar/`, con un nombre fijo por app.
+3. **Guardar respaldos.** Baja al teléfono una copia al día de cada
+   repositorio del ecosistema, con **todas** sus ramas.
+4. **Un depósito**: `Respaldos/Deposito/`, donde lo que guardes no lo toca
+   ninguna limpieza.
+
+**La lista de proyectos sale del panel**, no está escrita en el código:
+ver «Sincronizado con el panel», más abajo.
 
 ## Por qué en el teléfono y no desde el chat
 
@@ -25,12 +33,30 @@ En Termux:
 
 ```
 termux-setup-storage          # tocá «Permitir»
+pkg upgrade                   # ANTES que nada: ver abajo
 pkg install nodejs git
 git clone https://github.com/maurogasta-crypto/datos
 cd datos
 ```
 
 Para tenerlo al día: `git pull` en esa carpeta.
+
+**`pkg upgrade` no es opcional, y se aprendió el primer día** (29-sep-2026).
+Instalar `nodejs` sin actualizar lo demás dejó al teléfono con un `node`
+nuevo y una biblioteca de cifrado vieja, y `node` no arrancaba:
+`CANNOT LINK EXECUTABLE "node": cannot locate symbol
+"OSSL_PROVIDER_add_conf_parameter"`. Termux no admite actualizaciones a
+medias. Si vuelve a aparecer ese mensaje, lo que se corre es `pkg upgrade`.
+
+## Todo de una vez
+
+```
+node herramientas/telefono.mjs sincronizar
+```
+
+Respalda los repositorios, trae las apps que tengan versión nueva, mira
+Descargas **sin tocar nada**, y abre el informe. Es lo que conviene correr
+todos los días, y lo que corre solo si se programa (más abajo).
 
 ## Limpiar Descargas
 
@@ -41,7 +67,8 @@ node herramientas/telefono.mjs deshacer               # devuelve lo último que 
 node herramientas/telefono.mjs vaciar --aplicar       # borra DE VERDAD lo de más de 30 días
 ```
 
-**Sin `--aplicar` no se toca nada.** Siempre conviene mirar primero.
+**Sin `--aplicar` no se toca nada.** Siempre conviene mirar primero: sin
+`--aplicar`, `descargas` también escribe el informe y lo abre.
 
 **Botar es mover, no borrar.** Todo va a `Download/_Papelera/<fecha-hora>/`.
 Cada lote lleva un `lote.json` que anota de dónde salió cada cosa y por qué.
@@ -79,10 +106,51 @@ alguno de esos adentro tampoco se mueve.
 Tampoco mira las carpetas ocultas (`.thumbnails` y parecidas, que son del
 sistema) ni sigue enlaces que lleven afuera de Descargas.
 
+## Lo último para instalar
+
+En `Respaldos/Instalar/` queda un APK por app, con un nombre fijo:
+`hilux.apk`, nunca «sitd-hilux (3).apk». Qué apps tienen APK **lo dice el
+panel**, con el campo `descarga` de la ficha del sitio, que es el mismo que
+dibuja el botón «Descargar». Una app nueva con su descarga cargada en el
+panel aparece sola.
+
+Para saber si hay versión nueva se le pregunta a la descarga misma, con un
+`HEAD`, y no a la API de GitHub. La API deja 60 consultas por hora sin
+cuenta y en la primera prueba contestó 403. La descarga dice su tamaño, su
+fecha y su huella, y alcanza con eso. El nombre no sirve para saber nada,
+porque el release `ultimo` de la Hilux se reemplaza entero con el mismo
+nombre en cada tanda.
+
+**La versión anterior no se tira**: pasa a `Instalar/anteriores/` con su
+fecha, y quedan las dos últimas. Si una tanda sale mal, la de ayer está ahí.
+Sin red, la que ya estaba se queda donde está y el informe lo dice.
+
+Instalar un APK sigue siendo un toque tuyo: se abre `hilux.apk` desde el
+administrador de archivos, o el botón «Instalar desde GitHub» del informe.
+
+## Sincronizado con el panel
+
+La lista de proyectos está en `herramientas/bodega.json`, que se genera
+desde `proyectos/` del panel:
+
+```
+node herramientas/telefono.mjs manifiesto      # en una SESIÓN, no en el teléfono
+```
+
+Viaja al teléfono con el `git pull` de `datos`. **El teléfono no guarda
+ninguna credencial del panel**, y es por eso que el camino da esa vuelta.
+De cada proyecto viajan sólo cuatro campos de `sitio`: el repositorio, la
+dirección del sitio, la descarga y el resumen, y todos ya son públicos. `app`,
+`acceso` y `empaquetado` no viajan, y el banco lo comprueba.
+
+**Cuándo se regenera:** en la misma tanda en que cambia `sitio` de un
+proyecto, o se da uno de alta. Las VERSIONES de las apps no dependen de
+esto: se preguntan en vivo en cada corrida.
+
 ## Guardar respaldos
 
 ```
-node herramientas/telefono.mjs respaldar
+node herramientas/telefono.mjs respaldar       # sólo esto; «sincronizar» ya lo incluye
 ```
 
 Deja en `Almacenamiento interno/Respaldos/`:
@@ -93,8 +161,10 @@ Deja en `Almacenamiento interno/Respaldos/`:
 | `repos/<nombre>-main.zip` | los archivos de la rama principal, para abrirlos sin git |
 | `ESTADO.txt` | cuándo se hizo, y de cada repositorio el último commit y cuántas ramas tiene |
 
-Los seis repositorios son públicos, así que **el teléfono no guarda ninguna
-credencial** para esto.
+Son los repositorios que el panel da de alta, cada uno una sola vez, aunque
+lo compartan dos proyectos, como el panel y `datos`. Son públicos, así que
+**el teléfono no guarda ninguna credencial** para esto. Uno que se vuelva
+privado sale con ✖ en el informe y los demás siguen.
 
 **Las ramas que se borran en GitHub siguen en el teléfono.** El espejo se
 actualiza sin podar a propósito. Así se contesta la duda de `datos:R6`: antes
@@ -113,8 +183,8 @@ bueno de ayer.
 pkg install cronie termux-services
 sv-enable crond
 crontab -e
-# y agregar esta línea, que respalda todos los días a las 4:17:
-17 4 * * * cd ~/datos && git pull -q && node herramientas/telefono.mjs respaldar
+# y agregar esta línea, que sincroniza todos los días a las 4:17:
+17 4 * * * cd ~/datos && git pull -q && node herramientas/telefono.mjs sincronizar --sin-abrir
 ```
 
 Para que HyperOS no mate a Termux, Termux necesita lo mismo que la app de la
@@ -126,12 +196,18 @@ Hilux: Autostart encendido y batería «Sin restricciones».
   Termux necesitaría la contraseña del usuario del agente, y eso es sumar un
   lugar más donde vive una credencial. Se decide aparte.
 - **El chat no lee lo que pasa en el teléfono.** Si querés que opine sobre
-  una limpieza, mandale lo que imprimió `descargas`.
+  una limpieza, mandale el informe o lo que imprimió `descargas`.
+- **El informe no tiene botones que ejecuten nada**: un archivo abierto en
+  el navegador no puede mover archivos del teléfono, y está bien que no
+  pueda. Dice qué se va a hacer y con qué comando.
 - **El iPad no entra**: en iOS no hay forma de que algo corra solo sobre la
   carpeta Descargas.
 
 ## Banco
 
-`node pruebas/herramientas/telefono.mjs`: 28 casos, sin red ni dependencias.
+`node pruebas/herramientas/telefono.mjs`: 45 casos, sin red ni dependencias.
 Arma carpetas de mentira, las limpia y las deshace de verdad, y compara el
-disco antes y después byte por byte.
+disco antes y después byte por byte. También cubre que el manifiesto no
+lleve nada de más, que una app se baje una sola vez por versión y que sin red
+no se pierda la copia. Y que el informe muestre un nombre de archivo con
+HTML adentro en vez de ejecutarlo.

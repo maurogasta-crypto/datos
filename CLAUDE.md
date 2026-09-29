@@ -212,7 +212,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
   falla**: si eso cambiara, los reportes viejos desaparecerían de la sección 3
-  sin que nadie lo note; `node pruebas/herramientas/telefono.mjs` (28 casos, sin
+  sin que nadie lo note; `node pruebas/herramientas/telefono.mjs` (45 casos, sin
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; y `pruebas/panel/banco.mjs` (con `npm install`
   una vez) para el panel entero. En `pruebas/casayourte/` hay dos más
@@ -395,6 +395,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   es `vaciar`; y claves de firma y bases de datos no se mueven nunca, aunque
   estén repetidas. **Un chat no puede entrar al teléfono**, así que lo que
   el teléfono hace lo hace él.
+  **Y desde el mismo día sigue al panel**: la lista de proyectos, sus
+  repositorios y la descarga de cada APK salen de `herramientas/bodega.json`,
+  que genera `node herramientas/telefono.mjs manifiesto` desde `proyectos/`.
+  **Si cambia `sitio` de un proyecto, o se da uno de alta, se regenera en la
+  misma tanda**: si no, el teléfono sigue con la lista vieja sin avisar.
 
 ## Protocolos
 

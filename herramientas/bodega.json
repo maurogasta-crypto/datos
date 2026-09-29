@@ -1,0 +1,86 @@
+{
+  "generado": "2026-09-29",
+  "proyectos": [
+    {
+      "id": "casaverde",
+      "nombre": "Casa Verde",
+      "repo": "casaverdecanas-blip/casaverdecanas",
+      "respaldar": true,
+      "url": "https://casaverdecanas.com.br",
+      "apk": null,
+      "resumen": "Sitio público y panel interno de Casa Verde Canas. El único con funciones de servidor propias, en Netlify, subidas a mano."
+    },
+    {
+      "id": "casayourte",
+      "nombre": "CasaYourte",
+      "repo": "casayourte/CasaYourte",
+      "respaldar": true,
+      "url": "https://casayourte.com/",
+      "apk": null,
+      "resumen": "Sitio público bilingüe, álbumes de obra y panel de Casa Yourte. Estático, sin build, todo en la raíz para poder editarlo del teléfono. Desde el 14-sep tiene un SITIO PILOTO (`?taller=1`) para rediseña"
+    },
+    {
+      "id": "datos",
+      "nombre": "datos · protocolos",
+      "repo": "maurogasta-crypto/datos",
+      "respaldar": true,
+      "url": null,
+      "apk": null,
+      "resumen": "Los cinco protocolos del ecosistema, públicos desde el 2026-09-12. Comparten repositorio con el panel: `protocolos/` es una carpeta adentro del repo que Pages publica."
+    },
+    {
+      "id": "gestos",
+      "nombre": "gestos",
+      "repo": "maurogasta-crypto/gestos",
+      "respaldar": true,
+      "url": "https://maurogasta-crypto.github.io/gestos/",
+      "apk": null,
+      "resumen": "Instrumento que se toca con las manos frente a la cámara del teléfono. Estático puro, sin build y sin una sola credencial. Es la copia publicada de lo que vive en `public/gestos/` de Harmonía."
+    },
+    {
+      "id": "harmonia",
+      "nombre": "Harmonía",
+      "repo": "toromboto/harmonia",
+      "respaldar": true,
+      "url": null,
+      "apk": null,
+      "resumen": "Diccionario armónico, entrenador de improvisación y colores tonales. El único con build (React + Vite) y el único sin terceros."
+    },
+    {
+      "id": "hilux",
+      "nombre": "SITD-Hilux",
+      "repo": "maurogasta-crypto/sitd-hilux",
+      "respaldar": true,
+      "url": null,
+      "apk": "https://github.com/maurogasta-crypto/sitd-hilux/releases/download/ultimo/sitd-hilux.apk",
+      "resumen": "Telemetría, odometría y diagnóstico mecánico de una Toyota Hilux 3.0 (1KD-FTV, 2008-2011). Aplicación Android hecha en Flutter, todo local y sin conexión. Es el primero del ecosistema con paso de comp"
+    },
+    {
+      "id": "panel",
+      "nombre": "Panel",
+      "repo": "maurogasta-crypto/datos",
+      "respaldar": false,
+      "url": "https://maurogasta-crypto.github.io/datos/",
+      "apk": null,
+      "resumen": "Este panel. Cascarón público, datos en Firestore. Es el único lugar donde se escriben las fichas, y no salen de acá."
+    },
+    {
+      "id": "partitura",
+      "nombre": "partitura",
+      "repo": "maurogasta-crypto/partitura",
+      "respaldar": true,
+      "url": null,
+      "apk": null,
+      "resumen": "Repositorio recién creado y VACÍO: al 2026-09-20 tiene un solo archivo, `Texto.txt`, de un byte. Todavía no hay código, ni sitio, ni documentación, ni se sabe qué va a ser. Está dado de alta acá para "
+    },
+    {
+      "id": "remate",
+      "nombre": "Rematetaller",
+      "repo": "rematetaller/remate",
+      "respaldar": true,
+      "url": "https://rematetaller.github.io/remate/",
+      "apk": null,
+      "resumen": "Catálogo por invitación y panel interno del remate. Estático, más una función en Vercel que prende las luces del depósito."
+    }
+  ]
+}

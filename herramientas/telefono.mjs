@@ -976,7 +976,7 @@ async function main(args) {
       try {
         const r = W.capturar();
         const hora = new Date().toLocaleTimeString("es-UY");
-        if (r.nuevos) console.log(`  ${hora} · ${r.nuevos} mensajes nuevos${r.subido ? "" : " (sin red: suben después)"}`);
+        if (r.nuevos) console.log(`  ${hora} · ${r.nuevos} mensajes nuevos${r.subido ? " · subidos" : " (no se pudieron subir: quedan guardados y suben en la próxima)"}`);
         return true;
       } catch (e) { console.log("  ✖ " + e.message); return false; }
     };
@@ -986,6 +986,13 @@ async function main(args) {
     // Termux con la pantalla apagada; si no está, sigue igual.
     try { execFileSync("termux-wake-lock", { stdio: "ignore" }); } catch {}
     console.log("  Leyendo WhatsApp cada minuto. Para cortar: Ctrl+C.");
+    // Lo que quedó sin subir de una vuelta anterior (un rechazo, un corte de
+    // red) sube ahora, sin esperar a que llegue un mensaje nuevo.
+    try {
+      const Bodega = await import("./telefono-bodega.mjs");
+      const token = Bodega.leerToken();
+      if (token) { Bodega.actualizarTrabajo({ remoto: `https://github.com/${Bodega.REPO_BODEGA}.git`, token }); console.log("  Bodega al día: lo pendiente subió."); }
+    } catch (e) { console.log("  (no se pudo poner al día la bodega todavía: " + String(e.message).split("\n")[0] + ")"); }
     if (!pasada()) process.exit(1);
     setInterval(pasada, 60000);
     return;

@@ -796,6 +796,20 @@ prueba("un pedido escrito sin red no se pierde: sube en la próxima", () => {
   assert.ok(fs.existsSync(path.join(b.chat, "pedidos", `${r.id}.json`)));
 });
 
+prueba("si el chat subió algo mientras tanto, el teléfono lo trae y sube igual (el caso del 29-sep)", () => {
+  const b = bodegaDePrueba();
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  // El chat sube algo que el teléfono no tiene.
+  fs.writeFileSync(path.join(b.chat, "borradores.json"), "[]");
+  g(["add", "-A"], b.chat); g(["commit", "-q", "-m", "del chat"], b.chat); g(["push", "-q"], b.chat);
+  const ok = Bodega.guardarYSubir({ ruta: "mensajes/2026-09-29.json", contenido: "[1]", mensaje: "WhatsApp: 1",
+    trabajo: b.trabajo, remoto: b.remoto, token: null });
+  assert.equal(ok, true);
+  g(["pull", "-q"], b.chat);
+  assert.ok(fs.existsSync(path.join(b.chat, "mensajes", "2026-09-29.json")), "el mensaje llegó");
+  assert.ok(fs.existsSync(path.join(b.trabajo, "borradores.json")), "y el teléfono tiene lo del chat");
+});
+
 prueba("sin token, contra GitHub no se intenta nada y se dice", () => {
   const r = Bodega.traerBodega({ trabajo: armar({}), destino: armar({}), token: null });
   assert.equal(r.sinToken, true);

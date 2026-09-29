@@ -130,9 +130,22 @@ function enviarPedido({ texto, inventario, trabajo = TRABAJO, token = leerToken(
     inventario: (inventario || []).slice(0, 3000) }, null, 2));
   git(["add", "pedidos"], trabajo);
   git([...IDENTIDAD, "commit", "-q", "-m", `Pedido del teléfono ${id}`], trabajo);
-  let subido = true;
-  try { git(["push", "-q"], trabajo); } catch { subido = false; }
-  return { id, subido };
+  return { id, subido: subir(git, trabajo) };
+}
+
+/* Subir, y si GitHub lo rechaza porque el chat subió algo mientras tanto,
+   traer eso primero y volver a subir. Hasta el 29-sep-2026 un rechazo así se
+   leía como «sin red»: el teléfono juntaba mensajes que no subían nunca,
+   porque la copia de trabajo sólo se ponía al día al crearse. `--rebase`
+   deja lo del teléfono arriba de lo del chat; los dos tocan archivos
+   distintos (el teléfono `mensajes/` y `pedidos/`, el chat lo demás). */
+function subir(git, trabajo) {
+  try { git(["push", "-q"], trabajo); return true; } catch { /* sigue */ }
+  try {
+    git([...IDENTIDAD, "pull", "-q", "--rebase"], trabajo);
+    git(["push", "-q"], trabajo);
+    return true;
+  } catch { return false; }
 }
 
 /* Escribe un archivo en la copia de trabajo, lo commitea y lo sube. Lo usan
@@ -148,7 +161,7 @@ function guardarYSubir({ ruta, contenido, mensaje, trabajo = TRABAJO, token = le
   fs.writeFileSync(abs, contenido);
   git(["add", ruta], trabajo);
   git([...IDENTIDAD, "commit", "-q", "-m", mensaje], trabajo);
-  try { git(["push", "-q"], trabajo); return true; } catch { return false; }
+  return subir(git, trabajo);
 }
 
 /* Los pedidos que hay en la copia de trabajo, del más nuevo al más viejo, con

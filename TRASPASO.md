@@ -238,3 +238,22 @@ Mauro; `claves/` del panel no se toca; lo personal de Tiempos es de cada uno;
 los `cierres` son inmutables; nombres de los chicos, mails y UID no entran a
 los repos públicos; y cuando el control de permisos frena algo, se le dice a
 Mauro y no se le busca la vuelta.
+
+## Después del traspaso (30-sep-2026, el mismo chat viejo)
+
+Mauro siguió acá un rato más. Quedó hecho y en `main`:
+
+- **Tiempos** app-8 a app-10 (sugerencias, balance en días, reglas v8). Ver
+  `CLAUDE.md` de tiempos; las reglas v8 hay que publicarlas desde el panel.
+- **remate: la foto del inventario le pregunta a Gemini** título, descripción,
+  categoría y un precio sugerido en Uruguay, como nuevo (`interno/identificar.js`
+  1.3). **La IA es `claude-proxy` de Casa Verde**, no una función propia; su v6
+  agrega la búsqueda de Google con `buscar: true`. Tanda
+  `2026-09-30-inventario-gemini` en el panel.
+- Pendientes que dejó para Mauro: `casaverde:D10` (subir el zip de Netlify),
+  `remate:I1` (probar con un artículo real) y `tiempos:A10` (¿las boletas se
+  cortan con `gemini-2.5-flash`?).
+
+**Ojo, para el chat nuevo:** el clasificador de permisos frena que el agente
+mande pedidos de prueba a `claude-proxy`. No lo esquives: la prueba en vivo la
+hace Mauro desde el inventario.

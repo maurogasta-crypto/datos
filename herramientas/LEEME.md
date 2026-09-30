@@ -277,7 +277,7 @@ Bases con gente: `casaverde`, `casayourte`, `remate` (`tiempos` va por
 `reservas.mjs llegadas --enviar --a <nombre>` usa esto para el aviso de cada
 llegada, y si no puede salir lo deja como borrador, como antes.
 
-Banco: `node pruebas/herramientas/avisos.mjs` (36 casos, sin npm ni red), que
+Banco: `node pruebas/herramientas/avisos.mjs` (37 casos, sin npm ni red), que
 además compara las reglas de los tres sitios cuando sus repositorios están al
 lado.
 

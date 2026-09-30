@@ -44,7 +44,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-export const VERSION = "avisos-1";
+export const VERSION = "avisos-2";
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /* La función de Netlify de Casa Verde es el puente de TODO el ecosistema. No se
@@ -125,9 +125,16 @@ export function armarMensaje(base, tema, texto, sobre) {
    navegador y no se puede importar desde acá—: CallMeBot contesta 200 aunque
    rechace el pedido, y mete el error como HTML rojo en el cuerpo. Si cambia
    una, cambia la otra: el banco compara las palabras que busca cada una. */
+/* CallMeBot repite en su respuesta el número al que mandó («Message to:
+   +55…»). Eso no puede llegar ni a la pantalla ni al registro: se tapa todo
+   número largo, dejando los tres últimos dígitos para poder reconocerlo.
+   Lo encontró la primera prueba real, el 30-sep-2026. */
+export const taparNumeros = (t) => String(t || "").replace(/\+?\d[\d\s().-]{6,}\d/g,
+  (m) => "…" + m.replace(/\D/g, "").slice(-3));
+
 export function leerRespuesta(txt) {
   const crudo = String(txt || "");
-  const plano = crudo.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const plano = taparNumeros(crudo.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
   const b = plano.toLowerCase();
   if (b.includes("paused") || b.includes("pausada"))
     return { ok: false, motivo: "pausada", detalle: "la cuenta de CallMeBot de esa persona está EN PAUSA: tiene que mandarle «resume» al bot desde su teléfono" };

@@ -49,7 +49,7 @@ const conexion = (niega = false) => ({ cfg: {}, sesion: {}, F: {
 } });
 
 /* El puente de mentira: anota lo que le llegó y contesta lo que se le diga. */
-let pedidos = [], respuesta = "Message queued. You will receive it in a few seconds.";
+let pedidos = [], respuesta = "Message to: +59899000111 Message queued. You will receive it in a few seconds.";
 globalThis.fetch = async (url, op = {}) => {
   pedidos.push({ url: String(url), body: JSON.parse(op.body || "{}") });
   return { ok: true, status: 200, json: async () => ({ ok: true, status: 200, respuesta }) };
@@ -121,6 +121,12 @@ await prueba("clave mala, sin alta, límite, y rojo genérico", () => {
   assert.equal(leerRespuesta("Too many requests").motivo, "limite");
   assert.equal(leerRespuesta('<b style="color:red">algo</b>').motivo, "rechazado");
   assert.equal(leerRespuesta("Message queued").ok, true);
+});
+await prueba("la respuesta de CallMeBot repite el número: se tapa antes de mostrarla o anotarla", () => {
+  const r = leerRespuesta("Message to: +554899990000 Text to send: hola Message queued.");
+  assert.ok(r.ok);
+  assert.ok(!/\d{5,}/.test(r.detalle), r.detalle);
+  assert.match(r.detalle, /…000/);
 });
 await prueba("busca las mismas señales que CV2._leerRespuestaWa de Casa Verde", () => {
   const f = path.join(AQUI, "..", "..", "..", "casaverdecanas", "interno", "nucleo.js");

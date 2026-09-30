@@ -94,7 +94,7 @@ Verde contestó que no, que es lo esperable hasta que se publiquen sus reglas.
 
 **Qué quedó hecho:**
 - `protocolos/PROTOCOLO-AVISOS.md`: los criterios (temas, forma, límites).
-- `herramientas/avisos.mjs` (banco de 36 casos) y `contactoAviso` en
+- `herramientas/avisos.mjs` (banco de 37 casos) y `contactoAviso` en
   `firestore.mjs`; `reservas.mjs llegadas --enviar --a <nombre>`.
 - Casa Verde: «Avisos de Claude» en Mis avisos (`avisos-6`) y el `get` del
   agente en las reglas. CasaYourte (`nucleo-25`) y remate (`utils.js` v1.17,

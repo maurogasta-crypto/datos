@@ -28,7 +28,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { avisar, taparNumeros, hoyMontevideo, validarTexto, LARGO_MAX } from "./avisos.mjs";
 
-export const VERSION = "novedades-2";
+export const VERSION = "novedades-3";
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 export const PANEL = "https://maurogasta-crypto.github.io/datos/";
 export const CV_INTERNO = "https://casaverdecanas.com.br/interno/";
@@ -112,6 +112,9 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
     if (ya("reportes", clave)) continue;
     anotar("reportes", clave);
     if (rp.estado && rp.estado !== "nuevo") continue;
+    // Lo que pidió la misma persona que recibe no es una novedad para ella
+    // (30-sep: la primera ronda le mandó a Mauro sus propios cinco pedidos).
+    if (para && String(rp.nombre || "").trim().toLowerCase() === para.toLowerCase()) continue;
     const tipo = rp.tipo === "pedido" ? "Pedido" : "Falla";
     items.push({ clase: "reporte", texto: `${tipo} en ${NOMBRE_BASE[rp.base] || rp.base}${rp.nombre ? ` (${limpiarParaAviso(rp.nombre, 20)})` : ""}: «${limpiarParaAviso(rp.texto, 60)}»` });
   }

@@ -295,7 +295,7 @@ teléfonos y mails antes de armar el mensaje.
 node herramientas/novedades.mjs [--a Mauro] [--seco] [--bodega <dir>]
 ```
 
-Banco: `node pruebas/herramientas/novedades.mjs` (17 casos, sin red).
+Banco: `node pruebas/herramientas/novedades.mjs` (18 casos, sin red).
 
 ## `ACCESO-A-LAS-BASES.md`
 

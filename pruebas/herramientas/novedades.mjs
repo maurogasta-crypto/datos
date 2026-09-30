@@ -74,6 +74,13 @@ prueba("pedidos y fallas de los sitios: sólo los nuevos, con el sitio y quién"
   const t = armarNovedades(d, v, HOY).items.map((i) => i.texto);
   assert.deepEqual(t, ["Pedido en CasaYourte (Romi): «Que las ofertas vayan antes»", "Falla en Casa Verde: «No carga el calendario»"]);
 });
+prueba("un pedido de la misma persona que recibe no se le avisa (y queda visto)", () => {
+  const v = armarNovedades(base, null, HOY).visto;
+  const d = { ...base, reportes: [{ base: "tiempos", id: "p9", tipo: "pedido", nombre: "Mauro", texto: "lista de compras", estado: "nuevo" }] };
+  const r = armarNovedades(d, v, HOY, { para: "Mauro" });
+  assert.equal(r.items.length, 0);
+  assert.ok(r.visto.reportes.includes("tiempos/p9"));
+});
 prueba("mensajes: por chat, sólo los que llegaron después del último aviso, y nunca los propios avisos", () => {
   const v = { ...vistoVacio(), mensajesHasta: "2026-09-30T10:00:00Z" };
   const d = { ...base, mensajes: [

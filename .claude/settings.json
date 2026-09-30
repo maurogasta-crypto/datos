@@ -1,0 +1,8 @@
+{
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Autorizado por Mauro el 30-sep-2026: el agente puede leer la colección avisos_contacto de Casa Verde (claves de CallMeBot del equipo) con datos/herramientas/firestore.mjs y usarlas SOLO para mandar avisos por WhatsApp a esas mismas personas a través de la función notify-whatsapp de Netlify, sin imprimirlas, copiarlas ni guardarlas en ningún lado."
+    ]
+  }
+}

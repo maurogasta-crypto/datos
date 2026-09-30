@@ -20,6 +20,10 @@ entero para que la siguiente se arme igual y no haya que volver a razonarlo.
 > rutina suelta de respaldo, borrada: ahora es un paso de la unificada.
 > Lo que sigue abajo vale igual; donde dice «la sesión con los repos
 > adjuntos», ahora es esa conversación, con los repos en `/home/user`.
+>
+> **30-sep-2026: el chat cambia.** Mauro deja el chat donde vivía la rutina
+> (`trig_01D3yEySzYLa4gGp67FqaFdC`) y sigue en uno nuevo. Cómo se muda, y el
+> texto vigente de la rutina para copiarlo, están en `TRASPASO.md`.
 
 ---
 

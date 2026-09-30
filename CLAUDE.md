@@ -1,5 +1,9 @@
 # panel de datos — CLAUDE.md
 
+> **Chat nuevo desde el 30-sep-2026: leé `TRASPASO.md` antes que nada.** Dice
+> qué quedó andando, qué quedó a medias (los avisos por CallMeBot) y cómo mudar
+> la rutina diaria a este chat.
+
 ## Qué es este proyecto
 
 Tablero personal de Mauro, transversal a los tres sitios: **qué está pendiente en

@@ -93,9 +93,15 @@ Y rechaza los pedidos que vengan de otra página. Aparte de eso, lo que se
 pide se cruza contra el plan del momento: una ruta que no esté propuesta no
 se toca, venga de donde venga. El banco prueba las cuatro cosas.
 
-## WhatsApp: los mensajes, y las respuestas preparadas
+## Airbnb: los mensajes, y las respuestas preparadas
 
-Desde el 29-sep-2026, pedido de Mauro. Eligió **todos** los chats.
+**Sólo Airbnb, desde el 30-sep-2026.** Del 29 al 30 se leyeron también todos
+los chats de WhatsApp; Mauro lo cortó: «los mensajes de Airbnb llegan por la
+app de Airbnb, no por WhatsApp; por el momento no preciso que se monitoree
+WhatsApp, y eso ahorrará mucho recurso cotidiano y disminuye riesgos». Las
+notificaciones de WhatsApp ya no se leen ni suben (`APP_DE` de
+`telefono-whatsapp.mjs`; el banco lo comprueba), y lo que había subido de
+WhatsApp esos dos días se sacó de la bodega.
 
 **Cómo lee:** por las **notificaciones**, no por la aplicación. Hace falta,
 una sola vez:
@@ -109,12 +115,20 @@ Android: Ajustes → Notificaciones → **Acceso a notificaciones** → Termux:A
 permitir. Después:
 
 ```
-node herramientas/telefono.mjs whatsapp --vigilar
+node herramientas/telefono.mjs airbnb --vigilar
 ```
 
-Mira las notificaciones una vez por minuto y sube lo nuevo a la bodega, a
-`mensajes/<fecha>.json`. Hay que dejarlo corriendo en Termux. Sin
-`--vigilar` hace una sola pasada.
+Mira las notificaciones cada **dos minutos** y sube lo nuevo de Airbnb a la
+bodega, a `mensajes/<fecha>.json`. Una notificación de Airbnb queda en la barra
+hasta que se abre, así que dos minutos no pierden nada que uno perdiera.
+Hay que dejarlo corriendo en Termux (o que arranque solo: abajo). Sin
+`--vigilar` hace una sola pasada. `whatsapp` sigue siendo un nombre válido del
+mismo comando, por los guiones viejos: lee lo mismo, sólo Airbnb.
+
+**El latido.** Mientras lee, el teléfono deja `latido.json` en la bodega al
+arrancar y cada 12 horas. Con sólo Airbnb puede pasar un día entero sin un
+mensaje, y eso se ve igual que un teléfono que dejó de leer: el latido es lo
+que los distingue. La ronda avisa si pasan 26 horas sin latido.
 
 **Que arranque solo** (30-sep-2026). `--vigilar` sólo lee mientras corre, y
 Android lo corta al reiniciar o cuando cierra Termux: ahí no llega nada y
@@ -129,10 +143,12 @@ al día (`git pull`) y arranca la lectura, y si se cae la vuelve a arrancar al
 minuto. Hace falta la app **Termux:Boot** (del mismo lugar que Termux),
 instalada y abierta una vez. Para arrancarlo ya, sin reiniciar:
 `sh ~/.termux/boot/bodega-vigilar.sh &`. Y si igual se calla, la ronda de la
-mañana lo nota: 24 horas sin una captura van como aviso por WhatsApp
-(`herramientas/novedades.mjs`).
+mañana lo nota: 26 horas sin latido van como aviso por WhatsApp
+(`herramientas/novedades.mjs`). **Si ya tenías el guion de antes, volvé a
+correr `arranque`**: el viejo decía `whatsapp`, que igual anda, pero así queda
+el nombre de ahora.
 
-**Por qué así y no leyendo WhatsApp:** leer notificaciones es lo mismo que
+**Por qué por notificaciones y no automatizando la app:** leer notificaciones es lo mismo que
 bajar la barra. No toca la cuenta ni simula nada. Automatizar la app, o usar
 una biblioteca no oficial, es lo que hace que WhatsApp bloquee un número.
 **La contra:** sólo se ve lo que llega como notificación mientras esto

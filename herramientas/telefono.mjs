@@ -991,19 +991,20 @@ async function main(args) {
       "git pull -q --ff-only >/dev/null 2>&1",
       // Si se cae, vuelve a arrancar al minuto: un corte de red o un error de
       // una pasada no pueden dejar el teléfono sin leer hasta el próximo reinicio.
-      `while true; do node herramientas/telefono.mjs whatsapp --vigilar >> "${log}" 2>&1; sleep 60; done`,
+      `while true; do node herramientas/telefono.mjs airbnb --vigilar >> "${log}" 2>&1; sleep 60; done`,
       ""
     ].join("\n"));
     fs.chmodSync(guion, 0o755);
     console.log(`\n  ✓ ${guion}`);
-    console.log("  Al encender el teléfono arranca solo la lectura de WhatsApp y Airbnb.");
+    console.log("  Al encender el teléfono arranca sola la lectura de los mensajes de Airbnb.");
     console.log("  Falta, UNA vez: instalar la app Termux:Boot (del mismo lugar que Termux) y abrirla.");
     console.log("  Para arrancarlo ya sin reiniciar:  sh " + guion + " &");
     console.log(`  Lo que va pasando queda en ${log}\n`);
     return;
   }
 
-  if (cmd === "whatsapp") {
+  // «airbnb» es el nombre de ahora; «whatsapp» queda por los guiones viejos.
+  if (cmd === "airbnb" || cmd === "whatsapp") {
     const W = await import("./telefono-whatsapp.mjs");
     const C = await import("./telefono-capturas.mjs");
     const pasada = () => {
@@ -1022,10 +1023,13 @@ async function main(args) {
     };
     // «--vigilar.» con un punto al final también vale: se copia de un mensaje.
     if (!args.some((a) => a.replace(/[.,;]+$/, "") === "--vigilar")) { pasada(); return; }
-    // Una pasada por minuto. `termux-wake-lock` para que Android no duerma a
-    // Termux con la pantalla apagada; si no está, sigue igual.
+    // Una pasada cada DOS minutos (hasta el 30-sep era cada uno, con WhatsApp
+    // adentro). Una notificación de Airbnb queda en la barra hasta que se
+    // abre, así que dos minutos no pierden nada que uno no perdiera, y es la
+    // mitad de despertares de Termux:API. `termux-wake-lock` para que Android
+    // no duerma a Termux con la pantalla apagada; si no está, sigue igual.
     try { execFileSync("termux-wake-lock", { stdio: "ignore" }); } catch {}
-    console.log("  Leyendo WhatsApp y Airbnb cada minuto (y las capturas de Airbnb). Para cortar: Ctrl+C.");
+    console.log("  Leyendo los mensajes de Airbnb cada dos minutos (y sus capturas). WhatsApp no. Para cortar: Ctrl+C.");
     // Lo que quedó sin subir de una vuelta anterior (un rechazo, un corte de
     // red) sube ahora, sin esperar a que llegue un mensaje nuevo.
     try {
@@ -1033,8 +1037,16 @@ async function main(args) {
       const token = Bodega.leerToken();
       if (token) { Bodega.actualizarTrabajo({ remoto: `https://github.com/${Bodega.REPO_BODEGA}.git`, token }); console.log("  Bodega al día: lo pendiente subió."); }
     } catch (e) { console.log("  (no se pudo poner al día la bodega todavía: " + String(e.message).split("\n")[0] + ")"); }
+    // El latido: al arrancar y cada 12 horas (ver `latir`). Si no se puede
+    // subir, se reintenta en la pasada siguiente.
+    let ultimoLatido = 0;
+    const latido = () => {
+      try { const l = W.latir({ ultimo: ultimoLatido }); if (l.latio && l.subido !== false) ultimoLatido = l.ultimo; }
+      catch (e) { console.log("  ✖ latido: " + String(e.message).split("\n")[0]); }
+    };
     if (!pasada()) process.exit(1);
-    setInterval(pasada, 60000);
+    latido();
+    setInterval(() => { pasada(); latido(); }, 120000);
     return;
   }
 
@@ -1215,7 +1227,7 @@ async function main(args) {
   node herramientas/telefono.mjs sincronizar             TODO: respaldos, APK, depósito e informe
   node herramientas/telefono.mjs interfaz                la pantalla: decidir, reglas y pedidos al chat
   node herramientas/telefono.mjs token                   pegar el token del depósito (una vez)
-  node herramientas/telefono.mjs whatsapp [--vigilar]     leer los mensajes nuevos de WhatsApp
+  node herramientas/telefono.mjs airbnb [--vigilar]       leer los mensajes nuevos de Airbnb (WhatsApp no)
   node herramientas/telefono.mjs arranque                que la lectura arranque sola con el teléfono (Termux:Boot)
   node herramientas/telefono.mjs descargas [--aplicar]    repetidos y basura de Descargas
   node herramientas/telefono.mjs deshacer [<lote>]        devuelve lo último que se botó
@@ -1224,7 +1236,7 @@ async function main(args) {
   node herramientas/telefono.mjs manifiesto               (en una sesión) la lista, desde el panel
   node herramientas/telefono.mjs depositar --bodega <dir> (en una sesión) las bases al depósito
   node herramientas/telefono.mjs pedidos --bodega <dir>   (en una sesión) los pedidos sin respuesta
-  node herramientas/telefono.mjs mensajes --bodega <dir>  (en una sesión) los WhatsApp de los últimos días
+  node herramientas/telefono.mjs mensajes --bodega <dir>  (en una sesión) los mensajes de Airbnb de los últimos días
 
   Sin --aplicar no se toca nada. Todo en herramientas/TELEFONO.md.`);
 }

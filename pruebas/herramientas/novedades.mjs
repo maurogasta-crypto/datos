@@ -83,7 +83,7 @@ prueba("mensajes: por chat, sólo los que llegaron después del último aviso, y
     { app: "whatsapp", chat: "CasaVerde Notificaciones", texto: "🔧 Claude · Casa Verde", captado: "2026-09-30T12:00:00Z" }] };
   const r = armarNovedades(d, v, HOY);
   const m = r.items.filter((i) => i.clase === "mensajes");
-  assert.deepEqual(m.map((i) => i.texto), ["Mensajes nuevos · Airbnb: 2 avisos"]);
+  assert.deepEqual(m.map((i) => i.texto), ["Mensajes nuevos de Airbnb: 2"]);
   assert.equal(r.visto.mensajesHasta, "2026-09-30T12:00:00Z");
 });
 prueba("lo que trae plata, teléfonos o mails en el dato sale limpio", () => {
@@ -98,22 +98,26 @@ prueba("el texto armado pasa el control de avisos.mjs, aunque el dato venga suci
   const v = validarTexto(textoNovedades(items));
   assert.ok(v.ok, v.motivos.join("; "));
 });
-prueba("de Airbnb se cuenta, no se nombra (el «chat» es el título y puede traer plata); de WhatsApp, el chat", () => {
+prueba("sólo Airbnb, y se cuenta sin nombrar (el «chat» puede ser un título con plata); WhatsApp no entra", () => {
   const d = { ...base, mensajes: [
     { app: "airbnb", chat: "Podrías ganar 637,94 R$ si hospedas a Natalia", captado: "2026-09-30T11:00:00Z" },
     { app: "whatsapp", chat: "Flor Brasil", captado: "2026-09-30T11:01:00Z" }] };
   const t = armarNovedades(d, { ...vistoVacio(), mensajesHasta: "2026-09-30T10:00:00Z" }, HOY).items
     .filter((i) => i.clase === "mensajes").map((i) => i.texto);
-  assert.deepEqual(t, ["Mensajes nuevos · WhatsApp: Flor Brasil · Airbnb: 1 aviso"]);
+  assert.deepEqual(t, ["Mensajes nuevos de Airbnb: 1"]);
 });
-prueba("24 h sin una captura del teléfono se avisa, una sola vez por silencio", () => {
-  const v = { ...vistoVacio(), reservas: ["r1"], mensajesHasta: "2026-09-29T08:00:00Z" };
+prueba("26 h sin latido del teléfono se avisa, una sola vez por silencio", () => {
+  const v = { ...vistoVacio(), reservas: ["r1"] };
   const ahora = Date.parse("2026-09-30T11:00:00Z");
-  const r = armarNovedades(base, v, HOY, { ahora });
+  const r = armarNovedades(base, v, HOY, { ahora, latido: "2026-09-29T08:00:00Z" });
   assert.deepEqual(r.items.map((i) => i.clase), ["telefono"]);
   assert.match(r.items[0].texto, /hace 27 h/);
-  assert.equal(armarNovedades(base, r.visto, HOY, { ahora: ahora + 86400e3 }).items.length, 0, "no se repite");
-  assert.equal(armarNovedades(base, { ...v, mensajesHasta: "2026-09-30T08:00:00Z" }, HOY, { ahora }).items.length, 0, "con 3 h no");
+  assert.equal(armarNovedades(base, r.visto, HOY, { ahora: ahora + 86400e3, latido: "2026-09-29T08:00:00Z" }).items.length, 0, "no se repite");
+  assert.equal(armarNovedades(base, v, HOY, { ahora, latido: "2026-09-30T00:00:00Z" }).items.length, 0, "con 11 h no");
+});
+prueba("sin ningún latido todavía no se avisa, aunque no haya mensajes en días", () => {
+  const v = { ...vistoVacio(), reservas: ["r1"], mensajesHasta: "2026-09-20T00:00:00Z" };
+  assert.equal(armarNovedades(base, v, HOY, { ahora: Date.parse("2026-09-30T11:00:00Z") }).items.length, 0);
 });
 prueba("lo más urgente primero: fallas y pedidos, después check-in/out", () => {
   const t = textoNovedades([{ clase: "mensajes", texto: "M" }, { clase: "reserva", texto: "R" }, { clase: "reporte", texto: "F" }, { clase: "entrada", texto: "E" }]);

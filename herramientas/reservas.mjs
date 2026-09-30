@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // reservas.mjs — Completar las reservas de Casa Verde con lo que dicen los
-// mensajes (WhatsApp y Airbnb). Sello: reservas-6
+// mensajes de Airbnb (WhatsApp no, desde reservas-7). Sello: reservas-7
 //
 //   node herramientas/reservas.mjs estado
 //       Las reservas que vienen, con lo que les falta.
@@ -456,7 +456,10 @@ function mensajesDeBodega(dir, dias) {
   if (!fs.existsSync(d)) return [];
   const desde = new Date(Date.now() - dias * 86400000).toISOString().slice(0, 10);
   return fs.readdirSync(d).filter((f) => f.endsWith(".json") && f.slice(0, 10) >= desde)
-    .flatMap((f) => { try { return JSON.parse(fs.readFileSync(path.join(d, f), "utf8")); } catch { return []; } });
+    .flatMap((f) => { try { return JSON.parse(fs.readFileSync(path.join(d, f), "utf8")); } catch { return []; } })
+    // Sólo Airbnb (reservas-7, 30-sep-2026): WhatsApp dejó de leerse a pedido
+    // de Mauro, y lo que haya quedado de antes en la bodega tampoco se usa.
+    .filter((m) => m && m.app === "airbnb");
 }
 
 async function vincularCli(dir, dias) {
@@ -467,7 +470,7 @@ async function vincularCli(dir, dias) {
     (porChat[k] = porChat[k] || { app: m.app, chat: m.chat, textos: [] }).textos.push(...[m.texto, ...(m.lineas || [])].filter(Boolean));
   }
   const chats = Object.values(porChat);
-  if (!chats.length) { console.log("\n  No hay mensajes capturados en esos días. ¿Está corriendo «telefono.mjs whatsapp --vigilar» en el teléfono?\n"); return; }
+  if (!chats.length) { console.log("\n  No hay mensajes capturados en esos días. ¿Está corriendo «telefono.mjs airbnb --vigilar» en el teléfono? (con Termux:Boot arranca solo: «telefono.mjs arranque»)\n"); return; }
   const { F, cfg, sesion } = await base();
   const [rs, cs, cabs] = await Promise.all(["reservas", "clientes", "cabanas"].map((c) => F.listar(cfg, sesion, c)));
   for (const c of chats) {

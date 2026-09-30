@@ -876,23 +876,29 @@ pruebaA("un pedido desde la pantalla llega a quien lo envía, y vacío no", asyn
   } finally { i.servidor.close(); }
 });
 
-/* ── WhatsApp: leer para preparar respuestas ────────────────────────────── */
-titulo("WhatsApp");
+/* ── Las notificaciones: sólo Airbnb (desde el 30-sep-2026) ────────────── */
+titulo("Mensajes de Airbnb");
 
 const NOTIS = [
-  { packageName: "com.whatsapp", title: "Ana (huésped)", content: "¿A qué hora es el check-in?", when: "10:01" },
-  { packageName: "com.whatsapp", title: "WhatsApp", content: "3 mensajes de 2 chats", when: "10:01" },
-  { packageName: "com.whatsapp", title: "Familia", content: "Flor: compro pan", lines: ["Flor: compro pan", "Juan: dale"], when: "10:02" },
+  { packageName: "com.airbnb.android", title: "Ana (huésped)", content: "¿A qué hora es el check-in?", when: "10:01" },
+  { packageName: "com.airbnb.android", title: "Airbnb", content: "3 mensajes nuevos", when: "10:01" },
+  { packageName: "com.airbnb.android", title: "20–22 nov • Loft", content: "Flor: llegamos 19 hs", lines: ["Flor: llegamos 19 hs", "Flor: somos 3"], when: "10:02" },
+  { packageName: "com.whatsapp", title: "Familia", content: "compro pan", when: "10:03" },
   { packageName: "com.whatsapp.w4b", title: "Cliente", content: "Hola", when: "10:03" },
   { packageName: "com.android.chrome", title: "divinity.es", content: "spam", when: "10:04" },
-  { packageName: "com.whatsapp", title: "Pedro", content: "", when: "10:05" },
+  { packageName: "com.airbnb.android", title: "Pedro", content: "", when: "10:05" },
 ];
 
-prueba("sólo WhatsApp (y Business), sin los resúmenes ni las vacías", () => {
+prueba("sólo Airbnb, sin los resúmenes ni las vacías", () => {
   const m = W.mensajesDe(NOTIS);
-  assert.deepEqual(m.map((x) => x.chat), ["Ana (huésped)", "Familia", "Cliente"]);
-  assert.equal(m[2].app, "business");
-  assert.deepEqual(m[1].lineas, ["Flor: compro pan", "Juan: dale"]);
+  assert.deepEqual(m.map((x) => x.chat), ["Ana (huésped)", "20–22 nov • Loft"]);
+  assert.ok(m.every((x) => x.app === "airbnb"));
+  assert.deepEqual(m[1].lineas, ["Flor: llegamos 19 hs", "Flor: somos 3"]);
+});
+
+prueba("WhatsApp y WhatsApp Business NO se leen: salieron a pedido de Mauro (30-sep)", () => {
+  assert.deepEqual(Object.keys(W.APP_DE), ["com.airbnb.android"]);
+  assert.equal(W.mensajesDe(NOTIS.filter((n) => /whatsapp/.test(n.packageName))).length, 0);
 });
 
 prueba("si no puede leer notificaciones, dice CUÁL paso falta, en una línea corta", () => {
@@ -910,12 +916,12 @@ prueba("los mensajes de Airbnb también entran, marcados como airbnb, y su resum
   assert.deepEqual(m.map((x) => [x.app, x.chat]), [["airbnb", "Amparo"]]);
 });
 
-prueba("lo ya visto no se manda dos veces, aunque WhatsApp le cambie la hora", () => {
+prueba("lo ya visto no se manda dos veces, aunque la app le cambie la hora", () => {
   const m1 = W.nuevos(W.mensajesDe(NOTIS), []);
   const vistos = m1.map((x) => x.id);
   const otraHora = NOTIS.map((n) => ({ ...n, when: "11:00" }));
   assert.equal(W.nuevos(W.mensajesDe(otraHora), vistos).length, 0);
-  const masUno = [...NOTIS, { packageName: "com.whatsapp", title: "Ana (huésped)", content: "Llegamos 18 hs", when: "11:01" }];
+  const masUno = [...NOTIS, { packageName: "com.airbnb.android", title: "Ana (huésped)", content: "Llegamos 18 hs", when: "11:01" }];
   assert.equal(W.nuevos(W.mensajesDe(masUno), vistos).length, 1);
 });
 
@@ -925,13 +931,27 @@ prueba("una pasada guarda lo nuevo en la bodega y la segunda no repite", () => {
   const vistos = path.join(armar({}), "vistos.json");
   const ahora = new Date("2026-09-29T12:00:00Z");
   const r1 = W.capturar({ leer: () => NOTIS, trabajo: b.trabajo, remoto: b.remoto, token: null, archivoVistos: vistos, ahora });
-  assert.equal(r1.nuevos, 3); assert.equal(r1.subido, true);
+  assert.equal(r1.nuevos, 2); assert.equal(r1.subido, true);
   const r2 = W.capturar({ leer: () => NOTIS, trabajo: b.trabajo, remoto: b.remoto, token: null, archivoVistos: vistos, ahora });
   assert.equal(r2.nuevos, 0);
   g(["pull", "-q"], b.chat);
   const subidos = JSON.parse(fs.readFileSync(path.join(b.chat, "mensajes", "2026-09-29.json"), "utf8"));
-  assert.equal(subidos.length, 3);
+  assert.equal(subidos.length, 2);
   assert.ok(!JSON.stringify(subidos).includes("divinity"), "se coló otra app");
+  assert.ok(!JSON.stringify(subidos).includes("compro pan"), "se coló WhatsApp");
+});
+
+prueba("el latido sube al arrancar y no otra vez hasta 12 horas después", () => {
+  const b = bodegaDePrueba();
+  Bodega.traerBodega({ remoto: b.remoto, trabajo: b.trabajo, destino: b.destino, token: null });
+  const t0 = new Date("2026-09-30T08:00:00Z");
+  const l1 = W.latir({ trabajo: b.trabajo, remoto: b.remoto, token: null, ahora: t0 });
+  assert.equal(l1.latio, true);
+  assert.equal(W.latir({ trabajo: b.trabajo, remoto: b.remoto, token: null, ahora: new Date(+t0 + 3600e3), ultimo: l1.ultimo }).latio, false);
+  assert.equal(W.latir({ trabajo: b.trabajo, remoto: b.remoto, token: null, ahora: new Date(+t0 + 13 * 3600e3), ultimo: l1.ultimo }).latio, true);
+  g(["pull", "-q"], b.chat);
+  const lat = JSON.parse(fs.readFileSync(path.join(b.chat, "latido.json"), "utf8"));
+  assert.deepEqual(lat.lee, ["airbnb"]);
 });
 
 prueba("si no se puede guardar, no se marca como visto (se reintenta)", () => {

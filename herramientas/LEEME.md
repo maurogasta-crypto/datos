@@ -174,7 +174,7 @@ declaró prioridad al fondo y no al tope.
 ## `reservas.mjs`
 
 Completar las reservas de Casa Verde con lo que dicen los mensajes de los
-huéspedes —WhatsApp y Airbnb, capturados en el teléfono— (29-sep-2026, fase 0
+huéspedes —de Airbnb, capturados en el teléfono; WhatsApp dejó de leerse el 30-sep— (29-sep-2026, fase 0
 de `L-agente-casaverde`).
 
 ```
@@ -285,8 +285,8 @@ lado.
 
 Lo nuevo desde el último aviso, en **un** WhatsApp para Mauro (30-sep-2026,
 pedido suyo): reserva nueva, check-in y check-out de hoy o mañana, tarea
-nueva que creó otro, mensajes nuevos de WhatsApp y Airbnb, pedidos y fallas
-de los sitios, y el teléfono callado hace más de 24 h. Si no hay nada nuevo no
+nueva que creó otro, cuántos mensajes nuevos de Airbnb, pedidos y fallas
+de los sitios, y el teléfono sin latido hace más de 26 h. Si no hay nada nuevo no
 manda nada. Lo ya avisado vive en `avisos/visto.json` de la bodega; la primera
 corrida sólo anota lo que existe. Los textos de terceros se limpian de plata,
 teléfonos y mails antes de armar el mensaje.
@@ -295,7 +295,7 @@ teléfonos y mails antes de armar el mensaje.
 node herramientas/novedades.mjs [--a Mauro] [--seco] [--bodega <dir>]
 ```
 
-Banco: `node pruebas/herramientas/novedades.mjs` (15 casos, sin red).
+Banco: `node pruebas/herramientas/novedades.mjs` (16 casos, sin red).
 
 ## `ACCESO-A-LAS-BASES.md`
 

@@ -1,8 +1,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// telefono-whatsapp.mjs — Leer los mensajes de WhatsApp para preparar respuestas.
+// telefono-whatsapp.mjs — Leer los mensajes de AIRBNB que llegan como notificación.
 //
-//   node herramientas/telefono.mjs whatsapp            una pasada: lo nuevo, a la bodega
-//   node herramientas/telefono.mjs whatsapp --vigilar  una pasada por minuto, hasta cortarlo
+//   node herramientas/telefono.mjs airbnb            una pasada: lo nuevo, a la bodega
+//   node herramientas/telefono.mjs airbnb --vigilar  una pasada cada dos minutos, hasta cortarlo
+//   («whatsapp» sigue andando como nombre del mismo comando, por los guiones viejos)
+//
+// ── DESDE EL 30-SEP-2026, SÓLO AIRBNB ────────────────────────────────────────
+// Mauro: «Los mensajes de Airbnb llegan por la app de Airbnb, no por WhatsApp;
+// por el momento no preciso que se monitoree WhatsApp, y eso ahorrará mucho
+// recurso cotidiano y disminuye riesgos.» Así que WhatsApp y WhatsApp
+// Business salieron de la lista de abajo: sus notificaciones ni se leen ni
+// suben. El archivo conserva el nombre porque lo citan la documentación y los
+// guiones del teléfono; lo que lee lo dice `APP_DE`, y nada más.
 //
 // Pedido de Mauro, 29-sep-2026: «falta incorporar la lectura de mensajes para
 // preparar las respuestas en los WhatsApp». Eligió TODOS los chats. Y el mismo
@@ -37,10 +46,12 @@ import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
 import * as Bodega from "./telefono-bodega.mjs";
 
-/* WhatsApp, WhatsApp Business y, desde el 29-sep-2026, AIRBNB: los mensajes
-   de los huéspedes llegan como notificación de su app, y son los que
-   completan las reservas de Casa Verde (`herramientas/reservas.mjs`). */
-const APP_DE = { "com.whatsapp": "whatsapp", "com.whatsapp.w4b": "business", "com.airbnb.android": "airbnb" };
+/* SÓLO AIRBNB (30-sep-2026): los mensajes de los huéspedes llegan como
+   notificación de su app, y son los que completan las reservas de Casa Verde
+   (`herramientas/reservas.mjs`). WhatsApp estuvo del 29 al 30-sep y salió a
+   pedido de Mauro — ver la cabecera. Volver a sumarlo es una línea acá, y es
+   una decisión suya, no un descuido que alguien corrige. */
+const APP_DE = { "com.airbnb.android": "airbnb" };
 const PAQUETES = new Set(Object.keys(APP_DE));
 const VISTOS = path.join(os.homedir(), ".config", "bodega", "whatsapp-vistos.json");
 const TOPE_VISTOS = 5000;
@@ -125,7 +136,7 @@ function capturar({ leer = leerNotificaciones, trabajo = Bodega.TRABAJO, token, 
   let previos = [];
   try { previos = JSON.parse(fs.readFileSync(path.join(trabajo, ruta), "utf8")); } catch {}
   const captado = ahora.toISOString();
-  const opciones = { ruta, trabajo, mensaje: `WhatsApp: ${nv.length} mensajes`,
+  const opciones = { ruta, trabajo, mensaje: `Airbnb: ${nv.length} mensajes`,
     contenido: JSON.stringify([...previos, ...nv.map((m) => ({ ...m, captado }))], null, 1) };
   if (token !== undefined) opciones.token = token;
   if (remoto !== undefined) opciones.remoto = remoto;
@@ -134,6 +145,23 @@ function capturar({ leer = leerNotificaciones, trabajo = Bodega.TRABAJO, token, 
   // pasada los vuelve a intentar en vez de perderlos.
   guardarVistos([...vistos, ...nv.map((m) => m.id)], archivoVistos);
   return { nuevos: nv.length, subido };
+}
+
+/* EL LATIDO (30-sep-2026). Con sólo Airbnb puede haber días enteros sin un
+   mensaje, y un día sin mensajes se ve igual que un teléfono que dejó de
+   leer. Así que el teléfono deja en la bodega, cada 12 horas mientras lee,
+   `latido.json` con la hora. La ronda avisa si pasan más de 26 horas sin uno
+   (`herramientas/novedades.mjs`). Es un commit cada 12 horas, no uno por
+   pasada: dos por día no ensucian la bodega. */
+const CADA_LATIDO = 12 * 3600e3;
+function latir({ trabajo = Bodega.TRABAJO, token, remoto, ahora = new Date(), ultimo = 0 } = {}) {
+  if (ultimo && ahora - ultimo < CADA_LATIDO) return { latio: false, ultimo };
+  const opciones = { ruta: "latido.json", trabajo, mensaje: "Latido del teléfono",
+    contenido: JSON.stringify({ ultimo: ahora.toISOString(), lee: Object.values(APP_DE) }, null, 1) + "\n" };
+  if (token !== undefined) opciones.token = token;
+  if (remoto !== undefined) opciones.remoto = remoto;
+  const subido = Bodega.guardarYSubir(opciones);
+  return { latio: true, subido, ultimo: ahora.getTime() };
 }
 
 /* Los borradores que escribió el chat, validados como cualquier dato que
@@ -158,5 +186,5 @@ function borradores(trabajo = Bodega.TRABAJO) {
    pregunta a quién: igual sirve. */
 const enlaceWhatsapp = (b) => `https://wa.me/${b.numero || ""}?text=${encodeURIComponent(b.texto)}`;
 
-export { leerNotificaciones, mensajesDe, nuevos, huella, esResumen, capturar, borradores, enlaceWhatsapp,
+export { APP_DE, latir, CADA_LATIDO, leerNotificaciones, mensajesDe, nuevos, huella, esResumen, capturar, borradores, enlaceWhatsapp,
          leerVistos, guardarVistos, VISTOS };

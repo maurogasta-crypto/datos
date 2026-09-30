@@ -28,7 +28,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { avisar, taparNumeros, hoyMontevideo, validarTexto, LARGO_MAX } from "./avisos.mjs";
 
-export const VERSION = "novedades-1";
+export const VERSION = "novedades-2";
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 export const PANEL = "https://maurogasta-crypto.github.io/datos/";
 export const CV_INTERNO = "https://casaverdecanas.com.br/interno/";
@@ -72,7 +72,7 @@ export const vistoVacio = () => ({ reservas: [], actividades: [], reportes: [], 
  * Lo puro: con los datos y lo ya visto, qué hay de nuevo. No lee ni escribe.
  * Devuelve { items: [{clase, texto}], visto (actualizado), primera }.
  */
-export function armarNovedades({ reservas = [], actividades = [], cabanas = [], reportes = [], mensajes = [] }, vistoIn, hoy, { para = "", ahora = Date.now() } = {}) {
+export function armarNovedades({ reservas = [], actividades = [], cabanas = [], reportes = [], mensajes = [] }, vistoIn, hoy, { para = "", ahora = Date.now(), latido = "" } = {}) {
   const primera = !vistoIn;
   const visto = { ...vistoVacio(), ...(vistoIn || {}) };
   const ya = (k, id) => visto[k].includes(id);
@@ -117,31 +117,26 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
   }
   // Mensajes que llegaron desde el último aviso, por chat.
   const nuevos = mensajes.filter((m) => m && String(m.captado || "") > (visto.mensajesHasta || "") && !NO_ES_UN_CHAT.test(`${m.chat} ${m.texto}`));
-  /* De WhatsApp el `chat` es la persona o el grupo; de Airbnb es el TÍTULO de
-     la notificación («Nueva reserva confirmada», «Podrías ganar…»), que no es
-     un chat y a veces trae plata. Por eso Airbnb se cuenta y no se nombra. */
-  if (nuevos.length) {
-    const wa = [...new Set(nuevos.filter((m) => m.app !== "airbnb").map((m) => limpiarParaAviso(m.chat, 24)))];
-    const ab = nuevos.filter((m) => m.app === "airbnb").length;
-    const partes = [];
-    if (wa.length) partes.push(`WhatsApp: ${wa.slice(0, 4).join(", ")}${wa.length > 4 ? ` y ${wa.length - 4} más` : ""}`);
-    if (ab) partes.push(`Airbnb: ${ab} aviso${ab === 1 ? "" : "s"}`);
-    items.push({ clase: "mensajes", texto: `Mensajes nuevos · ${partes.join(" · ")}` });
-  }
+  /* Sólo los de Airbnb (30-sep-2026: WhatsApp dejó de leerse). El `chat` de
+     una notificación de Airbnb a veces es el hilo («20–22 nov • Loft…») y a
+     veces un título («Nueva reserva confirmada», «Podrías ganar…», que trae
+     plata): por eso se cuentan y no se nombran. */
+  const deAirbnb = nuevos.filter((m) => m.app === "airbnb");
+  if (deAirbnb.length) items.push({ clase: "mensajes", texto: `Mensajes nuevos de Airbnb: ${deAirbnb.length}` });
   const ultimo = mensajes.map((m) => String(m.captado || "")).sort().pop();
   if (ultimo && ultimo > (visto.mensajesHasta || "")) visto.mensajesHasta = ultimo;
 
-  /* EL TELÉFONO CALLADO. Todo lo de Airbnb y WhatsApp depende de que
-     `telefono.mjs whatsapp --vigilar` esté corriendo en Termux, y si Android
-     lo corta no hay ningún error: simplemente no llega nada, que se ve igual
-     que un día sin mensajes. A Mauro le llegan mensajes todos los días, así
-     que 24 horas sin una sola captura es la señal. Se avisa UNA vez por
-     silencio (`telefonoAvisado`), no todas las mañanas. */
-  const hasta = visto.mensajesHasta;
-  if (hasta && ahora - Date.parse(hasta) > 24 * 3600e3 && visto.telefonoAvisado !== hasta) {
-    const h = Math.round((ahora - Date.parse(hasta)) / 3600e3);
-    items.push({ clase: "telefono", texto: `El teléfono no sube mensajes hace ${h} h: abrí Termux (con Termux:Boot arranca solo al reiniciar)` });
-    visto.telefonoAvisado = hasta;
+  /* EL TELÉFONO CALLADO. Todo lo de Airbnb depende de que
+     `telefono.mjs airbnb --vigilar` esté corriendo en Termux, y si Android lo
+     corta no hay ningún error: simplemente no llega nada. Con sólo Airbnb un
+     día sin mensajes es normal, así que no sirven los mensajes para saberlo:
+     el teléfono deja un LATIDO cada 12 horas (`latido.json` de la bodega) y
+     26 horas sin latido es la señal. Se avisa UNA vez por silencio. Sin
+     ningún latido todavía (el teléfono no se actualizó) no se avisa nada. */
+  if (latido && ahora - Date.parse(latido) > 26 * 3600e3 && visto.telefonoAvisado !== latido) {
+    const h = Math.round((ahora - Date.parse(latido)) / 3600e3);
+    items.push({ clase: "telefono", texto: `El teléfono no lee Airbnb hace ${h} h: abrí Termux (con Termux:Boot arranca solo al reiniciar)` });
+    visto.telefonoAvisado = latido;
   }
 
   // Que lo visto no crezca para siempre: se queda con los últimos 500.
@@ -198,7 +193,9 @@ export async function novedades({ a = "Mauro", bodega, seco = false } = {}) {
   let visto = null;
   try { visto = JSON.parse(fs.readFileSync(archivo, "utf8")); } catch { visto = null; }
   const hoy = hoyMontevideo();
-  const r = armarNovedades({ reservas, actividades, cabanas, reportes, mensajes: leerMensajes(bodega) }, visto, hoy, { para: a });
+  let latido = "";
+  try { latido = String(JSON.parse(fs.readFileSync(path.join(bodega, "latido.json"), "utf8")).ultimo || ""); } catch { latido = ""; }
+  const r = armarNovedades({ reservas, actividades, cabanas, reportes, mensajes: leerMensajes(bodega) }, visto, hoy, { para: a, latido });
   const salida = { primera: r.primera, items: r.items, fuentes, texto: r.items.length ? textoNovedades(r.items) : "" };
   if (seco) return { ...salida, enviado: null };
   let enviado = null;

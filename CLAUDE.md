@@ -218,11 +218,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   falla**: si eso cambiara, los reportes viejos desaparecerían de la sección 3
   sin que nadie lo note; `node pruebas/herramientas/reservas.mjs` (48 casos, sin npm ni red) para
   el completado de reservas, que sobre todo prueba lo que NO completa; `node
-  pruebas/herramientas/telefono.mjs` (100 casos, sin
+  pruebas/herramientas/telefono.mjs` (101 casos, sin
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (37 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
-  manda; `node pruebas/herramientas/novedades.mjs` (16 casos) para las novedades
+  manda; `node pruebas/herramientas/novedades.mjs` (17 casos) para las novedades
   que se le mandan a Mauro, que prueba que nada se avise dos veces; y `pruebas/panel/banco.mjs` (con `npm install`
   una vez) para el panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.

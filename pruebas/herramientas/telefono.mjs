@@ -952,6 +952,15 @@ prueba("el latido sube al arrancar y no otra vez hasta 12 horas después", () =>
   g(["pull", "-q"], b.chat);
   const lat = JSON.parse(fs.readFileSync(path.join(b.chat, "latido.json"), "utf8"));
   assert.deepEqual(lat.lee, ["airbnb"]);
+  assert.equal(lat.falla, undefined, "sin falla, no hay campo");
+  W.latir({ trabajo: b.trabajo, remoto: b.remoto, token: null, ahora: new Date(+t0 + 14 * 3600e3), falla: "Android no deja leer las notificaciones." });
+  g(["pull", "-q"], b.chat);
+  assert.match(JSON.parse(fs.readFileSync(path.join(b.chat, "latido.json"), "utf8")).falla, /no deja leer/);
+});
+prueba("--vigilar ya no se corta si la primera lectura falla (antes: exit sin latido)", () => {
+  const src = fs.readFileSync(new URL("../../herramientas/telefono.mjs", import.meta.url), "utf8");
+  const bloque = src.slice(src.indexOf("let ultimoLatido"), src.indexOf("setInterval(() => { pasada(); latido(); }"));
+  assert.ok(!/process\.exit/.test(bloque), "volvió el exit");
 });
 
 prueba("si no se puede guardar, no se marca como visto (se reintenta)", () => {

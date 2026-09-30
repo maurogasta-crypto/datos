@@ -130,6 +130,12 @@ arrancar y cada 12 horas. Con sólo Airbnb puede pasar un día entero sin un
 mensaje, y eso se ve igual que un teléfono que dejó de leer: el latido es lo
 que los distingue. La ronda avisa si pasan 26 horas sin latido.
 
+**Y si no puede leer, igual late, con la falla adentro** (desde el mismo 30-sep).
+Antes, si la primera lectura fallaba —pasó justo después de un reinicio, con
+Android sin darle todavía el acceso a las notificaciones— el proceso se cerraba
+sin dejar rastro. Ahora sigue probando cada dos minutos y `latido.json` lleva
+`falla` con qué tocar; cuando se arregla, late enseguida sin la falla.
+
 **Que arranque solo** (30-sep-2026). `--vigilar` sólo lee mientras corre, y
 Android lo corta al reiniciar o cuando cierra Termux: ahí no llega nada y
 **no hay ningún error**, que se ve igual que un día sin mensajes. Una vez:

@@ -1018,9 +1018,11 @@ async function main(args) {
       try {
         const r = W.capturar();
         if (r.nuevos) console.log(`  ${hora} · ${r.nuevos} mensajes nuevos${r.subido ? " · subidos" : " (no se pudieron subir: quedan guardados y suben en la próxima)"}`);
+        falla = "";
         return true;
-      } catch (e) { console.log("  ✖ " + e.message); return false; }
+      } catch (e) { falla = String(e.message).split("\n")[0]; console.log("  ✖ " + e.message); return false; }
     };
+    let falla = "";
     // «--vigilar.» con un punto al final también vale: se copia de un mensaje.
     if (!args.some((a) => a.replace(/[.,;]+$/, "") === "--vigilar")) { pasada(); return; }
     // Una pasada cada DOS minutos (hasta el 30-sep era cada uno, con WhatsApp
@@ -1039,12 +1041,23 @@ async function main(args) {
     } catch (e) { console.log("  (no se pudo poner al día la bodega todavía: " + String(e.message).split("\n")[0] + ")"); }
     // El latido: al arrancar y cada 12 horas (ver `latir`). Si no se puede
     // subir, se reintenta en la pasada siguiente.
-    let ultimoLatido = 0;
+    //
+    // Y NO SE CORTA SI LA PRIMERA LECTURA FALLA (30-sep-2026). Antes hacía
+    // `process.exit(1)`: después de un reinicio Android todavía no le daba
+    // acceso a las notificaciones, el proceso moría sin dejar latido, y desde
+    // la bodega no había cómo saber si el teléfono estaba apagado o trabado.
+    // Ahora sigue intentando cada dos minutos, y el latido lleva la FALLA: la
+    // ronda puede decir exactamente qué tocar. Cuando la falla cambia —o se
+    // arregla— late enseguida, sin esperar las 12 horas.
+    let ultimoLatido = 0, fallaLatida = null;
     const latido = () => {
-      try { const l = W.latir({ ultimo: ultimoLatido }); if (l.latio && l.subido !== false) ultimoLatido = l.ultimo; }
-      catch (e) { console.log("  ✖ latido: " + String(e.message).split("\n")[0]); }
+      if (falla !== fallaLatida) ultimoLatido = 0;
+      try {
+        const l = W.latir({ ultimo: ultimoLatido, falla });
+        if (l.latio && l.subido !== false) { ultimoLatido = l.ultimo; fallaLatida = falla; }
+      } catch (e) { console.log("  ✖ latido: " + String(e.message).split("\n")[0]); }
     };
-    if (!pasada()) process.exit(1);
+    pasada();
     latido();
     setInterval(() => { pasada(); latido(); }, 120000);
     return;

@@ -154,10 +154,12 @@ function capturar({ leer = leerNotificaciones, trabajo = Bodega.TRABAJO, token, 
    (`herramientas/novedades.mjs`). Es un commit cada 12 horas, no uno por
    pasada: dos por día no ensucian la bodega. */
 const CADA_LATIDO = 12 * 3600e3;
-function latir({ trabajo = Bodega.TRABAJO, token, remoto, ahora = new Date(), ultimo = 0 } = {}) {
+function latir({ trabajo = Bodega.TRABAJO, token, remoto, ahora = new Date(), ultimo = 0, falla = "" } = {}) {
   if (ultimo && ahora - ultimo < CADA_LATIDO) return { latio: false, ultimo };
-  const opciones = { ruta: "latido.json", trabajo, mensaje: "Latido del teléfono",
-    contenido: JSON.stringify({ ultimo: ahora.toISOString(), lee: Object.values(APP_DE) }, null, 1) + "\n" };
+  // `falla`: por qué no pudo leer, si no pudo. El latido dice «estoy vivo»;
+  // la falla dice «pero no leo», que es lo que hay que arreglar.
+  const opciones = { ruta: "latido.json", trabajo, mensaje: falla ? "Latido del teléfono: NO puede leer" : "Latido del teléfono",
+    contenido: JSON.stringify({ ultimo: ahora.toISOString(), lee: Object.values(APP_DE), ...(falla ? { falla: String(falla).slice(0, 200) } : {}) }, null, 1) + "\n" };
   if (token !== undefined) opciones.token = token;
   if (remoto !== undefined) opciones.remoto = remoto;
   const subido = Bodega.guardarYSubir(opciones);

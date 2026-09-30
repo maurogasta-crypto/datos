@@ -115,6 +115,14 @@ prueba("26 h sin latido del teléfono se avisa, una sola vez por silencio", () =
   assert.equal(armarNovedades(base, r.visto, HOY, { ahora: ahora + 86400e3, latido: "2026-09-29T08:00:00Z" }).items.length, 0, "no se repite");
   assert.equal(armarNovedades(base, v, HOY, { ahora, latido: "2026-09-30T00:00:00Z" }).items.length, 0, "con 11 h no");
 });
+prueba("un latido con falla se avisa enseguida, con la falla, una vez", () => {
+  const v = { ...vistoVacio(), reservas: ["r1"] };
+  const ahora = Date.parse("2026-09-30T03:00:00Z");
+  const r = armarNovedades(base, v, HOY, { ahora, latido: "2026-09-30T02:55:00Z", fallaLatido: "Android no deja leer las notificaciones. Ajustes → Acceso a notificaciones → Termux:API → permitir." });
+  assert.deepEqual(r.items.map((i) => i.clase), ["telefono"]);
+  assert.match(r.items[0].texto, /no puede leer Airbnb: Android no deja/);
+  assert.equal(armarNovedades(base, r.visto, HOY, { ahora, latido: "2026-09-30T02:55:00Z", fallaLatido: "x" }).items.length, 0);
+});
 prueba("sin ningún latido todavía no se avisa, aunque no haya mensajes en días", () => {
   const v = { ...vistoVacio(), reservas: ["r1"], mensajesHasta: "2026-09-20T00:00:00Z" };
   assert.equal(armarNovedades(base, v, HOY, { ahora: Date.parse("2026-09-30T11:00:00Z") }).items.length, 0);

@@ -72,7 +72,7 @@ export const vistoVacio = () => ({ reservas: [], actividades: [], reportes: [], 
  * Lo puro: con los datos y lo ya visto, qué hay de nuevo. No lee ni escribe.
  * Devuelve { items: [{clase, texto}], visto (actualizado), primera }.
  */
-export function armarNovedades({ reservas = [], actividades = [], cabanas = [], reportes = [], mensajes = [] }, vistoIn, hoy, { para = "", ahora = Date.now(), latido = "" } = {}) {
+export function armarNovedades({ reservas = [], actividades = [], cabanas = [], reportes = [], mensajes = [] }, vistoIn, hoy, { para = "", ahora = Date.now(), latido = "", fallaLatido = "" } = {}) {
   const primera = !vistoIn;
   const visto = { ...vistoVacio(), ...(vistoIn || {}) };
   const ya = (k, id) => visto[k].includes(id);
@@ -133,7 +133,12 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
      el teléfono deja un LATIDO cada 12 horas (`latido.json` de la bodega) y
      26 horas sin latido es la señal. Se avisa UNA vez por silencio. Sin
      ningún latido todavía (el teléfono no se actualizó) no se avisa nada. */
-  if (latido && ahora - Date.parse(latido) > 26 * 3600e3 && visto.telefonoAvisado !== latido) {
+  /* Y si late pero no puede leer (`falla` en el latido), eso es lo primero:
+     el teléfono está vivo y trabado, y la falla dice qué tocar. */
+  if (latido && fallaLatido && visto.telefonoAvisado !== latido) {
+    items.push({ clase: "telefono", texto: `El teléfono no puede leer Airbnb: ${limpiarParaAviso(fallaLatido, 110)}` });
+    visto.telefonoAvisado = latido;
+  } else if (latido && ahora - Date.parse(latido) > 26 * 3600e3 && visto.telefonoAvisado !== latido) {
     const h = Math.round((ahora - Date.parse(latido)) / 3600e3);
     items.push({ clase: "telefono", texto: `El teléfono no lee Airbnb hace ${h} h: abrí Termux (con Termux:Boot arranca solo al reiniciar)` });
     visto.telefonoAvisado = latido;
@@ -193,9 +198,12 @@ export async function novedades({ a = "Mauro", bodega, seco = false } = {}) {
   let visto = null;
   try { visto = JSON.parse(fs.readFileSync(archivo, "utf8")); } catch { visto = null; }
   const hoy = hoyMontevideo();
-  let latido = "";
-  try { latido = String(JSON.parse(fs.readFileSync(path.join(bodega, "latido.json"), "utf8")).ultimo || ""); } catch { latido = ""; }
-  const r = armarNovedades({ reservas, actividades, cabanas, reportes, mensajes: leerMensajes(bodega) }, visto, hoy, { para: a, latido });
+  let latido = "", fallaLatido = "";
+  try {
+    const l = JSON.parse(fs.readFileSync(path.join(bodega, "latido.json"), "utf8"));
+    latido = String(l.ultimo || ""); fallaLatido = String(l.falla || "");
+  } catch { latido = ""; }
+  const r = armarNovedades({ reservas, actividades, cabanas, reportes, mensajes: leerMensajes(bodega) }, visto, hoy, { para: a, latido, fallaLatido });
   const salida = { primera: r.primera, items: r.items, fuentes, texto: r.items.length ? textoNovedades(r.items) : "" };
   if (seco) return { ...salida, enviado: null };
   let enviado = null;

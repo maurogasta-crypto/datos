@@ -136,6 +136,16 @@ Android sin darle todavía el acceso a las notificaciones— el proceso se cerra
 sin dejar rastro. Ahora sigue probando cada dos minutos y `latido.json` lleva
 `falla` con qué tocar; cuando se arregla, late enseguida sin la falla.
 
+**Si la falla dice «Android no deja leer las notificaciones» y el permiso YA
+está prendido** (pasó el 30-sep en el Xiaomi de Mauro, con HyperOS, después
+de un reinicio): el permiso queda trabado. Se destraba así, y fue lo que
+anduvo: Ajustes → Privacidad → Permisos especiales → **Control, respuesta y
+lectura de notificaciones** → Termux:API → apagar y volver a prender; y
+Ajustes → Aplicaciones → Termux:API → **Forzar detención**. La prueba es
+`termux-notification-list | head -c 300`: tiene que devolver `[` y no quedar
+vacío. `termux-battery-status` andando y la lista vacía quiere decir eso
+mismo: Termux:API contesta, pero no le dejan leer.
+
 **Que arranque solo** (30-sep-2026). `--vigilar` sólo lee mientras corre, y
 Android lo corta al reiniciar o cuando cierra Termux: ahí no llega nada y
 **no hay ningún error**, que se ve igual que un día sin mensajes. Una vez:

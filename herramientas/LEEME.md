@@ -182,6 +182,7 @@ node herramientas/reservas.mjs estado                          lo que le falta a
 node herramientas/reservas.mjs vincular --bodega <dir> [--dias N]   cada chat, con la reserva a la que se refiere
 node herramientas/reservas.mjs completar <reservaId> <archivo.json> [--seco]
 node herramientas/reservas.mjs capturas --bodega <dir> [--leida <archivo>]   las capturas de Airbnb sin leer
+node herramientas/reservas.mjs llegadas [--dias N] [--bodega <dir>] [--enviar --a <nombre>]   el aviso de cada llegada
 ```
 
 El archivo dice de dónde salió y qué completar:
@@ -241,6 +242,44 @@ pantalla. Ese renglón se agrega **crudo** (`leerCrudo` y `$crudo` de
 `firestore.mjs`): los anteriores son fechas de Firestore, y reescribirlos como
 texto rompería la pantalla. Banco: `node pruebas/herramientas/reservas.mjs`
 (48 casos, sin red).
+
+## `avisos.mjs`
+
+Los avisos del agente por WhatsApp, por el CallMeBot de cada persona (desde el
+30-sep-2026, línea `L-avisos`). **Los criterios —qué merece un aviso y qué no—
+están en `protocolos/PROTOCOLO-AVISOS.md`**; esto es la mitad que se comprueba
+con código.
+
+```
+node herramientas/avisos.mjs quienes [base...]         quién puede recibir, y si no, por qué
+node herramientas/avisos.mjs enviar <base> --a <nombre> --tema <tema> --texto "…" [--sobre <proyecto>] [--seco]
+node herramientas/avisos.mjs probar <base> --a <nombre>
+node herramientas/avisos.mjs registro [--dias N]
+```
+
+Bases con gente: `casaverde`, `casayourte`, `remate` (`tiempos` va por
+`casaverde`). Temas: `urgente`, `llegada`, `pedido`, `resumen`, `prueba`.
+
+- **El contacto se trae de a uno** con `contactoAviso` de `firestore.mjs`, la
+  única puerta a `avisos_contacto` —que sigue en `selladas`—. La regla de cada
+  base le da al agente `get` y nada más. **No se imprime ni se guarda.**
+- **Sólo a quien encendió «Avisos de Claude»** (`agente: true`, lo escribe la
+  persona) y tiene ficha activa. Nunca a un huésped ni a un cliente.
+- **El texto no lleva teléfonos, plata, mails ni enlaces de afuera**: la
+  herramienta lo rechaza y dice qué sacar.
+- **Tres por número y por día**, y un minuto entre dos al mismo número.
+- **El registro va a la bodega** (`avisos/AAAA-MM.json`), con una huella del
+  número y nunca el número. Sin `--bodega` no se manda: sin registro no hay tope.
+- **Manda por la función `notify-whatsapp` de Casa Verde en Netlify**, y lee la
+  respuesta de CallMeBot como `CV2._leerRespuestaWa`: un 200 no quiere decir
+  que salió.
+
+`reservas.mjs llegadas --enviar --a <nombre>` usa esto para el aviso de cada
+llegada, y si no puede salir lo deja como borrador, como antes.
+
+Banco: `node pruebas/herramientas/avisos.mjs` (36 casos, sin npm ni red), que
+además compara las reglas de los tres sitios cuando sus repositorios están al
+lado.
 
 ## `ACCESO-A-LAS-BASES.md`
 

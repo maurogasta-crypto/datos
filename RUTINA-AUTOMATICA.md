@@ -24,6 +24,13 @@ entero para que la siguiente se arme igual y no haya que volver a razonarlo.
 > **30-sep-2026: el chat cambia.** Mauro deja el chat donde vivía la rutina
 > (`trig_01D3yEySzYLa4gGp67FqaFdC`) y sigue en uno nuevo. Cómo se muda, y el
 > texto vigente de la rutina para copiarlo, están en `TRASPASO.md`.
+>
+> **Mudada el mismo 30-sep.** La rutina vigente es `trig_016okPxZMQR4ndoG9XUCKhce`
+> («Ronda diaria unificada (en el chat de Mauro)», 07:47 de Montevideo), atada al
+> chat `session_01EziAxJdqEDKFcQGws5uW49`. La vieja, `trig_01D3yEySzYLa4gGp67FqaFdC`,
+> quedó **pausada** (no borrada: conserva sus corridas). Y el texto suma el paso
+> **10 bis**: los avisos por WhatsApp al equipo, con los criterios de
+> `protocolos/PROTOCOLO-AVISOS.md`; las llegadas pasan de borrador a envío.
 
 ---
 

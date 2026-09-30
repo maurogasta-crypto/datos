@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // reservas.mjs — Completar las reservas de Casa Verde con lo que dicen los
-// mensajes (WhatsApp y Airbnb). Sello: reservas-5
+// mensajes (WhatsApp y Airbnb). Sello: reservas-6
 //
 //   node herramientas/reservas.mjs estado
 //       Las reservas que vienen, con lo que les falta.
@@ -9,12 +9,14 @@
 //       que parece referirse (o ninguna, y por qué).
 //   node herramientas/reservas.mjs completar <reservaId> <archivo.json> [--seco]
 //       Aplica lo que se sacó de un mensaje. Con --seco muestra y no escribe.
-//   node herramientas/reservas.mjs llegadas [--dias N] [--bodega <dir>]
+//   node herramientas/reservas.mjs llegadas [--dias N] [--bodega <dir>] [--enviar --a <nombre>]
 //       Las llegadas de los próximos N días (3) que todavía no se avisaron,
 //       con el aviso para quien recibe: el enlace a la FICHA DE LLEGADA de
 //       Casa Verde (llegada.html, detrás del login), que trae la reserva, el
 //       huésped, su historia, la plata y la bienvenida lista para mandar.
 //       Con --bodega deja cada aviso como borrador y la marca como avisada.
+//       Con --enviar --a <nombre> (reservas-6) lo manda por el CallMeBot de
+//       esa persona (herramientas/avisos.mjs); si no sale, queda el borrador.
 //   node herramientas/reservas.mjs capturas --bodega <dir> [--leida <archivo>]
 //       Las capturas de Airbnb que subió el teléfono y todavía no se leyeron
 //       (reservas-3). Las lee la sesión —es una imagen— y con --leida se
@@ -527,7 +529,14 @@ async function completarCli(id, archivo, seco) {
   console.log(`\n  Escrito. Se deshace con: node herramientas/firestore.mjs casaverde historial 5  →  deshacer <id>\n`);
 }
 
-async function llegadasCli(dias, dir) {
+/* Con `--enviar --a <nombre>` (avisos-1, 30-sep-2026) el aviso sale directo
+   por el CallMeBot de quien recibe, con los límites de herramientas/avisos.mjs
+   y protocolos/PROTOCOLO-AVISOS.md. Si no puede salir —no lo encendió, llegó
+   al tope, CallMeBot lo rechazó— queda como borrador, igual que antes: una
+   llegada no se queda sin aviso porque falló el camino corto. */
+export const textoParaEnviar = (texto) => String(texto).replace(/^🏡 Casa Verde · l/, "L");
+
+async function llegadasCli(dias, dir, enviarA) {
   const { F, cfg, sesion } = await base();
   const [rs, cs, cabs] = await Promise.all(["reservas", "clientes", "cabanas"].map((c) => F.listar(cfg, sesion, c)));
   const hoy = hoyISO();
@@ -536,20 +545,35 @@ async function llegadasCli(dias, dir) {
   const avisos = lista.map((g) => ({ rs: g, texto: avisoDeLlegada(g, { cabanas: cabs, clientes: cs, hoy }) }));
   for (const a of avisos) console.log("\n" + a.texto.split("\n").map((l) => "  " + l).join("\n"));
   if (!dir) { console.log("\n  (sin --bodega: no se dejó nada ni se marcó nada)\n"); return; }
-  // Hasta que haya camino directo al WhatsApp de quien recibe, el aviso va
-  // como borrador a la pantalla del teléfono de Mauro, que lo reenvía.
+  if (enviarA === true) throw new Error("--enviar necesita --a <nombre>: a quién le llega el aviso");
   const archivo = path.join(dir, "borradores.json");
   let bs = [];
   try { bs = JSON.parse(fs.readFileSync(archivo, "utf8")); } catch { bs = []; }
   if (!Array.isArray(bs)) bs = [];
+  let enviados = 0, borradores = 0;
   for (const a of avisos) {
-    const idB = "llegada-" + a.rs[0].id;
-    if (!bs.some((b) => b && b.id === idB)) bs.push({ id: idB, para: "Florencia (aviso de llegada)", canal: "whatsapp",
-      contexto: "Reenviáselo a Florencia: el enlace abre la ficha de llegada con su cuenta.", texto: a.texto, numero: "", creado: hoy });
-    for (const r of a.rs) await F.fusionar(cfg, sesion, "reservas", r.id, { bienvenida: { ...(r.bienvenida || {}), avisadaEn: hoy } });
+    let r = null;
+    if (enviarA) {
+      const { avisar } = await import("./avisos.mjs");
+      r = await avisar({ base: "casaverde", a: enviarA, tema: "llegada", texto: textoParaEnviar(a.texto),
+                         bodega: dir, conexion: { F, cfg, sesion } });
+      console.log(`  ${r.ok ? "✓ mandado a" : "✖ no salió para"} ${r.a || enviarA}${r.ok ? "" : ": " + r.detalle}`);
+    }
+    const marca = { ...(a.rs[0].bienvenida || {}), avisadaEn: hoy };
+    if (r && r.ok) { enviados++; marca.avisadaA = r.a; marca.avisadaPor = "whatsapp"; }
+    else {
+      // Hasta que haya camino directo al WhatsApp de quien recibe, el aviso va
+      // como borrador a la pantalla del teléfono de Mauro, que lo reenvía.
+      const idB = "llegada-" + a.rs[0].id;
+      if (!bs.some((b) => b && b.id === idB)) { borradores++; bs.push({ id: idB, para: `${(r && r.a) || "Florencia"} (aviso de llegada)`, canal: "whatsapp",
+        contexto: "Reenviáselo: el enlace abre la ficha de llegada con su cuenta." + (r ? ` (No salió solo: ${r.detalle})` : ""),
+        texto: a.texto, numero: "", creado: hoy }); }
+    }
+    for (const x of a.rs) await F.fusionar(cfg, sesion, "reservas", x.id, { bienvenida: { ...(x.bienvenida || {}), ...marca } });
   }
   fs.writeFileSync(archivo, JSON.stringify(bs, null, 2) + "\n");
-  console.log(`\n  ${avisos.length} aviso(s) en ${archivo} y marcados como avisados. Falta commit y push de la bodega.\n`);
+  console.log(`\n  ${avisos.length} llegada(s) marcadas como avisadas: ${enviados} por WhatsApp, ${borradores} como borrador en ${archivo}.`
+    + `\n  Falta commit y push de la bodega.\n`);
 }
 
 /* Las capturas que todavía no se leyeron, del registro de la bodega. */
@@ -580,13 +604,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const run = cmd === "estado" ? estado()
     : cmd === "vincular" ? vincularCli(opt("--bodega", path.join(AQUI, "..", "..", "bodega")), Number(opt("--dias", 2)))
     : cmd === "completar" && args[0] && args[1] ? completarCli(args[0], args[1], args.includes("--seco"))
-    : cmd === "llegadas" ? llegadasCli(Number(opt("--dias", DIAS_ANTES)), opt("--bodega"))
+    : cmd === "llegadas" ? llegadasCli(Number(opt("--dias", DIAS_ANTES)), opt("--bodega"),
+        args.includes("--enviar") ? (opt("--a") || true) : null)
     : cmd === "capturas" ? (async () => {
         const dir = opt("--bodega", path.join(AQUI, "..", "..", "bodega"));
         if (opt("--leida")) return marcarLeida(dir, opt("--leida"));
         const l = capturasSinLeer(dir);
         console.log(l.length ? `\n  ${l.length} captura(s) de Airbnb sin leer:\n` + l.map((f) => "    " + f).join("\n") + "\n" : "\n  No hay capturas de Airbnb sin leer.\n");
       })()
-    : Promise.reject(new Error("uso: estado | vincular --bodega <dir> [--dias N] | completar <reservaId> <archivo.json> [--seco] | llegadas [--dias N] [--bodega <dir>] | capturas --bodega <dir> [--leida <archivo>]"));
+    : Promise.reject(new Error("uso: estado | vincular --bodega <dir> [--dias N] | completar <reservaId> <archivo.json> [--seco] | llegadas [--dias N] [--bodega <dir>] [--enviar --a <nombre>] | capturas --bodega <dir> [--leida <archivo>]"));
   run.catch((e) => { console.error("\n✖ " + e.message + "\n"); process.exit(1); });
 }

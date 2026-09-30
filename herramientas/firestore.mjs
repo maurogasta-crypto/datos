@@ -112,8 +112,11 @@ const PROYECTOS = {
                   "metodosPago", "lucesRegistro", "usuarios", "reportes"],
     /* `llaves`: el código ES la credencial del comprador — lo dice la regla.
        `documentos`: datos de terceros, que por decisión del proyecto no salen
-       ni al catálogo público. */
-    selladas: ["llaves", "documentos"]
+       ni al catálogo público.
+       `avisos_contacto` (30-sep-2026): la clave de CallMeBot de cada persona.
+       Se LEE de a una y sólo para mandarle un aviso: ver `contactoAviso`. */
+    selladas: ["llaves", "documentos", "avisos_contacto"],
+    avisos: "avisos_contacto"
   },
 
   casayourte: {
@@ -128,8 +131,11 @@ const PROYECTOS = {
     colecciones: ["sitio", "albums", "usuarios", "reportes"],
     /* `calculos`: datos de clientes y medidas de obra, y detrás costos,
        márgenes y tarifas — lo que el CLAUDE.md del proyecto prohíbe publicar.
-       `invitaciones`: mails de gente que todavía no entró. */
-    selladas: ["calculos", "invitaciones"]
+       `invitaciones`: mails de gente que todavía no entró.
+       `avisos_contacto` (30-sep-2026): la clave de CallMeBot de cada persona.
+       Se LEE de a una y sólo para mandarle un aviso: ver `contactoAviso`. */
+    selladas: ["calculos", "invitaciones", "avisos_contacto"],
+    avisos: "avisos_contacto"
   },
 
   hilux: {
@@ -256,6 +262,12 @@ const PROYECTOS = {
     selladas: [
       "claves_recuerdos", "config/integraciones", "config/airbnb", "avisos_contacto"
     ],
+    /* `avisos_contacto` sigue sellada para LISTAR, leer por la línea de
+       comandos y escribir. Desde el 30-sep-2026 hay UNA puerta: el agente
+       trae el contacto de UNA persona, por su uid, para mandarle un aviso por
+       WhatsApp (`contactoAviso`, pedido de Mauro). La regla le da `get` y
+       nada más. */
+    avisos: "avisos_contacto",
     /* Desde el 29-sep-2026 el agente ESCRIBE acá (pedido de Mauro: «gestionar
        y editar todo»), con historial de cada cambio. Los `cierres` no: son
        el registro de los balances y la regla los hace inmutables para todos. */
@@ -473,6 +485,46 @@ const leerUno = async (cfg, sesion, coleccion, id) => {
   return d ? { id, ...objeto(d.fields || {}) } : null;
 };
 
+/* ── El contacto de WhatsApp de UNA persona (30-sep-2026) ────────────────────
+   La única puerta a `avisos_contacto`, que sigue en `selladas`: listarla,
+   leerla por la línea de comandos o escribirla siguen frenando en el guardia.
+
+   Pedido de Mauro, 29 y 30-sep-2026: que el agente pueda escribirle por
+   CallMeBot a cualquier persona registrada del ecosistema cuando en una ronda
+   aparezca algo que le concierna. La clave de CallMeBot de una persona sólo
+   sirve para mandarle mensajes A ESE MISMO NÚMERO, así que leerla no le abre
+   al agente nada que no sea eso.
+
+   Tres cosas que no se aflojan, y por qué:
+   · de a UNA, por uid: la regla da `get` y no `list`, así que no hay forma de
+     bajarse la colección entera ni por error;
+   · NUNCA se imprime: esto devuelve el contacto a quien llama
+     (`herramientas/avisos.mjs`), que lo manda a la función de Netlify y lo
+     olvida. No va a un archivo, ni a un respaldo, ni a un chat;
+   · NUNCA corta el proceso: una base donde la regla todavía no se publicó
+     tiene que ser un renglón («las reglas dijeron que no»), no el fin de la
+     ronda — la misma lección que `entrarSuave`.
+
+   Devuelve { ok, motivo, contacto } con contacto = { telefono, apikey,
+   agente, nombre } o null si la persona no cargó nada. */
+async function contactoAviso(cfg, sesion, uid) {
+  if (!cfg.avisos) return { ok: false, motivo: `${cfg.projectId} no tiene avisos por WhatsApp`, contacto: null };
+  if (!uid || /[/]/.test(String(uid))) return { ok: false, motivo: "uid inválido", contacto: null };
+  try {
+    const r = await fetch(RAIZ(cfg.projectId) + `/${cfg.avisos}/${encodeURIComponent(uid)}`,
+      { headers: { Authorization: "Bearer " + sesion.token } });
+    if (r.status === 404) return { ok: true, motivo: "", contacto: null };
+    if (r.status === 403) return { ok: false, motivo: "las reglas dijeron que no (¿se publicaron las de avisos?)", contacto: null };
+    if (!r.ok) return { ok: false, motivo: `Firestore contestó ${r.status}`, contacto: null };
+    const d = objeto(((await r.json()) || {}).fields || {});
+    return { ok: true, motivo: "", contacto: {
+      telefono: String(d.telefono || ""), apikey: String(d.apikey || ""),
+      agente: d.agente === true, nombre: String(d.nombre || "") } };
+  } catch (e) {
+    return { ok: false, motivo: "red: " + (e && e.message ? e.message : String(e)), contacto: null };
+  }
+}
+
 /* ── El historial: ningún cambio del agente sin su copia de antes ────────────
    Pedido de Mauro, 2026-09-29: «quiero que el agente pueda gestionar y editar
    todo, teniendo respaldos de los registros para evitar perder datos en caso
@@ -574,7 +626,7 @@ async function deshacer(cfg, sesion, hid) {
   return e;
 }
 
-export { HISTORIAL, deshacer, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
+export { HISTORIAL, deshacer, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
          entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/

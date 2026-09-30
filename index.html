@@ -392,7 +392,7 @@
       <div class="fila-btn"><button class="btn" id="btnCopiarUid">Copiar el UID</button></div>
     </div>
     <div class="tarj">
-      <label for="uidAgente">UID del agente <span class="gris">(se recuerda en este teléfono)</span></label>
+      <label for="uidAgente">UID del agente <span class="gris">(vacío = el guardado en la base; lo escrito acá manda)</span></label>
       <input id="uidAgente" class="mono" style="font-size:.8rem;" autocomplete="off"
              placeholder="pegalo una vez y queda guardado acá">
       <p class="gris" style="margin-bottom:0;font-size:.78rem;">Se pega <b>una sola
@@ -449,7 +449,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-29";
+P.PANEL = "panel-30";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -606,6 +606,9 @@ async function leer() {
     li.forEach((d) => LINEAS.push({ id: d.id, ...d.data() }));
     ordenarLineas();
     pintar();
+    /* Con los proyectos leídos ya se sabe el UID del agente guardado en la
+       base (`panel-30`): «La puerta» se vuelve a armar con él adentro. */
+    pintarReglas();
   } catch (e) {
     $("resumen").textContent = P.explicar(e);
     $("lista").innerHTML = "";
@@ -2632,7 +2635,7 @@ function botonesDeReglas(pr, pendienteId) {
   if (!tieneReglas(pr)) return "";
   const a = pr.acceso || {};
   const pend = P.esc(pendienteId || "");
-  const faltaAgente = esPropia(pr) && !String($("uidAgente").value || "").trim();
+  const faltaAgente = esPropia(pr) && !uidAgentePropio();
   return '<div class="fila-btn">'
     + '<button class="btn p" data-reglas="' + P.esc(pr.id) + '" data-pend="' + pend + '">'
     + "Copiar para publicar</button>"
@@ -3381,8 +3384,28 @@ const LLAVE_AGENTE = "panel:uidAgente";
    los otros cuatro proyectos, así que esto tenía que salir de ahí: dos copias
    de la sustitución serían dos textos que se pueden separar, y uno de los dos
    se publicaría. */
+/* EL UID DEL AGENTE SALE DE LA BASE, y el campo de «La puerta» es sólo un
+   atajo (`panel-30`, 30-sep-2026). Hasta acá vivía únicamente en el campo, que
+   se recuerda en UN teléfono: Mauro publicó desde otro, el campo estaba vacío,
+   las reglas salieron con `SIN-AGENTE-CONFIGURADO` y el agente quedó afuera
+   del panel sin que nadie lo decidiera. Mauro lo pidió así: «deberías dejarlo
+   configurado por defecto para no volver con este error».
+
+   El «huevo y la gallina» que justificaba no guardarlo en la base no aplica
+   para quien PUBLICA: Mauro entra con `soyYo()` y lee `proyectos/` con
+   cualquier versión de las reglas. Así que vale lo mismo que para las otras
+   bases: `acceso.uids.agente` del documento del propio panel, que escribe el
+   agente. Un UID no es un secreto —va escrito en las reglas publicadas—.
+   Lo escrito en el campo manda, por si alguna vez hay que probar otro. */
+function uidAgentePropio() {
+  const escrito = String($("uidAgente").value || "").trim();
+  if (escrito) return escrito;
+  const pr = PROYECTOS.find(esPropia);
+  return String(((pr && pr.acceso && pr.acceso.uids) || {}).agente || "").trim();
+}
+
 function armarPlantilla(t) {
-  const a = String($("uidAgente").value || "").trim();
+  const a = uidAgentePropio();
   return sacarNotaDePlantilla(t)
     .split(MARCA_MIA).join(yo ? yo.uid : MARCA_MIA)
     .split(MARCA_AGENTE).join(a || SIN_AGENTE);
@@ -3408,7 +3431,7 @@ async function bajarPlantilla() {
 async function pintarReglas() {
   if (!yo) return;
   const ta = $("reglas"), btn = $("btnCopiarReglas"), est = $("reglasEstado");
-  const a = String($("uidAgente").value || "").trim();
+  const a = uidAgentePropio();
   let t;
   try {
     t = await bajarPlantilla();

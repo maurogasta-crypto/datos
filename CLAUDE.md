@@ -270,6 +270,15 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sólo al tocar «Copiar». Hasta ahí, cuando un chat cambiaba unas reglas, el
   chip seguía comparando el archivo viejo y decía «al día»: pasó con
   `sitd-34` el 2026-09-28. Uno por ficha, no los cinco al abrir.
+- **El UID del agente del propio panel sale de la base, no de un teléfono**
+  (`panel-30`, 30-sep-2026). Vivía sólo en el campo de «La puerta», que se
+  recuerda en UN dispositivo: Mauro publicó desde otro, las reglas salieron
+  con `SIN-AGENTE-CONFIGURADO` y el agente quedó afuera del panel. Ahora el
+  armado usa `acceso.uids.agente` de `proyectos/panel` —el mismo campo que ya
+  usan las otras bases, y lo escribe el agente— y el campo del teléfono es
+  sólo para probar otro. **Si las reglas se arman sin agente, eso es un
+  error, no un estado posible**: el aviso rojo sigue, pero ya no depende de
+  en qué teléfono se esté.
 - **La configuración que una app pega para entrar a su base sale de un botón**
   (`panel-29`), en la ficha del sitio. Lo público —`acceso.base` y
   `app: { apiKey, mail }`— lo escribe el agente en `proyectos/`; **la

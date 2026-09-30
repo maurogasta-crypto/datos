@@ -107,7 +107,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch","firebaseConfig","getDoc",
-  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
+  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -1560,6 +1560,26 @@ await sembrar({ proyectos: [
 api.verSitio("mudo"); api.pintarSitios(); await esperar(); await esperar();
 ok(api.estadoReglas(proy("mudo")).chip === "al día",
    "sin señal el chip queda como estaba: no inventa un cambio");
+
+console.log("\n40 · el UID del agente del panel sale de la base, no del teléfono (panel-30)");
+/* Pasó el 30-sep-2026: Mauro publicó desde un teléfono con el campo vacío, y
+   las reglas salieron con SIN-AGENTE-CONFIGURADO. Ahora el campo vacío cae en
+   `acceso.uids.agente` de la propia base. */
+const MARCA_UID = "UIDagenteDePrueba0000000001";
+BASE.proyectos = BASE.proyectos || {};
+BASE.proyectos.panel = { nombre: "El panel", orden: 1, acceso: { base: "datos-830f8", uids: { agente: MARCA_UID } } };
+await api.leer(); await esperar();
+$("uidAgente").value = "";
+const plant = fs.readFileSync(RAIZ + "reglas.txt", "utf8");
+ok(api.uidAgentePropio() === MARCA_UID, "con el campo vacío usa el UID guardado en la base");
+ok(api.armarPlantilla(plant).includes(MARCA_UID) && !api.armarPlantilla(plant).includes(api.SIN_AGENTE),
+   "y las reglas armadas lo llevan adentro, sin el relleno");
+$("uidAgente").value = "OtroUidEscritoAMano00000001";
+ok(api.armarPlantilla(plant).includes("OtroUidEscritoAMano00000001"), "lo escrito en el campo manda");
+$("uidAgente").value = "";
+BASE.proyectos.panel.acceso.uids = {};
+await api.leer(); await esperar();
+ok(api.armarPlantilla(plant).includes(api.SIN_AGENTE), "sin ninguno de los dos, sale el relleno (y el aviso)");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

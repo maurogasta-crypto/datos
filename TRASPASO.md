@@ -133,6 +133,11 @@ sesión. Entonces, desde el chat nuevo:
 
 Vigente desde el 30-sep-2026: el paso f) manda las llegadas por WhatsApp y entra el 10 bis, los avisos al equipo (línea `L-avisos`).
 
+**Desde la noche del 30-sep la rutina LEE este bloque**: el disparador
+(`trig_016okPxZMQR4ndoG9XUCKhce`) sólo tiene el arranque, las prohibiciones y
+un puntero acá. Cambiar un paso es cambiarlo en este archivo y empujarlo; no
+hay que tocar el disparador.
+
 ```
 RONDA DIARIA UNIFICADA. Mauro pidió el 29-sep que todas las rutinas corran en ESTE chat, con todos los protocolos que armamos, en un solo lugar. Corrés sin nadie delante.
 

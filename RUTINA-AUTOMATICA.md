@@ -31,6 +31,12 @@ entero para que la siguiente se arme igual y no haya que volver a razonarlo.
 > quedó **pausada** (no borrada: conserva sus corridas). Y el texto suma el paso
 > **10 bis**: los avisos por WhatsApp al equipo, con los criterios de
 > `protocolos/PROTOCOLO-AVISOS.md`; las llegadas pasan de borrador a envío.
+>
+> **Y desde esa misma noche el disparador ya no copia los pasos.** Su texto
+> tiene el arranque (dónde van los repos, cómo clonarlos si faltan), las
+> prohibiciones —que mandan aunque el archivo dijera otra cosa— y un puntero:
+> los pasos se leen de `TRASPASO.md` § 4, recién bajados. Eran 16 mil
+> caracteres en dos lugares; cambiar la rutina ahora es cambiar un archivo.
 
 ---
 

@@ -224,7 +224,7 @@ const PROYECTOS = {
        y sus observaciones. La plata el agente la LEE; lo que quiere agregar
        lo escribe en `propuestas` y una persona lo aprueba desde la app. */
     colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
-                  "bloques", "movimientos", "recurrentes", "propuestas", "auditoria",
+                  "bloques", "marcas", "movimientos", "recurrentes", "propuestas", "auditoria",
                   "reportes", "_historial"],
     /* Desde app-5 (29-sep-2026) `tiempos` SÍ tiene reportes: el globo 💡 de
        la app escribe sugerencias y fallas en `reportes/`, con la forma de los

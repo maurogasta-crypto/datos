@@ -44,7 +44,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-export const VERSION = "avisos-2";
+export const VERSION = "avisos-3";
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /* La función de Netlify de Casa Verde es el puente de TODO el ecosistema. No se
@@ -72,10 +72,11 @@ export const TEMAS = {
   urgente: "algo que no deja trabajar o que se pierde si nadie actúa hoy",
   llegada: "llega un huésped (Casa Verde): el enlace a la ficha de llegada",
   pedido:  "lo que esa persona pidió o reportó: quedó hecho o hace falta que conteste",
+  novedades: "lo nuevo desde el último aviso, junto: reservas, check-in y check-out, tareas, mensajes sin contestar, pedidos y fallas (herramientas/novedades.mjs)",
   resumen: "el resumen de la ronda, para quien lo pidió",
   prueba:  "comprobar que el camino anda"
 };
-const ICONO = { urgente: "⚠️", llegada: "🏡", pedido: "💬", resumen: "📋", prueba: "🔧" };
+const ICONO = { urgente: "⚠️", llegada: "🏡", novedades: "🔔", pedido: "💬", resumen: "📋", prueba: "🔧" };
 
 export const TOPE_DIA = 3;            // avisos por número y por día (de Montevideo)
 export const ESPERA_MS = 65000;       // CallMeBot: uno por minuto al mismo número
@@ -105,7 +106,7 @@ export function validarTexto(texto) {
   // es un teléfono.
   const sin = t.replace(/https?:\/\/[^\s)]+/gi, " ");
   if (/(\d[\s.-]?){8,}/.test(sin)) motivos.push("lleva un número largo (¿un teléfono, una cuenta?): va detrás del login");
-  if (/(R\$|US\$|U\$S|\$|€)\s?\d|\d[\d.,]*\s?(reales|pesos|d[oó]lares|usd|uyu|brl)\b/i.test(sin))
+  if (/(R\$|US\$|U\$S|\$|€)\s?\d|\d[\d.,]*\s?(R\$|US\$|U\$S|€)|\d[\d.,]*\s?(reales|pesos|d[oó]lares|usd|uyu|brl)\b/i.test(sin))
     motivos.push("lleva plata: los montos se ven en el sitio, no en un WhatsApp");
   if (/[\w.+-]+@[\w-]+\.[\w.]+/.test(sin)) motivos.push("lleva un mail");
   return { ok: motivos.length === 0, motivos };

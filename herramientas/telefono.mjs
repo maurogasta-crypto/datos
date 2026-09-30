@@ -970,6 +970,39 @@ async function main(args) {
     return;
   }
 
+  /* ARRANQUE SOLO (30-sep-2026, pedido de Mauro: que la lectura de Airbnb y
+     WhatsApp ande «sin que yo tenga que hacer ninguna acción»). `--vigilar`
+     tiene que estar corriendo para que llegue algo a la bodega, y Android lo
+     corta al reiniciar o cuando cierra Termux. Termux:Boot corre al encender
+     el teléfono los guiones de ~/.termux/boot/: éste deja uno que se pone al
+     día y arranca la lectura. Lo único que no se puede hacer desde acá es
+     instalar la app Termux:Boot y abrirla UNA vez: eso es de Mauro. */
+  if (cmd === "arranque") {
+    const boot = path.join(os.homedir(), ".termux", "boot");
+    const repo = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+    const guion = path.join(boot, "bodega-vigilar.sh");
+    const log = path.join(os.homedir(), ".bodega-vigilar.log");
+    fs.mkdirSync(boot, { recursive: true });
+    fs.writeFileSync(guion, [
+      "#!/data/data/com.termux/files/usr/bin/sh",
+      "# Lo escribió `node herramientas/telefono.mjs arranque`. Arranca solo con el teléfono.",
+      "termux-wake-lock",
+      `cd "${repo}" || exit 1`,
+      "git pull -q --ff-only >/dev/null 2>&1",
+      // Si se cae, vuelve a arrancar al minuto: un corte de red o un error de
+      // una pasada no pueden dejar el teléfono sin leer hasta el próximo reinicio.
+      `while true; do node herramientas/telefono.mjs whatsapp --vigilar >> "${log}" 2>&1; sleep 60; done`,
+      ""
+    ].join("\n"));
+    fs.chmodSync(guion, 0o755);
+    console.log(`\n  ✓ ${guion}`);
+    console.log("  Al encender el teléfono arranca solo la lectura de WhatsApp y Airbnb.");
+    console.log("  Falta, UNA vez: instalar la app Termux:Boot (del mismo lugar que Termux) y abrirla.");
+    console.log("  Para arrancarlo ya sin reiniciar:  sh " + guion + " &");
+    console.log(`  Lo que va pasando queda en ${log}\n`);
+    return;
+  }
+
   if (cmd === "whatsapp") {
     const W = await import("./telefono-whatsapp.mjs");
     const C = await import("./telefono-capturas.mjs");
@@ -1183,6 +1216,7 @@ async function main(args) {
   node herramientas/telefono.mjs interfaz                la pantalla: decidir, reglas y pedidos al chat
   node herramientas/telefono.mjs token                   pegar el token del depósito (una vez)
   node herramientas/telefono.mjs whatsapp [--vigilar]     leer los mensajes nuevos de WhatsApp
+  node herramientas/telefono.mjs arranque                que la lectura arranque sola con el teléfono (Termux:Boot)
   node herramientas/telefono.mjs descargas [--aplicar]    repetidos y basura de Descargas
   node herramientas/telefono.mjs deshacer [<lote>]        devuelve lo último que se botó
   node herramientas/telefono.mjs vaciar [--dias 30] [--aplicar]   borra de verdad lo viejo

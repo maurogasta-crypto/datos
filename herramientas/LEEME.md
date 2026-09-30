@@ -281,6 +281,22 @@ Banco: `node pruebas/herramientas/avisos.mjs` (37 casos, sin npm ni red), que
 además compara las reglas de los tres sitios cuando sus repositorios están al
 lado.
 
+## `novedades.mjs`
+
+Lo nuevo desde el último aviso, en **un** WhatsApp para Mauro (30-sep-2026,
+pedido suyo): reserva nueva, check-in y check-out de hoy o mañana, tarea
+nueva que creó otro, mensajes nuevos de WhatsApp y Airbnb, pedidos y fallas
+de los sitios, y el teléfono callado hace más de 24 h. Si no hay nada nuevo no
+manda nada. Lo ya avisado vive en `avisos/visto.json` de la bodega; la primera
+corrida sólo anota lo que existe. Los textos de terceros se limpian de plata,
+teléfonos y mails antes de armar el mensaje.
+
+```
+node herramientas/novedades.mjs [--a Mauro] [--seco] [--bodega <dir>]
+```
+
+Banco: `node pruebas/herramientas/novedades.mjs` (15 casos, sin red).
+
 ## `ACCESO-A-LAS-BASES.md`
 
 El paso a paso para dar de alta al agente en una base, hecho para seguirse

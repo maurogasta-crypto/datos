@@ -68,7 +68,7 @@ await prueba("un identificador largo DENTRO de un enlace no cuenta como teléfon
   assert.ok(validarTexto("https://casayourte.com/editar.html?x=12345678901234").ok);
 });
 await prueba("la plata no pasa, en cualquier moneda", () => {
-  for (const t of ["El saldo es R$ 450", "debe US$120", "quedan $ 3000", "son 200 reales", "1.500 pesos"])
+  for (const t of ["El saldo es R$ 450", "Podrías ganar 637,94 R$", "debe US$120", "quedan $ 3000", "son 200 reales", "1.500 pesos"])
     assert.ok(!validarTexto(t).ok, t);
 });
 await prueba("un número chico (horas, personas, noches) sí pasa", () => {

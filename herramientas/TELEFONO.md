@@ -116,6 +116,22 @@ Mira las notificaciones una vez por minuto y sube lo nuevo a la bodega, a
 `mensajes/<fecha>.json`. Hay que dejarlo corriendo en Termux. Sin
 `--vigilar` hace una sola pasada.
 
+**Que arranque solo** (30-sep-2026). `--vigilar` sólo lee mientras corre, y
+Android lo corta al reiniciar o cuando cierra Termux: ahí no llega nada y
+**no hay ningún error**, que se ve igual que un día sin mensajes. Una vez:
+
+```
+node herramientas/telefono.mjs arranque
+```
+
+deja `~/.termux/boot/bodega-vigilar.sh`, que al encender el teléfono se pone
+al día (`git pull`) y arranca la lectura, y si se cae la vuelve a arrancar al
+minuto. Hace falta la app **Termux:Boot** (del mismo lugar que Termux),
+instalada y abierta una vez. Para arrancarlo ya, sin reiniciar:
+`sh ~/.termux/boot/bodega-vigilar.sh &`. Y si igual se calla, la ronda de la
+mañana lo nota: 24 horas sin una captura van como aviso por WhatsApp
+(`herramientas/novedades.mjs`).
+
 **Por qué así y no leyendo WhatsApp:** leer notificaciones es lo mismo que
 bajar la barra. No toca la cuenta ni simula nada. Automatizar la app, o usar
 una biblioteca no oficial, es lo que hace que WhatsApp bloquee un número.

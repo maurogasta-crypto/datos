@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-12
+   Sello: estilos-13
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -446,3 +446,15 @@ textarea.libre { font-family:inherit; font-size:.95rem; white-space:pre-wrap;
 .bit i { font-family:var(--mono); font-style:normal; font-size:.72rem; color:var(--gris2); }
 .bit b { font-size:.78rem; color:var(--acento); }
 .bit div { color:var(--gris); margin-top:.2rem; }
+
+/* ── panel-32: el sitio se elige en la barra, y las claves en uso ───────── */
+#barra select#cual-app { flex:0 1 auto; max-width:52%; min-height:38px;
+  margin:0 .5rem; padding:.3rem .5rem; font-size:.85rem; }
+.par.acc input.u { grid-column:1 / -1; grid-row:3; min-height:40px; font-size:.85rem; }
+.accesos { border-top:1px solid var(--linea, #2a2e35); margin-top:.5rem; padding-top:.2rem; }
+.acceso { padding:.45rem 0; border-bottom:1px dashed var(--linea, #2a2e35); }
+.acceso:last-child { border-bottom:0; }
+.acceso .ruta { font-size:.8rem; word-break:break-word; margin:.15rem 0; }
+.valor-clave textarea { width:100%; margin-top:.3rem; }
+.valor-clave input { width:100%; margin-top:.3rem; min-height:40px; }
+#pedido-rapido textarea { min-height:3.2rem; }

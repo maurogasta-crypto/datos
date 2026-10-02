@@ -107,7 +107,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch","firebaseConfig","getDoc",
-  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, armarPedido, abrirPedido, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
+  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { APP = s === '*' ? '' : s; SITIO = s; $('cual-app').value = APP; }, elegirSitio, accesosDe, pintarAccesos, idBoveda, APP: () => APP, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, armarPedido, abrirPedido, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -436,7 +436,8 @@ api.pintarProtocolos();
 const nomRemate = (api.PROYECTOS ? "" : "") || "Rematetaller";
 ok($("r-reglas").innerHTML.includes(nomRemate), "agrupa por sitio con el nombre del catálogo");
 $("r-ambito").value = "remate"; api.pintarProtocolos();
-ok($("r-estado").textContent === "1 de 3", "el filtro por sitio deja una sola");
+// panel-32: las de un sitio son las suyas Y las generales.
+ok($("r-estado").textContent === "3 de 3", "el filtro por sitio deja la suya y las generales");
 $("r-ambito").value = ""; api.pintarProtocolos();
 
 // (c) Mauro edita una
@@ -858,14 +859,17 @@ await api.leer(); await esperar();
 
 /* ── la vista de todos ── */
 api.verSitio("*"); api.pintarSitios();
-const tabs = [...$("s-tabs").querySelectorAll("button")];
-ok(tabs.length === 4, "una pestaña por proyecto, más «Todos»");
-ok(tabs[0].dataset.s === "*" && tabs[0].getAttribute("aria-pressed") === "true",
-   "«Todos» arranca elegida");
+/* panel-32: ya no hay pestañas de sitio; se elige en la barra, al lado de
+   «Panel», y ese selector manda sobre todas las pestañas. */
+ok($("s-tabs").classList.contains("hide"), "las pestañas de sitio ya no se muestran");
+const opcionesBarra = [...$("barra").querySelectorAll("#cual-app option")];
+ok(opcionesBarra.length === 4 && opcionesBarra[0].textContent === "Ecosistema completo",
+   "el selector está en la barra: «Ecosistema completo» y un sitio por proyecto");
+ok($("s-titulo").textContent === "El ecosistema", "y la pestaña dice que mira el ecosistema");
 ok($("s-cuerpo").textContent.includes("Rematetaller"), "la vista global nombra los proyectos");
 ok($("s-cuerpo").textContent.includes("reglas sin publicar"),
    "y marca al que tiene las reglas sin publicar, que es lo que hay que ir a hacer");
-ok($("s-cuerpo").querySelector('[data-ir="remate"]'), "cada fila lleva a su pestaña");
+ok($("s-cuerpo").querySelector('[data-ir="remate"]'), "cada fila lleva a su sitio");
 
 /* ── un sitio ── */
 api.verSitio("remate"); api.pintarSitios();
@@ -1154,7 +1158,7 @@ const verFiltroDeTodo = () => {
   $("filtro").querySelector('[data-v="todo"]').dispatchEvent(
     new window.MouseEvent("click", { bubbles: true }));
 };
-$("cual-app").value = ""; api.pintar();
+api.verSitio("*"); api.pintar();
 const tarj = $("lista").querySelector('[data-abrir="r1"]');
 ok(!!tarj && !!tarj.querySelector('[data-reglas="sitio"]'),
    "la tarjeta del pendiente trae el botón de copiar, sin salir de la lista");
@@ -1283,7 +1287,7 @@ ok(api.lineasDe("remate").map((l) => l.id).join(",") === "L-eco",
    "y en otro sitio queda sólo lo global, no lo ajeno");
 
 /* ── la caja de arriba ── */
-$("cual-app").value = ""; api.pintar();
+api.verSitio("*"); api.pintar();
 ok($("lineas").textContent.includes("En qué estamos"), "la caja encabeza el tablero");
 ok($("lineas").textContent.includes("El taller de CasaYourte"), "y lista las líneas vivas");
 ok(!$("lineas").textContent.includes("Algo que ya se cerró"), "y no las cerradas");
@@ -1618,6 +1622,62 @@ $("btnPedidoGuardar").click(); await esperar(); await esperar(); await esperar()
 const cargado = Object.entries(BASE.pendientes || {}).find(([, v]) => v.tipo === "pedido");
 ok(cargado && cargado[1].sitios.length === 2 && cargado[1].proyecto === "general", "queda escrito en pendientes/");
 ok($("t-pedido").classList.contains("hide"), "y vuelve al tablero");
+
+console.log("\n42 · el sitio de arriba manda, el pedido rápido y las claves en uso (panel-32)");
+/* El pedido rápido usa el sitio de la barra. */
+api.elegirSitio("remate"); await esperar();
+ok(api.APP() === "remate", "elegir un sitio en la barra lo deja elegido para todo");
+ok($("pr-donde").textContent.includes("remate"), "el cuadro de pedido dice a qué sitio va");
+$("pr-texto").value = "Que la pantalla de luces diga la hora\ncon la última vez que se prendió";
+$("btnPedidoRapido").click(); await esperar(); await esperar(); await esperar();
+const rapido = Object.entries(BASE.pendientes || {}).find(([, v]) => v.tipo === "pedido" && v.proyecto === "remate");
+ok(rapido && rapido[1].titulo === "Que la pantalla de luces diga la hora" && rapido[1].sitios.join() === "remate",
+   "el pedido rápido queda escrito, del sitio elegido arriba");
+ok($("pr-texto").value === "", "y el cuadro queda vacío para el próximo");
+api.elegirSitio(""); await esperar();
+ok($("pr-donde").textContent.includes("todo el ecosistema"), "con «Ecosistema completo» va a todo");
+
+/* Las fichas siguen al sitio, y las claves en uso NUNCA muestran un valor
+   que no se pidió: el valor vive en la bóveda y se trae al tocar. */
+const SECRETO = "valor-que-solo-sale-al-tocar";
+BASE.fichas = {
+  "claves-uso-remate": { titulo: "Claves en uso · remate", proyecto: "remate", campos: [],
+    accesos: [
+      { nombre: "TUYA_CLIENT_SECRET", ruta: "Netlify › serene-scone-76bd4e › Environment variables › TUYA_CLIENT_SECRET",
+        usadaPor: "el puente de luces", boveda: "acceso-remate-tuya_client_secret" },
+      { nombre: "firebaseConfig.apiKey", ruta: "interno/utils.js", publica: true }
+    ] },
+  "otra": { titulo: "De Casa Verde", proyecto: "casaverde", campos: [{ clave: "x", valor: "y" }] }
+};
+BASE.claves = { "acceso-remate-tuya_client_secret": { clave: SECRETO } };
+api.elegirSitio("remate"); await esperar();
+await api.leerFichas(); await esperar();
+const fl = $("f-fichas");
+ok(fl.textContent.includes("Claves en uso · remate") && !fl.textContent.includes("De Casa Verde"),
+   "con un sitio elegido, sólo sus fichas");
+ok(fl.textContent.includes("Netlify › serene-scone-76bd4e") && fl.textContent.includes("el puente de luces"),
+   "cada clave muestra su camino y quién la usa");
+ok(!fl.innerHTML.includes(SECRETO), "y el valor NO está en la pantalla hasta que se pide");
+ok(fl.textContent.includes("pública por diseño") && fl.querySelectorAll("[data-ver-clave]").length === 1,
+   "una pública por diseño no ofrece bóveda");
+fl.querySelector("[data-ver-clave]").click(); await esperar(); await esperar();
+ok(fl.querySelector(".valor-clave textarea") && fl.querySelector(".valor-clave textarea").value === SECRETO,
+   "«Ver la clave» la trae de la bóveda");
+fl.querySelector("[data-ocultar]").click();
+ok(!fl.innerHTML.includes(SECRETO), "y «Ocultar» la saca de la pantalla");
+api.elegirSitio(""); await esperar();
+ok($("f-fichas").textContent.includes("De Casa Verde"), "con «Ecosistema completo», todas");
+
+/* Editar una ficha no se come sus claves en uso: guardar es sin merge. */
+api.abrirFicha(api.FICHAS().find((f) => f.id === "claves-uso-remate"));
+ok($("f-accesos").querySelectorAll(".par").length === 2, "el editor trae las claves en uso");
+$("btnFichaGuardar").click(); await esperar(); await esperar(); await esperar();
+const fichaGuardada = BASE.fichas["claves-uso-remate"];
+ok(fichaGuardada && Array.isArray(fichaGuardada.accesos) && fichaGuardada.accesos.length === 2
+   && fichaGuardada.accesos[0].boveda === "acceso-remate-tuya_client_secret" && fichaGuardada.accesos[1].publica === true,
+   "guardar la ficha conserva las claves, su lugar en la bóveda y cuál es pública");
+ok(api.idBoveda({ proyecto: "tiempos" }, { nombre: "FB TIEMPOS Clave" }) === "acceso-tiempos-fb-tiempos-clave",
+   "una clave nueva sin lugar en la bóveda recibe uno derivado de su nombre");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

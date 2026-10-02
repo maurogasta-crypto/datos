@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-12">
+<link rel="stylesheet" href="estilos.css?v=estilos-13">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
@@ -17,6 +17,12 @@
 
 <div id="barra">
   <div class="marca">Panel<small id="sello"></small></div>
+  <!-- EL SITIO QUE MIRA EL PANEL (panel-32, 2-oct-2026). Pedido de Mauro:
+       «arriba dice panel; a su lado elijo el sitio, y en la pestaña de abajo
+       me muevo en toda la información de ese sitio: pendientes, tandas,
+       reglas, fichas. También puedo elegir el ecosistema completo». Vivía
+       adentro de Pendientes; ahora manda sobre todas las pestañas. -->
+  <select id="cual-app" aria-label="Qué sitio mira el panel"></select>
   <button class="btn" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
 </div>
 
@@ -67,10 +73,22 @@
     <!-- 1a · la lista -->
     <div id="t-lista">
       <h1>Qué está pendiente</h1>
-      <label for="cual-app">¿En qué estás trabajando?</label>
-      <select id="cual-app"></select>
+      <!-- UN PEDIDO, A MANO (panel-32). Lo primero de la pantalla: «al inicio,
+           arriba de los pendientes, un cuadro cómodo donde registrar un
+           pedido para el desarrollo». Va al sitio elegido arriba, o a todo el
+           ecosistema; «Más opciones» abre el formulario de panel-31 para
+           elegir varios sitios o la prioridad. -->
+      <div class="tarj" id="pedido-rapido">
+        <label for="pr-texto">Un pedido para el desarrollo</label>
+        <textarea id="pr-texto" class="libre" rows="2"
+          placeholder="Qué querés que se haga. La primera línea es el título."></textarea>
+        <p class="gris" id="pr-donde" style="margin:.3rem 0 0;font-size:.78rem"></p>
+        <div class="fila-btn">
+          <button class="btn" id="btnPedido">Más opciones</button>
+          <button class="btn p" id="btnPedidoRapido">Mandar el pedido</button>
+        </div>
+      </div>
       <p class="gris" id="resumen">Leyendo…</p>
-      <div class="fila-btn"><button class="btn p" id="btnPedido">Pedido</button></div>
 
       <!-- 1b · la ficha técnica de la app elegida.
            Con qué está hecha, dónde corre, quién la administra. Sale de
@@ -283,11 +301,10 @@
     <!-- 3a · la lista -->
     <div id="f-lista">
       <h1>Fichas</h1>
-      <p class="gris">Titularidad de cuentas, contactos, números. <b>Los escribís vos, acá
-        adentro.</b> No pasan por el chat, no van a ningún repositorio, y ningún agente los
-        lee nunca.</p>
-      <p class="duro">Acá no van contraseñas. Ésas viven en tu gestor de contraseñas y en
-        ningún documento — tampoco en éste.</p>
+      <p class="gris">De quién es cada cuenta, contactos, y <b>por dónde se llega a cada
+        clave que usa una app</b>. Siguen al sitio elegido arriba.</p>
+      <p class="duro">El valor de una clave no va en una ficha: va a la bóveda, con
+        «Guardar el valor». Ahí lo lee sólo tu cuenta; el agente no puede.</p>
       <input id="f-buscar" type="search" placeholder="Buscar en las fichas…" autocomplete="off">
       <div class="fila-btn"><button class="btn p" id="btnFichaNueva">Nueva ficha</button></div>
       <p class="gris" id="f-estado">Leyendo…</p>
@@ -317,6 +334,21 @@
           un dato: es una explicación.</p>
         <div id="f-campos"></div>
         <div class="fila-btn"><button class="btn" id="btnCampo">Agregar un dato</button></div>
+      </div>
+      <!-- LAS CLAVES EN USO (panel-32). Por cada credencial que usa una app:
+           cómo se llama, la RUTA por la que se llega a ella en su consola
+           —la misma que se sigue para cambiarla— y quién la usa. El VALOR no
+           vive acá: vive en la bóveda (`claves/`), lo guarda sólo Mauro y el
+           agente no lo puede leer. La ficha guarda el camino; la bóveda, lo
+           que abre. -->
+      <div class="tarj">
+        <label>Las claves en uso</label>
+        <p class="gris" style="margin-top:.1rem;font-size:.78rem">Un renglón por
+          clave: el nombre, el camino para llegar a ella y quién la usa. El valor
+          no se escribe acá: se guarda en la bóveda desde la lista de fichas, con
+          «Guardar el valor».</p>
+        <div id="f-accesos"></div>
+        <div class="fila-btn"><button class="btn" id="btnAcceso">Agregar una clave</button></div>
       </div>
       <div class="tarj">
         <label for="f-notas">Notas</label>
@@ -364,8 +396,9 @@
         <div class="fila-btn"><button class="btn" id="btnAuditoria">La hice hoy</button></div>
       </div>
 
-      <label for="r-ambito">De qué sitio</label>
-      <select id="r-ambito"></select>
+      <!-- El ámbito lo manda el selector de arriba (panel-32); queda acá,
+           escondido, porque `pintarProtocolos()` lo lee. -->
+      <select id="r-ambito" class="hide"></select>
       <input id="r-buscar" type="search" placeholder="Buscar en las reglas…" autocomplete="off">
       <div class="fila-btn"><button class="btn p" id="btnReglaNueva">Nueva regla</button></div>
       <p class="gris" id="r-estado">Leyendo…</p>
@@ -409,10 +442,10 @@
        la cabeza, las reglas en la consola y el README en GitHub. Acá está
        todo junto, por sitio, que es como Mauro lo mira. -->
   <section id="v-sitios" class="hide">
-    <h1>Los sitios</h1>
-    <p class="gris">Uno por pestaña: con qué está hecho, dónde se ve, quién
-      entra a su base y qué le falta.</p>
-    <div class="sit-tabs" id="s-tabs" role="group" aria-label="Elegir sitio"></div>
+    <h1 id="s-titulo">El sitio</h1>
+    <p class="gris">Con qué está hecho, dónde se ve, quién entra a su base y qué
+      le falta. Se elige arriba, al lado de «Panel».</p>
+    <div class="sit-tabs hide" id="s-tabs" role="group" aria-label="Elegir sitio"></div>
     <div id="s-cuerpo"><p class="gris">Leyendo…</p></div>
   </section>
 
@@ -465,7 +498,7 @@
 
 <div id="nav" role="group" aria-label="Secciones">
   <button data-v="tablero" aria-pressed="true">Pendientes</button>
-  <button data-v="sitios" aria-pressed="false">Sitios</button>
+  <button data-v="sitios" aria-pressed="false">Sitio</button>
   <button data-v="tandas" aria-pressed="false">Tandas</button>
   <button data-v="reglas" aria-pressed="false">Reglas</button>
   <button data-v="fichas" aria-pressed="false">Fichas</button>
@@ -483,7 +516,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-31";
+P.PANEL = "panel-32";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -691,6 +724,7 @@ const tituloDe = (id) => {
    panel casi siempre viene a seguir con lo mismo de ayer. */
 let APP = "";
 try { APP = localStorage.getItem("panel.app") || ""; } catch (e) { APP = ""; }
+let SITIO = APP || "*";     // lo mismo, para «Sitio»: "*" es el ecosistema
 
 /* Un pendiente es de la app elegida si es SUYO o si es un pedido que la
    nombra entre sus `sitios` (panel-31): un pedido que cruza dos sitios tiene
@@ -701,21 +735,62 @@ const esDeLaApp = (p) => !APP || p.proyecto === APP
 function llenarApps() {
   const sel = $("cual-app");
   const antes = sel.value || APP;
-  sel.innerHTML = '<option value="">Todas las apps</option>'
+  sel.innerHTML = '<option value="">Ecosistema completo</option>'
     + PROYECTOS.map((p) => '<option value="' + P.esc(p.id) + '">'
         + P.esc(p.nombre || p.id) + "</option>").join("");
   sel.value = PROYECTOS.some((p) => p.id === antes) ? antes : "";
   APP = sel.value;
+  SITIO = APP || "*";
+  pintarDondePedido();
 }
 
-$("cual-app").addEventListener("change", () => {
+/* ── EL SITIO MANDA SOBRE TODO (panel-32) ──────────────────────────────────
+   Hasta panel-31 el selector filtraba Pendientes y Tandas, «Sitios» tenía
+   sus propias pestañas, las reglas su propio desplegable y las fichas
+   ninguno: cuatro maneras de elegir lo mismo. Ahora es UNA, arriba, y cada
+   pestaña se repinta con ella. */
+function aplicarSitio() {
   APP = $("cual-app").value;
+  SITIO = APP || "*";
   reiniciarCola();
   try { localStorage.setItem("panel.app", APP); } catch (e) {}
-  /* La solapa de reglas sigue al selector: si estoy trabajando en un sitio,
-     las reglas que importan son las suyas y las generales. */
   if ($("r-ambito").options.length) { $("r-ambito").value = APP; pintarProtocolos(); }
   pintar();
+  if (!$("v-sitios").classList.contains("hide")) pintarSitios();
+  if (tandasLeidas) pintarTandas();
+  if (fichasLeidas) pintarFichas();
+}
+$("cual-app").addEventListener("change", aplicarSitio);
+
+/* Ir a un sitio desde adentro de una pantalla (la lista de «Ecosistema
+   completo») es elegirlo arriba: un solo lugar dice qué se está mirando. */
+function elegirSitio(id) {
+  $("cual-app").value = PROYECTOS.some((p) => p.id === id) ? id : "";
+  aplicarSitio();
+  window.scrollTo(0, 0);
+}
+
+function pintarDondePedido() {
+  const d = $("pr-donde");
+  if (d) d.textContent = APP
+    ? "Va a «" + nombreProy(APP) + "». Para varios sitios o la prioridad: «Más opciones»."
+    : "Va a todo el ecosistema. Para elegir sitios o la prioridad: «Más opciones».";
+}
+
+/* El pedido rápido: el mismo `armarPedido` de panel-31, con el sitio de
+   arriba y prioridad media. Lo que el formulario completo decide con
+   casillas, acá lo decide el selector. */
+$("btnPedidoRapido").addEventListener("click", async () => {
+  const r = armarPedido($("pr-texto").value, APP ? [APP] : [], "media", PENDIENTES, P.hoy());
+  if (!r.ok) return P.aviso(r.motivo, "error");
+  const b = $("btnPedidoRapido"); b.disabled = true; b.textContent = "…";
+  try {
+    await setDoc(doc(db, "pendientes", r.id), { ...r.datos, actualizadoEn: serverTimestamp() });
+    $("pr-texto").value = "";
+    await leer();
+    P.aviso("Cargado como " + r.id + ". Lo levanta la próxima ronda.");
+  } catch (e) { P.aviso(P.explicar(e), "error"); }
+  finally { b.disabled = false; b.textContent = "Mandar el pedido"; }
 });
 
 /* ---------- pintar ---------- */
@@ -1786,14 +1861,17 @@ function llenarAmbitos(extra) {
     + lista.map((a) => '<option value="' + P.esc(a[0]) + '">' + P.esc(a[1]) + "</option>").join("");
   const antes = $("r-ambito").value;
   $("r-ambito").innerHTML = opciones(true);
-  $("r-ambito").value = lista.some((a) => a[0] === antes) ? antes : "";
+  $("r-ambito").value = lista.some((a) => a[0] === APP) ? APP
+    : (lista.some((a) => a[0] === antes) ? antes : "");
   $("r-de").innerHTML = opciones(false);
 }
 
 function pintarProtocolos() {
   const busca = norm($("r-buscar").value.trim());
   const soloDe = $("r-ambito").value;
-  const entra = (r) => (!soloDe || (r.ambito || "general") === soloDe)
+  /* Las de un sitio son las suyas Y las generales: «las reglas que impliquen
+     ese sitio» incluyen las que valen para todos (panel-32). */
+  const entra = (r) => (!soloDe || [soloDe, "general"].includes(r.ambito || "general"))
     && (!busca || norm([r.titulo, r.regla, r.porQue, r.origen].join(" ")).includes(busca));
 
   const visibles = PROTOCOLOS.filter(entra);
@@ -2096,13 +2174,18 @@ function pintarFichas() {
   const busca = norm($("f-buscar").value.trim());
   const entra = (f) => !busca || norm([
     f.titulo, f.notas, nombreProy(f.proyecto),
-    ...(Array.isArray(f.campos) ? f.campos.map((c) => c.clave + " " + c.valor) : [])
+    ...(Array.isArray(f.campos) ? f.campos.map((c) => c.clave + " " + c.valor) : []),
+    ...accesosDe(f).map((a) => a.nombre + " " + a.ruta + " " + a.usadaPor)
   ].join(" ")).includes(busca);
 
-  const visibles = FICHAS.filter(entra);
-  $("f-estado").textContent = FICHAS.length
-    ? (busca ? visibles.length + " de " + FICHAS.length : FICHAS.length + (FICHAS.length === 1 ? " ficha" : " fichas"))
-    : "Todavía no hay ninguna. Empezá por «Nueva ficha».";
+  /* Siguen al sitio de arriba (panel-32): las de ese sitio. Con
+     «Ecosistema completo», todas. */
+  const delSitio = FICHAS.filter((f) => !APP || f.proyecto === APP);
+  const visibles = delSitio.filter(entra);
+  $("f-estado").textContent = delSitio.length
+    ? (busca ? visibles.length + " de " + delSitio.length : delSitio.length + (delSitio.length === 1 ? " ficha" : " fichas"))
+      + (APP ? " de " + nombreProy(APP) : "")
+    : (APP ? "Ninguna de " + nombreProy(APP) + " todavía." : "Todavía no hay ninguna. Empezá por «Nueva ficha».");
 
   // Agrupadas por proyecto, en el mismo orden que el tablero; lo que no tenga
   // proyecto cae al final en vez de desaparecer.
@@ -2129,12 +2212,90 @@ function pintarFichas() {
           + '<span class="v">' + P.esc(c.valor) + "</span>"
           + '<button class="mini" data-copiar="' + P.esc(c.valor) + '">Copiar</button></div>';
       });
+      h += pintarAccesos(f);
       if (f.notas) h += '<div class="notas">' + P.esc(f.notas) + "</div>";
       if (f.actualizadoEn) h += '<div class="cuando">' + P.esc(P.fecha(f.actualizadoEn)) + "</div>";
       h += "</div>";
     });
   });
-  $("f-fichas").innerHTML = h || (FICHAS.length ? '<p class="gris">Nada con esa búsqueda.</p>' : "");
+  $("f-fichas").innerHTML = h || (delSitio.length ? '<p class="gris">Nada con esa búsqueda.</p>' : "");
+}
+
+/* ═══ LAS CLAVES EN USO (panel-32) ════════════════════════════════════════
+   Pedido de Mauro, 2-oct-2026: «dejar presentada la vía de acceso actual de
+   cada clave usada en las apps del ecosistema, con la misma ruta que se usa
+   cuando sea posible, para mostrar la clave que está siendo usada».
+
+   DOS PARTES, en las dos zonas de siempre:
+     · el CAMINO —nombre, ruta, quién la usa— va en la ficha (`accesos`), y
+       lo escribe el agente leyendo la tabla de secretos de cada CLAUDE.md;
+     · el VALOR va a la bóveda, `claves/<boveda>`, y lo guarda sólo Mauro con
+       «Guardar el valor». El agente no lo lee: las reglas se lo niegan.
+
+   Por qué no se trae el valor de la consola misma: Netlify, GitHub y Google
+   no le muestran un secreto a nadie una vez guardado — ni al dueño —. Lo que
+   se ve acá es lo que Mauro guardó; el camino dice dónde cambiarlo. */
+const slug = (v) => String(v || "").toLowerCase().normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+const idBoveda = (f, a) => a.boveda || ("acceso-" + (f.proyecto || "general") + "-" + slug(a.nombre));
+function accesosDe(f) {
+  return (Array.isArray(f && f.accesos) ? f.accesos : [])
+    .filter((a) => a && (a.nombre || a.ruta))
+    .map((a) => ({ nombre: String(a.nombre || ""), ruta: String(a.ruta || ""),
+      usadaPor: String(a.usadaPor || ""), boveda: a.boveda || "", publica: !!a.publica }));
+}
+function pintarAccesos(f) {
+  const lista = accesosDe(f);
+  if (!lista.length) return "";
+  return '<div class="accesos"><div class="k" style="margin:.5rem 0 .2rem">Claves en uso</div>'
+    + lista.map((a) => {
+      const id = idBoveda(f, a);
+      return '<div class="acceso">'
+        + '<div class="mono" style="font-weight:600">' + P.esc(a.nombre) + "</div>"
+        + (a.ruta ? '<div class="ruta">' + P.esc(a.ruta) + "</div>" : "")
+        + (a.usadaPor ? '<div class="gris" style="font-size:.78rem">la usa: ' + P.esc(a.usadaPor) + "</div>" : "")
+        + (a.publica
+          ? '<div class="gris" style="font-size:.78rem">pública por diseño: está en el código, no abre nada</div>'
+          : '<div class="fila-btn" style="margin-top:.3rem">'
+            + '<button class="mini" data-ver-clave="' + P.esc(id) + '">Ver la clave</button>'
+            + '<button class="mini" data-guardar-clave="' + P.esc(id) + '" data-para="'
+            + P.esc(a.nombre + " · " + a.ruta) + '">Guardar el valor</button></div>'
+            + '<div class="valor-clave" data-valor-de="' + P.esc(id) + '"></div>')
+        + "</div>";
+    }).join("") + "</div>";
+}
+
+async function verClave(id, caja) {
+  caja.innerHTML = '<p class="gris">Leyendo la bóveda…</p>';
+  try {
+    const d = await getDoc(doc(db, "claves", id));
+    const v = d.exists() ? String((d.data() || {}).clave || "") : "";
+    if (!v) { caja.innerHTML = '<p class="gris">Todavía no la guardaste en la bóveda: «Guardar el valor».</p>'; return; }
+    const cuando = (d.data() || {}).guardada;
+    caja.innerHTML = '<textarea readonly class="mono" rows="1" style="font-size:.8rem"></textarea>'
+      + '<div class="fila-btn"><button class="mini" data-copiar-valor>Copiar</button>'
+      + '<button class="mini" data-ocultar>Ocultar</button></div>'
+      + (cuando ? '<p class="gris" style="font-size:.72rem;margin:.2rem 0 0">guardada el ' + P.esc(cuando) + "</p>" : "");
+    const t = caja.querySelector("textarea"); t.value = v; crecer(t);
+  } catch (e) { caja.innerHTML = '<p class="gris">' + P.esc(P.explicar(e)) + "</p>"; }
+}
+
+function formularioClave(id, para, caja) {
+  caja.innerHTML = '<input type="password" class="mono" autocomplete="off" placeholder="pegá el valor que está en uso">'
+    + '<div class="fila-btn"><button class="mini" data-cancelar-clave>Cancelar</button>'
+    + '<button class="mini p" data-confirmar-clave="' + P.esc(id) + '" data-para="' + P.esc(para) + '">Guardar en la bóveda</button></div>';
+  caja.querySelector("input").focus();
+}
+
+async function guardarClave(id, para, caja, boton) {
+  const v = String(caja.querySelector("input").value || "");
+  if (!v.trim()) return P.aviso("Pegá el valor primero.", "error");
+  boton.disabled = true;
+  try {
+    // `merge`: si ese documento ya tenía otra cosa, no se pierde.
+    await setDoc(doc(db, "claves", id), { clave: v, para, guardada: P.hoy() }, { merge: true });
+    caja.innerHTML = '<p class="gris">Guardada en la bóveda.</p>';
+  } catch (e) { P.aviso("No se pudo guardar: " + P.explicar(e), "error"); boton.disabled = false; }
 }
 
 $("f-buscar").addEventListener("input", pintarFichas);
@@ -2144,6 +2305,13 @@ $("f-buscar").addEventListener("input", pintarFichas);
 $("f-fichas").addEventListener("click", (e) => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.copiar !== undefined) return copiar(b.dataset.copiar, "Copiado.");
+  // Sin `CSS.escape`: se busca comparando el atributo, que no necesita escaparse.
+  const cajaDe = (id) => [...$("f-fichas").querySelectorAll("[data-valor-de]")].find((x) => x.dataset.valorDe === id);
+  if (b.dataset.verClave) return verClave(b.dataset.verClave, cajaDe(b.dataset.verClave));
+  if (b.dataset.guardarClave) return formularioClave(b.dataset.guardarClave, b.dataset.para || "", cajaDe(b.dataset.guardarClave));
+  if (b.dataset.confirmarClave) return guardarClave(b.dataset.confirmarClave, b.dataset.para || "", cajaDe(b.dataset.confirmarClave), b);
+  if (b.dataset.cancelarClave !== undefined || b.dataset.ocultar !== undefined) { b.closest(".valor-clave").innerHTML = ""; return; }
+  if (b.dataset.copiarValor !== undefined) return copiar(b.closest(".valor-clave").querySelector("textarea").value, "Copiada.");
   if (b.dataset.abrir) {
     const f = FICHAS.find((x) => x.id === b.dataset.abrir);
     if (f) abrirFicha(f);
@@ -2190,6 +2358,27 @@ function crecer(caja) {
   if (caja.scrollHeight) caja.style.height = Math.max(44, caja.scrollHeight) + "px";
 }
 
+/* Un renglón de «Las claves en uso»: nombre, camino y quién la usa. El
+   identificador de la bóveda viaja escondido, para que renombrar la clave en
+   la ficha no deje huérfano el valor guardado. */
+function filaAcceso(a) {
+  const fila = document.createElement("div");
+  fila.className = "par acc";
+  fila.dataset.boveda = (a && a.boveda) || "";
+  fila.dataset.publica = (a && a.publica) ? "1" : "";
+  fila.innerHTML = '<input class="k" placeholder="nombre (GEMINI_API_KEY)" autocomplete="off">'
+    + '<button class="mini quitar" type="button" aria-label="Quitar esta clave">×</button>'
+    + '<textarea class="v ruta" rows="1" placeholder="el camino: Netlify › proyecto › Environment variables › NOMBRE"></textarea>'
+    + '<input class="u" placeholder="la usa…" autocomplete="off">';
+  fila.querySelector(".k").value = (a && a.nombre) || "";
+  const caja = fila.querySelector(".ruta");
+  caja.value = (a && a.ruta) || "";
+  caja.addEventListener("input", () => crecer(caja));
+  fila.querySelector(".u").value = (a && a.usadaPor) || "";
+  fila.querySelector(".quitar").onclick = () => fila.remove();
+  return fila;
+}
+
 function abrirFicha(f) {
   editando = { id: (f && f.id) || null, creadoEn: (f && f.creadoEn) || null };
   $("f-cual").textContent = f ? "Editar ficha" : "Nueva ficha";
@@ -2199,7 +2388,7 @@ function abrirFicha(f) {
   // El desplegable sale del catálogo de proyectos. Si la ficha tiene uno que
   // ya no está en el catálogo, se agrega igual: perder el dato en silencio
   // por un desplegable incompleto es peor que mostrar un nombre suelto.
-  const actual = (f && f.proyecto) || "";
+  const actual = f ? (f.proyecto || "") : APP;
   const opciones = PROYECTOS.map((p) => ({ id: p.id, nombre: p.nombre || p.id }));
   if (actual && !opciones.some((o) => o.id === actual)) opciones.push({ id: actual, nombre: actual });
   $("f-proyecto").innerHTML = '<option value="">(sin proyecto)</option>'
@@ -2210,8 +2399,12 @@ function abrirFicha(f) {
   cont.innerHTML = "";
   const campos = (f && Array.isArray(f.campos) && f.campos.length) ? f.campos : [{ clave: "", valor: "" }];
   campos.forEach((c) => cont.appendChild(filaCampo(c.clave, c.valor)));
+  const acc = $("f-accesos");
+  acc.innerHTML = "";
+  accesosDe(f).forEach((a) => acc.appendChild(filaAcceso(a)));
   /* Recién ahora están en la pantalla y `scrollHeight` dice algo. */
   cont.querySelectorAll("textarea.v").forEach(crecer);
+  acc.querySelectorAll("textarea.v").forEach(crecer);
 
   $("btnFichaBorrar").classList.toggle("hide", !f);
   $("f-lista").classList.add("hide");
@@ -2228,6 +2421,7 @@ function cerrarFicha() {
 
 $("btnFichaNueva").addEventListener("click", () => abrirFicha(null));
 $("btnCampo").addEventListener("click", () => $("f-campos").appendChild(filaCampo("", "")));
+$("btnAcceso").addEventListener("click", () => $("f-accesos").appendChild(filaAcceso(null)));
 $("btnFichaCancelar").addEventListener("click", cerrarFicha);
 /* El volver es un enlace, no un history.back(): desde acá se guardó, se borró
    o se canceló, y para cuando se toca Atrás el back ya no lleva a donde uno
@@ -2245,6 +2439,19 @@ $("btnFichaGuardar").addEventListener("click", async () => {
     if (k || v) campos.push({ clave: k, valor: v });
   });
 
+  const proyecto = $("f-proyecto").value || "";
+  const accesos = [];
+  $("f-accesos").querySelectorAll(".par").forEach((fila) => {
+    const nombre = fila.querySelector(".k").value.trim();
+    const ruta = fila.querySelector(".ruta").value.trim();
+    const usadaPor = fila.querySelector(".u").value.trim();
+    if (!nombre && !ruta) return;
+    const a = { nombre, ruta, usadaPor };
+    a.boveda = fila.dataset.boveda || idBoveda({ proyecto }, a);
+    if (fila.dataset.publica) a.publica = true;
+    accesos.push(a);
+  });
+
   const b = $("btnFichaGuardar"); b.disabled = true; b.textContent = "…";
   try {
     // Sin merge, a propósito: si sacaste un dato de la ficha tiene que
@@ -2253,8 +2460,9 @@ $("btnFichaGuardar").addEventListener("click", async () => {
     const id = editando.id || doc(collection(db, "fichas")).id;
     await setDoc(doc(db, "fichas", id), {
       titulo,
-      proyecto: $("f-proyecto").value || "",
+      proyecto,
       campos,
+      accesos,
       notas: $("f-notas").value.trim(),
       creadoEn: editando.creadoEn || serverTimestamp(),
       actualizadoEn: serverTimestamp()
@@ -2324,7 +2532,7 @@ if ("serviceWorker" in navigator) {
    dentro del archivo, y eso no cambió — allá siguen los marcadores.
    ═══════════════════════════════════════════════════════════ */
 
-let SITIO = "*";            // "*" es la vista de todos juntos
+/* `SITIO` se declara junto a `APP` (panel-32): es el mismo selector. */
 
 const urlRepo = (r) => "https://github.com/" + String(r || "").trim();
 
@@ -3351,7 +3559,7 @@ function pintarTodosLosSitios() {
       + "</div></div>";
   }).join("");
   h += '<p class="gris" style="margin:.6rem 0 0;font-size:.78rem">Tocá uno para '
-    + "abrir su pestaña.</p></div>";
+    + "elegirlo arriba: todas las pestañas pasan a mostrar ese sitio.</p></div>";
   return h;
 }
 
@@ -3362,12 +3570,13 @@ function pintarSitios() {
     $("s-cuerpo").innerHTML = '<p class="gris">Todavía no leí los proyectos.</p>';
     return;
   }
-  pintarTabsSitios();
+  SITIO = APP || "*";
+  $("s-titulo").textContent = SITIO === "*" ? "El ecosistema" : nombreProy(SITIO);
   if (SITIO === "*") { $("s-cuerpo").innerHTML = pintarTodosLosSitios(); return; }
   const pr = PROYECTOS.find((x) => x.id === SITIO);
   /* Si el proyecto elegido ya no está (lo borré), se vuelve a la
      vista global en vez de dejar la pantalla vacía sin decir por qué. */
-  if (!pr) { SITIO = "*"; pintarSitios(); return; }
+  if (!pr) { elegirSitio(""); return; }
   $("s-cuerpo").innerHTML = pintarUnSitio(pr);
   releerReglas(pr);
 }
@@ -3393,7 +3602,7 @@ $("s-cuerpo").addEventListener("click", (e) => {
     return;
   }
   const ir = e.target.closest("[data-ir]");
-  if (ir) { SITIO = ir.dataset.ir; pintarSitios(); window.scrollTo(0, 0); return; }
+  if (ir) { elegirSitio(ir.dataset.ir); return; }
   const rg = e.target.closest("[data-reglas]");
   if (rg) {
     const pr = PROYECTOS.find((x) => x.id === rg.dataset.reglas);

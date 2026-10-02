@@ -1,5 +1,5 @@
 {
-  "generado": "2026-09-29",
+  "generado": "2026-10-02",
   "proyectos": [
     {
       "id": "casaverde",
@@ -72,6 +72,15 @@
       "url": null,
       "apk": null,
       "resumen": "Repositorio recién creado y VACÍO: al 2026-09-20 tiene un solo archivo, `Texto.txt`, de un byte. Todavía no hay código, ni sitio, ni documentación, ni se sabe qué va a ser. Está dado de alta acá para "
+    },
+    {
+      "id": "pizarra",
+      "nombre": "Pizarra",
+      "repo": "maurogasta-crypto/pizarra",
+      "respaldar": true,
+      "url": null,
+      "apk": "https://github.com/maurogasta-crypto/pizarra/releases/download/ultimo/pizarra.apk",
+      "resumen": "Widget de Android con las tareas de Tiempos que cada uno elige, para verlas en la pantalla de inicio y tacharlas con un toque. Tachar ahí es lo mismo que «✔ Hecha» en Tiempos: lo ve el otro. App nativ"
     },
     {
       "id": "remate",

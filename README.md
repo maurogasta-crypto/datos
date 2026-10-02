@@ -189,9 +189,21 @@ cerrar— está en `protocolos/PROTOCOLO-GENERAL.md` § 2.1 quinquies.
 
 ### El tablero: en qué app, qué primero, y qué traba qué
 
-Arriba de todo hay un **selector de app**. Todo lo que se ve cuelga de él —los
-contadores, la lista, y las reglas de la otra solapa—, y se recuerda en el
-teléfono: quien abre el panel casi siempre viene a seguir con lo de ayer.
+Arriba de todo, **al lado de «Panel» en la barra**, se elige el sitio —o
+**Ecosistema completo**—, y desde `panel-32` (2-oct-2026) **manda sobre todas
+las pestañas**: Pendientes, Sitio, Tandas, Reglas (las del sitio y las
+generales) y Fichas. Se recuerda en el teléfono: quien abre el panel casi
+siempre viene a seguir con lo de ayer. Hasta `panel-31` eran cuatro maneras de
+elegir lo mismo —el selector de Pendientes, las pestañas de «Sitios», el
+desplegable de Reglas, y ninguna en Fichas—; lo pidió Mauro así: «arriba dice
+panel, a su lado elijo el sitio, y en la pestaña de abajo me muevo en toda la
+información de ese sitio».
+
+**Lo primero de Pendientes es un cuadro para mandar un pedido** (`panel-32`):
+se escribe, se toca «Mandar el pedido», y queda como pendiente del sitio
+elegido arriba —o de todo el ecosistema—, con `tipo: "pedido"` y `quien:
+"claude"`, igual que el formulario de `panel-31`, que sigue en «Más opciones»
+para elegir varios sitios o la prioridad.
 
 Debajo, la lista **no es una lista**: son dos bloques.
 
@@ -450,16 +462,16 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-31` |
-| `estilos.css` | (en el comentario) | `estilos-12` |
+| `index.html` | `P.PANEL` | `panel-32` |
+| `estilos.css` | (en el comentario) | `estilos-13` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v22` |
+| `sw.js` | `VERSION` | `panel-shell-v23` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-12` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-13` y `nucleo.js?v=nucleo-4`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 
@@ -592,8 +604,9 @@ garantía**. Si cambia uno, cambia el otro en la misma tanda.
 
 ## Los sitios
 
-Una **pestaña por proyecto** (solapa «Sitios»), y una más, «Todos», con el
-panorama. Nace de un problema concreto: para contestar «¿cómo está casayourte?»
+Una solapa, **«Sitio»**, que muestra el sitio elegido arriba —o, con
+«Ecosistema completo», el panorama de todos—. Hasta `panel-31` tenía sus propias
+pestañas; desde `panel-32` el sitio se elige en la barra. Nace de un problema concreto: para contestar «¿cómo está casayourte?»
 había que abrir cuatro cosas que nunca se miran juntas — la ficha técnica
 adentro del tablero, el enlace público de memoria, las reglas en la consola de
 Firebase y la explicación en el README de su repositorio.
@@ -917,6 +930,30 @@ ninguna: un botón que a veces no muestra nada enseña a no tocarlo.
 > **uno** y a propósito. El banco de pruebas lo verifica en el bloque 32.
 
 ## Las fichas
+
+### Las claves en uso (`panel-32`)
+
+Pedido de Mauro el 2026-10-02: «dejar presentada la vía de acceso actual de cada
+clave usada en las apps del ecosistema, con la misma ruta que se usa, para
+mostrar la clave que está siendo usada». Cada ficha puede llevar una lista
+`accesos`: por clave, **el nombre, el camino** para llegar a ella en su consola
+—el mismo que se sigue para cambiarla, como `Netlify › serene-scone-76bd4e ›
+Project configuration › Environment variables › GEMINI_API_KEY`— **y quién la
+usa**. Las arma el agente desde la tabla de secretos del `CLAUDE.md` de cada
+proyecto, en una ficha «Claves en uso · <sitio>».
+
+**El valor no está en la ficha, y no es un descuido: son las dos zonas.** Cada
+clave tiene su lugar en la bóveda, `claves/acceso-<sitio>-<nombre>`, y ahí lo
+guarda Mauro con «Guardar el valor»; «Ver la clave» lo trae al tocar y
+«Ocultar» lo saca de la pantalla. El agente escribe el camino y no puede leer
+el valor: las reglas le niegan `claves/`. Y no se puede traer de la consola
+misma: Netlify, GitHub y Google no le vuelven a mostrar un secreto a nadie una
+vez guardado. Lo que se ve es lo que Mauro guardó; el camino dice dónde está el
+que está en uso, para cambiarlo. Una clave **pública por diseño** (la `apiKey`
+web de Firebase) se marca `publica` y no ofrece bóveda.
+
+Guardar una ficha es sin `merge`, así que el editor **lleva las claves en uso
+adentro**: abrir y guardar una ficha no se las come. El banco lo comprueba.
 
 La segunda zona: titularidad de cuentas, contactos, números. **Se escriben en el
 panel y no salen de ahí.** Cada ficha tiene un título, un proyecto, los datos que

@@ -202,6 +202,19 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   nueve días de `fichas/` sellada. Y la pantalla la acompaña: la clave arriba,
   el valor abajo a lo ancho, en una caja que crece — antes eran dos `input` al
   34 % y al 66 % y en un teléfono no se leía lo que uno mismo había escrito.
+- **El sitio se elige UNA vez, en la barra, y manda sobre todas las pestañas**
+  (`panel-32`, 2-oct-2026). Pendientes, Sitio, Tandas, Reglas —las del sitio y
+  las generales— y Fichas se repintan con él, y «Ecosistema completo» muestra
+  todo. Hasta `panel-31` eran cuatro maneras de elegir lo mismo. **No se le
+  vuelve a dar a una pestaña su propio selector de sitio.** Y lo primero de
+  Pendientes es el cuadro para mandar un pedido, que va al sitio de arriba.
+- **Una ficha puede llevar «Las claves en uso» (`accesos`)** (`panel-32`):
+  por clave, el nombre, el CAMINO en su consola y quién la usa. Las fichas
+  «Claves en uso · <sitio>» las arma el agente desde la tabla de secretos de
+  cada `CLAUDE.md`, y **si cambia esa tabla, cambia la ficha en la misma
+  tanda**. El VALOR no va en la ficha: va a `claves/acceso-<sitio>-<nombre>`,
+  lo guarda Mauro con «Guardar el valor» y el agente no lo lee. Guardar una
+  ficha es sin `merge`, así que el editor lleva los `accesos` adentro.
 - **Las reglas se editan completas, nunca por fragmentos:** se suman. Y lo que
   el agente no toca está escrito **en dos lugares**: `reglas.txt` acá y
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
@@ -224,7 +237,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
   manda; `node pruebas/herramientas/novedades.mjs` (18 casos) para las novedades
   que se le mandan a Mauro, que prueba que nada se avise dos veces; y `pruebas/panel/banco.mjs` (con `npm install`
-  una vez) para el panel entero. En `pruebas/casayourte/` hay dos más
+  una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.
 - **`reglas.txt` es la plantilla, y es la ÚNICA copia del texto de las reglas.**
   Los dos UID van como marcadores (`TU-UID-ACA`, `UID-DEL-AGENTE`) porque este

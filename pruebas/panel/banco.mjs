@@ -107,7 +107,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch","firebaseConfig","getDoc",
-  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
+  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { SITIO = s; }, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, armarPedido, abrirPedido, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -1580,6 +1580,44 @@ $("uidAgente").value = "";
 BASE.proyectos.panel.acceso.uids = {};
 await api.leer(); await esperar();
 ok(api.armarPlantilla(plant).includes(api.SIN_AGENTE), "sin ninguno de los dos, sale el relleno (y el aviso)");
+
+console.log("\n41 · un pedido desde el panel (panel-31)");
+/* Pedido de Mauro al contestar panel:R8 (2-oct-2026): «un botón "pedido" para
+   cargar una sugerencia que pueda atravesar un sitio o varios». Es un
+   pendiente más, de Claude, que la ronda levanta. */
+const PEND = [{ id: "casaverde:P1", proyecto: "casaverde", clave: "P1" },
+              { id: "general:P3", proyecto: "general", clave: "P3" },
+              { id: "general:P4", proyecto: "general", clave: "reportes-4" }];
+let pe = api.armarPedido("   ", [], "alta", PEND, "2026-10-02");
+ok(!pe.ok, "sin texto no se arma nada");
+pe = api.armarPedido("Que la ficha de llegada muestre el clima\nasí Flor sabe qué decir", ["casaverde"], "alta", PEND, "2026-10-02");
+ok(pe.ok && pe.id === "casaverde:P2" && pe.datos.proyecto === "casaverde",
+   "un sitio: es de ese sitio, con la P que sigue");
+ok(pe.datos.titulo === "Que la ficha de llegada muestre el clima" && pe.datos.porQue.includes("Flor sabe"),
+   "el título es la primera línea y el texto entero va al porQue");
+ok(pe.datos.quien === "claude" && pe.datos.estado === "abierto" && pe.datos.tipo === "pedido"
+   && pe.datos.tocado === true && pe.datos.prioridad === "alta" && pe.datos.origen === "panel",
+   "lo levanta la ronda: de Claude, abierto, tocado, con su urgencia");
+ok(pe.datos.historia.length === 1 && pe.datos.historia[0].por === "mauro", "la historia empieza con Mauro");
+pe = api.armarPedido("Unificar los avisos", ["casaverde", "remate"], "nada", PEND, "2026-10-02");
+ok(pe.id === "general:P5" && pe.datos.sitios.join() === "casaverde,remate",
+   "varios sitios: es general, nombra los dos, y no pisa general:P4 aunque su clave sea otra");
+ok(pe.datos.prioridad === "media", "una urgencia desconocida cae en «después»");
+pe = api.armarPedido("x".repeat(200), [], "baja", [], "2026-10-02");
+ok(pe.id === "general:P1" && pe.datos.titulo.length === 90 && pe.datos.titulo.endsWith("…"),
+   "ninguno: general, y un título largo se corta con puntos suspensivos");
+
+/* Y la pantalla: cargar un pedido lo escribe y lo deja a la vista en el sitio que toca. */
+BASE.proyectos = { casaverde: { nombre: "Casa Verde", orden: 1 }, remate: { nombre: "remate", orden: 2 } };
+await api.leer(); await esperar();
+api.abrirPedido();
+ok(!$("t-pedido").classList.contains("hide") && $("t-lista").classList.contains("hide"), "el botón abre la hoja del pedido");
+$("p-texto").value = "Unificar los avisos\nen los dos sitios";
+$("p-sitios").querySelectorAll("input").forEach((i) => { i.checked = true; });
+$("btnPedidoGuardar").click(); await esperar(); await esperar(); await esperar();
+const cargado = Object.entries(BASE.pendientes || {}).find(([, v]) => v.tipo === "pedido");
+ok(cargado && cargado[1].sitios.length === 2 && cargado[1].proyecto === "general", "queda escrito en pendientes/");
+ok($("t-pedido").classList.contains("hide"), "y vuelve al tablero");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

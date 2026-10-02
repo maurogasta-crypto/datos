@@ -450,10 +450,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-30` |
+| `index.html` | `P.PANEL` | `panel-31` |
 | `estilos.css` | (en el comentario) | `estilos-12` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v21` |
+| `sw.js` | `VERSION` | `panel-shell-v22` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

@@ -187,6 +187,7 @@ Si falta alguno (el contenedor pudo haberse renovado), clonalo ahí: git clone h
 
 ════ PARTE 2 · TRABAJAR (como máximo UN pendiente) ════
 7. El pendiente lo elige la ronda en QUÉ TOCAR AHORA: tomá el primero. Antes comprobá que TODAVÍA sea cierto (preguntale a la cosa, no al registro). Si no hay ninguno elegible, decilo y andá a la PARTE 3: no inventes trabajo.
+   Si es un PEDIDO de Mauro (`tipo: "pedido"`, cargado con el botón «Pedido» del panel): hacelo sólo si está claro y cabe en cómo funciona hoy el ecosistema. Si es ambiguo, toca varios sitios, choca con una regla de un CLAUDE.md o es más grande que una tanda, NO toques código: escribile un PLAN como `pregunta` del pendiente (qué entendiste, qué sitios toca, en qué pasos, qué choca y qué decide él) y pasá a la PARTE 3. Economizar recursos y planear antes de lanzar cambios sueltos es lo que pidió (panel:R8, 2-oct).
 8. Tomá la línea y reservá el repo:  ronda.mjs reservar <repo> --chat "ronda diaria <fecha>". Si está tomada por otro chat, no la toques y decilo.
 9. Obedecé el CLAUDE.md del repo que tocás. Archivos completos; el núcleo no se duplica; una colección nueva entra con su regla. Se empuja a main directo, sin rama; nunca --force.
 10. Verificación previa obligatoria: que el JS parsee como módulo (node --input-type=module --check < archivo), los bancos del CLAUDE.md de ese repo en verde, los sellos y la VERSION de sw.js subidos, la documentación diciendo la verdad. Si algo no pasa, no empujes y escribilo en el pendiente.

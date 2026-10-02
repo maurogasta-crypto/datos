@@ -280,6 +280,17 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sólo para probar otro. **Si las reglas se arman sin agente, eso es un
   error, no un estado posible**: el aviso rojo sigue, pero ya no depende de
   en qué teléfono se esté.
+- **Un pedido de Mauro entra por el botón «Pedido» del tablero** (`panel-31`,
+  2-oct-2026, al contestar `panel:R8`): «una sugerencia que pueda atravesar un
+  sitio o varios». **Es un pendiente, no una colección nueva** —ninguna regla
+  que publicar—: `tipo: "pedido"`, `sitios` con los que toca, clave `P<n>`,
+  `quien: "claude"` y `tocado`. Con un sitio es de ese sitio; con ninguno o
+  varios es `general`, y aparece en cada sitio que nombra. **La ronda lo
+  levanta en «QUÉ TOCAR AHORA» y no lo ejecuta a ciegas**: si está claro y
+  cabe en cómo funciona hoy el ecosistema, lo hace; si es ambiguo, cruza
+  varios sitios o choca con una regla, deja un plan como `pregunta` antes de
+  tocar código (TRASPASO § 4, paso 7). Lo dijo él así: «no lanzar cuentas de
+  pequeñas modificaciones sin plan general coherente».
 - **La configuración que una app pega para entrar a su base sale de un botón**
   (`panel-29`), en la ficha del sitio. Lo público —`acceso.base` y
   `app: { apiKey, mail }`— lo escribe el agente en `proyectos/`; **la

@@ -70,6 +70,7 @@
       <label for="cual-app">¿En qué estás trabajando?</label>
       <select id="cual-app"></select>
       <p class="gris" id="resumen">Leyendo…</p>
+      <div class="fila-btn"><button class="btn p" id="btnPedido">Pedido</button></div>
 
       <!-- 1b · la ficha técnica de la app elegida.
            Con qué está hecha, dónde corre, quién la administra. Sale de
@@ -191,6 +192,39 @@
       <div class="fila-btn">
         <button class="btn" id="btnLineaCancelar">Cancelar</button>
         <button class="btn p" id="btnLineaGuardar">Guardar</button>
+      </div>
+    </div>
+
+    <!-- 1b ter · UN PEDIDO NUEVO (panel-31, 2-oct-2026). Lo pidió Mauro al
+         contestar panel:R8: «un botón "pedido" para cargar una sugerencia que
+         pueda atravesar un sitio o varios». Es un pendiente más —no una
+         colección nueva, así que no hay regla que publicar— con `tipo:
+         "pedido"`, `sitios` y `quien: "claude"`: la ronda lo levanta en «QUÉ
+         TOCAR AHORA» y decide si lo hace o si primero arma un plan. -->
+    <div id="t-pedido" class="hide">
+      <p class="volver"><a href="#lista" id="p-volver">← Volver al tablero</a></p>
+      <h1>Un pedido</h1>
+      <p class="gris">Lo que quieras que se haga o se piense, en tus palabras.
+        Lo lee la ronda: si está claro y cabe en lo que ya hay, lo hace; si no,
+        te deja un plan como pregunta antes de tocar nada.</p>
+
+      <div class="tarj">
+        <label for="p-texto">Qué pedís</label>
+        <textarea id="p-texto" class="libre"
+          placeholder="La primera línea es el título. Abajo, todo lo que haga falta."></textarea>
+        <label for="p-sitios">¿Qué sitios toca? (ninguno, o varios: es de todo el ecosistema)</label>
+        <div id="p-sitios" class="l-checks"></div>
+        <label>¿Qué tan urgente?</label>
+        <div class="seg" id="p-prioridad" role="group" aria-label="Prioridad">
+          <button data-v="alta">Primero</button>
+          <button data-v="media">Después</button>
+          <button data-v="baja">Cuando se pueda</button>
+        </div>
+      </div>
+
+      <div class="fila-btn">
+        <button class="btn" id="btnPedidoCancelar">Cancelar</button>
+        <button class="btn p" id="btnPedidoGuardar">Cargar el pedido</button>
       </div>
     </div>
 
@@ -449,7 +483,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-30";
+P.PANEL = "panel-31";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -658,6 +692,12 @@ const tituloDe = (id) => {
 let APP = "";
 try { APP = localStorage.getItem("panel.app") || ""; } catch (e) { APP = ""; }
 
+/* Un pendiente es de la app elegida si es SUYO o si es un pedido que la
+   nombra entre sus `sitios` (panel-31): un pedido que cruza dos sitios tiene
+   que aparecer en los dos, no sólo en «Todas las apps». */
+const esDeLaApp = (p) => !APP || p.proyecto === APP
+  || (Array.isArray(p.sitios) && p.sitios.includes(APP));
+
 function llenarApps() {
   const sel = $("cual-app");
   const antes = sel.value || APP;
@@ -720,7 +760,7 @@ const respondida = (p) => !!(p.pregunta || "").trim()
 
 function colaDePreguntas() {
   const conPregunta = PENDIENTES.filter((p) =>
-    (!APP || p.proyecto === APP) && (p.pregunta || "").trim());
+    esDeLaApp(p) && (p.pregunta || "").trim());
   const falta = conPregunta.filter(sinResponder)
     .sort((a, b) => pesoPrio(a) - pesoPrio(b));
   const hechas = conPregunta.filter((p) => !sinResponder(p))
@@ -934,8 +974,7 @@ function bloque(titulo, lista, vacio) {
 function pintarTeToca() {
   const caja = $("te-toca");
   if (!caja) return;
-  const deLaApp = (p) => !APP || p.proyecto === APP;
-  const mios = PENDIENTES.filter(deLaApp);
+  const mios = PENDIENTES.filter(esDeLaApp);
 
   /* Las reglas salen de `proyectos/`, no de los pendientes: es el estado real
      de cada base y no depende de que alguien se haya acordado de abrir un
@@ -1016,8 +1055,7 @@ function pintar() {
      tocar la zona sensible. Pero el botón «ver» necesita saber CUÁNTAS hay para
      poder decirlo, así que en cuanto hay una app elegida se piden una vez. */
   if (APP && !fichasLeidas) leerFichas().then(pintarFichaTecnica).catch(() => {});
-  const deLaApp = (p) => !APP || p.proyecto === APP;
-  const mios = PENDIENTES.filter(deLaApp);
+  const mios = PENDIENTES.filter(esDeLaApp);
   const n = (f) => mios.filter(f).length;
 
   $("c-pregunta").textContent = n(sinResponder);
@@ -1304,6 +1342,7 @@ function abrirLinea(l) {
 
   $("t-lista").classList.add("hide");
   $("t-editor").classList.add("hide");
+  $("t-pedido").classList.add("hide");
   $("t-linea").classList.remove("hide");
   window.scrollTo(0, 0);
 }
@@ -1402,6 +1441,90 @@ async function leerLineas() {
   pintarLineas();
 }
 
+/* ── UN PEDIDO (panel-31) ──────────────────────────────────────────────────
+   Arma el pendiente sin tocar la base: es una función pura para que el banco
+   la pruebe con los casos que importan. Un sitio marcado → el pendiente es de
+   ese sitio; ninguno o varios → `general`, con `sitios` diciendo cuáles.
+   La clave es `P` + el número que sigue en ese proyecto: `P` de pedido, que
+   no la usaba nadie. La letra es temática (ronda.mjs, `letrasEnUso`) y ésta
+   la elige la pantalla porque el tema ya se sabe: es un pedido de Mauro. */
+const LARGO_TITULO = 90;
+function armarPedido(texto, sitios, prioridad, pendientes, hoy) {
+  const limpio = String(texto || "").trim();
+  if (!limpio) return { ok: false, motivo: "Escribí qué pedís." };
+  const primera = limpio.split("\n")[0].trim();
+  const titulo = primera.length > LARGO_TITULO
+    ? primera.slice(0, LARGO_TITULO - 1).trimEnd() + "…" : primera;
+  const lista = [...new Set((sitios || []).filter(Boolean))];
+  const proyecto = lista.length === 1 ? lista[0] : "general";
+  let alto = 0;
+  for (const p of pendientes || []) {
+    if (p.proyecto !== proyecto) continue;
+    const m = /^P(\d+)$/i.exec(String(p.clave || ""));
+    if (m) alto = Math.max(alto, Number(m[1]));
+  }
+  /* Si alguien ya usó ese id con otra forma de clave, se sigue contando: un
+     pedido nuevo no puede pisar un pendiente viejo. */
+  const ids = new Set((pendientes || []).map((p) => p.id));
+  let n = alto + 1;
+  while (ids.has(proyecto + ":P" + n)) n++;
+  const clave = "P" + n;
+  return { ok: true, id: proyecto + ":" + clave, datos: {
+    proyecto, clave, titulo,
+    porQue: limpio,
+    tipo: "pedido",
+    sitios: lista,
+    origen: "panel",
+    quien: "claude",
+    estado: "abierto",
+    prioridad: ["alta", "media", "baja"].includes(prioridad) ? prioridad : "media",
+    esperaA: [],
+    /* Lo nuevo de Mauro se marca igual que lo que él toca: es lo primero que
+       mira la próxima ronda. */
+    tocado: true,
+    creadoEn: hoy,
+    historia: [{ fecha: hoy, por: "mauro", texto: "Mauro: pedido cargado desde el panel" }]
+  } };
+}
+
+function abrirPedido() {
+  $("p-texto").value = "";
+  $("p-sitios").innerHTML = PROYECTOS.map((p) =>
+    '<label class="l-check"><input type="checkbox" value="' + P.esc(p.id) + '"'
+    + (p.id === APP ? " checked" : "") + "> " + P.esc(p.nombre || p.id) + "</label>").join("");
+  marcarSeg("p-prioridad", "media");
+  $("t-lista").classList.add("hide");
+  $("t-editor").classList.add("hide");
+  $("t-linea").classList.add("hide");
+  $("t-pedido").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+function cerrarPedido() {
+  $("t-pedido").classList.add("hide");
+  $("t-lista").classList.remove("hide");
+  window.scrollTo(0, 0);
+}
+$("btnPedido").addEventListener("click", abrirPedido);
+$("btnPedidoCancelar").addEventListener("click", cerrarPedido);
+$("p-volver").addEventListener("click", (e) => { e.preventDefault(); cerrarPedido(); });
+$("p-prioridad").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b) marcarSeg("p-prioridad", b.dataset.v);
+});
+$("btnPedidoGuardar").addEventListener("click", async () => {
+  const sitios = [...$("p-sitios").querySelectorAll("input:checked")].map((i) => i.value);
+  const r = armarPedido($("p-texto").value, sitios, leerSeg("p-prioridad"), PENDIENTES, P.hoy());
+  if (!r.ok) return P.aviso(r.motivo, "error");
+  const b = $("btnPedidoGuardar"); b.disabled = true; b.textContent = "…";
+  try {
+    await setDoc(doc(db, "pendientes", r.id), { ...r.datos, actualizadoEn: serverTimestamp() });
+    await leer();
+    cerrarPedido();
+    P.aviso("Cargado como " + r.id + ". Lo levanta la próxima ronda.");
+  } catch (e) { P.aviso(P.explicar(e), "error"); }
+  finally { b.disabled = false; b.textContent = "Cargar el pedido"; }
+});
+
 let abriendo = null;    // el pendiente abierto, o null
 
 /* Los dos segmentados del editor funcionan igual: se marca uno y se lee cuál
@@ -1424,8 +1547,11 @@ const leerSeg = (cual) => {
 function abrirPendiente(p) {
   abriendo = p;
   $("t-linea").classList.add("hide");
+  $("t-pedido").classList.add("hide");
   $("t-cual").textContent = p.titulo || "(sin título)";
-  $("t-donde").textContent = [nombreProy(p.proyecto), p.clave].filter(Boolean).join(" · ");
+  $("t-donde").textContent = [nombreProy(p.proyecto), p.clave,
+    Array.isArray(p.sitios) && p.sitios.length > 1 ? "toca " + p.sitios.map(nombreProy).join(", ") : ""]
+    .filter(Boolean).join(" · ");
   $("t-porque").textContent = p.porQue || "";
   $("t-porque").classList.toggle("hide", !p.porQue);
 

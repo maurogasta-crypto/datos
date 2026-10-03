@@ -269,3 +269,17 @@ Mauro siguió acá un rato más. Quedó hecho y en `main`:
 **Ojo, para el chat nuevo:** el clasificador de permisos frena que el agente
 mande pedidos de prueba a `claude-proxy`. No lo esquives: la prueba en vivo la
 hace Mauro desde el inventario.
+
+### Y del 1 al 3-oct (el mismo chat viejo)
+
+- **Luces de remate en el Netlify de Casa Verde** (remate 929b7e7, casaverde
+  973a067): el zip lleva SEIS funciones. Variables de Tuya cargadas por Mauro;
+  falta confirmar que publicó el zip después de cargarlas (`remate:L2`).
+- **Pizarra** (`maurogasta-crypto/pizarra`): widget de Android con tareas de
+  Tiempos; APK en el release `ultimo`. Falta probarla (`tiempos:A11`).
+- **Panel 32 a 34:** el sitio se elige en la barra y manda sobre todo; pedido
+  rápido; fichas «Claves en uso · <sitio>»; plan y riesgo en cada pendiente con
+  «Aprobar el plan»; y el ESQUEMA de cada sitio arriba de los pendientes.
+- **La ronda** (pasos 6 bis y 6 ter de § 4): organiza lo contestado (plan +
+  riesgo; lo bajo se ejecuta solo, hasta tres por ronda), revisa la coherencia
+  y reescribe los esquemas. Tandas `2026-10-03-organizar` y `2026-10-03-esquema`.

@@ -516,7 +516,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-32";
+P.PANEL = "panel-33";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -991,6 +991,17 @@ function tarjeta(p) {
     h += (p.respuesta)
       ? '<div class="resp"><span class="k">contestaste</span>' + P.esc(p.respuesta) + "</div>"
       : '<div class="resp falta">sin responder — tocá para contestar</div>';
+  }
+  /* EL PLAN (panel-33, 2-oct-2026). La ronda organiza lo que contestaste o
+     pediste y deja un plan con su riesgo. Uno de riesgo BAJO lo ejecuta sola;
+     uno ALTO espera que lo apruebes acá, sin abrir el pendiente. */
+  if (p.plan) {
+    const alto = p.riesgo === "alto";
+    h += '<div class="preg"><span class="k">plan · riesgo ' + P.esc(p.riesgo || "sin evaluar")
+      + (p.aprobado ? " · aprobado" : "") + "</span>" + P.esc(p.plan) + "</div>";
+    if (alto && !p.aprobado && abierto(p))
+      h += '<div class="fila-btn"><button class="btn p" data-aprobar="' + P.esc(p.id)
+        + '">Aprobar el plan</button></div>';
   }
   const hist = Array.isArray(p.historia) ? p.historia.slice(-3) : [];
   if (hist.length) {
@@ -1695,8 +1706,25 @@ $("lista").addEventListener("click", (e) => {
     return;
   }
   const pt = e.target.closest("[data-puerta]");
-  if (pt) { irA("puerta"); window.scrollTo(0, 0); }
+  if (pt) { irA("puerta"); window.scrollTo(0, 0); return; }
+  const ap = e.target.closest("[data-aprobar]");
+  if (ap) aprobarPlan(ap.dataset.aprobar, ap);
 });
+
+/* Aprobar un plan de riesgo alto: pasa a Claude y la próxima ronda lo
+   ejecuta. La historia se suma, nunca se pisa. */
+async function aprobarPlan(id, boton) {
+  const p = PENDIENTES.find((x) => x.id === id); if (!p) return;
+  boton.disabled = true;
+  try {
+    const historia = (Array.isArray(p.historia) ? p.historia : [])
+      .concat([{ fecha: P.hoy(), por: "mauro", texto: "Mauro: aprobó el plan" }]);
+    await setDoc(doc(db, "pendientes", id), { aprobado: true, quien: "claude", tocado: true,
+      historia, actualizadoEn: serverTimestamp() }, { merge: true });
+    await leer();
+    P.aviso("Aprobado. Lo ejecuta la próxima ronda.");
+  } catch (e) { P.aviso(P.explicar(e), "error"); boton.disabled = false; }
+}
 
 $("btnPendCancelar").addEventListener("click", cerrarPendiente);
 $("t-volver").addEventListener("click", (e) => { e.preventDefault(); cerrarPendiente(); });

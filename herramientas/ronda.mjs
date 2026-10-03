@@ -592,6 +592,27 @@ function queTocarAhora(abiertos, ctx) {
 const tocados = (p) => (p || []).filter((x) => x.tocado);
 const sinResponder = (p) => (p || []).filter((x) => x.pregunta && !x.respuesta);
 
+/* ── ORGANIZAR: LO QUE MAURO CONTESTÓ O PIDIÓ, Y TODAVÍA NO TIENE PLAN ──────
+   2-oct-2026. Mauro contestó catorce preguntas una noche y a la mañana la ronda
+   dijo «ninguno se puede empezar»: QUÉ TOCAR AHORA sólo mira lo que es de
+   Claude, y una respuesta deja el pendiente del lado de él. La respuesta se
+   quedaba ahí, esperando a nadie. Lo pidió así: «que luego de la tanda se
+   establezca una organización de todos los pendientes y se elaboren planes de
+   intervención que, si no tienen implicaciones serias, se ejecuten solos».
+
+   Un pendiente ESPERA PLAN si está abierto y (a) tiene una respuesta más nueva
+   que su último plan, o (b) es un pedido que nunca se planeó. La ronda los
+   organiza ANTES de trabajar: escribe `plan`, `riesgo` (bajo | alto) y
+   `planEn`; uno de riesgo bajo pasa a `quien: "claude"` y entra solo a QUÉ
+   TOCAR AHORA; uno de riesgo alto queda de Mauro hasta que toque «Aprobar el
+   plan» en el panel (`aprobado`). Las fechas se comparan como texto ISO, que
+   ordena igual que el tiempo. */
+const abiertoP = (x) => x && x.estado !== "hecho" && x.estado !== "retirado";
+const esperaPlan = (x) => abiertoP(x) && (
+  (String(x.respuesta || "").trim() && String(x.planEn || "") < String(x.respondidoEn || "~"))
+  || (x.tipo === "pedido" && !String(x.plan || "").trim()));
+const paraOrganizar = (p) => (p || []).filter(esperaPlan);
+
 /* Agrupa por proyecto y devuelve los grupos ordenados por el `orden` que el
    panel guarda en `proyectos/`, para que la lista salga como sale en su
    pantalla. Un proyecto sin ficha va al final, alfabético. */
@@ -611,7 +632,7 @@ function porProyecto(pendientes, fichas) {
 }
 
 export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
-         tocados, sinResponder, porProyecto, pesoDe, reglasSinPublicar,
+         tocados, sinResponder, esperaPlan, paraOrganizar, porProyecto, pesoDe, reglasSinPublicar,
          vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido,
          MINUTOS_RESERVA, reservaViva, reservasDe, minutosQueQuedan,
          queCambio, archivosTocados, DIAS_CAMBIOS, raizDeLosRepos,
@@ -643,7 +664,9 @@ const objeto = (f) => Object.fromEntries(
 
    `id` no va: sale del nombre del documento y llega siempre. */
 const CAMPOS_PENDIENTE = ["clave", "esperaA", "estado", "linea", "origen",
-  "pregunta", "prioridad", "proyecto", "quien", "respuesta", "titulo", "tocado"];
+  "pregunta", "prioridad", "proyecto", "quien", "respuesta", "titulo", "tocado",
+  // ORGANIZAR (2-oct-2026): sin estos cinco, `esperaPlan` miente en silencio.
+  "respondidoEn", "plan", "planEn", "riesgo", "tipo"];
 
 /* Lo mismo para las otras dos del panel, y por el mismo motivo medido.
 
@@ -1012,6 +1035,21 @@ function imprimir(d) {
   L.push(`      no el chat, para que dos sesiones distintas elijan lo mismo.`);
   L.push(`      Lo que SÍ le toca al que lee: comprobar que el pendiente TODAVÍA`);
   L.push(`      sea cierto antes de trabajarlo. Esto ordena; no verifica.`);
+
+  /* Va ANTES del 1, sin número como QUÉ TOCAR: no es una lista para mirar,
+     es el primer trabajo de la corrida (TRASPASO § 4, paso 6 bis). */
+  const org = paraOrganizar(d.pendientes);
+  L.push(`\n  ORGANIZAR — lo que Mauro contestó o pidió y todavía no tiene plan`);
+  if (!org.length) L.push(`      (nada: todo lo contestado ya tiene plan)`);
+  for (const p of org) {
+    L.push(`      ${p.id}  [${p.prioridad || "media"}/${p.quien || "?"}]  ${corto(p.titulo)}`);
+    if (p.respuesta) L.push(`          dijo: ${corto(p.respuesta, 140)}`);
+  }
+  if (org.length) {
+    L.push(`\n      Por cada uno: cerrarlo si ya está, o escribir plan + riesgo + planEn.`);
+    L.push(`      Riesgo BAJO → quien:"claude" y entra a QUÉ TOCAR la próxima vez.`);
+    L.push(`      Riesgo ALTO → queda de Mauro, con el plan a la vista, hasta que lo apruebe.`);
+  }
 
   L.push(`\n  1 · TOCADOS — Mauro los editó desde el último parte`);
   if (!ti.length) L.push(`      (ninguno)`);

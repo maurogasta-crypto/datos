@@ -15,7 +15,7 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
+import { esperaPlan, paraOrganizar, origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
          CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA,
          vivaL, diasTomada, lineasVivas,
@@ -988,6 +988,27 @@ prueba("y la pantalla dice que esto ORDENA pero no verifica", () => {
 prueba("sin saber quién sos, la ronda lo DICE en vez de descartarte lo tuyo", () => {
   assert.match(fuente, /no sé quién sos/);
   assert.match(fuente, /--chat/);
+});
+
+// ── ORGANIZAR (2-oct-2026): una respuesta de Mauro no puede quedar esperando a nadie ──
+prueba("una respuesta sin plan espera plan, aunque el pendiente sea de Mauro", () => {
+  assert.ok(esperaPlan({ estado: "abierto", quien: "mauro", respuesta: "Sí, corre", respondidoEn: "2026-10-01" }));
+});
+prueba("con un plan más nuevo que la respuesta, ya no; con una respuesta más nueva, otra vez sí", () => {
+  assert.ok(!esperaPlan({ estado: "abierto", respuesta: "x", respondidoEn: "2026-10-01", plan: "p", planEn: "2026-10-02" }));
+  assert.ok(esperaPlan({ estado: "abierto", respuesta: "x", respondidoEn: "2026-10-03", plan: "p", planEn: "2026-10-02" }));
+});
+prueba("una respuesta sin fecha también espera, hasta que tenga plan", () => {
+  assert.ok(esperaPlan({ estado: "abierto", respuesta: "x" }));
+});
+prueba("un pedido sin plan espera plan aunque no tenga respuesta; uno cerrado, nunca", () => {
+  assert.ok(esperaPlan({ estado: "abierto", tipo: "pedido", titulo: "algo" }));
+  assert.ok(!esperaPlan({ estado: "abierto", tipo: "pedido", plan: "ya" }));
+  assert.ok(!esperaPlan({ estado: "hecho", respuesta: "x" }));
+  assert.ok(!esperaPlan({ estado: "retirado", tipo: "pedido" }));
+});
+prueba("sin respuesta ni pedido no hay nada que organizar", () => {
+  assert.deepEqual(paraOrganizar([{ estado: "abierto", pregunta: "¿?" }, null]), []);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

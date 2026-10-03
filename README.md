@@ -199,6 +199,11 @@ desplegable de Reglas, y ninguna en Fichas—; lo pidió Mauro así: «arriba di
 panel, a su lado elijo el sitio, y en la pestaña de abajo me muevo en toda la
 información de ese sitio».
 
+**Cada pendiente muestra su plan y su riesgo** (`panel-33`): la ronda organiza
+lo que contestaste o pediste, deja un plan, y si el riesgo es bajo lo ejecuta
+sola. Uno de riesgo alto muestra **«Aprobar el plan»** en la misma tarjeta:
+tocarlo lo pasa a Claude y lo hace la próxima ronda.
+
 **Lo primero de Pendientes es un cuadro para mandar un pedido** (`panel-32`):
 se escribe, se toca «Mandar el pedido», y queda como pendiente del sitio
 elegido arriba —o de todo el ecosistema—, con `tipo: "pedido"` y `quien:
@@ -462,10 +467,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-32` |
+| `index.html` | `P.PANEL` | `panel-33` |
 | `estilos.css` | (en el comentario) | `estilos-13` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v23` |
+| `sw.js` | `VERSION` | `panel-shell-v24` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

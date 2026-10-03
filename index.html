@@ -88,6 +88,11 @@
           <button class="btn p" id="btnPedidoRapido">Mandar el pedido</button>
         </div>
       </div>
+      <!-- EL ESQUEMA (panel-34, 3-oct-2026). Pedido de Mauro: «se pierden los
+           hilos… una visión simplificada de los planes de acción en cada sitio,
+           un resumen o esquema que se pueda ampliar». Lo reescribe la ronda
+           cada día en `proyectos/<id>.esquema`; acá sólo se lee. -->
+      <div id="esquema"></div>
       <p class="gris" id="resumen">Leyendo…</p>
 
       <!-- 1b · la ficha técnica de la app elegida.
@@ -516,7 +521,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-3";
 
-P.PANEL = "panel-33";
+P.PANEL = "panel-34";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -1132,8 +1137,58 @@ $("te-toca").addEventListener("click", (e) => {
   $("lista").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
+/* ── EL ESQUEMA (panel-34) ──────────────────────────────────────────────────
+   `proyectos/<id>.esquema` = { fecha, resumen, pasos: [{ titulo, quien,
+   riesgo, ids: [pendientes] }], alertas: [texto] }, y el del ecosistema en
+   `proyectos/panel.esquemaEcosistema` = { fecha, alertas }. Lo escribe la
+   ronda (TRASPASO § 4, paso 6 ter). Cerrado se lee en diez segundos; cada paso
+   se abre con <details> para ver los pendientes que lo forman. */
+function pintarEsquema() {
+  const caja = $("esquema"); if (!caja) return;
+  const filaPaso = (x, i) => {
+    const pend = (Array.isArray(x.ids) ? x.ids : []).map((id) => PENDIENTES.find((q) => q.id === id) || { id, titulo: id });
+    return "<details><summary><b>" + (i + 1) + ".</b> " + P.esc(x.titulo || "")
+      + ' <span class="gris">· ' + P.esc(x.quien === "claude" ? "lo hago yo" : x.quien === "mauro" ? "te toca" : (x.quien || ""))
+      + (x.riesgo ? " · riesgo " + P.esc(x.riesgo) : "") + "</span></summary>"
+      + (pend.length ? pend.map((q) => '<div class="gris" style="margin:.2rem 0 0 1rem;font-size:.82rem">'
+          + P.esc(q.id) + " — " + P.esc(q.titulo || "") + (q.estado === "hecho" ? " ✔" : "") + "</div>").join("") : "")
+      + "</details>";
+  };
+  const alertas = (lista) => (Array.isArray(lista) && lista.length)
+    ? lista.map((a) => '<div class="frena"><span class="k">⚠</span>' + P.esc(a) + "</div>").join("") : "";
+  if (APP) {
+    const pr = PROYECTOS.find((x) => x.id === APP) || {};
+    const e = pr.esquema;
+    if (!e) { caja.innerHTML = '<div class="tarj"><label>El plan de ' + P.esc(nombreProy(APP))
+      + '</label><p class="gris" style="margin:.2rem 0 0">Todavía no hay esquema: lo arma la próxima ronda.</p></div>'; return; }
+    caja.innerHTML = '<div class="tarj"><label>El plan de ' + P.esc(nombreProy(APP))
+      + ' <span class="gris" style="font-weight:400">· al ' + P.esc(e.fecha || "") + "</span></label>"
+      + (e.resumen ? '<p style="margin:.2rem 0 .4rem">' + P.esc(e.resumen) + "</p>" : "")
+      + alertas(e.alertas)
+      + (Array.isArray(e.pasos) ? e.pasos.map(filaPaso).join("") : "")
+      + "</div>";
+    return;
+  }
+  const conEsq = PROYECTOS.filter((x) => x.esquema && x.esquema.resumen);
+  const eco = (PROYECTOS.find((x) => x.id === "panel") || {}).esquemaEcosistema || {};
+  if (!conEsq.length && !(eco.alertas || []).length) { caja.innerHTML = ""; return; }
+  caja.innerHTML = '<div class="tarj"><label>El ecosistema'
+    + (eco.fecha ? ' <span class="gris" style="font-weight:400">· al ' + P.esc(eco.fecha) + "</span>" : "") + "</label>"
+    + alertas(eco.alertas)
+    + conEsq.map((x) => '<div class="sit-res" data-elegir="' + P.esc(x.id) + '" style="cursor:pointer;margin-top:.4rem">'
+        + "<b>" + P.esc(x.nombre || x.id) + '</b> <span class="gris">· ' + (x.esquema.pasos || []).length + " pasos"
+        + ((x.esquema.alertas || []).length ? " · ⚠ " + x.esquema.alertas.length : "") + "</span>"
+        + '<div class="gris" style="font-size:.82rem">' + P.esc(x.esquema.resumen) + "</div></div>").join("")
+    + '<p class="gris" style="margin:.5rem 0 0;font-size:.75rem">Tocá un sitio para ver su plan.</p></div>';
+}
+$("esquema").addEventListener("click", (e) => {
+  const s = e.target.closest("[data-elegir]");
+  if (s) elegirSitio(s.dataset.elegir);
+});
+
 function pintar() {
   llenarApps();
+  pintarEsquema();
   pintarLineas();
   pintarTeToca();
   pintarFichaTecnica();

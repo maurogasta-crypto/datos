@@ -15,7 +15,7 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { esperaPlan, paraOrganizar, origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
+import { esperaPlan, paraOrganizar, quedaronViejos, ultimoMovimiento, origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
          CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA,
          vivaL, diasTomada, lineasVivas,
@@ -1009,6 +1009,21 @@ prueba("un pedido sin plan espera plan aunque no tenga respuesta; uno cerrado, n
 });
 prueba("sin respuesta ni pedido no hay nada que organizar", () => {
   assert.deepEqual(paraOrganizar([{ estado: "abierto", pregunta: "¿?" }, null]), []);
+});
+
+// ── COHERENCIA (3-oct-2026): lo que quedó en el tiempo ──
+prueba("un abierto quieto 14 días queda viejo; uno movido ayer, no; uno cerrado, nunca", () => {
+  const v = quedaronViejos([
+    { id: "a", estado: "abierto", actualizadoEn: "2026-09-10T00:00:00Z" },
+    { id: "b", estado: "abierto", actualizadoEn: "2026-10-02" },
+    { id: "c", estado: "hecho", actualizadoEn: "2026-08-01" },
+    { id: "d", estado: "abierto" },
+  ], "2026-10-03");
+  assert.deepEqual(v.map((x) => x.id), ["d", "a"]);
+});
+prueba("el último movimiento es la fecha más nueva, venga como texto o como marca de Firestore", () => {
+  assert.equal(ultimoMovimiento({ creadoEn: "2026-09-01", planEn: "2026-10-03",
+    actualizadoEn: { seconds: Date.UTC(2026, 8, 20) / 1000 } }), "2026-10-03");
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

@@ -224,7 +224,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (50 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (113 casos, sin npm ni red) para la ronda de apertura, que desde el
+  (115 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
@@ -415,6 +415,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   tres por ronda. **Riesgo alto** queda de Mauro con «Aprobar el plan» en el
   panel (`panel-33`). Lo pidió así: «planes de intervención que, si no tienen
   implicaciones serias, se ejecuten automáticamente».
+- **Arriba de los pendientes va el ESQUEMA de cada sitio** (`panel-34`,
+  3-oct-2026): resumen de dos renglones, hasta cinco pasos con quién y riesgo,
+  y alertas de coherencia; cada paso se abre para ver sus pendientes. Lo
+  reescribe la ronda cada día (`proyectos/<id>.esquema`, y lo que cruza sitios
+  en `proyectos/panel.esquemaEcosistema`), después de revisar lo que quedó
+  quieto 14 días y lo que un commit de un sitio le puede romper a otro
+  (TRASPASO § 4, paso 6 ter). Mauro: «se pierden los hilos».
 - **La `bitacora` de una línea es donde dos chats que se contradijeron quedan
   uno al lado del otro.** No se pisa lo que escribió otro: se agrega.
 - **Antes de tocar código se LEE el panel, y al cerrar se ESCRIBE en él.** Es la

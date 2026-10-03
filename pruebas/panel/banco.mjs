@@ -1679,5 +1679,30 @@ ok(fichaGuardada && Array.isArray(fichaGuardada.accesos) && fichaGuardada.acceso
 ok(api.idBoveda({ proyecto: "tiempos" }, { nombre: "FB TIEMPOS Clave" }) === "acceso-tiempos-fb-tiempos-clave",
    "una clave nueva sin lugar en la bóveda recibe uno derivado de su nombre");
 
+console.log("\n43 · el esquema: el plan de un sitio en pocos renglones (panel-34)");
+BASE.proyectos = {
+  casaverde: { nombre: "Casa Verde", orden: 1, esquema: { fecha: "2026-10-03", resumen: "Reservas y avisos andando; falta cerrar dos decisiones.",
+    pasos: [{ titulo: "Notas en las reservas de Morini", quien: "mauro", riesgo: "alto", ids: ["casaverde:R10"] }],
+    alertas: ["El zip de Netlify ahora lleva las luces de remate"] } },
+  remate: { nombre: "remate", orden: 2 },
+  panel: { nombre: "Panel", orden: 3, esquemaEcosistema: { fecha: "2026-10-03", alertas: ["Dos sitios tocan el mismo Netlify"] } }
+};
+BASE.pendientes = { "casaverde:R10": { proyecto: "casaverde", titulo: "Reservas: lo que sólo sabés vos", estado: "abierto", quien: "mauro" } };
+await api.leer(); await esperar();
+api.elegirSitio("casaverde"); await esperar();
+const esq = $("esquema");
+ok(esq.textContent.includes("Reservas y avisos andando") && esq.querySelectorAll("details").length === 1,
+   "con un sitio: el resumen y un renglón por paso, cerrado");
+ok(esq.textContent.includes("riesgo alto") && esq.textContent.includes("te toca"), "cada paso dice quién y el riesgo");
+ok(esq.querySelector("details").textContent.includes("Reservas: lo que sólo sabés vos"), "y al abrirlo trae sus pendientes");
+ok(esq.textContent.includes("El zip de Netlify"), "las alertas de coherencia del sitio, a la vista");
+api.elegirSitio("remate"); await esperar();
+ok($("esquema").textContent.includes("Todavía no hay esquema"), "un sitio sin esquema lo dice, no queda en blanco");
+api.elegirSitio(""); await esperar();
+ok($("esquema").textContent.includes("Dos sitios tocan el mismo Netlify") && $("esquema").querySelector('[data-elegir="casaverde"]'),
+   "con el ecosistema: las alertas que cruzan sitios y un renglón por sitio que lleva a su plan");
+$("esquema").querySelector('[data-elegir="casaverde"]').click(); await esperar();
+ok(api.APP() === "casaverde", "tocar un sitio del esquema lo elige arriba");
+
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

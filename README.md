@@ -199,6 +199,13 @@ desplegable de Reglas, y ninguna en Fichas—; lo pidió Mauro así: «arriba di
 panel, a su lado elijo el sitio, y en la pestaña de abajo me muevo en toda la
 información de ese sitio».
 
+**Arriba de todo, el esquema** (`panel-34`, 3-oct-2026): con un sitio elegido,
+su plan en pocos renglones —un resumen, los pasos con quién y el riesgo, y las
+alertas de coherencia—, y cada paso se abre para ver sus pendientes. Con
+«Ecosistema completo», un renglón por sitio y las alertas que cruzan sitios. Lo
+reescribe la ronda cada día (`proyectos/<id>.esquema`); es la respuesta a «se
+pierden los hilos». Los pendientes siguen abajo, para cuando se quiere ampliar.
+
 **Cada pendiente muestra su plan y su riesgo** (`panel-33`): la ronda organiza
 lo que contestaste o pediste, deja un plan, y si el riesgo es bajo lo ejecuta
 sola. Uno de riesgo alto muestra **«Aprobar el plan»** en la misma tarjeta:
@@ -467,10 +474,10 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-33` |
+| `index.html` | `P.PANEL` | `panel-34` |
 | `estilos.css` | (en el comentario) | `estilos-13` |
 | `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v24` |
+| `sw.js` | `VERSION` | `panel-shell-v25` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

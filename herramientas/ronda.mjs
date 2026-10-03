@@ -613,6 +613,30 @@ const esperaPlan = (x) => abiertoP(x) && (
   || (x.tipo === "pedido" && !String(x.plan || "").trim()));
 const paraOrganizar = (p) => (p || []).filter(esperaPlan);
 
+/* ── COHERENCIA: LO QUE QUEDÓ EN EL TIEMPO ─────────────────────────────────
+   3-oct-2026, Mauro: «se pierden los hilos al leer cosas que quedaron en el
+   tiempo perdidas, y en el desarrollo en paralelo una puede modificar algo que
+   afecte a otra; las rondas deben revisar esa coherencia». Un pendiente
+   abierto que no se movió en `dias` es candidato a cerrarse, retirarse o
+   reescribirse: la ronda lo mira y decide, no lo deja dormir. La fecha es la
+   más nueva entre `actualizadoEn`, `planEn`, `respondidoEn`, `creadoEn`. */
+const fechaDe = (v) => {
+  if (!v) return "";
+  if (typeof v === "string") return v.slice(0, 10);
+  if (v.seconds) return new Date(v.seconds * 1000).toISOString().slice(0, 10);
+  if (v.toDate) return v.toDate().toISOString().slice(0, 10);
+  return "";
+};
+const ultimoMovimiento = (x) => [x.actualizadoEn, x.planEn, x.respondidoEn, x.creadoEn]
+  .map(fechaDe).filter(Boolean).sort().pop() || "";
+function quedaronViejos(pendientes, hoy, dias = 14) {
+  const corte = new Date(new Date(hoy + "T00:00:00Z").getTime() - dias * 86400000)
+    .toISOString().slice(0, 10);
+  return (pendientes || []).filter((x) => abiertoP(x)
+    && (ultimoMovimiento(x) || "0000") < corte)
+    .sort((a, b) => ultimoMovimiento(a).localeCompare(ultimoMovimiento(b)));
+}
+
 /* Agrupa por proyecto y devuelve los grupos ordenados por el `orden` que el
    panel guarda en `proyectos/`, para que la lista salga como sale en su
    pantalla. Un proyecto sin ficha va al final, alfabético. */
@@ -632,7 +656,7 @@ function porProyecto(pendientes, fichas) {
 }
 
 export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
-         tocados, sinResponder, esperaPlan, paraOrganizar, porProyecto, pesoDe, reglasSinPublicar,
+         tocados, sinResponder, esperaPlan, paraOrganizar, quedaronViejos, ultimoMovimiento, porProyecto, pesoDe, reglasSinPublicar,
          vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido,
          MINUTOS_RESERVA, reservaViva, reservasDe, minutosQueQuedan,
          queCambio, archivosTocados, DIAS_CAMBIOS, raizDeLosRepos,
@@ -666,7 +690,9 @@ const objeto = (f) => Object.fromEntries(
 const CAMPOS_PENDIENTE = ["clave", "esperaA", "estado", "linea", "origen",
   "pregunta", "prioridad", "proyecto", "quien", "respuesta", "titulo", "tocado",
   // ORGANIZAR (2-oct-2026): sin estos cinco, `esperaPlan` miente en silencio.
-  "respondidoEn", "plan", "planEn", "riesgo", "tipo"];
+  "respondidoEn", "plan", "planEn", "riesgo", "tipo",
+  // COHERENCIA (3-oct-2026): cuándo se movió por última vez.
+  "actualizadoEn", "creadoEn"];
 
 /* Lo mismo para las otras dos del panel, y por el mismo motivo medido.
 
@@ -690,7 +716,10 @@ const CAMPOS_PENDIENTE = ["clave", "esperaA", "estado", "linea", "origen",
    alta un proyecto: justo lo que el CLAUDE.md prohíbe. */
 const CAMPOS_LINEA = ["titulo", "alcance", "objetivo", "proyectos", "estado",
   "tomada", "porQue", "abierta"];
-const CAMPOS_PROYECTO = ["acceso", "reportes", "orden", "nombre", "sitio.repo"];
+const CAMPOS_PROYECTO = ["acceso", "reportes", "orden", "nombre", "sitio.repo",
+  // El esquema que la ronda reescribe (3-oct-2026): sólo su fecha, para saber
+  // si está al día; el resto lo lee el panel.
+  "esquema.fecha"];
 
 /* Para una colección que sólo hay que CONTAR. Pedir un campo que no existe
    devuelve los documentos sin cuerpo: los nombres alcanzan para contarlos.
@@ -1050,6 +1079,18 @@ function imprimir(d) {
     L.push(`      Riesgo BAJO → quien:"claude" y entra a QUÉ TOCAR la próxima vez.`);
     L.push(`      Riesgo ALTO → queda de Mauro, con el plan a la vista, hasta que lo apruebe.`);
   }
+
+  /* COHERENCIA y ESQUEMA, también sin número: son el segundo trabajo de la
+     corrida (TRASPASO § 4, paso 6 ter). */
+  const viejos = quedaronViejos(d.pendientes, d.fecha);
+  L.push(`\n  COHERENCIA — abiertos que no se movieron en 14 días`);
+  if (!viejos.length) L.push(`      (ninguno)`);
+  for (const p of viejos) L.push(`      ${p.id}  [${ultimoMovimiento(p) || "sin fecha"}]  ${corto(p.titulo)}`);
+  const sinEsquema = (d.proyectos || []).filter((pr) =>
+    (d.pendientes || []).some((x) => abiertoP(x) && x.proyecto === pr.id)
+    && fechaDe(pr.esquema && pr.esquema.fecha) !== d.fecha);
+  L.push(`\n  ESQUEMA — sitios con pendientes cuyo esquema no es de hoy`);
+  L.push(sinEsquema.length ? `      ${sinEsquema.map((pr) => pr.id).join(" · ")}` : `      (todos al día)`);
 
   L.push(`\n  1 · TOCADOS — Mauro los editó desde el último parte`);
   if (!ti.length) L.push(`      (ninguno)`);

@@ -503,6 +503,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   manda a la función de Netlify de Casa Verde y lo olvida. Tres por día como
   mucho, sin teléfonos ni plata en el texto, cada envío anotado en la bodega.
   **A huéspedes, nunca.** Los criterios, en `protocolos/PROTOCOLO-AVISOS.md`.
+- **Una consulta desde un sitio despierta a este chat en el acto** (3-oct-2026,
+  rutina «Consulta en vivo», `trig_01Ep6kQCNo2JFwXVvZv8cuDE`, sin horario). El
+  formulario de Casa Verde, CasaYourte, remate y Tiempos guarda el reporte y
+  llama a `avisar-claude` del Netlify de Casa Verde, que verifica la sesión y
+  la ficha activa y dispara la rutina con un renglón fijo: el sitio y el id. **El
+  texto de la persona nunca viaja en el disparo**: se lee de la base, como dato.
+  Los pasos, en `TRASPASO.md` § 4 bis. Airbnb sigue una vez por día.
 - **Las reservas de Casa Verde se COMPLETAN con los mensajes, y nada más**
   (`herramientas/reservas.mjs`, 29-sep-2026; las notificaciones de Airbnb
   entran por la misma captura). El agente llena el cliente, la cantidad, la

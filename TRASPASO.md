@@ -287,6 +287,7 @@ CONSULTA EN VIVO. Sesión aparte, corta: lee, contesta y planea; NO toca código
         CHICOS (actividad de los chicos en su calendario): la de siempre, clase "evento" (va a Plata): {titulo, fecha, hora, horaFin, ninos:[ids], quienes:[uids], nota}.
         `modo`: «recordar» si es algo de uno para no olvidarse; «invitar» si es una propuesta para los demás (un flyer de un evento); «sugerida» si lo dedujiste vos. Nunca escribas en agendas/ ni marcas/: eso lo hace cada uno al aceptar.
      e) Lo que no se puede decidir (falta el día, dos lecturas posibles) va en `dudas` y en la respuesta: la tarjeta deja corregirlo antes de aceptar.
+     f) Si el reporte trae `yaAgendado` (sugerir-4: la persona ya lo precargó con Gemini y lo agendó ella), NO le propongas lo mismo otra vez: lo que queda es el cruce — consulta al que queda libre, o la propuesta para el otro si `quien` es "otro", "los-dos" o "familia". `esperaba` trae lo que agendó, en una línea.
 5. Respuesta: corta, en castellano rioplatense, para leer en la notificación del teléfono. Qué entendiste, qué quedó hecho o planeado, y qué decide Mauro si hay algo.
    Última línea sola: «Consulta en vivo · <sitio>: <qué pidió en 5 palabras> → <contestado / planeado / pregunta>».
 ```

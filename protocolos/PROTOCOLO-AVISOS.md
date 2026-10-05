@@ -59,6 +59,7 @@ registro. Si un aviso no entra en ninguno, **no se manda**.
 | `llegada` | 🏡 | llega un huésped a Casa Verde en los próximos días: el enlace a la ficha de llegada | a quien recibe (hoy Florencia) |
 | `pedido` | 💬 | lo que esa persona pidió o reportó desde su sitio: quedó hecho, o hace falta que conteste algo para seguir | a quien lo pidió, y a nadie más |
 | `novedades` | 🔔 | **lo que Mauro pidió que le avisen** (30-sep): reserva nueva, check-in y check-out de hoy o mañana, tarea nueva que creó otro, cuántos mensajes nuevos de Airbnb (WhatsApp no se lee desde el 30-sep), el teléfono sin latido hace 26 h, y pedidos o fallas reportados desde un sitio. **Todo junto, en un solo mensaje por corrida**, y sólo lo que no se le avisó antes (`avisos/visto.json` de la bodega). Si no hay nada nuevo, no sale. Lo arma `herramientas/novedades.mjs` | Mauro |
+| `recordatorio` | ⏰ | **lo que esa persona aceptó en su agenda de Tiempos marcando «Recordármelo»** (5-oct): el mismo día, a la mañana, en la ronda. Sale de las `propuestas` de clase `agenda` aprobadas con `recordar`, con la hora de su marca. Nunca lo que no aceptó | a quien lo aceptó, y a nadie más |
 | `resumen` | 📋 | el resumen de la ronda diaria, **sólo si esa persona lo pidió** | hoy, nadie hasta que Mauro diga que sí |
 | `prueba` | 🔧 | comprobar el camino después de un alta | a quien se está dando de alta |
 

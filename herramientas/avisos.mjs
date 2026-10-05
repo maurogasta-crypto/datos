@@ -74,9 +74,10 @@ export const TEMAS = {
   pedido:  "lo que esa persona pidió o reportó: quedó hecho o hace falta que conteste",
   novedades: "lo nuevo desde el último aviso, junto: reservas, check-in y check-out, tareas, mensajes sin contestar, pedidos y fallas (herramientas/novedades.mjs)",
   resumen: "el resumen de la ronda, para quien lo pidió",
+  recordatorio: "lo que esa persona aceptó en su agenda de Tiempos con «recordármelo»: el día que toca",
   prueba:  "comprobar que el camino anda"
 };
-const ICONO = { urgente: "⚠️", llegada: "🏡", novedades: "🔔", pedido: "💬", resumen: "📋", prueba: "🔧" };
+const ICONO = { urgente: "⚠️", llegada: "🏡", novedades: "🔔", pedido: "💬", resumen: "📋", recordatorio: "⏰", prueba: "🔧" };
 
 export const TOPE_DIA = 3;            // avisos por número y por día (de Montevideo)
 export const ESPERA_MS = 65000;       // CallMeBot: uno por minuto al mismo número

@@ -225,7 +225,10 @@ const PROYECTOS = {
        lo escribe en `propuestas` y una persona lo aprueba desde la app. */
     colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
                   "bloques", "marcas", "movimientos", "recurrentes", "propuestas", "auditoria",
-                  "reportes", "_historial"],
+                  "reportes", "_historial", "alertas", "deseos"],
+    /* v9 (app-13, 5-oct-2026): `alertas` (recordatorios y alarmas de cada
+       uno, que la ronda manda por WhatsApp) y `deseos` (la lista de deseos,
+       que Claude coordina con el otro). Las dos las lee el agente. */
     /* Desde app-5 (29-sep-2026) `tiempos` SÍ tiene reportes: el globo 💡 de
        la app escribe sugerencias y fallas en `reportes/`, con la forma de los
        sitios (`tipo` pedido/falla). Hasta entonces se vigilaban las

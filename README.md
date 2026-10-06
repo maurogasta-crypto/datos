@@ -237,7 +237,12 @@ tocarlo lo pasa a Claude y lo hace la próxima ronda.
 se escribe, se toca «Mandar el pedido», y queda como pendiente del sitio
 elegido arriba —o de todo el ecosistema—, con `tipo: "pedido"` y `quien:
 "claude"`, igual que el formulario de `panel-31`, que sigue en «Más opciones»
-para elegir varios sitios o la prioridad.
+para elegir varios sitios o la prioridad. **Desde `panel-36` ese formulario
+lleva una foto o captura** (`panel:U1`): cámara o archivos, se achica y se sube
+a Cloudinary al cargar —con `P.subirCaptura` del núcleo, la misma que usa la
+página de invitados— y queda en `imagen` del pendiente, que la ficha muestra.
+Y las casillas de «¿Qué sitios toca?» ya no se estiran a un cuadrado blanco
+cuando el nombre parte en dos renglones (`estilos-14`).
 
 Debajo, la lista **no es una lista**: son dos bloques.
 
@@ -495,18 +500,18 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-5` |
-| `index.html` | `P.PANEL` | `panel-35` |
-| `invitado.html` | `P.PANEL` | `invitado-1` |
-| `estilos.css` | (en el comentario) | `estilos-13` |
+| `nucleo.js` | `P.VERSION` | `nucleo-6` |
+| `index.html` | `P.PANEL` | `panel-36` |
+| `invitado.html` | `P.PANEL` | `invitado-2` |
+| `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-4` |
-| `sw.js` | `VERSION` | `panel-shell-v26` |
+| `sw.js` | `VERSION` | `panel-shell-v27` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-13` y `nucleo.js?v=nucleo-5`. Sin ese número, el
+pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-6`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

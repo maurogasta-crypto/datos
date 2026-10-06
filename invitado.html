@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel · invitados</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-13">
+<link rel="stylesheet" href="estilos.css?v=estilos-14">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
 <style>
@@ -20,7 +20,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  invitado.html — El panel para los INVITADOS. Sello: invitado-1
+  invitado.html — El panel para los INVITADOS. Sello: invitado-2
 
   Pedido de Mauro, 6-oct-2026 (`panel:U2`): «compartirle a Mariano un link a
   mi panel en el que pueda ver lo que se está desarrollando en ese
@@ -91,11 +91,11 @@
 </div>
 
 <script type="module">
-import { P, $, db, auth } from "./nucleo.js?v=nucleo-5";
+import { P, $, db, auth } from "./nucleo.js?v=nucleo-6";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion }
   from "./firebase-init.js?v=init-4";
 
-P.PANEL = "invitado-1";
+P.PANEL = "invitado-2";
 P.pintarSello();
 
 // El cupo: 12 pedidos resueltos por día para todos los invitados, entre los
@@ -107,9 +107,6 @@ const SITIOS_EN_DESARROLLO = ["casaverde", "casayourte", "remate", "tiempos", "h
 const CUPO_SITIO = Math.max(1, Math.floor(CUPO_DIA / SITIOS_EN_DESARROLLO.length));
 // La función que despierta a la «Consulta en vivo» de Claude (Netlify de Casa Verde).
 const AVISAR = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/avisar-claude";
-// La misma cuenta de Cloudinary y el mismo preset SIN FIRMA que usan los sitios
-// (públicos por diseño: identifican, no abren nada).
-const CLOUD = "dnwfu8ffn", PRESET = "preset-comprobantes";
 
 let yo = null, persona = null, PROY = [], PEND = [], FICHAS = [];
 const capturas = {};       // proyecto → File elegido, se sube recién al mandar
@@ -240,7 +237,7 @@ function htmlPendiente(x) {
     <div class="cola-cab"><span class="proy">${P.esc(x.clave || x.id)}</span> <span class="prio">${P.esc(x.estado || "")}</span></div>
     <p class="cola-de">${P.esc(x.titulo || "")}</p>
     ${x.porQue ? `<p class="cola-pq gris">${P.esc(x.porQue)}</p>` : ""}
-    ${/^https:\/\/res\.cloudinary\.com\/dnwfu8ffn\//.test(x.imagen || "") ? `<a href="${P.esc(x.imagen)}" target="_blank" rel="noopener"><img class="inv-captura" src="${P.esc(x.imagen)}" alt="captura"></a>` : ""}
+    ${P.esImagenNuestra(x.imagen) ? `<a href="${P.esc(x.imagen)}" target="_blank" rel="noopener"><img class="inv-captura" src="${P.esc(x.imagen)}" alt="captura"></a>` : ""}
     ${x.plan ? `<p class="preg"><b>Plan:</b> ${P.esc(x.plan)}</p>` : ""}
     ${x.pregunta ? `<p class="preg"><b>Pregunta:</b> ${P.esc(x.pregunta)}</p>` : ""}
     ${x.respuesta ? `<p class="resp"><b>Respuesta:</b> ${P.esc(x.respuesta)}</p>` : ""}
@@ -275,21 +272,6 @@ async function traerCommits(pr) {
   } catch (e) { caja.innerHTML = '<p class="gris">' + P.esc(e.message) + "</p>"; }
 }
 
-/* La captura se achica a 1600 px y se sube AL MANDAR, nunca al elegirla. */
-async function subirCaptura(file) {
-  const img = await createImageBitmap(file);
-  const k = Math.min(1, 1600 / Math.max(img.width, img.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-  const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.82));
-  const fd = new FormData();
-  fd.append("file", blob, "captura.jpg"); fd.append("upload_preset", PRESET); fd.append("asset_folder", "panel");
-  const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, { method: "POST", body: fd });
-  if (!r.ok) throw new Error("Cloudinary contestó " + r.status);
-  return (await r.json()).secure_url;
-}
-
 /* La clave del pedido: I1, I2… dentro del proyecto (I de invitado). */
 function proximaClave(pid) {
   const n = PEND.filter((x) => x.proyecto === pid && /^I\d+$/.test(x.clave || ""))
@@ -303,7 +285,7 @@ async function mandar(pid, boton) {
   if (!titulo) return P.aviso("Escribí en una línea qué pasa.", "error");
   boton.disabled = true;
   try {
-    const imagen = capturas[pid] ? await subirCaptura(capturas[pid]) : "";
+    const imagen = capturas[pid] ? await P.subirCaptura(capturas[pid]) : "";
     const clave = proximaClave(pid), id = pid + ":" + clave, quien = persona.nombre || yo.email || "";
     await setDoc(doc(db, "pendientes", id), {
       proyecto: pid, autor: yo.uid, autorNombre: quien, tipo: "pedido", estado: "abierto", quien: "claude",

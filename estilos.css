@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-13
+   Sello: estilos-14
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -438,6 +438,15 @@ textarea.libre { font-family:inherit; font-size:.95rem; white-space:pre-wrap;
 .l-check { display:inline-flex; align-items:center; gap:.35rem; min-height:38px;
            padding:.3rem .6rem; border:1px solid var(--linea); border-radius:999px;
            font-size:.8rem; }
+/* estilos-14 (panel:U1): la casilla heredaba `width:100%`, `min-height:44px`
+   y el relleno de los campos. Mientras el nombre entraba en un renglón no se
+   notaba; con uno que parte («Casa Verde», «SITD-Hilux») la casilla se
+   quedaba con el ancho de la chip y salía un cuadrado blanco enorme. */
+input[type="checkbox"], input[type="radio"] { width:1.1rem; height:1.1rem; min-height:0;
+  padding:0; margin:0; flex:none; accent-color:var(--acento); }
+.l-check { max-width:100%; }
+/* La captura de un pedido (panel-36): entera, sin pasarse del ancho. */
+.captura { max-width:100%; max-height:260px; border-radius:var(--r-s); margin:.4rem 0; display:block; }
 
 /* La bitácora: quién dijo qué y cuándo. Es donde dos chats que se
    contradijeron quedan uno al lado del otro. */

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    nucleo.js — EL NÚCLEO DEL PANEL.
-   Sello: nucleo-5
+   Sello: nucleo-6
 
    Todo lo que hace falta en más de una pantalla vive acá y no se copia.
    Es la regla de los otros tres proyectos (PROTOCOLO-DESARROLLO §2, §3.2).
@@ -18,7 +18,7 @@ import {
 } from "./firebase-init.js?v=init-4";
 
 export const P = {};
-P.VERSION = "nucleo-5";
+P.VERSION = "nucleo-6";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */
@@ -116,6 +116,27 @@ P.idBoveda = (f, a) => a.boveda || ("acceso-" + (f.proyecto || "general") + "-" 
 
 // nucleo-5 (panel:U2): un invitado crea su cuenta y después pide acceso.
 P.crearCuenta = (mail, clave) => createUserWithEmailAndPassword(auth, mail.trim(), clave);
+
+/* ---------- una captura a Cloudinary (nucleo-6, panel:U1) ---------- */
+/* La usan el pedido de Mauro y el de un invitado. Misma cuenta y mismo preset
+   SIN FIRMA que los sitios (públicos por diseño: identifican, no abren nada).
+   Se achica a 1600 px y se sube AL MANDAR, nunca al elegirla: si no, cada
+   foto mirada y descartada queda huérfana en Cloudinary. */
+P.CLOUDINARY = { cloud: "dnwfu8ffn", preset: "preset-comprobantes" };
+P.esImagenNuestra = (u) => /^https:\/\/res\.cloudinary\.com\/dnwfu8ffn\//.test(String(u || ""));
+P.subirCaptura = async function (file) {
+  const img = await createImageBitmap(file);
+  const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.82));
+  const fd = new FormData();
+  fd.append("file", blob, "captura.jpg"); fd.append("upload_preset", P.CLOUDINARY.preset); fd.append("asset_folder", "panel");
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${P.CLOUDINARY.cloud}/image/upload`, { method: "POST", body: fd });
+  if (!r.ok) throw new Error("Cloudinary contestó " + r.status);
+  return (await r.json()).secure_url;
+};
 
 /* ---------- preguntar antes de algo irreversible ---------- */
 /* Sin depender del confirm() del navegador, que en Android se ve como un

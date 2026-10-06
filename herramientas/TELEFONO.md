@@ -146,6 +146,18 @@ Ajustes → Aplicaciones → Termux:API → **Forzar detención**. La prueba es
 vacío. `termux-battery-status` andando y la lista vacía quiere decir eso
 mismo: Termux:API contesta, pero no le dejan leer.
 
+**Desde el 6-oct-2026 Airbnb lo lee la Pizarra, no Termux** (`pizarra-9`,
+`Bodega.kt` de `maurogasta-crypto/pizarra`). En el Xiaomi de Mauro (Android 16
+/ HyperOS 3) el lector de Termux:API no se conectó nunca —`termux-notification-list`
+tira un NullPointerException aunque el permiso figure dado—, y Termux:API, hecha
+para Android 9, no tiene cómo llevar al renglón exacto ni decir que Android la
+desconectó. La Pizarra sube a la bodega con el MISMO formato y la misma huella,
+así que la ronda no cambió. Si algo de este archivo cambia (`mensajesDe`,
+`huella`, `latir`), cambia `Bodega.kt` en la misma tanda. **En Termux se apaga
+la lectura**, para que no escriban dos el mismo latido:
+`rm ~/.termux/boot/bodega-vigilar.sh; pkill -f vigilar`. Lo de abajo queda
+para un teléfono donde Termux:API sí ande.
+
 **Que arranque solo** (30-sep-2026). `--vigilar` sólo lee mientras corre, y
 Android lo corta al reiniciar o cuando cierra Termux: ahí no llega nada y
 **no hay ningún error**, que se ve igual que un día sin mensajes. Una vez:

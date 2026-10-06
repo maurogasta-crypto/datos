@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    firebase-init.js — EL ÚNICO CONTACTO CON EL SDK DE FIREBASE.
-   Sello: init-3
+   Sello: init-4
 
    Ninguna otra página importa nada de firebase directamente. Si mañana
    cambia la versión del SDK, o el proyecto, o hay que agregar una función,
@@ -58,9 +58,10 @@ export const firebaseConfig = {
 /* Enlaces vivos: `undefined` hasta que `cargarFirebase()` los rellena. */
 export let app, auth, db;
 export let onAuthStateChanged, signInWithEmailAndPassword, signOut,
-           sendPasswordResetEmail;
+           sendPasswordResetEmail, createUserWithEmailAndPassword;
 export let doc, getDoc, setDoc, deleteDoc, collection, getDocs,
-           query, orderBy, serverTimestamp, writeBatch;
+           query, orderBy, serverTimestamp, writeBatch,
+           where, updateDoc, arrayUnion;
 
 /* `null` mientras no se intentó; `true` si anduvo. Lo mira el diagnóstico. */
 export let cargado = false;
@@ -98,9 +99,12 @@ export function cargarFirebase() {
     auth = modAuth.getAuth(app);
 
     ({ onAuthStateChanged, signInWithEmailAndPassword, signOut,
-       sendPasswordResetEmail } = modAuth);
+       sendPasswordResetEmail, createUserWithEmailAndPassword } = modAuth);
+    // init-4 (panel:U2): `where`, `updateDoc`, `arrayUnion` y crear cuenta,
+    // para la página de los invitados.
     ({ doc, getDoc, setDoc, deleteDoc, collection, getDocs,
-       query, orderBy, serverTimestamp, writeBatch } = modFs);
+       query, orderBy, serverTimestamp, writeBatch,
+       where, updateDoc, arrayUnion } = modFs);
 
     /* LA CACHÉ PERSISTENTE. Es lo que hace que el panel instalado sirva de
        algo sin señal: sin ella el cascarón abre y no hay un solo dato

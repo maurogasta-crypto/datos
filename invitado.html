@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel · invitados</title>
+<link rel="stylesheet" href="estilos.css?v=estilos-13">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" href="./icono-192.png">
+<style>
+  .inv-proy { margin: 1rem 0 1.4rem; }
+  .inv-cupo { font-family: var(--mono); font-size: .72rem; color: var(--gris); }
+  .inv-captura { max-width: 100%; max-height: 260px; border-radius: var(--r-s); margin: .4rem 0; display: block; }
+  .inv-com { font-size: .82rem; margin: .3rem 0 0; padding-left: .6rem; border-left: 2px solid var(--linea); white-space: pre-wrap; }
+  .inv-commit { font-size: .8rem; padding: .25rem 0; border-bottom: 1px solid var(--linea); }
+  textarea { width: 100%; }
+</style>
+</head>
+<body>
+<!--
+  ════════════════════════════════════════════════════════════════
+  invitado.html — El panel para los INVITADOS. Sello: invitado-1
+
+  Pedido de Mauro, 6-oct-2026 (`panel:U2`): «compartirle a Mariano un link a
+  mi panel en el que pueda ver lo que se está desarrollando en ese
+  repositorio; acceso a mis proyectos que yo le habilité; que haga pedidos,
+  que cargue la captura de pantalla con la observación o pedido; acceso a los
+  resúmenes y comentarios tal como yo; a la bóveda sólo para los proyectos que
+  se le habiliten» — y «las claves sólo las ve». Cupo: 12 pedidos resueltos
+  por día para todos los invitados, repartidos entre los sitios en desarrollo.
+
+  Es una página APARTE y no una vista del panel, a propósito: el panel de
+  Mauro tiene cuatro mil líneas que leen TODO, y un permiso que falla en
+  silencio ahí adentro dejaría a un invitado viendo lo que no es suyo. Acá
+  se lee sólo lo de sus proyectos, y quien decide es la regla (reglas v6),
+  no esta pantalla: aunque alguien la modifique, la base no le da más.
+
+  QUIÉN ES INVITADO: quien tiene ficha ACTIVA en `personas/{uid}`, que escribe
+  sólo Mauro desde la solapa «Personas» del panel. Quien entra sin ficha deja
+  una `solicitud` y espera.
+  ════════════════════════════════════════════════════════════════
+-->
+
+<div id="barra">
+  <div class="marca">Panel<small id="sello"></small></div>
+  <button class="btn hide" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
+</div>
+
+<div id="sin-sdk" class="contenedor hide">
+  <h1>Falta Firebase</h1>
+  <div class="tarj"><p id="sin-sdk-que" class="gris"></p>
+    <div class="fila-btn"><button class="btn p" id="btnReintentar">Reintentar</button></div></div>
+</div>
+
+<!-- Entrar, o crear la cuenta la primera vez -->
+<div id="puerta" class="contenedor hide">
+  <h1>Entrar</h1>
+  <p class="gris">Si es la primera vez, poné tu mail y una contraseña nueva y tocá «Crear mi cuenta».
+    Después pedís acceso y Mauro te habilita los proyectos.</p>
+  <div class="tarj">
+    <label for="mail">Mail</label>
+    <input type="email" id="mail" inputmode="email" autocomplete="username">
+    <label for="clave">Contraseña</label>
+    <input type="password" id="clave" autocomplete="current-password">
+    <div class="fila-btn">
+      <button class="btn" id="btnCrear">Crear mi cuenta</button>
+      <button class="btn p" id="btnEntrar">Entrar</button>
+    </div>
+    <button class="mini" id="btnOlvide">Olvidé la contraseña</button>
+  </div>
+</div>
+
+<!-- Con cuenta y sin ficha: pedir acceso -->
+<div id="pedir" class="contenedor hide">
+  <h1>Pedir acceso</h1>
+  <div class="tarj" id="pedir-caja">
+    <p class="gris">Mauro decide qué proyectos ves. Contale quién sos y para qué.</p>
+    <label for="p-nombre">Tu nombre</label>
+    <input id="p-nombre" maxlength="80">
+    <label for="p-msj">Mensaje (opcional)</label>
+    <textarea id="p-msj" rows="3" maxlength="500" placeholder="Soy Mariano, para seguir Harmonía."></textarea>
+    <div class="fila-btn"><button class="btn p" id="btnPedir">Pedir acceso</button></div>
+  </div>
+</div>
+
+<!-- El invitado, con sus proyectos -->
+<div id="app" class="contenedor hide">
+  <p class="gris" id="hola"></p>
+  <div id="proyectos"></div>
+</div>
+
+<script type="module">
+import { P, $, db, auth } from "./nucleo.js?v=nucleo-5";
+import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion }
+  from "./firebase-init.js?v=init-4";
+
+P.PANEL = "invitado-1";
+P.pintarSello();
+
+// El cupo: 12 pedidos resueltos por día para todos los invitados, entre los
+// sitios en desarrollo (Mauro, 6-oct-2026). Lo controla el agente al
+// resolver —un pedido de más espera a la ronda del día siguiente—; acá sólo
+// se muestra, para que quien pide sepa qué esperar.
+const CUPO_DIA = 12;
+const SITIOS_EN_DESARROLLO = ["casaverde", "casayourte", "remate", "tiempos", "hilux", "harmonia"];
+const CUPO_SITIO = Math.max(1, Math.floor(CUPO_DIA / SITIOS_EN_DESARROLLO.length));
+// La función que despierta a la «Consulta en vivo» de Claude (Netlify de Casa Verde).
+const AVISAR = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/avisar-claude";
+// La misma cuenta de Cloudinary y el mismo preset SIN FIRMA que usan los sitios
+// (públicos por diseño: identifican, no abren nada).
+const CLOUD = "dnwfu8ffn", PRESET = "preset-comprobantes";
+
+let yo = null, persona = null, PROY = [], PEND = [], FICHAS = [];
+const capturas = {};       // proyecto → File elegido, se sube recién al mandar
+
+async function arrancar() {
+  for (const id of ["sin-sdk", "puerta", "pedir", "app"]) $(id).classList.add("hide");
+  if (!(await P.arrancarFirebase())) {
+    $("sin-sdk-que").textContent = P.fallaFirebase ? P.fallaFirebase.message : "No bajó el SDK.";
+    $("sin-sdk").classList.remove("hide"); return;
+  }
+  yo = await P.quienEntra();
+  if (!yo) { $("puerta").classList.remove("hide"); return; }
+  $("btnSalir").classList.remove("hide");
+  const f = await getDoc(doc(db, "personas", yo.uid)).catch(() => null);
+  persona = f && f.exists() ? f.data() : null;
+  if (!persona || persona.activo !== true) return pantallaPedir();
+  $("app").classList.remove("hide");
+  $("hola").textContent = "Hola, " + (persona.nombre || yo.email) + ".";
+  await leer();
+}
+
+/* ---------- entrar ---------- */
+$("btnReintentar").onclick = arrancar;
+$("btnEntrar").onclick = async () => {
+  try { await P.entrar($("mail").value, $("clave").value); location.reload(); }
+  catch (e) { P.aviso(P.explicar(e), "error"); }
+};
+$("btnCrear").onclick = async () => {
+  if (String($("clave").value).length < 8) return P.aviso("La contraseña: 8 caracteres o más.", "error");
+  try { await P.crearCuenta($("mail").value, $("clave").value); location.reload(); }
+  catch (e) {
+    P.aviso(e && e.code === "auth/email-already-in-use" ? "Ese mail ya tiene cuenta: tocá Entrar." : P.explicar(e), "error");
+  }
+};
+$("btnOlvide").onclick = async () => {
+  if (!$("mail").value.trim()) return P.aviso("Escribí tu mail primero.", "error");
+  try { await P.recuperar($("mail").value); P.aviso("Te mandé el mail para cambiarla."); }
+  catch (e) { P.aviso(P.explicar(e), "error"); }
+};
+$("btnSalir").onclick = async () => { await P.salir(); location.reload(); };
+
+/* ---------- pedir acceso ---------- */
+async function pantallaPedir() {
+  $("pedir").classList.remove("hide");
+  const s = await getDoc(doc(db, "solicitudes", yo.uid)).catch(() => null);
+  if (s && s.exists()) {
+    $("pedir-caja").innerHTML = '<p>Ya pediste acceso. Cuando Mauro lo apruebe, al volver a entrar vas a ver tus proyectos.</p>'
+      + (persona && persona.activo === false ? '<p class="gris">Tu acceso está pausado.</p>' : "");
+    return;
+  }
+  $("btnPedir").onclick = async () => {
+    const nombre = $("p-nombre").value.trim();
+    if (!nombre) return P.aviso("Poné tu nombre.", "error");
+    try {
+      await setDoc(doc(db, "solicitudes", yo.uid), { nombre: nombre.slice(0, 80), mail: yo.email || "",
+        mensaje: $("p-msj").value.trim().slice(0, 500), creadoEn: P.hoy() });
+      P.aviso("Listo: le llegó a Mauro.");
+      pantallaPedir();
+    } catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+}
+
+/* ---------- leer: SÓLO lo de sus proyectos ---------- */
+async function leer() {
+  const ids = (persona.proyectos || []).slice(0, 10);   // `in` acepta hasta 10
+  if (!ids.length) { $("proyectos").innerHTML = '<p class="gris">Todavía no tenés proyectos habilitados.</p>'; return; }
+  try {
+    PROY = (await Promise.all(ids.map((id) => getDoc(doc(db, "proyectos", id)))))
+      .filter((d) => d.exists()).map((d) => ({ id: d.id, ...d.data() }));
+    const [pe, fi] = await Promise.all([
+      getDocs(query(collection(db, "pendientes"), where("proyecto", "in", ids))),
+      getDocs(query(collection(db, "fichas"), where("proyecto", "in", ids))),
+    ]);
+    PEND = pe.docs.map((d) => ({ id: d.id, ...d.data() }));
+    FICHAS = fi.docs.map((d) => ({ id: d.id, ...d.data() }));
+    pintar();
+    PROY.forEach(traerCommits);
+  } catch (e) { $("proyectos").innerHTML = '<p class="gris">' + P.esc(P.explicar(e)) + "</p>"; }
+}
+
+const abierto = (x) => x.estado !== "hecho" && x.estado !== "retirado";
+const pedidosHoy = (pid) => PEND.filter((x) => x.proyecto === pid && String(x.origen || "").startsWith("panel:invitado/")
+  && String(x.creadoEn || "").slice(0, 10) === P.hoy()).length;
+
+function pintar() {
+  $("proyectos").innerHTML = PROY.map((pr) => {
+    const e = pr.esquema || {};
+    const pend = PEND.filter((x) => x.proyecto === pr.id)
+      .sort((a, b) => Number(abierto(b)) - Number(abierto(a)) || String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
+    const n = pedidosHoy(pr.id);
+    return `<section class="inv-proy">
+      <h2>${P.esc(pr.nombre || pr.id)}</h2>
+      ${pr.sitio && pr.sitio.resumen ? `<p class="gris">${P.esc(pr.sitio.resumen)}</p>` : ""}
+      ${e.resumen ? `<div class="tarj"><div class="k">En qué está</div><p>${P.esc(e.resumen)}</p>
+        ${(e.pasos || []).length ? "<ol>" + e.pasos.map((p) => `<li>${P.esc(p.titulo)} <span class="gris">· ${P.esc(p.quien === "claude" ? "lo hace Claude" : "lo decide Mauro")}</span></li>`).join("") + "</ol>" : ""}
+        ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}</div>` : ""}
+
+      <div class="tarj">
+        <div class="k">Un pedido</div>
+        <p class="inv-cupo">Hoy: ${n} de ${CUPO_SITIO} pedidos de este proyecto.${n >= CUPO_SITIO ? " Lo que mandes ahora se resuelve mañana." : ""}</p>
+        <label>Qué pasa o qué querés (una línea)</label>
+        <input data-titulo="${P.esc(pr.id)}" maxlength="120" placeholder="El botón de la rueda no suena en el iPhone">
+        <label>Contalo con tus palabras</label>
+        <textarea data-texto="${P.esc(pr.id)}" rows="3" maxlength="2000" placeholder="Qué hiciste, qué esperabas y qué pasó."></textarea>
+        <div class="fila-btn">
+          <label class="mini">📷 Sacar foto<input type="file" accept="image/*" capture="environment" data-captura="${P.esc(pr.id)}" hidden></label>
+          <label class="mini">🖼 Elegir captura<input type="file" accept="image/*" data-captura="${P.esc(pr.id)}" hidden></label>
+        </div>
+        <div data-vista="${P.esc(pr.id)}"></div>
+        <p class="gris">Contesta Claude, una IA. Lo simple lo resuelve en el día; lo que necesita una decisión queda abajo, con el plan, para que lo definan.</p>
+        <div class="fila-btn"><button class="btn p" data-mandar="${P.esc(pr.id)}">Mandar el pedido</button></div>
+      </div>
+
+      ${pr.sitio && pr.sitio.repo ? `<div class="tarj"><div class="k">Lo último que se subió a ${P.esc(pr.sitio.repo)}</div><div data-commits="${P.esc(pr.id)}"><p class="gris">Leyendo…</p></div></div>` : ""}
+
+      <div class="k" style="margin-top:1rem">Pendientes (${pend.filter(abierto).length} abiertos)</div>
+      ${pend.map(htmlPendiente).join("") || '<p class="gris">Nada todavía.</p>'}
+
+      ${htmlBoveda(pr.id)}
+    </section>`;
+  }).join("");
+  enganchar();
+}
+
+function htmlPendiente(x) {
+  const h = (x.historia || []).slice(0, 3);
+  return `<div class="pend">
+    <div class="cola-cab"><span class="proy">${P.esc(x.clave || x.id)}</span> <span class="prio">${P.esc(x.estado || "")}</span></div>
+    <p class="cola-de">${P.esc(x.titulo || "")}</p>
+    ${x.porQue ? `<p class="cola-pq gris">${P.esc(x.porQue)}</p>` : ""}
+    ${/^https:\/\/res\.cloudinary\.com\/dnwfu8ffn\//.test(x.imagen || "") ? `<a href="${P.esc(x.imagen)}" target="_blank" rel="noopener"><img class="inv-captura" src="${P.esc(x.imagen)}" alt="captura"></a>` : ""}
+    ${x.plan ? `<p class="preg"><b>Plan:</b> ${P.esc(x.plan)}</p>` : ""}
+    ${x.pregunta ? `<p class="preg"><b>Pregunta:</b> ${P.esc(x.pregunta)}</p>` : ""}
+    ${x.respuesta ? `<p class="resp"><b>Respuesta:</b> ${P.esc(x.respuesta)}</p>` : ""}
+    ${h.map((r) => `<p class="inv-com gris">${P.esc(r.fecha || "")} · ${P.esc(r.texto || "")}</p>`).join("")}
+    ${(x.comentarios || []).map((c) => `<p class="inv-com">${P.esc(c.nombre || "")} (${P.esc(c.fecha || "")}): ${P.esc(c.texto || "")}</p>`).join("")}
+    <div class="fila-btn"><input data-com="${P.esc(x.id)}" maxlength="600" placeholder="Comentar…"><button class="mini" data-comentar="${P.esc(x.id)}">Comentar</button></div>
+  </div>`;
+}
+
+/* La bóveda de SUS proyectos: sólo ver. El nombre de cada clave sale de la
+   ficha con P.idBoveda, la misma función del panel. */
+function htmlBoveda(pid) {
+  const accesos = FICHAS.filter((f) => f.proyecto === pid)
+    .flatMap((f) => (Array.isArray(f.accesos) ? f.accesos : []).filter((a) => a && a.nombre && !a.publica).map((a) => ({ f, a })));
+  if (!accesos.length) return "";
+  return `<div class="tarj" style="margin-top:1rem"><div class="k">Claves en uso (sólo ver)</div>
+    ${accesos.map(({ f, a }) => `<div class="acceso"><div class="mono">${P.esc(a.nombre)}</div>
+      ${a.ruta ? `<div class="gris">${P.esc(a.ruta)}</div>` : ""}
+      <button class="mini" data-ver="${P.esc(P.idBoveda(f, a))}">Ver la clave</button><div data-valor="${P.esc(P.idBoveda(f, a))}"></div></div>`).join("")}</div>`;
+}
+
+/* El repositorio público, leído sin credencial: lo último que se subió. */
+async function traerCommits(pr) {
+  const caja = document.querySelector(`[data-commits="${pr.id}"]`);
+  if (!caja || !pr.sitio || !/^[\w.-]+\/[\w.-]+$/.test(pr.sitio.repo || "")) return;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${pr.sitio.repo}/commits?per_page=6`);
+    if (!r.ok) throw new Error("GitHub contestó " + r.status);
+    const l = await r.json();
+    caja.innerHTML = l.map((c) => `<div class="inv-commit"><span class="gris">${P.esc(String(c.commit.author.date).slice(0, 10))}</span>
+      ${P.esc(String(c.commit.message).split("\n")[0].slice(0, 120))}</div>`).join("");
+  } catch (e) { caja.innerHTML = '<p class="gris">' + P.esc(e.message) + "</p>"; }
+}
+
+/* La captura se achica a 1600 px y se sube AL MANDAR, nunca al elegirla. */
+async function subirCaptura(file) {
+  const img = await createImageBitmap(file);
+  const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.82));
+  const fd = new FormData();
+  fd.append("file", blob, "captura.jpg"); fd.append("upload_preset", PRESET); fd.append("asset_folder", "panel");
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, { method: "POST", body: fd });
+  if (!r.ok) throw new Error("Cloudinary contestó " + r.status);
+  return (await r.json()).secure_url;
+}
+
+/* La clave del pedido: I1, I2… dentro del proyecto (I de invitado). */
+function proximaClave(pid) {
+  const n = PEND.filter((x) => x.proyecto === pid && /^I\d+$/.test(x.clave || ""))
+    .map((x) => Number(x.clave.slice(1))).reduce((a, b) => Math.max(a, b), 0);
+  return "I" + (n + 1);
+}
+
+async function mandar(pid, boton) {
+  const titulo = document.querySelector(`[data-titulo="${pid}"]`).value.trim();
+  const texto = document.querySelector(`[data-texto="${pid}"]`).value.trim();
+  if (!titulo) return P.aviso("Escribí en una línea qué pasa.", "error");
+  boton.disabled = true;
+  try {
+    const imagen = capturas[pid] ? await subirCaptura(capturas[pid]) : "";
+    const clave = proximaClave(pid), id = pid + ":" + clave, quien = persona.nombre || yo.email || "";
+    await setDoc(doc(db, "pendientes", id), {
+      proyecto: pid, autor: yo.uid, autorNombre: quien, tipo: "pedido", estado: "abierto", quien: "claude",
+      prioridad: "media", titulo: titulo.slice(0, 120), porQue: texto.slice(0, 2000), imagen,
+      origen: "panel:invitado/" + yo.uid, clave, sitios: [pid], creadoEn: P.hoy(),
+      historia: [{ fecha: P.hoy(), por: "invitado", texto: quien + " lo pidió desde el panel." }],
+    });
+    delete capturas[pid];
+    avisarClaude(id);
+    P.aviso("Mandado. Claude lo ve enseguida.");
+    await leer();
+  } catch (e) { P.aviso("No se pudo mandar: " + P.explicar(e), "error"); boton.disabled = false; }
+}
+
+/* Despierta a la «Consulta en vivo». Manda la base y el id, NUNCA el texto.
+   Si falla, la ronda diaria lo trae igual: nunca frena el pedido. */
+async function avisarClaude(id) {
+  try {
+    const t = await auth.currentUser.getIdToken();
+    await fetch(AVISAR, { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + t },
+      body: JSON.stringify({ base: "panel", reporteId: id }) });
+  } catch (e) { /* silencio a propósito */ }
+}
+
+function enganchar() {
+  document.querySelectorAll("[data-captura]").forEach((i) => i.onchange = () => {
+    const pid = i.dataset.captura, f = i.files && i.files[0];
+    if (!f) return;
+    capturas[pid] = f;
+    document.querySelector(`[data-vista="${pid}"]`).innerHTML =
+      `<img class="inv-captura" src="${URL.createObjectURL(f)}" alt=""><p class="gris">Se sube al mandar.</p>`;
+  });
+  document.querySelectorAll("[data-mandar]").forEach((b) => b.onclick = () => mandar(b.dataset.mandar, b));
+  document.querySelectorAll("[data-comentar]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.comentar, i = document.querySelector(`[data-com="${id}"]`), t = i.value.trim();
+    if (!t) return;
+    try {
+      await updateDoc(doc(db, "pendientes", id), { comentarios: arrayUnion({ por: yo.uid, nombre: persona.nombre || "", texto: t.slice(0, 600), fecha: P.hoy() }) });
+      await leer();
+    } catch (e) { P.aviso(P.explicar(e), "error"); }
+  });
+  document.querySelectorAll("[data-ver]").forEach((b) => b.onclick = async () => {
+    const caja = document.querySelector(`[data-valor="${b.dataset.ver}"]`);
+    try {
+      const d = await getDoc(doc(db, "claves", b.dataset.ver));
+      const v = d.exists() ? String((d.data() || {}).clave || "") : "";
+      caja.innerHTML = v ? '<textarea readonly class="mono" rows="1"></textarea>' : '<p class="gris">Todavía no está guardada.</p>';
+      if (v) caja.querySelector("textarea").value = v;
+    } catch (e) { caja.innerHTML = '<p class="gris">' + P.esc(P.explicar(e)) + "</p>"; }
+  });
+}
+
+arrancar();
+</script>
+</body>
+</html>

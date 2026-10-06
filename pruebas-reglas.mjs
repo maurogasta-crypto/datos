@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    pruebas-reglas.mjs — el banco de pruebas de «La puerta».
-   Sello: pruebas-1
+   Sello: pruebas-2
 
    Se corre con `node pruebas-reglas.mjs`, sin npm y sin navegador. Es el
    patrón que presta Harmonía (`npm run prueba`) y que remate ya usa en
@@ -133,10 +133,39 @@ caso("LA BÓVEDA es `claves` y es de una sola persona", () => {
      abre algo va en `claves`. Lo que NO cambió, y es lo que se prueba acá, es
      que `claves` no se negocia. */
   trae(r, "match /claves/{id}     { allow read, write: if soyYo(); }");
-  for (const linea of r.split("\n")) {
-    if (/match \/claves\//.test(linea) && !/if soyYo\(\);/.test(linea)) {
-      throw new Error("`claves` quedó abierta a alguien más: " + linea.trim());
-    }
+  /* v6 (2026-10-06): un INVITADO ve las claves de SUS proyectos —decisión de
+     Mauro, «las claves sólo las ve»—. Así que hay exactamente DOS bloques de
+     `claves`: el de Mauro, y uno que sólo da `get` a persona(). Cualquier otro,
+     o cualquiera que nombre al agente o al equipo, falla acá. */
+  const bloques = r.split("\n").filter((l) => /match \/claves\//.test(l));
+  igual(bloques.length, 2, "tiene que haber dos bloques de `claves`: Mauro y el invitado");
+  for (const l of bloques) {
+    if (/equipo\(\)|esAgente\(\)/.test(l)) throw new Error("`claves` le abre al agente: " + l.trim());
+    if (!/if soyYo\(\);/.test(l) && !/allow get: if persona\(\)/.test(l))
+      throw new Error("`claves` quedó abierta a alguien más: " + l.trim());
+  }
+  // El del invitado: SÓLO get (ni list, ni write), y sólo con el proyecto en el nombre.
+  const inv = r.slice(r.indexOf("allow get: if persona()"), r.indexOf("in susProyectos(); }", r.indexOf("allow get: if persona()")));
+  noTrae(inv, "write", "el invitado no escribe la bóveda");
+  noTrae(inv, "list", "el invitado no lista la bóveda");
+  trae(inv, "id.split('-')[0] in ['acceso', 'app']", "la clave del invitado tiene que llevar el proyecto en el nombre");
+});
+
+caso("v6: un invitado es una ficha ACTIVA en `personas/` que escribe sólo Mauro", () => {
+  trae(r, "data.activo == true", "persona() sin ficha activa");
+  const pe = r.slice(r.indexOf("match /personas/{uid}"), r.indexOf("match /solicitudes/{uid}"));
+  trae(pe, "allow write: if soyYo();", "`personas` la escribe alguien más que Mauro");
+  noTrae(pe.replace("allow read: if equipo()", ""), "equipo()", "el agente no se puede dar una ficha");
+  // Lo que crea un invitado es un pedido de SU proyecto, firmado por él, y nada más.
+  const pend = r.slice(r.indexOf("match /pendientes/{id} {"), r.indexOf("match /personas/{uid}"));
+  for (const t of ["request.resource.data.proyecto in susProyectos()", "request.resource.data.autor == request.auth.uid",
+    "request.resource.data.tipo == 'pedido'", "keys().hasOnly(", "affectedKeys().hasOnly(['comentarios'])"])
+    trae(pend, t, "al pedido del invitado le falta");
+  noTrae(pend, "allow delete", "un invitado no borra pendientes");
+  // Y ninguna de las colecciones de trabajo del equipo le llega.
+  for (const c of ["lineas", "tandas", "protocolos", "reservas"]) {
+    const l = r.split("\n").filter((x) => x.includes("match /" + c + "/")).join(" ");
+    noTrae(l, "persona()", "`" + c + "` le llega a un invitado");
   }
 });
 
@@ -155,8 +184,8 @@ caso("el equipo llega a las seis colecciones del estado, y a ninguna más", () =
   for (const c of ["lineas", "reservas", "proyectos", "pendientes", "tandas", "protocolos"]) {
     trae(r, "match /" + c + "/{id}", "falta la colección");
   }
-  const declaradas = [...r.matchAll(/match \/([a-z-]+)\/\{id\}/g)].map((m) => m[1]).sort();
-  igual(declaradas.join(","), "claves,fichas,lineas,pendientes,protocolos,proyectos,reservas,tandas",
+  const declaradas = [...new Set([...r.matchAll(/match \/([a-z-]+)\/\{(?:id|uid)\}/g)].map((m) => m[1]))].sort();
+  igual(declaradas.join(","), "claves,fichas,lineas,pendientes,personas,protocolos,proyectos,reservas,solicitudes,tandas",
     "cambió la lista de colecciones: si entró una nueva, agregala acá y a las reglas");
 });
 

@@ -2,6 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
+//  v6 · 2026-10-06 · entran los INVITADOS: `personas/` y `solicitudes/` (panel:U2)
 //  v5 · 2026-09-14 · entra `lineas/`: en qué se está trabajando y quién
 //  v4 · 2026-09-13 · la bóveda se define por PROPÓSITO, y `fichas/` sale
 //
@@ -88,10 +89,36 @@ rules_version = '2';
 //  aparecer» nunca le dijo a Mauro qué poner adentro. La v4 lo reemplaza.
 // ═══════════════════════════════════════════════════════════════
 //
-//  EL MODELO, EN DOS LÍNEAS.
+//  QUÉ CAMBIÓ EN LA v6 (2026-10-06, `panel:U2`).
 //
-//    · MAURO  — todo, sin excepción.
-//    · AGENTE — todo MENOS lo que abre algo. O sea: todo menos `claves/`.
+//  Entran los INVITADOS. Mauro lo pidió así: «compartirle a Mariano un link
+//  a mi panel en el que pueda ver lo que se está desarrollando… con acceso a
+//  los proyectos que le habilité… que pueda hacer pedidos con la captura…
+//  y la bóveda sólo para los proyectos que se le habiliten». Y sobre la
+//  bóveda contestó: «las claves sólo las ve».
+//
+//  Un invitado es alguien con ficha ACTIVA en `personas/{uid}`, que escribe
+//  SÓLO Mauro: ni el invitado ni el agente se dan permisos a sí mismos. Lo
+//  que puede, y nada más:
+//    · LEER sus proyectos (`proyectos/<id>` con id en su lista), los
+//      pendientes de esos proyectos y las fichas de esos proyectos;
+//    · CREAR un pedido en uno de sus proyectos, con su texto y su captura;
+//    · COMENTAR un pendiente de sus proyectos (sólo el campo `comentarios`);
+//    · VER (get, nunca listar ni escribir) las claves de sus proyectos: las
+//      que se llaman `acceso-<proyecto>-…` o `app-<proyecto>`.
+//  Nada de `lineas`, `tandas`, `protocolos`, `reservas`, ni de otros
+//  proyectos. Quien entra sin ficha sólo puede dejar una `solicitud`.
+//
+//  LA BÓVEDA SIGUE CERRADA PARA EL AGENTE. Lo que cambió es que Mauro, el
+//  dueño, decidió mostrarle a un invitado las claves de SU proyecto. El
+//  agente no entra a `claves/` por ningún camino, y eso no se negocia.
+// ═══════════════════════════════════════════════════════════════
+//
+//  EL MODELO, EN TRES LÍNEAS.
+//
+//    · MAURO    — todo, sin excepción.
+//    · AGENTE   — todo MENOS lo que abre algo. O sea: todo menos `claves/`.
+//    · INVITADO — sus proyectos: leer, pedir, comentar y ver sus claves.
 //
 //  LO QUE HACE QUE ESTO SEA SEGURO, y es la parte que no se toca:
 //
@@ -123,6 +150,18 @@ service cloud.firestore {
 
     function equipo() {
       return soyYo() || esAgente();
+    }
+
+    // ── v6 · LOS INVITADOS ──
+    // Una ficha ACTIVA en `personas/`, que escribe sólo Mauro. La lista de
+    // proyectos sale de ahí y de ningún otro lado.
+    function persona() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/personas/$(request.auth.uid))
+        && get(/databases/$(database)/documents/personas/$(request.auth.uid)).data.activo == true;
+    }
+    function susProyectos() {
+      return get(/databases/$(database)/documents/personas/$(request.auth.uid)).data.proyectos;
     }
 
     // ── EN QUÉ SE ESTÁ TRABAJANDO, Y QUIÉN ──
@@ -166,6 +205,59 @@ service cloud.firestore {
     // saca de encima el toque de Mauro por tanda.
     match /proyectos/{id}  { allow read, write: if equipo(); }
     match /pendientes/{id} { allow read, write: if equipo(); }
+
+    // ── v6 · lo que ve y hace un INVITADO, en SUS proyectos ──
+    // Para listar pendientes, la consulta tiene que pedir `proyecto in […]`
+    // con los suyos: si no, la base no puede probar que no hay uno ajeno.
+    match /proyectos/{id}  { allow read: if persona() && id in susProyectos(); }
+    match /pendientes/{id} {
+      allow read: if persona() && resource.data.proyecto in susProyectos();
+      // Un pedido nuevo: en un proyecto suyo, firmado por él, abierto, para
+      // Claude, y con los campos de un pedido y nada más.
+      allow create: if persona()
+        && request.resource.data.proyecto in susProyectos()
+        && request.resource.data.autor == request.auth.uid
+        && request.resource.data.tipo == 'pedido'
+        && request.resource.data.estado == 'abierto'
+        && request.resource.data.quien == 'claude'
+        && request.resource.data.titulo is string
+        && request.resource.data.titulo.size() > 0
+        && request.resource.data.titulo.size() <= 120
+        && request.resource.data.porQue is string
+        && request.resource.data.porQue.size() <= 2000
+        // La captura, si va, es de NUESTRA cuenta de Cloudinary: una dirección
+        // cualquiera en `imagen` sería un enlace que otro toca en el panel.
+        && (!('imagen' in request.resource.data) || request.resource.data.imagen == ''
+            || request.resource.data.imagen.matches('https://res[.]cloudinary[.]com/dnwfu8ffn/.*'))
+        && request.resource.data.keys().hasOnly(['proyecto', 'autor', 'autorNombre', 'tipo',
+             'estado', 'quien', 'prioridad', 'titulo', 'porQue', 'imagen', 'origen', 'clave',
+             'sitios', 'creadoEn', 'historia', 'tocado']);
+      // Comentar: el único campo que un invitado toca de un pendiente.
+      allow update: if persona() && resource.data.proyecto in susProyectos()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comentarios'])
+        && request.resource.data.comentarios is list
+        && request.resource.data.comentarios.size() <= 200;
+    }
+
+    // La ficha de cada invitado: la escribe SÓLO Mauro. El invitado lee la
+    // suya (así sabe qué proyectos tiene) y el agente las lee para el cupo.
+    match /personas/{uid} {
+      allow read: if equipo() || (request.auth != null && request.auth.uid == uid);
+      allow write: if soyYo();
+    }
+    // Quien entra sin ficha pide acceso. Una por cuenta, con su nombre y un
+    // mensaje; Mauro la aprueba creando la ficha y después la borra.
+    match /solicitudes/{uid} {
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nombre', 'mail', 'mensaje', 'creadoEn'])
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.nombre.size() <= 80
+        && request.resource.data.mensaje is string
+        && request.resource.data.mensaje.size() <= 500;
+      allow read: if equipo() || (request.auth != null && request.auth.uid == uid);
+      allow delete: if soyYo();
+    }
     match /tandas/{id}     { allow read, write: if equipo(); }
     match /protocolos/{id} { allow read, write: if equipo(); }
 
@@ -176,6 +268,14 @@ service cloud.firestore {
     // archivo que no se negocia, y si un día un agente pide que se le abra:
     // la respuesta es no, y la cabecera es el motivo.
     match /claves/{id}     { allow read, write: if soyYo(); }
+    // v6: un INVITADO VE —get, nunca list ni escribir— las claves de SUS
+    // proyectos, y sólo las que llevan el proyecto en el nombre
+    // (`acceso-<proyecto>-…`, `app-<proyecto>`). Lo decidió Mauro el
+    // 2026-10-06: «las claves sólo las ve». El AGENTE sigue afuera: no es
+    // persona() —no tiene ficha en `personas/`— y esta línea no lo nombra.
+    match /claves/{id}     { allow get: if persona() && id.split('-').size() >= 2
+                               && id.split('-')[0] in ['acceso', 'app']
+                               && id.split('-')[1] in susProyectos(); }
 
     // ── FICHAS AL EQUIPO: `fichas` la administra el agente, desde la v4 ──
     //
@@ -213,6 +313,9 @@ service cloud.firestore {
     // se publican con esa contraseña todavía ahí, la leyó un agente y hay que
     // rotarla. El orden es: PRIMERO se mueve a `claves`, DESPUÉS se publica.
     match /fichas/{id}     { allow read, write: if equipo(); }
+    // v6: un invitado lee las fichas de SUS proyectos (los caminos de las
+    // claves en uso, la titularidad de su proyecto). No las escribe.
+    match /fichas/{id}     { allow read: if persona() && resource.data.proyecto in susProyectos(); }
 
     // ── El cierre, que NO cierra ──
     // Ojo con leerlo como un candado: en Firestore los permisos se SUMAN y

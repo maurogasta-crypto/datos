@@ -107,7 +107,7 @@ Un workflow propio sí corre con esos push: cada tanda se publica sola. Ver `REA
 | Contenido de `fichas/` | De quién es cada cuenta, a qué mail llega la recuperación, qué servicio usa cada proyecto. **No abre nada** | dato de configuración | Firestore. Las administra Claude desde la **v4** | el panel y el agente | v4 escrita el 2026-09-13 |
 | UID del usuario del agente | Es lo que compara `esAgente()` en las reglas | dato de configuración | Publicado en las reglas de la consola. Lo imprime `node herramientas/firestore.mjs panel quien`, acá mismo | Firestore | verificado contra la base, 2026-09-11 |
 | Contraseña del usuario del agente | Entrar a `datos-830f8` desde una sesión de Claude Code | dato en runtime | Variables de entorno del entorno de Claude Code, cargadas por Mauro en la web | `herramientas/firestore.mjs`, acá mismo | — |
-| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v4**) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | **v4 publicada por Mauro el 2026-09-13** y verificada contra la base el mismo día: `fichas` se lee y se escribe, `claves` contesta que no |
+| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v6**, 2026-10-06: entran los invitados; por publicar) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | **v4 publicada por Mauro el 2026-09-13** y verificada contra la base el mismo día: `fichas` se lee y se escribe, `claves` contesta que no |
 
 Lo que NO está acá y no tiene que estar: el UID real, la contraseña, y cualquier
 contenido de `fichas/`.
@@ -215,13 +215,21 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   tanda**. El VALOR no va en la ficha: va a `claves/acceso-<sitio>-<nombre>`,
   lo guarda Mauro con «Guardar el valor» y el agente no lo lee. Guardar una
   ficha es sin `merge`, así que el editor lleva los `accesos` adentro.
+- **Hay INVITADOS desde el 6-oct-2026** (`panel-35`, reglas v6, `panel:U2`):
+  alguien con ficha activa en `personas/{uid}` —que escribe SÓLO Mauro— entra
+  por `invitado.html` y ve SÓLO sus proyectos: lee, pide con captura, comenta y
+  **ve** las claves `acceso-<proyecto>-…` de esos proyectos (Mauro: «las claves
+  sólo las ve»). **El agente sigue sin entrar a `claves/` por ningún camino**,
+  y el banco de reglas y el emulador lo comprueban. El cupo de los invitados
+  —12 pedidos resueltos por día, entre los sitios en desarrollo— lo aplica el
+  agente al resolver, no la base.
 - **Las reglas se editan completas, nunca por fragmentos:** se suman. Y lo que
   el agente no toca está escrito **en dos lugares**: `reglas.txt` acá y
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
 - **Hay ocho bancos de pruebas, y se corren antes de subir.** `node
-  pruebas-reglas.mjs` (18 casos, sin npm) para `reglas.txt`; `node
+  pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (50 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
   (115 casos, sin npm ni red) para la ronda de apertura, que desde el

@@ -199,6 +199,28 @@ desplegable de Reglas, y ninguna en Fichas—; lo pidió Mauro así: «arriba di
 panel, a su lado elijo el sitio, y en la pestaña de abajo me muevo en toda la
 información de ese sitio».
 
+**Los invitados** (`panel-35`, reglas **v6**, 6-oct-2026, `panel:U2`). Pedido
+de Mauro: que Mariano vea Harmonía en el panel, pida con captura y vea sus
+claves («las claves sólo las ve»). Es una **página aparte**, `invitado.html`:
+el panel lee todo y para alguien que no es Mauro la base dice que no.
+
+- **Entrar**: el invitado abre el link (en «Puerta» → «Copiar el link para
+  invitados»), crea su cuenta y pide acceso. Quien tiene ficha y abre el panel
+  va solo a su página.
+- **Aprobar**: en «Puerta» → «Personas invitadas», elegís los proyectos y
+  «Aprobar». La ficha (`personas/{uid}`) la escribe **sólo Mauro**: ni el
+  invitado ni el agente se dan permisos.
+- **Qué ve y hace**: sus proyectos (resumen, pasos, alertas, pendientes con su
+  plan e historia, lo último subido al repositorio si es público), manda
+  pedidos con texto y captura (se sube al mandar), comenta, y **ve** —nunca
+  edita ni lista— las claves `acceso-<proyecto>-…` / `app-<proyecto>`.
+- **El cupo**: 12 pedidos resueltos por día para todos los invitados,
+  repartidos entre los 6 sitios en desarrollo (2 por sitio). Se cuenta en
+  pedidos, no en tokens: el plan de Claude no informa tokens por pedido. Lo
+  aplica el agente al resolver (TRASPASO § 4 bis); la página lo muestra.
+- **Probado** en el banco (bloque 44) y las reglas contra el emulador de
+  Firestore: 35 casos, entre ellos que el agente sigue sin ver la bóveda.
+
 **Arriba de todo, el esquema** (`panel-34`, 3-oct-2026): con un sitio elegido,
 su plan en pocos renglones —un resumen, los pasos con quién y el riesgo, y las
 alertas de coherencia—, y cada paso se abre para ver sus pendientes. Con
@@ -473,17 +495,18 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-4` |
-| `index.html` | `P.PANEL` | `panel-34` |
+| `nucleo.js` | `P.VERSION` | `nucleo-5` |
+| `index.html` | `P.PANEL` | `panel-35` |
+| `invitado.html` | `P.PANEL` | `invitado-1` |
 | `estilos.css` | (en el comentario) | `estilos-13` |
-| `firebase-init.js` | (en el comentario) | `init-3` |
-| `sw.js` | `VERSION` | `panel-shell-v25` |
+| `firebase-init.js` | (en el comentario) | `init-4` |
+| `sw.js` | `VERSION` | `panel-shell-v26` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-13` y `nucleo.js?v=nucleo-4`. Sin ese número, el
+pide `estilos.css?v=estilos-13` y `nucleo.js?v=nucleo-5`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

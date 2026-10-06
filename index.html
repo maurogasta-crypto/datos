@@ -498,6 +498,18 @@
       <div class="fila-btn"><button class="btn" id="btnProbar">Probar</button></div>
       <div id="resProbar"></div>
     </div>
+
+    <!-- PERSONAS INVITADAS (panel-35, 6-oct-2026, `panel:U2`). Pedido de
+         Mauro: que Mariano vea Harmonía, pida con captura y vea sus claves.
+         Va acá, en «Puerta», porque es lo mismo: quién entra y a qué. La
+         ficha la escribe SÓLO Mauro (reglas v6); el invitado entra por
+         `invitado.html`, una página aparte que lee sólo lo suyo. -->
+    <h2 style="margin-top:1.6rem">Personas invitadas</h2>
+    <p class="gris">Quien entra a <span class="mono" id="linkInvitado"></span> crea su cuenta y pide
+      acceso; acá lo aprobás y elegís qué proyectos ve. Ve sus proyectos, pide con captura,
+      comenta y <b>sólo ve</b> las claves de esos proyectos. Necesita las reglas <b>v6</b> publicadas.</p>
+    <div class="fila-btn"><button class="btn" id="btnCopiarInvitado">Copiar el link para invitados</button></div>
+    <div id="personas"><p class="gris">Leyendo…</p></div>
   </section>
 </div>
 
@@ -511,7 +523,7 @@
 </div>
 
 <script type="module">
-import { P, $, db, auth } from "./nucleo.js?v=nucleo-4";
+import { P, $, db, auth } from "./nucleo.js?v=nucleo-5";
 /* `writeBatch` se fue con el parte: era lo único que escribía de a cientos.
    Lo que queda escribe de a un documento. */
 /* `getDoc` entró en `panel-29`, y para UNA sola cosa: leer la contraseña de la
@@ -519,9 +531,9 @@ import { P, $, db, auth } from "./nucleo.js?v=nucleo-4";
    documento y no la colección: la bóveda no se lista para buscar algo. */
 import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
-} from "./firebase-init.js?v=init-3";
+} from "./firebase-init.js?v=init-4";
 
-P.PANEL = "panel-34";
+P.PANEL = "panel-35";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -581,6 +593,10 @@ arrancar();
 async function entrarAlPanel() {
   yo = await P.quienEntra();
   if (!yo) { $("puerta").classList.remove("hide"); return; }
+  /* panel-35: un INVITADO (ficha en `personas/`) va a su página. Este panel
+     lee todo, y para alguien que no es Mauro la base dice que no. */
+  const ficha = await getDoc(doc(db, "personas", yo.uid)).catch(() => null);
+  if (ficha && ficha.exists()) { location.replace("invitado.html"); return; }
   $("app").classList.remove("hide");
   $("miUid").value = yo.uid;
   /* Sin `await`: baja `reglas.txt` por su cuenta y no tiene por qué demorar la
@@ -627,6 +643,7 @@ function irA(vista) {
      medio los cambia. Repintar es barato — no hay lectura nueva, es el mismo
      arreglo que ya tiene el tablero. */
   if (vista === "sitios") pintarSitios();
+  if (vista === "puerta") pintarPersonas();
   $("nav").querySelectorAll("button").forEach((x) =>
     x.setAttribute("aria-pressed", String(x.dataset.v === vista)));
 }
@@ -682,9 +699,79 @@ async function leer() {
        base (`panel-30`): «La puerta» se vuelve a armar con él adentro. */
     pintarReglas();
   } catch (e) {
+    /* Quien no es Mauro ni el agente no lee nada de esto: es alguien que
+       todavía no tiene ficha, y su lugar es pedir acceso (panel-35). */
+    if (e && e.code === "permission-denied") { location.replace("invitado.html"); return; }
     $("resumen").textContent = P.explicar(e);
     $("lista").innerHTML = "";
   }
+}
+
+/* ═══ PERSONAS INVITADAS (panel-35, `panel:U2`) ═══════════════════════════
+   Las solicitudes de quien creó cuenta en `invitado.html`, y las fichas de
+   los que ya entran. Aprobar = crear `personas/{uid}` con sus proyectos y
+   borrar la solicitud. La ficha la escribe sólo Mauro: las reglas v6 se lo
+   niegan al agente y al propio invitado. */
+const linkInvitado = () => location.href.replace(/[?#].*$/, "").replace(/(index\.html)?$/, "invitado.html");
+$("btnCopiarInvitado").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(linkInvitado()); P.aviso("Copiado: mandáselo a quien invites."); }
+  catch (e) { P.aviso(linkInvitado()); }
+});
+async function pintarPersonas() {
+  $("linkInvitado").textContent = linkInvitado();
+  const caja = $("personas");
+  try {
+    const [so, pe] = await Promise.all([getDocs(collection(db, "solicitudes")), getDocs(collection(db, "personas"))]);
+    const casillas = (uid, marcados) => PROYECTOS.map((pr) =>
+      '<label class="mini" style="display:inline-flex;gap:.3rem;align-items:center"><input type="checkbox" data-proy="'
+      + P.esc(uid) + '" value="' + P.esc(pr.id) + '"' + ((marcados || []).includes(pr.id) ? " checked" : "") + "> "
+      + P.esc(pr.nombre || pr.id) + "</label>").join(" ");
+    let h = "";
+    so.forEach((d) => {
+      const x = d.data();
+      h += '<div class="tarj"><div class="k">Pide acceso</div><p><b>' + P.esc(x.nombre) + "</b> · "
+        + P.esc(x.mail || "") + "</p>" + (x.mensaje ? '<p class="gris">' + P.esc(x.mensaje) + "</p>" : "")
+        + '<div class="fila-btn" style="flex-wrap:wrap">' + casillas(d.id, []) + "</div>"
+        + '<div class="fila-btn"><button class="btn" data-rechazar="' + P.esc(d.id) + '">No</button>'
+        + '<button class="btn p" data-aprobar="' + P.esc(d.id) + '" data-nombre="' + P.esc(x.nombre)
+        + '" data-mail="' + P.esc(x.mail || "") + '">Aprobar</button></div></div>';
+    });
+    pe.forEach((d) => {
+      const x = d.data();
+      h += '<div class="tarj"><div class="k">' + (x.activo ? "Entra" : "Pausado") + "</div><p><b>" + P.esc(x.nombre || d.id)
+        + "</b> · " + P.esc(x.mail || "") + "</p>"
+        + '<div class="fila-btn" style="flex-wrap:wrap">' + casillas(d.id, x.proyectos) + "</div>"
+        + '<div class="fila-btn"><button class="btn" data-pausar="' + P.esc(d.id) + '" data-activo="' + (x.activo ? "1" : "") + '">'
+        + (x.activo ? "Pausar" : "Volver a dejarlo entrar") + '</button><button class="btn p" data-guardar-persona="' + P.esc(d.id)
+        + '">Guardar proyectos</button></div></div>';
+    });
+    caja.innerHTML = h || '<p class="gris">Nadie todavía. Mandá el link y, cuando la persona pida acceso, aparece acá.</p>';
+  } catch (e) { caja.innerHTML = '<p class="gris">' + P.esc(P.explicar(e)) + " (¿publicaste las reglas v6?)</p>"; return; }
+  const marcados = (uid) => [...caja.querySelectorAll("[data-proy]:checked")].filter((i) => i.dataset.proy === uid).map((i) => i.value);
+  caja.querySelectorAll("[data-aprobar]").forEach((b) => b.onclick = async () => {
+    const uid = b.dataset.aprobar, proyectos = marcados(uid);
+    if (!proyectos.length) return P.aviso("Elegí al menos un proyecto.", "error");
+    try {
+      await setDoc(doc(db, "personas", uid), { nombre: b.dataset.nombre, mail: b.dataset.mail, proyectos,
+        activo: true, creadoEn: P.hoy() });
+      await deleteDoc(doc(db, "solicitudes", uid));
+      P.aviso("Aprobado. Al volver a entrar ve sus proyectos.");
+      pintarPersonas();
+    } catch (e) { P.aviso(P.explicar(e), "error"); }
+  });
+  caja.querySelectorAll("[data-rechazar]").forEach((b) => b.onclick = async () => {
+    if (!(await P.preguntar("¿Rechazar esta solicitud?"))) return;
+    try { await deleteDoc(doc(db, "solicitudes", b.dataset.rechazar)); pintarPersonas(); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  });
+  caja.querySelectorAll("[data-guardar-persona]").forEach((b) => b.onclick = async () => {
+    try { await setDoc(doc(db, "personas", b.dataset.guardarPersona), { proyectos: marcados(b.dataset.guardarPersona) }, { merge: true });
+      P.aviso("Guardado."); } catch (e) { P.aviso(P.explicar(e), "error"); }
+  });
+  caja.querySelectorAll("[data-pausar]").forEach((b) => b.onclick = async () => {
+    try { await setDoc(doc(db, "personas", b.dataset.pausar), { activo: !b.dataset.activo }, { merge: true }); pintarPersonas(); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  });
 }
 
 /* ---------- pintar ---------- */
@@ -2318,9 +2405,9 @@ function pintarFichas() {
    Por qué no se trae el valor de la consola misma: Netlify, GitHub y Google
    no le muestran un secreto a nadie una vez guardado — ni al dueño —. Lo que
    se ve acá es lo que Mauro guardó; el camino dice dónde cambiarlo. */
-const slug = (v) => String(v || "").toLowerCase().normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
-const idBoveda = (f, a) => a.boveda || ("acceso-" + (f.proyecto || "general") + "-" + slug(a.nombre));
+// Desde panel-35 viven en el núcleo: también las usa la página de invitados.
+const slug = P.slug;
+const idBoveda = P.idBoveda;
 function accesosDe(f) {
   return (Array.isArray(f && f.accesos) ? f.accesos : [])
     .filter((a) => a && (a.nombre || a.ruta))

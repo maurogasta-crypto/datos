@@ -83,7 +83,10 @@ const PROYECTOS = {
        murieron hace semanas, y nadie sabría a quién preguntarle. Lo que hay
        que poder restaurar es el estado y el reglamento; el semáforo se
        reconstruye solo en noventa minutos. */
-    colecciones: ["lineas", "proyectos", "pendientes", "protocolos", "tandas", "fichas"],
+    colecciones: ["lineas", "proyectos", "pendientes", "protocolos", "tandas", "fichas",
+                  // v6 (panel:U2): los invitados. Las fichas las escribe sólo
+                  // Mauro; el agente las LEE para el cupo y para saber quién pide.
+                  "personas", "solicitudes"],
     /* `claves` es la bóveda, desde el día uno y para siempre: es lo que ABRE
        algo — contraseñas, códigos de recuperación, segundos factores.
 

@@ -53,6 +53,10 @@ const setDoc = async (ref, datos, opts) => escribir(ref, datos, opts);
    las lecturas para poder comprobar que la bóveda se lee de a un documento y
    sólo cuando se toca el botón. */
 const lecturas = [];
+/* Desde panel-35 el panel también lee UNA ficha de `personas/` al entrar (para
+   mandar a un invitado a su página). Lo que estas pruebas cuidan es la BÓVEDA,
+   así que cuentan sólo las lecturas de `claves/`. */
+const boveda = () => lecturas.filter((l) => l.startsWith("claves/"));
 const getDoc = async (r) => {
   lecturas.push(r.__c + "/" + r.__id);
   const d = (BASE[r.__c] || {})[r.__id];
@@ -78,6 +82,10 @@ window.HTMLElement.prototype.scrollIntoView = () => {};
 window.URL.createObjectURL = () => "blob:prueba";
 window.URL.revokeObjectURL = () => {};
 global.URL = window.URL; global.Blob = window.Blob;
+/* panel-35: el panel manda a un invitado a `invitado.html` con location.replace.
+   Acá no se navega: se anota adónde quiso ir. */
+let redirigido = null;
+global.location = { href: "https://maurogasta-crypto.github.io/datos/", replace: (u) => { redirigido = u; } };
 
 /* ---- el SDK de mentira, que se puede hacer fallar ----
    Desde init-3 el panel baja el SDK con `import()` diferido, así que el banco
@@ -107,7 +115,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch","firebaseConfig","getDoc",
-  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { APP = s === '*' ? '' : s; SITIO = s; $('cual-app').value = APP; }, elegirSitio, accesosDe, pintarAccesos, idBoveda, APP: () => APP, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, armarPedido, abrirPedido, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas };");
+  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { APP = s === '*' ? '' : s; SITIO = s; $('cual-app').value = APP; }, elegirSitio, accesosDe, pintarAccesos, idBoveda, APP: () => APP, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, armarPedido, abrirPedido, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas, pintarPersonas };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -1474,7 +1482,7 @@ ok(ficha().textContent.includes("claves/app-app1"), "y dice DÓNDE vive la contr
 api.verSitio("sitio2"); api.pintarSitios(); await esperar();
 ok(!ficha().textContent.includes("Cómo entra la app"),
    "un sitio sin `app` no tiene una tarjeta vacía");
-ok(lecturas.length === 0, "pintar la ficha NO lee la bóveda");
+ok(boveda().length === 0, "pintar la ficha NO lee la bóveda");
 
 /* Sin contraseña guardada: no se copia nada. */
 api.verSitio("app1"); api.pintarSitios(); await esperar();
@@ -1483,7 +1491,7 @@ await api.copiarConfigApp(proy("app1"), ficha().querySelector("[data-app-copiar]
 ok(copiado === null, "sin contraseña en la bóveda NO se copia una configuración a medias");
 ok(String(($("aviso") || {}).textContent || "").includes("Todavía no guardaste"),
    "y dice qué falta y dónde se hace");
-ok(lecturas.length === 1 && lecturas[0] === "claves/app-app1",
+ok(boveda().length === 1 && boveda()[0] === "claves/app-app1",
    "y leyó UN documento de la bóveda, el suyo, no la colección");
 
 /* Guardarla. */
@@ -1703,6 +1711,39 @@ ok($("esquema").textContent.includes("Dos sitios tocan el mismo Netlify") && $("
    "con el ecosistema: las alertas que cruzan sitios y un renglón por sitio que lleva a su plan");
 $("esquema").querySelector('[data-elegir="casaverde"]').click(); await esperar();
 ok(api.APP() === "casaverde", "tocar un sitio del esquema lo elige arriba");
+
+console.log("\n44 · personas invitadas: aprobar, elegir proyectos, pausar (panel-35, panel:U2)");
+BASE.solicitudes = { "uid-mariano": { nombre: "Mariano", mail: "m@ejemplo.invalido", mensaje: "para Harmonía", creadoEn: "2026-10-06" } };
+BASE.personas = {};
+BASE.proyectos = { harmonia: { nombre: "Harmonía", orden: 1 }, casaverde: { nombre: "Casa Verde", orden: 2 } };
+await api.leer(); await api.pintarPersonas(); await esperar();
+const per = () => $("personas");
+ok(per().textContent.includes("Mariano") && per().textContent.includes("para Harmonía"), "la solicitud se ve, con su mensaje");
+per().querySelector('[data-aprobar="uid-mariano"]').click(); await esperar();
+ok(!BASE.personas["uid-mariano"], "sin proyecto elegido NO se aprueba");
+per().querySelector('[data-proy="uid-mariano"][value="harmonia"]').checked = true;
+per().querySelector('[data-aprobar="uid-mariano"]').click(); await esperar(); await esperar();
+const fm = BASE.personas["uid-mariano"] || {};
+ok(fm.activo === true && JSON.stringify(fm.proyectos) === '["harmonia"]', "aprobar crea la ficha ACTIVA con SÓLO los proyectos marcados");
+ok(!BASE.solicitudes["uid-mariano"], "y borra la solicitud");
+ok(!("clave" in fm) && !JSON.stringify(fm).includes("claves"), "la ficha no lleva nada de la bóveda");
+await api.pintarPersonas(); await esperar();
+per().querySelector('[data-pausar="uid-mariano"]').click(); await esperar(); await esperar();
+ok(BASE.personas["uid-mariano"].activo === false, "pausar lo deja afuera sin borrar su ficha");
+ok(html.includes('id="btnCopiarInvitado"') && fs.existsSync(RAIZ + "invitado.html"), "el link para invitados existe y apunta a una página que existe");
+const inv = fs.readFileSync(RAIZ + "invitado.html", "utf8");
+ok(inv.includes('where("proyecto", "in", ids)') && !/getDocs\(collection\(db, "(pendientes|claves|lineas|tandas)"\)\)/.test(inv),
+   "la página de invitados lee SÓLO lo de sus proyectos y nunca lista la bóveda");
+ok(per().ownerDocument.getElementById("linkInvitado").textContent === "https://maurogasta-crypto.github.io/datos/invitado.html",
+   "el link para invitados es el del panel, terminado en invitado.html");
+redirigido = null; BASE.personas["uid-de-prueba"] = { proyectos: ["harmonia"], activo: true };
+await api.arrancar(); await esperar(); await esperar();
+ok(redirigido === "invitado.html", "quien tiene ficha de invitado y entra al panel va a SU página");
+delete BASE.personas["uid-de-prueba"]; redirigido = null;
+await api.arrancar(); await esperar(); await esperar();
+ok(redirigido === null, "Mauro (sin ficha) se queda en el panel");
+ok(inv.includes('body: JSON.stringify({ base: "panel", reporteId: id })') && !/body:[^\n]*porQue/.test(inv),
+   "despierta a Claude con la base y el id, nunca con el texto");
 
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

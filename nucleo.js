@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    nucleo.js — EL NÚCLEO DEL PANEL.
-   Sello: nucleo-4
+   Sello: nucleo-5
 
    Todo lo que hace falta en más de una pantalla vive acá y no se copia.
    Es la regla de los otros tres proyectos (PROTOCOLO-DESARROLLO §2, §3.2).
@@ -14,11 +14,11 @@
 
 import {
   auth, db, onAuthStateChanged, signInWithEmailAndPassword, signOut,
-  sendPasswordResetEmail, cargarFirebase
-} from "./firebase-init.js?v=init-3";
+  sendPasswordResetEmail, createUserWithEmailAndPassword, cargarFirebase
+} from "./firebase-init.js?v=init-4";
 
 export const P = {};
-P.VERSION = "nucleo-4";
+P.VERSION = "nucleo-5";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */
@@ -106,6 +106,16 @@ P.quienEntra = () => new Promise((res) => {
 P.entrar = (mail, clave) => signInWithEmailAndPassword(auth, mail.trim(), clave);
 P.salir = () => signOut(auth);
 P.recuperar = (mail) => sendPasswordResetEmail(auth, mail.trim());
+/* El nombre de una clave en la bóveda: `acceso-<proyecto>-<nombre>` (o el que
+   diga la ficha). Vive acá desde nucleo-5 porque lo usan DOS pantallas —el
+   panel y la de los invitados— y las reglas v6 dependen de esta forma para
+   saber de qué proyecto es una clave. */
+P.slug = (v) => String(v || "").toLowerCase().normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9_-]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+P.idBoveda = (f, a) => a.boveda || ("acceso-" + (f.proyecto || "general") + "-" + P.slug(a.nombre));
+
+// nucleo-5 (panel:U2): un invitado crea su cuenta y después pide acceso.
+P.crearCuenta = (mail, clave) => createUserWithEmailAndPassword(auth, mail.trim(), clave);
 
 /* ---------- preguntar antes de algo irreversible ---------- */
 /* Sin depender del confirm() del navegador, que en Android se ve como un

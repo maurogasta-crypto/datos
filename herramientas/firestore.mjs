@@ -449,6 +449,7 @@ async function pedir(cfg, sesion, ruta, opciones = {}) {
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
     const m = (j.error && j.error.message) || r.status;
+    if (r.status === 403 && opciones.suave) throw Object.assign(new Error("las reglas dijeron que no: " + m), { suave: true });
     if (r.status === 403) {
       ex(`las reglas dijeron que no: ${m}\n`
        + `  No es un problema de este archivo. O la colección está sellada, o el\n`
@@ -462,13 +463,13 @@ async function pedir(cfg, sesion, ruta, opciones = {}) {
 
 /* Lista una colección entera, paginando. Sin `orderBy`: se ordena en memoria,
    que es lo que hace el panel y evita pedir un índice por veinte documentos. */
-async function listar(cfg, sesion, coleccion) {
+async function listar(cfg, sesion, coleccion, suave = false) {
   guardia(cfg, coleccion);
   const salida = [];
   let token = "";
   do {
     const q = "?pageSize=300" + (token ? "&pageToken=" + encodeURIComponent(token) : "");
-    const j = await pedir(cfg, sesion, "/" + coleccion + q);
+    const j = await pedir(cfg, sesion, "/" + coleccion + q, { suave });
     for (const d of (j && j.documents) || []) {
       salida.push({ id: d.name.split("/").pop(), ...objeto(d.fields || {}) });
     }
@@ -660,15 +661,26 @@ if (import.meta.url === `file://${process.argv[1]}`) {
        es lo que permite volver. Sin él, un error de un agente no se deshace.
        `respaldos/` está en el .gitignore: sale de la base tal cual, así que
        nunca entra al historial. */
+    /* Suave, como `depositar`: una colección nueva cuya regla todavía
+       no se publicó (personas/ y solicitudes/ del panel, 6-oct-2026) no puede
+       llevarse puesto el respaldo de las demás. Lo que no bajó se DICE, en el
+       archivo y en pantalla, y la salida no es cero. */
     const cols = args.length ? args : cfg.colecciones;
     const todo = { proyecto: proy, bajadoEn: new Date().toISOString().slice(0, 10) };
-    for (const c of cols) todo[c] = await listar(cfg, sesion, c);
+    const faltan = [];
+    for (const c of cols) {
+      try { todo[c] = await listar(cfg, sesion, c, true); }
+      catch (e) { if (!e.suave) throw e; todo[c] = { error: e.message }; faltan.push(c); }
+    }
     const destino = path.join("respaldos", `${todo.bajadoEn}-${proy}.json`);
     fs.mkdirSync("respaldos", { recursive: true });
     fs.writeFileSync(destino, JSON.stringify(todo, null, 2));
     console.log(`\n  ${destino}`);
-    for (const c of cols) console.log(`  ${String(todo[c].length).padStart(4)} en ${c}`);
+    for (const c of cols) console.log(Array.isArray(todo[c])
+      ? `  ${String(todo[c].length).padStart(4)} en ${c}`
+      : `     ✖ ${c}: ${todo[c].error} — NO está en el respaldo`);
     console.log("");
+    if (faltan.length) process.exitCode = 2;
 
   } else if (cmd === "leer") {
     const [coleccion, id] = args;

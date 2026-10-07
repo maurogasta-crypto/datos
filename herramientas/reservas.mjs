@@ -470,7 +470,7 @@ async function vincularCli(dir, dias) {
     (porChat[k] = porChat[k] || { app: m.app, chat: m.chat, textos: [] }).textos.push(...[m.texto, ...(m.lineas || [])].filter(Boolean));
   }
   const chats = Object.values(porChat);
-  if (!chats.length) { console.log("\n  No hay mensajes capturados en esos días. ¿Está corriendo «telefono.mjs airbnb --vigilar» en el teléfono? (con Termux:Boot arranca solo: «telefono.mjs arranque»)\n"); return; }
+  if (!chats.length) { console.log("\n  No hay mensajes capturados en esos días. Desde el 6-oct los lee la Pizarra (pizarra-9): si el latido está al día, simplemente no llegó ninguno.\n"); return; }
   const { F, cfg, sesion } = await base();
   const [rs, cs, cabs] = await Promise.all(["reservas", "clientes", "cabanas"].map((c) => F.listar(cfg, sesion, c)));
   for (const c of chats) {

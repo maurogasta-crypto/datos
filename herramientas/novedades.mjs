@@ -143,7 +143,7 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
     visto.telefonoAvisado = latido;
   } else if (latido && ahora - Date.parse(latido) > 26 * 3600e3 && visto.telefonoAvisado !== latido) {
     const h = Math.round((ahora - Date.parse(latido)) / 3600e3);
-    items.push({ clase: "telefono", texto: `El teléfono no lee Airbnb hace ${h} h: abrí Termux (con Termux:Boot arranca solo al reiniciar)` });
+    items.push({ clase: "telefono", texto: `El teléfono no lee Airbnb hace ${h} h: abrí la Pizarra → «📬 Mensajes de Airbnb» y mirá qué dice (o tocá «Subir ahora»)` });
     visto.telefonoAvisado = latido;
   }
 

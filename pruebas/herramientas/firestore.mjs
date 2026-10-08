@@ -42,6 +42,7 @@ const NIEGA_LA_BASE = ["claves"];
 /* Para probar que sin copia no hay cambio: se puede hacer que la base niegue
    el historial. */
 let niegaHistorial = false;
+let ultimoPedido = null;
 globalThis.fetch = async (url, op = {}) => {
   const u = String(url);
   const ok = (j) => ({ ok: true, status: 200, json: async () => j });
@@ -57,8 +58,15 @@ globalThis.fetch = async (url, op = {}) => {
   if ((op.headers || {}).Authorization !== "Bearer tok-de-prueba") return mal(401, "sin token");
 
   const ruta = u.split("/documents")[1].split("?")[0];
-  const [, col, id] = ruta.split("/");
-  if (NIEGA_LA_BASE.includes(col) || (niegaHistorial && col === "_historial"))
+  /* Una ruta par es un documento y una impar una colección; la colección se
+     guarda por su ruta entera (`agendas/u1/copias`), así que las de arriba
+     siguen siendo BASE.reservas, BASE.pagos… */
+  const partes = ruta.split("/").filter(Boolean).map(decodeURIComponent);
+  const par = partes.length % 2 === 0;
+  const col = (par ? partes.slice(0, -1) : partes).join("/");
+  const id = par ? partes.at(-1) : undefined;
+  ultimoPedido = { url: u, op };
+  if (NIEGA_LA_BASE.includes(partes[0]) || (niegaHistorial && col === "_historial"))
     return mal(403, "Missing or insufficient permissions.");
 
   if (!id) {
@@ -76,7 +84,7 @@ globalThis.fetch = async (url, op = {}) => {
 
 const { PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
         entrar, entrarSuave, listar, leerUno, escribir, fusionar, borrar, aFirestore, deFirestore,
-        deshacer, HISTORIAL } =
+        deshacer, HISTORIAL, fusionarRutas, rutaCampo } =
   await import("../../herramientas/firestore.mjs");
 const cfg = PROYECTOS.panel;
 
@@ -437,6 +445,112 @@ await prueba("una base sin historial (el panel) escribe como siempre, sin entrad
 await prueba("Casa Verde y Tiempos llevan historial", () => {
   assert.equal(PROYECTOS.casaverde.historial, true);
   assert.equal(PROYECTOS.tiempos.historial, true);
+});
+
+/* ── v11 de Tiempos: Claude organiza la agenda de quien lo permitió ─────── */
+titulo("Tiempos v11: una agenda se toca de a una, y su copia queda con su dueño");
+const ti = PROYECTOS.tiempos;
+await prueba("listar «agendas» sigue frenado: traería la de los dos", async () => {
+  assert.ok(await frena(() => listar(ti, sesion, "agendas")));
+});
+await prueba("pero UNA agenda por su id pasa el guardia (la regla v11 pide el permiso del dueño)", async () => {
+  assert.ok(!(await frena(() => leerUno(ti, sesion, "agendas", "u1"))));
+  assert.ok(!(await frena(() => listar(ti, sesion, "agendas/u1/copias"))));
+});
+await prueba("en otra base `agendas` no tiene excepción: el deAUno es por proyecto", async () => {
+  assert.ok(!PROYECTOS.casaverde.deAUno || !PROYECTOS.casaverde.deAUno.includes("agendas"));
+});
+await prueba("mover UNA actividad toca `actividades.<id>` y no reescribe las demás", async () => {
+  BASE.agendas = { u1: { agente: { booleanValue: true }, actividades: { mapValue: { fields: {
+    a1: { mapValue: { fields: { titulo: { stringValue: "Odontólogo" } } } },
+    a2: { mapValue: { fields: { titulo: { stringValue: "Gimnasio" } } } } } } } } };
+  await fusionarRutas(ti, sesion, "agendas", "u1", [[["actividades", "a1"], { titulo: "Odontólogo", dia: "2026-10-14" }]]);
+  assert.match(ultimoPedido.url, /updateMask\.fieldPaths=actividades\.a1(&|$)/);
+  const cuerpo = JSON.parse(ultimoPedido.op.body).fields;
+  assert.deepEqual(Object.keys(cuerpo.actividades.mapValue.fields), ["a1"]);
+});
+await prueba("la copia de una agenda va a agendas/<dueño>/copias, NUNCA a _historial (lo leen los dos)", async () => {
+  const n = entradas();
+  const copias = () => Object.keys(BASE["agendas/u1/copias"] || {}).length;
+  const c = copias();
+  // la base de mentira REEMPLAZA en vez de mezclar: se vuelve a poner la agenda entera
+  BASE.agendas.u1.actividades.mapValue.fields.a2 = { mapValue: { fields: { titulo: { stringValue: "Gimnasio" } } } };
+  await fusionarRutas(ti, sesion, "agendas", "u1", [[["actividades", "a2"], undefined]]);
+  assert.equal(entradas(), n, "se copió a _historial");
+  assert.equal(copias(), c + 1);
+  const h = Object.values(BASE["agendas/u1/copias"]).at(-1);
+  assert.ok(h.antes.stringValue.includes("Gimnasio"), "la copia no tiene cómo estaba");
+});
+await prueba("sacar un campo lo pone en la máscara y NO en el cuerpo (así lo borra Firestore)", async () => {
+  assert.match(ultimoPedido.url, /updateMask\.fieldPaths=actividades\.a2/);
+  assert.deepEqual(JSON.parse(ultimoPedido.op.body).fields, {});
+});
+await prueba("un id con guiones va entre acentos graves en la máscara", () => {
+  assert.equal(rutaCampo(["actividades", "a-1x"]), "actividades.`a-1x`");
+  assert.equal(rutaCampo(["actividades", "a1"]), "actividades.a1");
+});
+await prueba("una alerta deja su copia con su dueño, nueva o existente", async () => {
+  const n = entradas(), c = Object.keys(BASE["agendas/u1/copias"] || {}).length;
+  await escribir(ti, sesion, "alertas", "al1", { uid: "u1", tipo: "alarma", texto: "Salir", dia: "2026-10-14", hora: "09:20" });
+  await fusionar(ti, sesion, "alertas", "al1", { uid: "u1", hora: "09:10" });   // la base de mentira reemplaza
+  await borrar(ti, sesion, "alertas", "al1");
+  assert.equal(entradas(), n);
+  assert.equal(Object.keys(BASE["agendas/u1/copias"]).length, c + 3);
+});
+await prueba("sin saber de quién es, una alerta NO se cambia", async () => {
+  assert.ok(await frena(() => escribir(ti, sesion, "alertas", "al2", { tipo: "alarma", texto: "x", dia: "2026-10-14", hora: "09:00" })));
+  assert.equal((BASE.alertas || {}).al2, undefined);
+});
+await prueba("deshacer acepta la ruta de una copia privada y la devuelve a la agenda", async () => {
+  const hid = Object.keys(BASE["agendas/u1/copias"]).find((k) => BASE["agendas/u1/copias"][k].coleccion.stringValue === "agendas"
+    && BASE["agendas/u1/copias"][k].antes.stringValue.includes("Gimnasio"));
+  await deshacer(ti, sesion, "agendas/u1/copias/" + hid);
+  assert.ok(JSON.stringify(BASE.agendas.u1).includes("Gimnasio"));
+});
+await prueba("las copias no se escriben a mano", async () => {
+  assert.ok(await frena(() => escribir(ti, sesion, "agendas/u1/copias", "x", { a: 1 })));
+});
+await prueba("las marcas (sin título) siguen yendo a _historial", async () => {
+  const n = entradas();
+  await escribir(ti, sesion, "marcas", "a1", { uid: "u1", clase: "productivo", desde: "2026-10-14T10:00", hasta: "2026-10-14T11:00" });
+  assert.equal(entradas(), n + 1);
+});
+
+titulo("herramientas/agenda.mjs: las mismas formas que la app");
+const AG = await import("../../herramientas/agenda.mjs");
+await prueba("el horario es el de agenda.js: sin fin sólo de noche, y la medianoche se cruza", () => {
+  assert.deepEqual(AG.horario("2026-10-14", "10:00", "11:30"), { desde: "2026-10-14T10:00", hasta: "2026-10-14T11:30", hf: "11:30" });
+  assert.deepEqual(AG.horario("2026-10-14", "21:00", "01:00"), { desde: "2026-10-14T21:00", hasta: "2026-10-15T01:00", hf: "01:00" });
+  assert.deepEqual(AG.horario("2026-10-31", "21:00"), { desde: "2026-10-31T21:00", hasta: "2026-11-01T07:00", hf: "" });
+  assert.ok(AG.horario("2026-10-14", "10:00").mal);
+  assert.ok(AG.horario("14/10", "10:00", "11:00").mal);
+  assert.ok(AG.horario("2026-10-14", "25:00", "11:00").mal);
+});
+await prueba("la marca la firma el agente, sin título, con la clase de la actividad", () => {
+  const m = AG.marcaDe("u1", "ninos", AG.horario("2026-10-14", "10:00", "11:00"), "uid-agente", new Date("2026-10-08T10:00:00Z"));
+  assert.deepEqual(Object.keys(m).sort(), ["clase", "creadoEn", "desde", "hasta", "marcadoPor", "origen", "uid"]);
+  assert.equal(m.marcadoPor, "uid-agente"); assert.equal(m.clase, "chicos"); assert.equal(m.origen, "agenda");
+  assert.equal(AG.marcaDe("u1", "fiesta", AG.horario("2026-10-14", "10:00", "11:00"), "x"), null);
+});
+await prueba("las clases son las de nucleo.js de Tiempos (si está al lado, se comparan)", async () => {
+  assert.deepEqual(AG.CLASES_ACTIVIDAD, { trabajo: "productivo", tarea: "productivo", personal: "libre", ninos: "chicos" });
+  const fs = await import("node:fs");
+  const nuc = new URL("../../../tiempos/nucleo.js", import.meta.url);
+  if (fs.existsSync(nuc)) {
+    const { CLASES_ACTIVIDAD, HORA_NOCHE } = await import(nuc.href);
+    assert.deepEqual(Object.fromEntries(Object.entries(CLASES_ACTIVIDAD).map(([k, v]) => [k, v.clase])), AG.CLASES_ACTIVIDAD);
+    assert.equal(HORA_NOCHE, AG.HORA_NOCHE);
+  }
+});
+await prueba("lo que toca Claude lleva el porqué; sin porqué no hay cambio", () => {
+  assert.equal(AG.sello(""), null);
+  const x = AG.sello("lo pasé al miércoles: el martes no llegabas", new Date("2026-10-08T10:00:00Z"));
+  assert.equal(x.en, "2026-10-08T10:00:00.000Z"); assert.ok(x.porque.startsWith("lo pasé"));
+  assert.equal(AG.sello("x".repeat(500)).porque.length, 160);
+});
+await prueba("las opciones de la línea de comandos", () => {
+  const { o, resto } = AG.opciones(["Mauro", "a1", "2026-10-14", "--porque", "así", "--direcciones"]);
+  assert.deepEqual(resto, ["Mauro", "a1", "2026-10-14"]); assert.equal(o.porque, "así"); assert.equal(o.direcciones, true);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

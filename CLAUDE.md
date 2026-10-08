@@ -230,7 +230,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   el otro en la misma tanda.
 - **Hay ocho bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
-  pruebas/herramientas/firestore.mjs` (50 casos, sin npm ni red) para la
+  pruebas/herramientas/firestore.mjs` (67 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
   (115 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
@@ -491,6 +491,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   ronda diaria, que desde el 29-sep **corre en el chat de Mauro y es una sola**
   («Ronda diaria unificada», 07:47 de Montevideo; la vieja quedó pausada). Ver
   `RUTINA-AUTOMATICA.md`.
+- **Claude organiza la agenda de Tiempos de quien lo enciende** (8-oct-2026,
+  reglas v11 de Tiempos, `herramientas/agenda.mjs`). Es la única puerta a
+  `agendas/` —que sigue en `selladas` y no se lista nunca— y anda sólo si
+  esa persona encendió «🤝 Claude organiza mi agenda». Las copias de lo
+  privado van a `agendas/<uid>/copias` y no a `_historial`, que leen los dos
+  (`privadas` del proyecto `tiempos` en `firestore.mjs`).
 - **Del teléfono se leen SÓLO los mensajes de Airbnb, por sus NOTIFICACIONES**
   (`herramientas/telefono-whatsapp.mjs`, el nombre quedó por historia). Del
   29 al 30-sep se leyeron también todos los chats de WhatsApp; Mauro lo cortó

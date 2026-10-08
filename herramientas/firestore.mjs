@@ -222,7 +222,8 @@ const PROYECTOS = {
     /* v3 de las reglas (app-3, 29-sep-2026): lo cotidiano (`dias`), con quién
        están los chicos (`familia`, `turnos`) y sus actividades (`eventos`).
        Todo eso lo ven los dos y el agente. La agenda de cada uno (`agendas`)
-       NO: es de su dueño, y la regla se la niega al agente. */
+       NO se baja: es de su dueño. Desde la v11 el agente la lee y la cambia
+       de a una, sólo si su dueño lo encendió (ver `deAUno`, abajo). */
     /* v4 (app-4): los acuerdos de tiempo, la plata, lo que propone el agente
        y sus observaciones. La plata el agente la LEE; lo que quiere agregar
        lo escribe en `propuestas` y una persona lo aprueba desde la app. */
@@ -238,6 +239,21 @@ const PROYECTOS = {
        `sesiones`, sólo para saber que la base estaba viva; ahora se cruza
        como cualquier sitio y cada uno entra como pendiente del panel. */
     selladas: ["agendas"],
+    /* v11 de las reglas (8-oct-2026, Mauro: «quiero que la IA pueda
+       organizar mi agenda editando los contenidos»). `agendas` SIGUE sellada
+       como colección —listarla trae la de los dos, y eso no se hace nunca—,
+       pero UNA agenda se lee y se cambia por su id: la regla deja hacerlo
+       sólo si su dueño encendió «Claude organiza mi agenda» (`agente: true`).
+       Lo usa `herramientas/agenda.mjs`. */
+    deAUno: ["agendas"],
+    /* Lo PRIVADO no deja su copia en `_historial`, que leen los dos: la
+       agenda de Mauro (y sus alertas) copiada ahí la vería Florencia. Va a
+       `agendas/{dueño}/copias`, que lee sólo el dueño. Cada función dice de
+       quién es el documento; si no se sabe, no se cambia nada. */
+    privadas: {
+      agendas: (partes, id) => (partes.length === 1 ? id : null),
+      alertas: (partes, id, antes, pedido) => (antes.uid && antes.uid.stringValue) || pedido.uid || null
+    },
     historial: true
   },
 
@@ -302,6 +318,10 @@ function guardia(cfg, coleccion, id) {
   if (id) partes.push(String(id));
   for (const sello of cfg.selladas) {
     const s = sello.split("/").filter(Boolean);
+    /* `deAUno`: un documento por su id, y lo que cuelga de él, sí; la
+       colección entera no. La garantía de que ese documento se puede tocar
+       la da la regla (en tiempos, que su dueño lo haya permitido). */
+    if ((cfg.deAUno || []).includes(sello) && s.length === 1 && partes[0] === s[0] && partes.length >= 2) continue;
     const esPrefijo = s.every((x, i) => partes[i] === x);
     const estaAdentro = !id && partes.every((x, i) => s[i] === x);
     if (esPrefijo || estaAdentro) {
@@ -486,9 +506,9 @@ const leerCrudo = async (cfg, sesion, coleccion, id) => {
   return d ? (d.fields || {}) : null;
 };
 
-const leerUno = async (cfg, sesion, coleccion, id) => {
+const leerUno = async (cfg, sesion, coleccion, id, suave = false) => {
   guardia(cfg, coleccion, id);
-  const d = await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`);
+  const d = await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`, { suave });
   return d ? { id, ...objeto(d.fields || {}) } : null;
 };
 
@@ -554,6 +574,19 @@ const idHistorial = (d = new Date()) =>
   d.toISOString().replace(/[-:]/g, "").replace("T", "-").replace(/\..*$/, "")
   + "-" + Math.random().toString(36).slice(2, 8);
 
+/* Adónde va la copia: `_historial`, o —si lo que cambia es privado de una
+   persona (`privadas` del proyecto)— la carpeta de copias de SU agenda. */
+function adondeAnota(cfg, coleccion, id, crudo, cambio) {
+  const partes = String(coleccion || "").split("/").filter(Boolean);
+  const dueno = (cfg.privadas || {})[partes[0]];
+  if (!dueno) return HISTORIAL;
+  const uid = dueno(partes, String(id), (crudo && crudo.fields) || {}, cambio || {});
+  if (!uid || !/^[A-Za-z0-9_-]+$/.test(String(uid)))
+    ex(`no se sabe de quién es ${coleccion}/${id}, y lo privado deja su copia en la agenda\n`
+     + `  de su dueño. Sin dónde guardar la copia no se cambia nada.`);
+  return `agendas/${uid}/copias`;
+}
+
 async function anotar(cfg, sesion, op, coleccion, id, cambio) {
   if (!cfg.historial) return null;
   const crudo = await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`);
@@ -562,13 +595,16 @@ async function anotar(cfg, sesion, op, coleccion, id, cambio) {
   if ((antes || "").length + (pedido || "").length > TOPE_HISTORIAL)
     ex(`${coleccion}/${id} es demasiado grande para guardar su copia en el historial.\n`
      + `  No se cambió nada. Bajá un respaldo entero con «bajar» y cambialo a mano.`);
+  const destino = adondeAnota(cfg, coleccion, id, crudo, cambio);
   const hid = idHistorial();
-  await pedir(cfg, sesion, `/${HISTORIAL}/${hid}?currentDocument.exists=false`, {
+  await pedir(cfg, sesion, `/${destino}/${hid}?currentDocument.exists=false`, {
     method: "PATCH",
     body: JSON.stringify({ fields: campos({
       coleccion, docId: String(id), op, antes, pedido,
       en: new Date().toISOString(), quien: sesion.mail || "agente" }) }) });
-  return hid;
+  // Lo que se le pasa a `deshacer`: el id solo si está en `_historial`, la
+  // ruta entera si quedó en las copias de una agenda.
+  return destino === HISTORIAL ? hid : `${destino}/${hid}`;
 }
 
 /* Lo que el agente no escribe aunque pueda leerlo: lo sellado (que no lee),
@@ -576,9 +612,10 @@ async function anotar(cfg, sesion, op, coleccion, id, cambio) {
    de Casa Verde) y el historial mismo, que sólo se escribe por `anotar`. */
 function guardiaEscritura(cfg, coleccion, id) {
   guardia(cfg, coleccion, id);
-  const raiz = String(coleccion || "").split("/")[0];
-  if (raiz === HISTORIAL)
-    ex(`«${HISTORIAL}» no se escribe a mano: es la copia de lo que cambió el agente.`);
+  const partes = String(coleccion || "").split("/").filter(Boolean);
+  const raiz = partes[0];
+  if (raiz === HISTORIAL || (cfg.privadas && cfg.privadas[raiz] && partes[2] === "copias"))
+    ex(`«${HISTORIAL}» y las copias de una agenda no se escriben a mano: son la copia de lo que cambió el agente.`);
   if ((cfg.soloLectura || []).includes(raiz))
     ex(`«${raiz}» es de sólo lectura para el agente en ${cfg.projectId}: es inmutable por diseño.`);
 }
@@ -611,6 +648,30 @@ const fusionar = async (cfg, sesion, coleccion, id, datos) => {
     { method: "PATCH", body: JSON.stringify({ fields: campos(datos) }) });
 };
 
+/* `fusionarRutas` toca campos ADENTRO de un mapa sin reescribir el mapa
+   (8-oct-2026, para la agenda): mover UNA actividad es cambiar
+   `actividades.<id>`, y `fusionar({actividades: …})` reemplazaría las demás.
+   Cada cambio es [ruta, valor]; con valor `undefined` el campo se BORRA (está
+   en la máscara y no en el cuerpo, que es como lo pide Firestore). */
+const rutaCampo = (r) => r.map((x) => /^[A-Za-z_][A-Za-z_0-9]*$/.test(String(x)) ? String(x)
+  : "`" + String(x).replace(/[`\\]/g, (m) => "\\" + m) + "`").join(".");
+const fusionarRutas = async (cfg, sesion, coleccion, id, cambios) => {
+  guardiaEscritura(cfg, coleccion, id);
+  if (!cambios.length) return null;
+  await anotar(cfg, sesion, "fusionar", coleccion, id,
+    Object.fromEntries(cambios.map(([r, v]) => [r.join("."), v === undefined ? "(se borra)" : v])));
+  const cuerpo = {};
+  for (const [r, v] of cambios) {
+    if (v === undefined) continue;
+    let o = cuerpo;
+    for (const k of r.slice(0, -1)) o = (o[k] && typeof o[k] === "object") ? o[k] : (o[k] = {});
+    o[r[r.length - 1]] = v;
+  }
+  const mascara = cambios.map(([r]) => "updateMask.fieldPaths=" + encodeURIComponent(rutaCampo(r))).join("&");
+  return pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}?${mascara}`,
+    { method: "PATCH", body: JSON.stringify({ fields: campos(cuerpo) }) });
+};
+
 const borrar = async (cfg, sesion, coleccion, id) => {
   guardiaEscritura(cfg, coleccion, id);
   await anotar(cfg, sesion, "borrar", coleccion, id, null);
@@ -622,18 +683,22 @@ const borrar = async (cfg, sesion, coleccion, id) => {
    deshacer también se puede deshacer. */
 async function deshacer(cfg, sesion, hid) {
   if (!cfg.historial) ex(`${cfg.projectId} no lleva historial.`);
-  const h = await pedir(cfg, sesion, `/${HISTORIAL}/${encodeURIComponent(hid)}`);
+  // El id solo es de `_historial`; una ruta (agendas/<uid>/copias/<id>) es
+  // la copia privada de una agenda.
+  const ruta = String(hid).includes("/") ? "/" + String(hid).split("/").map(encodeURIComponent).join("/")
+                                         : `/${HISTORIAL}/${encodeURIComponent(hid)}`;
+  const h = await pedir(cfg, sesion, ruta);
   if (!h) ex(`no hay una entrada «${hid}» en el historial.`);
   const e = objeto(h.fields || {});
   guardiaEscritura(cfg, e.coleccion, e.docId);
   await anotar(cfg, sesion, "deshacer:" + hid, e.coleccion, e.docId, e.antes ? JSON.parse(e.antes) : null);
-  const ruta = `/${e.coleccion}/${encodeURIComponent(e.docId)}`;
-  if (e.antes == null) await pedir(cfg, sesion, ruta, { method: "DELETE" });
-  else await pedir(cfg, sesion, ruta, { method: "PATCH", body: JSON.stringify({ fields: JSON.parse(e.antes) }) });
+  const doc = `/${e.coleccion}/${encodeURIComponent(e.docId)}`;
+  if (e.antes == null) await pedir(cfg, sesion, doc, { method: "DELETE" });
+  else await pedir(cfg, sesion, doc, { method: "PATCH", body: JSON.stringify({ fields: JSON.parse(e.antes) }) });
   return e;
 }
 
-export { HISTORIAL, deshacer, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
+export { HISTORIAL, deshacer, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
          entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/
@@ -694,6 +759,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const e = await deshacer(cfg, sesion, hid);
     console.log(`  ${e.coleccion}/${e.docId} vuelve a como estaba antes de «${e.op}» (${e.en})`);
 
+  } else if (cmd === "copias") {
+    /* Las copias de lo que Claude cambió en la agenda de UNA persona (v11):
+       viven en esa agenda y no en `_historial`. */
+    const [uid, n] = args;
+    if (!uid) ex("falta de quién (el uid)");
+    const todo = (await listar(cfg, sesion, `agendas/${uid}/copias`)).sort((a, b) => (a.id < b.id ? 1 : -1));
+    for (const h of todo.slice(0, Number(n) || 20))
+      console.log(`  agendas/${uid}/copias/${h.id}  ${String(h.op).padEnd(9)} ${h.coleccion}/${h.docId}`);
+
   } else if (cmd === "historial") {
     const todo = (await listar(cfg, sesion, HISTORIAL)).sort((a, b) => (a.id < b.id ? 1 : -1));
     for (const h of todo.slice(0, Number(args[0]) || 20))
@@ -726,6 +800,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     borrar <coleccion> <id>
     historial [n]                  los últimos cambios del agente (bases con historial)
     deshacer <id-del-historial>    devuelve un documento a como estaba
+                                   (o la ruta agendas/<uid>/copias/<id>)
+    copias <uid> [n]               lo que Claude cambió en esa agenda (tiempos, v11)
 
   Proyectos: ${Object.keys(PROYECTOS).join(", ")}
   Alta en una base nueva: herramientas/ACCESO-A-LAS-BASES.md

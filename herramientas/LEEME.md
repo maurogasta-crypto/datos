@@ -297,6 +297,32 @@ node herramientas/novedades.mjs [--a Mauro] [--seco] [--bodega <dir>]
 
 Banco: `node pruebas/herramientas/novedades.mjs` (18 casos, sin red).
 
+## `agenda.mjs`
+
+Claude organiza la agenda de Tiempos de quien se lo pidió (8-oct-2026, reglas
+v11 de Tiempos). **Sólo anda sobre la agenda de quien encendió «🤝 Claude
+organiza mi agenda»**: lo garantiza la regla, y esto lo dice antes con un
+mensaje claro. Mismas formas que `agenda.js` de Tiempos (la actividad con su
+título en la agenda; al balance sólo la marca, que se borra y se vuelve a
+crear, firmada por el agente). Cada cambio deja su copia en
+`agendas/<uid>/copias` —no en `_historial`, que leen los dos— y la actividad
+lleva `claude: {en, porque}`, que la app muestra con ✨.
+
+```
+node herramientas/agenda.mjs ver <nombre> [días] [--direcciones]
+node herramientas/agenda.mjs mover <nombre> <id> <día> <desde> [hasta] --porque "…"
+node herramientas/agenda.mjs agregar <nombre> <día> <desde> [hasta] --tipo trabajo|tarea|personal|ninos --titulo "…" [--lugar "…"] --porque "…"
+node herramientas/agenda.mjs sacar <nombre> <id> --porque "…"
+node herramientas/agenda.mjs alerta <nombre> <día> <hora> --texto "…" [--tipo alarma|recordatorio] [--sobre <id>]
+node herramientas/agenda.mjs correr-alerta <nombre> <idAlerta> <día> <hora>
+node herramientas/agenda.mjs sacar-alerta <nombre> <idAlerta>
+node herramientas/firestore.mjs tiempos copias <uid>     lo que cambió, para deshacer
+```
+
+Mover UNA actividad usa `fusionarRutas` de `firestore.mjs`, que toca
+`actividades.<id>` con su máscara: `fusionar({actividades: …})` reemplazaría
+todas las demás. El banco está en `pruebas/herramientas/firestore.mjs`.
+
 ## `ACCESO-A-LAS-BASES.md`
 
 El paso a paso para dar de alta al agente en una base, hecho para seguirse

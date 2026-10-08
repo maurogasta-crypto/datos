@@ -323,6 +323,23 @@ Mover UNA actividad usa `fusionarRutas` de `firestore.mjs`, que toca
 `actividades.<id>` con su máscara: `fusionar({actividades: …})` reemplazaría
 todas las demás. El banco está en `pruebas/herramientas/firestore.mjs`.
 
+## `ingresos.mjs`
+
+Lo que entró a la familia desde los negocios (8-oct-2026, `tiempos:V9`). Lee el
+mes en Casa Verde (los honorarios PAGADOS a Mauro y a Florencia, y el neto de
+sus movimientos: lo que entró menos lo que salió, que ya descuenta todos los
+honorarios) y en remate (lo cobrado en sus ventas, bruto: remate no anota sus
+gastos), y deja **propuestas** de ingreso en Tiempos. El agente no escribe
+plata: aprueba una persona en Plata. Ids fijos (`ing-<mes>-<fuente>-…`), así
+que correrlo dos veces no duplica. La ronda diaria lo corre para el mes cerrado.
+
+```
+node herramientas/ingresos.mjs <AAAA-MM>              lo que propondría
+node herramientas/ingresos.mjs <AAAA-MM> --escribir   lo deja en Tiempos
+```
+
+Banco: `pruebas/herramientas/ingresos.mjs`.
+
 ## `ACCESO-A-LAS-BASES.md`
 
 El paso a paso para dar de alta al agente en una base, hecho para seguirse

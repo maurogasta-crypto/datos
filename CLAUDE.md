@@ -228,7 +228,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay ocho bancos de pruebas, y se corren antes de subir.** `node
+- **Hay nueve bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (67 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
@@ -244,7 +244,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (37 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
   manda; `node pruebas/herramientas/novedades.mjs` (18 casos) para las novedades
-  que se le mandan a Mauro, que prueba que nada se avise dos veces; y `pruebas/panel/banco.mjs` (con `npm install`
+  que se le mandan a Mauro, que prueba que nada se avise dos veces; `node
+  pruebas/herramientas/ingresos.mjs` (8 casos) para los ingresos de la familia
+  que se proponen a Tiempos desde Casa Verde y remate, que prueba sobre todo lo
+  que NO propone; y `pruebas/panel/banco.mjs` (con `npm install`
   una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.
 - **`reglas.txt` es la plantilla, y es la ÚNICA copia del texto de las reglas.**

@@ -112,7 +112,9 @@ const PROYECTOS = {
        aplica la regla—, y para saber qué reporte ya trajo se mira el campo
        `origen` del pendiente que creó en el panel. */
     colecciones: ["config", "categorias", "productos", "pedidos", "ventas",
-                  "metodosPago", "lucesRegistro", "usuarios", "reportes"],
+                  "metodosPago", "lucesRegistro", "usuarios", "reportes",
+                  // v1.1 (8-oct-2026): quien compró sin llave (venta directa).
+                  "compradores"],
     /* `llaves`: el código ES la credencial del comprador — lo dice la regla.
        `documentos`: datos de terceros, que por decisión del proyecto no salen
        ni al catálogo público.

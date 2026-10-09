@@ -44,7 +44,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-export const VERSION = "avisos-3";
+export const VERSION = "avisos-4";
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /* La función de Netlify de Casa Verde es el puente de TODO el ecosistema. No se
@@ -266,48 +266,88 @@ export function baseDe(nombre) {
   return b;
 }
 
+/* ── El buzón: el aviso también queda en la Pizarra (avisos-4, 9-oct-2026) ──
+   tiempos:V10. Mauro: «la Pizarra para todos por igual, para que cada quien
+   tenga la opción de instalar los avisos en su teléfono directamente». Cada
+   aviso, además del WhatsApp (que sigue con su consentimiento y su tope), se
+   deja en `avisos/` de la base de la PERSONA: Tiempos si es de la familia
+   (Mauro y Florencia: un solo buzón para todos los sitios), y si no, la del
+   sitio donde está. Lo trae su Pizarra. El buzón no tiene tope ni pide
+   consentimiento: lo lee sólo su dueño, y si no instaló la app, nadie lo ve.
+   El id sale de la persona, el tema, el texto y el día: correrlo dos veces el
+   mismo día no lo repite. */
+export const idAviso = (uid, tema, texto, dia) => "a-" + dia.replace(/-/g, "") + "-" + crypto.createHash("sha256")
+  .update([uid, tema, String(texto).trim(), dia].join("|")).digest("hex").slice(0, 16);
+
+export async function aBuzon({ base, a, tema, texto, sobre, seco = false }) {
+  const F = await import("./firestore.mjs");
+  for (const casa of ["tiempos", base]) {
+    const cfg = F.PROYECTOS[casa];
+    if (!cfg) continue;
+    const s = await F.entrarSuave(cfg);
+    if (!s.ok) continue;
+    let gente;
+    try { gente = await F.listar(cfg, s.sesion, casa === "tiempos" ? "miembros" : "usuarios", true); } catch { continue; }
+    const b = buscarPersona(gente.filter((u) => casa === "tiempos" ? u.rol === "persona" : u.activo === true), a);
+    if (!b.ok) continue;
+    if (seco) return { ok: true, casa, a: b.persona.nombre, seco: true };
+    const dia = hoyMontevideo();
+    const r = await F.crearAviso(cfg, s.sesion, idAviso(b.persona.id, tema, texto, dia), { uid: b.persona.id, sitio: sobre || base,
+      tema, texto: String(texto).trim(), creadoEn: { $timestamp: new Date().toISOString() }, leido: false });
+    return { ...r, casa, a: b.persona.nombre };
+  }
+  return { ok: false, motivo: "no está en Tiempos ni en " + base };
+}
+
 /**
  * Manda UN aviso a UNA persona. Nunca lanza por algo que no sea un error de
  * uso: devuelve { ok, motivo, detalle, a } para que la ronda siga con el resto.
  * Opciones: base, a, tema, texto, sobre, bodega, seco, esperar (true por
  * defecto: espera el minuto de CallMeBot en vez de rechazar).
  */
-export async function avisar({ base, a, tema, texto, sobre, bodega, seco = false, esperar = true, conexion }) {
+export async function avisar({ base, a, tema, texto, sobre, bodega, seco = false, esperar = true, conexion, buzon }) {
   base = baseDe(base);
   if (!TEMAS[tema]) throw new Error(`tema desconocido «${tema}». Temas: ${Object.keys(TEMAS).join(", ")}`);
   const v = validarTexto(texto);
   if (!v.ok) return { ok: false, motivo: "texto", detalle: v.motivos.join("; "), a };
   if (!bodega || !fs.existsSync(bodega)) throw new Error("falta la bodega (--bodega <dir>): sin el registro no hay tope");
 
+  // avisos-4: primero el buzón de su Pizarra; lo que pase con WhatsApp no lo
+  // cambia. Con una conexión de prueba y sin `buzon`, no se toca ninguna base.
+  const meter = buzon || (conexion ? null : aBuzon);
+  const app = meter ? await meter({ base, a, tema, texto, sobre, seco }).catch((e) => ({ ok: false, motivo: e.message }))
+    : { ok: false, motivo: "sin buzón" };
+  const conApp = (r) => ({ ...r, app });
+
   const { F, cfg, sesion } = conexion || await conectar(base);
   const usuarios = await F.listar(cfg, sesion, "usuarios");
   const b = buscarPersona(usuarios, a);
-  if (!b.ok) return { ok: false, motivo: "quien", detalle: b.motivo, a };
+  if (!b.ok) return conApp({ ok: false, motivo: "quien", detalle: b.motivo, a });
   const p = b.persona;
   const c = await F.contactoAviso(cfg, sesion, p.id);
-  if (!c.ok) return { ok: false, motivo: "contacto", detalle: c.motivo, a: p.nombre };
+  if (!c.ok) return conApp({ ok: false, motivo: "contacto", detalle: c.motivo, a: p.nombre });
   const est = estadoDe(p, c.contacto);
-  if (!est.listo) return { ok: false, motivo: est.estado, detalle: `${p.nombre}: ${est.texto}`, a: p.nombre };
+  if (!est.listo) return conApp({ ok: false, motivo: est.estado, detalle: `${p.nombre}: ${est.texto}`, a: p.nombre });
 
   const h = huella(c.contacto.telefono);
   const hoy = hoyMontevideo();
   const reg = leerRegistro(bodega, 1);
   const n = cuantosHoy(reg, h, hoy);
-  if (n >= TOPE_DIA) return { ok: false, motivo: "tope", detalle: `${p.nombre} ya recibió ${n} avisos hoy (tope ${TOPE_DIA})`, a: p.nombre };
+  if (n >= TOPE_DIA) return conApp({ ok: false, motivo: "tope", detalle: `${p.nombre} ya recibió ${n} avisos hoy (tope ${TOPE_DIA})`, a: p.nombre });
 
   const mensaje = armarMensaje(base, tema, texto, sobre);
-  if (seco) return { ok: true, motivo: "seco", detalle: mensaje, a: p.nombre };
+  if (seco) return conApp({ ok: true, motivo: "seco", detalle: mensaje, a: p.nombre });
 
   const falta = ESPERA_MS - (Date.now() - ultimoA(reg, h));
   if (falta > 0) {
-    if (!esperar) return { ok: false, motivo: "espera", detalle: `hay que esperar ${Math.ceil(falta / 1000)} s`, a: p.nombre };
+    if (!esperar) return conApp({ ok: false, motivo: "espera", detalle: `hay que esperar ${Math.ceil(falta / 1000)} s`, a: p.nombre });
     await dormir(falta);
   }
   const r = await mandarPorElPuente(c.contacto, mensaje);
   const archivo = anotar(bodega, { en: new Date().toISOString(), base, sobre: sobre || base, a: p.nombre, uid: p.id,
     tema, texto: String(texto).trim(), intentado: true, ok: r.ok, motivo: r.motivo, detalle: String(r.detalle || "").slice(0, 240),
-    huella: h, version: VERSION });
-  return { ok: r.ok, motivo: r.motivo, detalle: r.detalle, a: p.nombre, archivo };
+    huella: h, version: VERSION, app: app.ok ? (app.nuevo === false ? "ya estaba" : "buzón de " + app.casa) : "no" });
+  return conApp({ ok: r.ok, motivo: r.motivo, detalle: r.detalle, a: p.nombre, archivo });
 }
 
 /** Quién de una base puede recibir avisos. Sin números ni claves. */
@@ -332,6 +372,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const libres = args.filter((x, i) => !x.startsWith("--") && !CON_VALOR.includes(args[i - 1]));
   const bodega = opt("--bodega", path.join(AQUI, "..", "..", "bodega"));
   const decir = (r) => console.log(`\n  ${r.ok ? "✓" : "✖"} ${r.a || ""}${r.motivo ? "  [" + r.motivo + "]" : ""}\n  ${String(r.detalle || "").split("\n").join("\n  ")}\n`
+    + (r.app ? `  Pizarra: ${r.app.ok ? (r.app.seco ? "iría al buzón de " + r.app.casa : r.app.nuevo === false ? "ya estaba en el buzón" : "dejado en el buzón de " + r.app.casa) : "no — " + r.app.motivo}\n` : "")
     + (r.archivo ? `  anotado en ${r.archivo} (falta commit y push de la bodega)\n` : ""));
 
   const run = async () => {

@@ -172,6 +172,44 @@ herramienta dice «las reglas dijeron que no» y no manda nada.
 
 ---
 
+## 6 bis · La Pizarra: los avisos en el teléfono, para todos (9-oct-2026)
+
+Mauro, `tiempos:V10`: «Pizarra para todos por igual, para que cada quien tenga
+la opción de instalar los avisos en su teléfono directamente», y «un protocolo
+de instalación advirtiendo a cada uno».
+
+**El camino.** Cada aviso de `avisos.mjs` (avisos-4), además del WhatsApp, se
+deja en **`avisos/`** de la base de la persona —el BUZÓN—: Tiempos para Mauro y
+Florencia (uno solo para todos los sitios), y la base de su sitio para los
+demás (Esteban en Casa Verde, Romi en CasaYourte…). La **Pizarra** (la app de
+Android del ecosistema, `maurogasta-crypto/pizarra`) entra con la cuenta de ese
+sitio, trae los suyos y los muestra como notificación, con **un canal de
+Android por sitio**: ésa es la configuración, concentrada en la app.
+
+**Lo que no cambia.** WhatsApp sigue con su consentimiento («Avisos de Claude»),
+su tope de 3 por día y su registro en la bodega. El buzón no tiene tope ni pide
+consentimiento: lo lee sólo su dueño, y si no instaló la app nadie lo ve. Un
+texto que no pasa el control (§ 4) no va a ningún lado, tampoco al buzón.
+
+**Las reglas.** Cada base tiene su bloque `avisos/`: lo lee, lo marca leído o lo
+borra sólo su dueño; lo crea sólo el agente, con forma fija (`uid`, `sitio`,
+`tema`, `texto`, `creadoEn`, `leido`). Tiempos v12, Casa Verde [BUZON],
+CasaYourte (9-oct) y remate v1.2: **las publica Mauro**. Hasta entonces el
+buzón contesta «las reglas dijeron que no» y el WhatsApp sale igual.
+
+**La instalación** tiene UNA guía: `pizarra.html` de este repositorio
+(https://maurogasta-crypto.github.io/datos/pizarra.html), que enlazan los cuatro
+sitios desde «Mis avisos». Avisa ANTES lo que va a pasar —no viene de Play
+Store, el navegador y Play Protect advierten, hay que permitir la fuente, y una
+firma vieja obliga a desinstalar una vez— y después los pasos: bajar, instalar,
+elegir el sitio, entrar con la cuenta de ese sitio (la contraseña no se
+guarda), permitir notificaciones, y en Xiaomi / Samsung sacar la app del ahorro
+de batería. **Si cambia cómo se entra o qué permisos pide la app, la guía cambia
+en la misma tanda.** Un chat nunca manda el `.apk` por otro lado que no sea esa
+guía y su botón.
+
+---
+
 ## 7 · Lo que queda abierto
 
 - **El resumen diario por WhatsApp**: Mauro contestó el 30-sep que NO — sólo
@@ -179,4 +217,7 @@ herramienta dice «las reglas dijeron que no» y no manda nada.
 - **Que cada persona elija temas.** Hoy «Avisos de Claude» es uno solo, todo o
   nada. Cuando haya volumen para que moleste, se parte por tema.
 - **Hilux** no tiene pantalla (es una app Android sin equipo): sus avisos van a
-  Mauro por Casa Verde.
+  Mauro por Casa Verde (y desde avisos-4, a su buzón de Tiempos).
+- **Las fallas de la Pizarra** llegan a Claude sólo desde una cuenta de Tiempos
+  (los reportes de cada sitio tienen otra forma). Con otra cuenta, el
+  diagnóstico queda en el teléfono.

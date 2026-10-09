@@ -15,7 +15,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validarTexto, armarMensaje, leerRespuesta, buscarPersona, estadoDe, huella, hoyMontevideo,
-         cuantosHoy, leerRegistro, avisar, quienes, baseDe, TEMAS, TOPE_DIA, BASES, PUENTE } from "../../herramientas/avisos.mjs";
+         cuantosHoy, leerRegistro, avisar, quienes, baseDe, TEMAS, TOPE_DIA, BASES, PUENTE, idAviso } from "../../herramientas/avisos.mjs";
 import { avisoDeLlegada, textoParaEnviar } from "../../herramientas/reservas.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
 
@@ -270,6 +270,38 @@ await prueba("quienes: dice el estado de cada uno activo y nunca un número", as
 await prueba("los temas están todos escritos en el protocolo", () => {
   const p = fs.readFileSync(path.join(AQUI, "..", "..", "protocolos", "PROTOCOLO-AVISOS.md"), "utf8");
   for (const t of Object.keys(TEMAS)) assert.ok(p.includes("`" + t + "`"), t);
+});
+
+titulo("El buzón de la Pizarra (avisos-4)");
+await prueba("cada aviso va también al buzón, aunque WhatsApp no salga (sin número, apagado o tope)", async () => {
+  const llamados = [];
+  const buzon = async (o) => { llamados.push(o); return { ok: true, nuevo: true, casa: "tiempos", a: o.a }; };
+  const r = await avisar({ base: "casaverde", a: "Apagada", tema: "pedido", texto: "listo lo que pediste", bodega: bodega(), conexion: conexion(), buzon });
+  assert.equal(r.ok, false); assert.equal(r.motivo, "apagado");
+  assert.equal(r.app.ok, true, "el buzón no depende del consentimiento de WhatsApp");
+  assert.deepEqual(llamados.map((x) => [x.a, x.tema]), [["Apagada", "pedido"]]);
+});
+await prueba("un texto que no pasa el control no va a ningún lado, ni al buzón", async () => {
+  let llamado = false;
+  const r = await avisar({ base: "casaverde", a: "Mauro", tema: "urgente", texto: "debe R$ 300", bodega: bodega(), conexion: conexion(), buzon: async () => { llamado = true; return { ok: true }; } });
+  assert.equal(r.motivo, "texto"); assert.equal(llamado, false);
+});
+await prueba("en seco, el buzón tampoco se escribe (se le pasa seco)", async () => {
+  let visto = null;
+  await avisar({ base: "casaverde", a: "Mauro", tema: "prueba", texto: "hola", bodega: bodega(), seco: true, conexion: conexion(),
+    buzon: async (o) => { visto = o; return { ok: true, seco: true, casa: "tiempos" }; } });
+  assert.equal(visto.seco, true);
+});
+await prueba("con una conexión de prueba y sin buzón, no se toca ninguna base de verdad", async () => {
+  const r = await avisar({ base: "casaverde", a: "Mauro", tema: "prueba", texto: "hola", bodega: bodega(), seco: true, conexion: conexion() });
+  assert.deepEqual(r.app, { ok: false, motivo: "sin buzón" });
+});
+await prueba("el id del aviso: el mismo el mismo día, otro con otro texto u otra persona", () => {
+  const a = idAviso("u1", "pedido", "hola", "2026-10-09");
+  assert.equal(a, idAviso("u1", "pedido", " hola ", "2026-10-09"));
+  assert.notEqual(a, idAviso("u2", "pedido", "hola", "2026-10-09"));
+  assert.notEqual(a, idAviso("u1", "pedido", "chau", "2026-10-09"));
+  assert.match(a, /^a-20261009-[0-9a-f]{16}$/);
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

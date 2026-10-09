@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Instalar la Pizarra</title>
+<!--
+  pizarra.html — Cómo se instala la Pizarra. Sello: instalar-1 (9-oct-2026)
+
+  tiempos:V10. Mauro: «Pizarra para todos por igual, para que cada quien tenga
+  la opción de instalar los avisos en su teléfono directamente… un protocolo de
+  instalación advirtiendo a cada uno».
+
+  Es UNA página y la enlazan los cuatro sitios desde «Mis avisos»: Casa Verde
+  (avisos.html), CasaYourte (nucleo.js), remate (utils.js) y Tiempos (el pie).
+  Vive acá porque este sitio es público, no pide cuenta y no es de ningún sitio
+  en particular. No es parte del panel: no está en el SHELL de sw.js.
+
+  Lo que dice tiene que ser verdad en la app: si cambia cómo se entra o qué
+  permisos pide la Pizarra (MainActivity.kt, AndroidManifest.xml), cambia acá
+  en la misma tanda. El protocolo, para los chats, está en
+  protocolos/PROTOCOLO-AVISOS.md § «La Pizarra».
+-->
+<style>
+  :root { --fondo:#16191c; --caja:#1f2327; --texto:#ece8e1; --gris:#a3a7ab; --acento:#e8b04f; --mal:#e6887a; --ok:#8fc48a; --linea:#30353a; }
+  @media (prefers-color-scheme: light) {
+    :root { --fondo:#f6f4ef; --caja:#fff; --texto:#1d1d1b; --gris:#5f5c57; --acento:#93620f; --mal:#a33b2a; --ok:#3d7a38; --linea:#e0dbd0; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--fondo); color:var(--texto); font:16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 28px 0 8px; }
+  p { margin: 8px 0; }
+  .gris { color: var(--gris); font-size: .9rem; }
+  .caja { background: var(--caja); border: 1px solid var(--linea); border-radius: 12px; padding: 14px 16px; margin: 12px 0; }
+  .ojo { border-color: var(--acento); }
+  .ojo b:first-child { color: var(--acento); }
+  ol, ul { padding-left: 1.25rem; margin: 8px 0; }
+  li { margin: 8px 0; }
+  .bajar { display: block; text-align: center; background: var(--acento); color: #1b1407; font-weight: 700; text-decoration: none;
+           border-radius: 12px; padding: 14px; margin: 16px 0 6px; font-size: 1.05rem; }
+  a { color: var(--acento); }
+  code { background: var(--linea); border-radius: 4px; padding: 1px 5px; font-size: .9em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>📲 La Pizarra</h1>
+  <p class="gris">La app del equipo para Android: los avisos de Claude, en tu teléfono.</p>
+
+  <div class="caja">
+    <p><b>Qué hace.</b> Lo que Claude —la IA que recoge los pedidos y las fallas de los sitios— te tiene que avisar
+      (lo que pediste quedó hecho, llega un huésped, hace falta que contestes algo) te llega como
+      <b>notificación del teléfono</b>, sin WhatsApp. Sirve para Casa Verde, CasaYourte y remateTaller.
+      A Mauro y a Florencia además les abre Tiempos entero.</p>
+    <p class="gris">Es para Android. En un iPhone no se instala: seguí con «Mis avisos por WhatsApp» de tu sitio.</p>
+  </div>
+
+  <h2>⚠️ Antes de instalar, lo que va a pasar</h2>
+  <div class="caja ojo">
+    <p><b>No viene de Play Store, y el teléfono te lo va a decir.</b> Es una app que hicimos nosotros: el archivo
+      se arma solo desde su código, que es público
+      (<a href="https://github.com/maurogasta-crypto/pizarra" target="_blank" rel="noopener">maurogasta-crypto/pizarra</a>),
+      y se descarga de ahí. Por eso Android va a mostrar advertencias. Son esperables:</p>
+    <ul>
+      <li><b>«Este tipo de archivo puede dañar el dispositivo»</b> al bajarla → <b>Descargar de todas formas</b>.</li>
+      <li><b>«Por seguridad, el teléfono no puede instalar apps desconocidas de esta fuente»</b> → <b>Configuración</b> →
+        prendé <b>Permitir de esta fuente</b> (para el navegador o «Archivos») → volvé atrás.</li>
+      <li><b>Play Protect: «App no segura» o «bloqueada»</b> → <b>Más detalles → Instalar de todas formas</b>. Si no aparece esa
+        opción: Play Store → tu foto → Play Protect → ⚙ → apagá <b>Analizar apps</b> un momento, instalá, y <b>volvé a prenderlo</b>.</li>
+      <li><b>«La app no se instaló porque el paquete entra en conflicto»</b>: tenías una versión vieja firmada distinto.
+        Desinstalala una vez (mantené apretado el ícono → Desinstalar) y volvé a instalar. Pasa una sola vez.</li>
+    </ul>
+    <p class="gris">Si alguna vez la descargás de otro lugar que no sea el botón de abajo, no la instales.</p>
+  </div>
+
+  <h2>Instalar, paso a paso</h2>
+  <a class="bajar" href="https://github.com/maurogasta-crypto/pizarra/releases/download/ultimo/pizarra.apk">⬇ Bajar la Pizarra (pizarra.apk)</a>
+  <p class="gris" style="text-align:center;margin-top:0;">Siempre la última versión. Para actualizar, se baja y se instala igual: queda encima, sin perder nada.</p>
+  <ol>
+    <li><b>Bajala</b> con el botón de arriba, desde el teléfono, y aceptá las advertencias de arriba.</li>
+    <li><b>Abrí el archivo</b> (en la notificación de la descarga, o en «Archivos» → Descargas) y tocá <b>Instalar</b>.</li>
+    <li><b>Abrila</b> y elegí <b>de qué sitio sos</b>: Tiempos (Mauro y Florencia), Casa Verde, CasaYourte o remateTaller.</li>
+    <li><b>Entrá con el mismo mail y la misma contraseña</b> que usás en ese sitio. La contraseña se usa una sola vez:
+      no queda guardada en el teléfono.</li>
+    <li><b>Permití las notificaciones</b> cuando te las pida. Sin eso no te llega nada.</li>
+    <li><b>En un Xiaomi, Redmi o POCO</b> (HyperOS / MIUI), si no, los avisos llegan tarde o no llegan:
+      Ajustes → Aplicaciones → Pizarra → <b>Inicio automático: prendido</b> y <b>Ahorro de batería: Sin restricciones</b>.
+      En un Samsung: Ajustes → Batería → <b>Sin restricciones</b> para Pizarra.</li>
+    <li>Listo. En la app, <b>🔔 Avisos de Claude</b> muestra los últimos. Tocá uno para marcarlo leído.</li>
+  </ol>
+
+  <h2>La configuración</h2>
+  <div class="caja">
+    <ul>
+      <li><b>⚙ Configurar</b> abre las notificaciones de la app: hay <b>un canal por sitio</b> («Avisos · Casa Verde»,
+        «Avisos · remateTaller»…). Silenciás el que no quieras sin tocar los demás.</li>
+      <li><b>WhatsApp sigue aparte</b>: se prende o se apaga en «Mis avisos por WhatsApp» de tu sitio. Podés tener los dos.</li>
+      <li>Los avisos llegan solos <b>en menos de una hora</b>; al abrir la app, enseguida.</li>
+    </ul>
+  </div>
+
+  <h2>Qué ve y qué no</h2>
+  <div class="caja">
+    <ul>
+      <li>Ve <b>sólo tus avisos</b>: la base no le deja leer los de nadie más, ni nada de tu sitio que no puedas ver con tu cuenta.</li>
+      <li>La contraseña no se guarda: queda un permiso de sesión, que se corta desde la consola sin cambiar tu contraseña.</li>
+      <li>No lee tus fotos ni tus contactos. Tus notificaciones, sólo si le das «acceso a notificaciones» —lo usa Mauro, para los mensajes de Airbnb—: si no se lo das, no las ve. La ubicación aproximada la pide sólo Tiempos, al armar un plan.</li>
+      <li>Para dejar de usarla: en la app, <b>Salir</b>; o desinstalarla, como cualquier app.</li>
+    </ul>
+  </div>
+
+  <p class="gris">¿Algo no anda? Avisale a Mauro, o reportalo desde tu sitio: «Reportar una falla», en el menú de tu cuenta.</p>
+  <p class="gris">instalar-1 · 9-oct-2026</p>
+</main>
+</body>
+</html>

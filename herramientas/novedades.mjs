@@ -217,7 +217,8 @@ export async function novedades({ a = "Mauro", bodega, seco = false } = {}) {
   }
   // Lo visto se guarda si no había nada que mandar o si salió. Si el envío
   // falló, NO: la próxima corrida lo vuelve a intentar con lo mismo.
-  if (!r.items.length || (enviado && enviado.ok)) {
+  // avisos-4: quedar en el buzón de su Pizarra también es haber salido.
+  if (!r.items.length || (enviado && (enviado.ok || (enviado.app && enviado.app.ok && !enviado.app.seco)))) {
     fs.mkdirSync(path.dirname(archivo), { recursive: true });
     fs.writeFileSync(archivo, JSON.stringify(r.visto, null, 1) + "\n");
   }

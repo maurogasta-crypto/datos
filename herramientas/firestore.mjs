@@ -472,6 +472,9 @@ async function pedir(cfg, sesion, ruta, opciones = {}) {
   if (!r.ok) {
     const m = (j.error && j.error.message) || r.status;
     if (r.status === 403 && opciones.suave) throw Object.assign(new Error("las reglas dijeron que no: " + m), { suave: true });
+    // Suave también para lo demás (9-oct-2026, el buzón de avisos): quien pide
+    // suave decide qué hacer con el error, en vez de que se corte el proceso.
+    if (opciones.suave) throw Object.assign(new Error(`Firestore contestó ${r.status}: ${m}`), { suave: true, codigo: r.status });
     if (r.status === 403) {
       ex(`las reglas dijeron que no: ${m}\n`
        + `  No es un problema de este archivo. O la colección está sellada, o el\n`
@@ -680,6 +683,25 @@ const borrar = async (cfg, sesion, coleccion, id) => {
   return pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`, { method: "DELETE" });
 };
 
+/* ── El buzón de avisos (9-oct-2026, tiempos:V10) ─────────────────────────────
+   Un aviso de Claude para una persona: `avisos/<id>` de la base de ESA persona,
+   que su Pizarra trae y muestra como notificación. Se CREA y nada más
+   (`currentDocument.exists=false`): no puede pisar nada, y por eso no deja
+   copia en `_historial` —en Tiempos esa copia la leerían los dos, y un aviso es
+   de una sola persona—. Si ya existe (mismo id: misma persona, mismo texto,
+   mismo día), es el mismo aviso y no se repite. Nunca corta el proceso. */
+async function crearAviso(cfg, sesion, id, datos) {
+  guardiaEscritura(cfg, "avisos", id);
+  try {
+    await pedir(cfg, sesion, `/avisos/${encodeURIComponent(id)}?currentDocument.exists=false`,
+      { method: "PATCH", body: JSON.stringify({ fields: campos(datos) }), suave: true });
+    return { ok: true, nuevo: true };
+  } catch (e) {
+    if (e.codigo === 409 || /ALREADY_EXISTS|already exists/i.test(e.message)) return { ok: true, nuevo: false };
+    return { ok: false, motivo: e.message };
+  }
+}
+
 /* Devuelve un documento a como estaba antes de un cambio del historial. Se
    restaura CRUDO —con los tipos de Firestore— y deja su propia entrada: un
    deshacer también se puede deshacer. */
@@ -700,7 +722,7 @@ async function deshacer(cfg, sesion, hid) {
   return e;
 }
 
-export { HISTORIAL, deshacer, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
+export { HISTORIAL, deshacer, crearAviso, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
          entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/

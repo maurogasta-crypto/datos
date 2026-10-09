@@ -230,7 +230,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   el otro en la misma tanda.
 - **Hay nueve bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
-  pruebas/herramientas/firestore.mjs` (67 casos, sin npm ni red) para la
+  pruebas/herramientas/firestore.mjs` (69 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
   (115 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
@@ -241,7 +241,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   el completado de reservas, que sobre todo prueba lo que NO completa; `node
   pruebas/herramientas/telefono.mjs` (101 casos, sin
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
-  verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (37 casos, sin
+  verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (42 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
   manda; `node pruebas/herramientas/novedades.mjs` (18 casos) para las novedades
   que se le mandan a Mauro, que prueba que nada se avise dos veces; `node
@@ -520,6 +520,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   manda a la función de Netlify de Casa Verde y lo olvida. Tres por día como
   mucho, sin teléfonos ni plata en el texto, cada envío anotado en la bodega.
   **A huéspedes, nunca.** Los criterios, en `protocolos/PROTOCOLO-AVISOS.md`.
+  **Y desde avisos-4 (9-oct-2026, `tiempos:V10`) cada aviso queda también en
+  el BUZÓN de la persona** (`avisos/` de su base: Tiempos para Mauro y
+  Florencia, la de su sitio para los demás), que su **Pizarra** muestra como
+  notificación. Sin tope ni consentimiento —lo lee sólo su dueño—, sin
+  `_historial` —es nuevo y no pisa nada— (`crearAviso` de `firestore.mjs`). La
+  guía de instalación de la app, para todo el equipo, es `pizarra.html` de
+  este repositorio (§ 6 bis del protocolo).
 - **Una consulta desde un sitio despierta a este chat en el acto** (3-oct-2026,
   rutina «Consulta en vivo», `trig_01Ep6kQCNo2JFwXVvZv8cuDE`, sin horario). El
   formulario de Casa Verde, CasaYourte, remate y Tiempos guarda el reporte y
@@ -556,7 +563,7 @@ regla que sólo llega si alguien se acordó de algo no es una regla.
 | `protocolos/PROTOCOLO-SECRETOS.md` | qué tipo de secreto va en cada lugar |
 | `protocolos/PROTOCOLO-DESARROLLO.md` | el reglamento técnico común a los cuatro proyectos. Su § 10 dice qué hereda una app nueva, y este panel es el primer caso de prueba de ese párrafo |
 | `protocolos/PROTOCOLO-INTERFAZ.md` | cómo se maneja la gente en todos |
-| `protocolos/PROTOCOLO-AVISOS.md` | cuándo y cómo el agente le escribe a una persona por WhatsApp (CallMeBot), desde el 30-sep-2026 |
+| `protocolos/PROTOCOLO-AVISOS.md` | cuándo y cómo el agente le escribe a una persona por WhatsApp (CallMeBot), desde el 30-sep-2026, y el buzón de la Pizarra con su guía de instalación (§ 6 bis), desde el 9-oct |
 | `protocolos/ESTADO-DE-LOS-TRES.md` | qué le falta a cada proyecto y qué le puede dar a los otros |
 
 **Y son públicos, a propósito.** GitHub Pages los sirve en texto plano a

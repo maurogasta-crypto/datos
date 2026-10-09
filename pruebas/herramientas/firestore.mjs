@@ -75,6 +75,8 @@ globalThis.fetch = async (url, op = {}) => {
   }
   if (op.method === "DELETE") { delete (BASE[col] || {})[id]; return ok({}); }
   if (op.method === "PATCH") {
+    if (u.includes("currentDocument.exists=false") && (BASE[col] || {})[id])
+      return { ok: false, status: 409, json: async () => ({ error: { message: "Document already exists", status: "ALREADY_EXISTS" } }) };
     (BASE[col] ||= {})[id] = JSON.parse(op.body).fields;   // REEMPLAZA, no mezcla
     return ok({});
   }
@@ -84,7 +86,7 @@ globalThis.fetch = async (url, op = {}) => {
 
 const { PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
         entrar, entrarSuave, listar, leerUno, escribir, fusionar, borrar, aFirestore, deFirestore,
-        deshacer, HISTORIAL, fusionarRutas, rutaCampo } =
+        deshacer, HISTORIAL, fusionarRutas, rutaCampo, crearAviso } =
   await import("../../herramientas/firestore.mjs");
 const cfg = PROYECTOS.panel;
 
@@ -514,6 +516,24 @@ await prueba("las marcas (sin título) siguen yendo a _historial", async () => {
   const n = entradas();
   await escribir(ti, sesion, "marcas", "a1", { uid: "u1", clase: "productivo", desde: "2026-10-14T10:00", hasta: "2026-10-14T11:00" });
   assert.equal(entradas(), n + 1);
+});
+
+titulo("El buzón de avisos (avisos-4, tiempos:V10)");
+await prueba("crear un aviso no deja copia en _historial (la leerían los dos) y no pisa uno que ya está", async () => {
+  const n = entradas();
+  const a = await crearAviso(ti, sesion, "a-1", { uid: "u1", texto: "hola", leido: false });
+  assert.deepEqual(a, { ok: true, nuevo: true });
+  assert.equal(entradas(), n, "el buzón no va al historial");
+  const b = await crearAviso(ti, sesion, "a-1", { uid: "u1", texto: "OTRO", leido: false });
+  assert.deepEqual(b, { ok: true, nuevo: false });
+  assert.equal(BASE.avisos["a-1"].texto.stringValue, "hola", "no lo pisó");
+});
+await prueba("si la base dice que no (reglas sin publicar), contesta en vez de cortar el proceso", async () => {
+  NIEGA_LA_BASE.push("avisos");
+  try {
+    const r = await crearAviso(ti, sesion, "a-2", { uid: "u1", texto: "x" });
+    assert.equal(r.ok, false); assert.match(r.motivo, /reglas dijeron que no/);
+  } finally { NIEGA_LA_BASE.pop(); }
 });
 
 titulo("herramientas/agenda.mjs: las mismas formas que la app");

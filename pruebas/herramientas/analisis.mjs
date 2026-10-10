@@ -65,6 +65,14 @@ await prueba("lo cobrado en remate, por moneda y en el período (día de Uruguay
     { fecha: Date.parse("2026-10-01T04:00:00Z"), monto: 9, moneda: "USD" }] } }] });
   assert.deepEqual(c, { UYU: 150 });
 });
+await prueba("el trimestre: el ajuste de Tiempos (neto, fijos y costo de funcionamiento) viaja con los datos", () => {
+  const conceptos = { luz: { nombre: "UTE", monto: 3000, moneda: "UYU", categoria: "casa", cada: 1, mes: 1 } };
+  const movs = [{ monto: 3200, moneda: "UYU", fecha: "2026-10-05", categoria: "casa", fijo: "luz" }, { monto: 50000, moneda: "UYU", fecha: "2026-10-10", categoria: "trabajos" }];
+  const d = armarDatos({ nucleo, analisis: { que: "trimestre", desde: "2026-10-01", hasta: "2026-12-31" }, movs, cuentasDoc: CUENTAS, conceptos, hoyMes: "2026-11" });
+  assert.equal(d.trimestre.ajuste.trimestre, "2026-T4");
+  assert.deepEqual([d.trimestre.ajuste.porMoneda.UYU.entro, d.trimestre.ajuste.porMoneda.UYU.fijos, d.trimestre.ajuste.porMoneda.UYU.costoEstimado], [50000, 3200, 9000]);
+  assert.equal(armarDatos({ nucleo, analisis: { que: "balance" }, movs, cuentasDoc: CUENTAS }).trimestre, null);
+});
 await prueba("responder escribe una propuesta «analisis» con id fijo y un aviso; no escribe plata", () => {
   const src = fs.readFileSync(new URL("../../herramientas/analisis.mjs", import.meta.url), "utf8");
   assert.match(src, /const id = "an-" \+ reporteId/);

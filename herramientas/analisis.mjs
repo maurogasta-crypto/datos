@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
 // herramientas/analisis.mjs — El análisis que se le pide a Claude desde Tiempos.
-// Sello: analisis-1 (10-oct-2026, tiempos:V11)
+// Sello: analisis-2 (10-oct-2026, tiempos:V11)
 //
 // Mauro: «se tiene que interpretar y explicar la información registrada de
 // forma coherente para poder analizar la inversión y evaluar los planes de
@@ -18,6 +18,10 @@
 //       publicado o de ../tiempos: no se copia), y si corresponde lo de Casa
 //       Verde (su libro, por moneda y categoría, y honorarios sin pagar) y lo
 //       cobrado en remate. Por moneda, sin convertir. Imprime un JSON.
+//
+//       Si lo pedido es el TRIMESTRE (`que: "trimestre"`, analisis-2), suma el
+//       ajuste: el neto contra los fijos, el costo de funcionamiento del Año y
+//       lo estimado contra lo pagado (`ajusteTrimestral` y `posiblesFijos`).
 //
 //   node herramientas/analisis.mjs responder <reporteId> <archivo.txt> --titulo "…"
 //       Deja el texto que escribió Claude como propuesta de clase «analisis»
@@ -96,7 +100,7 @@ export function librosDe(cuenta) {
 }
 
 /** Todo lo que el análisis necesita, ya calculado. */
-export function armarDatos({ nucleo, analisis = {}, movs = [], cuentasDoc = {}, cv = null, remate = null }) {
+export function armarDatos({ nucleo, analisis = {}, movs = [], cuentasDoc = {}, cv = null, remate = null, conceptos = {}, hoyMes = "9999-12" }) {
   const cuentas = nucleo.cuentasDe(cuentasDoc);
   const { que = "balance", cuenta = "", desde = "", hasta = "", categorias = [] } = analisis;
   const id = cuenta ? nucleo.cuentaPorNombre(cuentas, cuenta) : null;
@@ -117,7 +121,11 @@ export function armarDatos({ nucleo, analisis = {}, movs = [], cuentasDoc = {}, 
       categorias: Object.fromEntries(Object.entries(nucleo.CATEGORIAS).map(([k, c]) => [k, c.nombre])) },
     casaVerde: libros.casaVerde && cv ? libroCasaVerde({ ...cv, desde, hasta }) : null,
     remate: libros.remate && remate ? { cobrado: cobradoRemate({ ...remate, desde, hasta }), nota: "bruto: remate no anota sus gastos" } : null,
-    reglas: "Cada moneda es aparte: no se suman ni se convierten. La plata es toda de la familia; la cuenta sólo dice a qué fue.",
+    trimestre: que === "trimestre" && desde ? {
+      ajuste: nucleo.ajusteTrimestral({ conceptos, movs, trimestre: nucleo.trimestreDe(desde.slice(0, 7)), hoyMes }),
+      seRepitenSinSerFijos: nucleo.posiblesFijos(movs, conceptos, hoyMes),
+    } : null,
+    reglas: "Cada moneda es aparte: no se suman ni se convierten. La plata es toda de la familia; la cuenta sólo dice a qué fue. El costo de funcionamiento es lo del Año ÷ 4 por trimestre.",
   };
 }
 
@@ -142,7 +150,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       if (s.ok) remate = { ventas: await listar(c, s.sesion, "ventas", true).catch(() => []) };
     }
     const d = armarDatos({ nucleo, analisis: an, movs: await listar(ti, sTi, "movimientos"),
-      cuentasDoc: (await leerUno(ti, sTi, "familia", "cuentas")) || {}, cv, remate });
+      cuentasDoc: (await leerUno(ti, sTi, "familia", "cuentas")) || {}, cv, remate,
+      conceptos: (((await leerUno(ti, sTi, "familia", "presupuesto")) || {}).conceptos) || {},
+      hoyMes: new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 7) });
     console.log(JSON.stringify({ pregunta: rep.texto, para: rep.nombre, ...d }, null, 2));
   } else {
     if (!archivo || !fs.existsSync(archivo)) ex("falta el archivo con el texto del análisis");

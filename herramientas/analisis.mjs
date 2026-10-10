@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
 // herramientas/analisis.mjs — El análisis que se le pide a Claude desde Tiempos.
-// Sello: analisis-3 (10-oct-2026, tiempos:V11 y V12)
+// Sello: analisis-4 (10-oct-2026, tiempos:V11, V12 y V13)
 //
 // Mauro: «se tiene que interpretar y explicar la información registrada de
 // forma coherente para poder analizar la inversión y evaluar los planes de
@@ -28,6 +28,12 @@
 //       que dicen Prex o BTG y todavía NO se registró como movimiento
 //       (`resumenExtractos` con `soloPendientes`), aparte, para no contar dos
 //       veces lo que ya está en los movimientos.
+//
+//       Y los DESTINOS (analisis-4, tiempos:V13, Mauro: «analizar el
+//       funcionamiento de cada proyecto y su viabilidad: cuántos recursos se le
+//       dedican y si es rentable»): `economiaFamiliar` de nucleo.js, la misma
+//       cuenta que Plata → Proyectos, con los movimientos y lo de los extractos
+//       que ya tiene categoría; y el libro propio de Casa Verde por moneda.
 //
 //   node herramientas/analisis.mjs responder <reporteId> <archivo.txt> --titulo "…"
 //       Deja el texto que escribió Claude como propuesta de clase «analisis»
@@ -106,7 +112,7 @@ export function librosDe(cuenta) {
 }
 
 /** Todo lo que el análisis necesita, ya calculado. */
-export function armarDatos({ nucleo, analisis = {}, movs = [], extractos = [], cuentasDoc = {}, cv = null, remate = null, conceptos = {}, hoyMes = "9999-12" }) {
+export function armarDatos({ nucleo, analisis = {}, movs = [], extractos = [], ninos = [], personas = [], cuentasDoc = {}, cv = null, remate = null, conceptos = {}, hoyMes = "9999-12" }) {
   const cuentas = nucleo.cuentasDe(cuentasDoc);
   const { que = "balance", cuenta = "", desde = "", hasta = "", categorias = [] } = analisis;
   const id = cuenta ? nucleo.cuentaPorNombre(cuentas, cuenta) : null;
@@ -130,6 +136,11 @@ export function armarDatos({ nucleo, analisis = {}, movs = [], extractos = [], c
     trimestre: que === "trimestre" && desde ? {
       ajuste: nucleo.ajusteTrimestral({ conceptos, movs, trimestre: nucleo.trimestreDe(desde.slice(0, 7)), hoyMes }),
       seRepitenSinSerFijos: nucleo.posiblesFijos(movs, conceptos, hoyMes),
+    } : null,
+    destinos: nucleo.economiaFamiliar && !id ? {
+      ...nucleo.economiaFamiliar({ movs: [...movs, ...nucleo.pendientesComoMovs(extractos)], cuentas, ninos, personas, desde, hasta }),
+      casaVerdeLibroPropio: cv && nucleo.libroDeNegocio ? nucleo.libroDeNegocio(cv.movimientos, { desde, hasta }) : null,
+      nota: "Toda la plata es de la familia. Cada movimiento va a UN destino (proyecto de su cuenta → chico → persona → la casa). `parte` = % de lo que salió en esa moneda. Casa Verde es rentable en una moneda si el neto de su libro propio menos lo que la familia le puso en esa moneda queda positivo.",
     } : null,
     extractos: nucleo.resumenExtractos && extractos.length ? {
       ...nucleo.resumenExtractos(ids ? extractos.filter((l) => ids.has(l.cuenta)) : extractos, { desde, hasta, soloPendientes: true }),
@@ -161,6 +172,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     }
     const d = armarDatos({ nucleo, analisis: an, movs: await listar(ti, sTi, "movimientos"),
       extractos: await listar(ti, sTi, "extractos").catch(() => []),
+      ninos: (((await leerUno(ti, sTi, "familia", "config")) || {}).ninos) || [],
+      personas: (await listar(ti, sTi, "miembros")).map((m) => ({ id: m.id, nombre: m.nombre || "" })),
       cuentasDoc: (await leerUno(ti, sTi, "familia", "cuentas")) || {}, cv, remate,
       conceptos: (((await leerUno(ti, sTi, "familia", "presupuesto")) || {}).conceptos) || {},
       hoyMes: new Date(Date.now() - 3 * 3600000).toISOString().slice(0, 7) });

@@ -103,5 +103,16 @@ await prueba("con una cuenta pedida, sólo las líneas de esa cuenta; sin extrac
   assert.equal(armarDatos({ nucleo, analisis: {}, movs: MOVS, cuentasDoc: CUENTAS }).extractos, null);
 });
 
+await prueba("los destinos: cada proyecto con lo dedicado y su parte; los extractos con categoría entran; el libro de Casa Verde aparte", () => {
+  if (!nucleo.economiaFamiliar) return;
+  const d = armarDatos({ nucleo, analisis: { desde: "2026-09-01", hasta: "2026-09-30" }, movs: MOVS, extractos: EXT, cuentasDoc: CUENTAS,
+    cv: { movimientos: [{ tipo: "entro", moneda: "USD", monto: 300, fecha: "2026-09-03", categoria: "Reservas" }], honorarios: [] } });
+  const hx = d.destinos.destinos.find((x) => x.nombre === "Hilux");
+  assert.equal(hx.porMoneda.UYU.salio, 4400, "2400 registrado + 2000 del extracto");
+  assert.equal(d.destinos.sinRegistrar, 1);
+  assert.equal(d.destinos.casaVerdeLibroPropio.USD.entro, 300);
+  assert.equal(armarDatos({ nucleo, analisis: { cuenta: "hilux" }, movs: MOVS, cuentasDoc: CUENTAS }).destinos, null, "con una cuenta pedida no hace falta");
+});
+
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);
 process.exit(fallidas ? 1 : 0);

@@ -228,7 +228,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay diez bancos de pruebas, y se corren antes de subir.** `node
+- **Hay once bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (69 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
@@ -247,8 +247,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   que se le mandan a Mauro, que prueba que nada se avise dos veces; `node
   pruebas/herramientas/ingresos.mjs` (8 casos) para los ingresos de la familia
   que se proponen a Tiempos desde Casa Verde y remate, que prueba sobre todo lo
-  que NO propone; `node pruebas/herramientas/analisis.mjs` (8 casos) para el
-  análisis que se pide desde Tiempos; y `pruebas/panel/banco.mjs` (con `npm install`
+  que NO propone; `node pruebas/herramientas/analisis.mjs` (10 casos) para el
+  análisis que se pide desde Tiempos, con los extractos; `node
+  pruebas/herramientas/extractos.mjs` (5 casos) para la carga de extractos de
+  los bancos, que prueba que nada se duplique ni se guarde un número de
+  cuenta; y `pruebas/panel/banco.mjs` (con `npm install`
   una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.
 - **`reglas.txt` es la plantilla, y es la ÚNICA copia del texto de las reglas.**
@@ -501,8 +504,18 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   publicado: no se copia) y, si corresponde, el libro de Casa Verde y lo
   cobrado en remate, por moneda; Claude escribe el texto y `responder` lo deja
   como propuesta «analisis» en Tiempos, con un aviso en el buzón. Banco: `node
-  pruebas/herramientas/analisis.mjs` (8 casos). Los pasos, en `TRASPASO.md`
+  pruebas/herramientas/analisis.mjs` (10 casos). Los pasos, en `TRASPASO.md`
   § 4 bis.
+- **Los extractos de los bancos los carga `herramientas/extractos.mjs`**
+  (10-oct-2026, reglas v14 de Tiempos, `tiempos:V12`). Mauro manda capturas o
+  el archivo de una cuenta (Prex, BTG…); el chat las pasa a un JSON **fuera de
+  todo repositorio**, clasificadas (gasto, entrada, revisar con su pregunta,
+  interno, negocio —ya en Casa Verde—, devuelto), y `cargar <json> --aplicar`
+  crea en `extractos/` de Tiempos SÓLO lo que falta (`crearNuevo`: sin pisar,
+  sin `_historial`). Registrar es de una persona, en Plata → Extractos. **Antes
+  de clasificar se cruza con `movimientos` de Casa Verde**: una seña que entró
+  a Prex ya está en ese libro y va como `negocio`. `analisis.mjs` suma aparte
+  lo no registrado.
 - **Claude organiza la agenda de Tiempos de quien lo enciende** (8-oct-2026,
   reglas v11 de Tiempos, `herramientas/agenda.mjs`). Es la única puerta a
   `agendas/` —que sigue en `selladas` y no se lista nunca— y anda sólo si

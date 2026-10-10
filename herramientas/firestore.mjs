@@ -231,7 +231,10 @@ const PROYECTOS = {
        lo escribe en `propuestas` y una persona lo aprueba desde la app. */
     colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
                   "bloques", "marcas", "movimientos", "recurrentes", "propuestas", "auditoria",
-                  "reportes", "_historial", "alertas", "deseos"],
+                  "reportes", "_historial", "alertas", "deseos", "extractos"],
+    /* v14 (10-oct-2026, tiempos:V12): `extractos`, lo que dice cada banco
+       línea por línea. El agente las carga (`extractos.mjs`) y las clasifica
+       mientras están pendientes; registrarlas es de una persona. */
     /* v9 (app-13, 5-oct-2026): `alertas` (recordatorios y alarmas de cada
        uno, que la ronda manda por WhatsApp) y `deseos` (la lista de deseos,
        que Claude coordina con el otro). Las dos las lee el agente. */
@@ -691,9 +694,19 @@ const borrar = async (cfg, sesion, coleccion, id) => {
    de una sola persona—. Si ya existe (mismo id: misma persona, mismo texto,
    mismo día), es el mismo aviso y no se repite. Nunca corta el proceso. */
 async function crearAviso(cfg, sesion, id, datos) {
-  guardiaEscritura(cfg, "avisos", id);
+  return crearNuevo(cfg, sesion, "avisos", id, datos);
+}
+
+/* Lo mismo para cualquier colección donde el agente sólo AGREGA lo que no
+   estaba: crea con `currentDocument.exists=false`, así que no puede pisar
+   nada y no deja copia en `_historial` (no hay «antes»). Lo usa también
+   `extractos.mjs` (10-oct-2026, tiempos:V12): cientos de líneas de un banco
+   no tienen por qué dejar cientos de copias vacías. Si ya existe, es la misma
+   línea y no se repite. Nunca corta el proceso. */
+async function crearNuevo(cfg, sesion, coleccion, id, datos) {
+  guardiaEscritura(cfg, coleccion, id);
   try {
-    await pedir(cfg, sesion, `/avisos/${encodeURIComponent(id)}?currentDocument.exists=false`,
+    await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}?currentDocument.exists=false`,
       { method: "PATCH", body: JSON.stringify({ fields: campos(datos) }), suave: true });
     return { ok: true, nuevo: true };
   } catch (e) {
@@ -722,7 +735,7 @@ async function deshacer(cfg, sesion, hid) {
   return e;
 }
 
-export { HISTORIAL, deshacer, crearAviso, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
+export { HISTORIAL, deshacer, crearAviso, crearNuevo, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
          entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/

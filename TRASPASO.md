@@ -95,6 +95,7 @@ Verde contestó que no, que es lo esperable hasta que se publiquen sus reglas.
 
 **Qué quedó hecho:**
 - `protocolos/PROTOCOLO-AVISOS.md`: los criterios (temas, forma, límites).
+- `protocolos/PROTOCOLO-PLATA.md`: cómo entra la plata a Tiempos — todo se evalúa e incorpora sin repetir, completando lo que había.
 - `herramientas/avisos.mjs` (banco de 37 casos) y `contactoAviso` en
   `firestore.mjs`; `reservas.mjs llegadas --enviar --a <nombre>`.
 - Casa Verde: «Avisos de Claude» en Mis avisos (`avisos-6`) y el `get` del
@@ -304,6 +305,7 @@ CONSULTA EN VIVO. Sesión aparte, corta: lee, contesta y planea; NO toca código
           correr-alerta / sacar-alerta <nombre> <idAlerta> [<día> <hora>]
         Criterios: lo que pidió la persona, hecho entero (no una tarea de «acordate de agendar»); «el miércoles» es el próximo; una alarma de salir es actividad − viaje − 10 min, desde la casa del país donde está; al mover una actividad, corré sus alertas; nada de dos cosas a la misma hora sin decirlo. Todo cambio lleva su --porque (la persona lo ve con ✨) y deja su copia en agendas/<uid>/copias (firestore.mjs tiempos copias <uid> · deshacer <ruta>). En la respuesta, una línea por cambio. La ronda diaria NO reorganiza sola: sólo lo que alguien pidió.
      f) Si el reporte trae `yaAgendado` (sugerir-4: la persona ya lo precargó con Gemini y lo agendó ella), NO le propongas lo mismo otra vez: lo que queda es el cruce — consulta al que queda libre, o la propuesta para el otro si `quien` es "otro", "los-dos" o "familia". `esperaba` trae lo que agendó, en una línea.
+   · TIEMPOS · PLATA (extractos, boletas, un dato de plata dicho en una consulta): seguí protocolos/PROTOCOLO-PLATA.md § 7 — leer lo que hay, los seis controles de lo repetido, clasificar sin preguntar lo deducible, incorporar completando, y anotar en el panel.
    · TIEMPOS · ANÁLISIS (el reporte trae `analisis`: {que, cuenta, desde, hasta, categorias}; tiempos:V11, 10-oct-2026). Es un pedido de Mauro o de Florencia desde «📊 Análisis de Claude». NO es un pendiente: es una respuesta.
      a) node herramientas/analisis.mjs datos <id>   → los NÚMEROS ya calculados (Tiempos con la cuenta de la app, y Casa Verde y remate cuando corresponde), por moneda.
         Trae también `extractos` (tiempos:V12): lo que dicen los bancos (Prex, BTG…) y todavía NO se registró. Va APARTE de `tiempos` —no se suma a los movimientos—, y lo que está en `revisar` se dice con su pregunta, no se adivina.

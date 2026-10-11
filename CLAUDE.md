@@ -517,6 +517,14 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   a Prex ya está en ese libro y va como `negocio`. `analisis.mjs` suma aparte
   lo no registrado, y desde analisis-4 trae los DESTINOS (`economiaFamiliar`,
   la misma cuenta que Plata → Proyectos) y el libro propio de Casa Verde.
+- **Todo lo que llega de plata se EVALÚA y se INCORPORA: sin repetir, y
+  completando lo que había** (11-oct-2026, Mauro: «todo lo que llega a la IA
+  debe ser evaluado e incorporado, evitando repetir información y siempre
+  completando el registro existente para agregar precisión»). El criterio y el
+  paso a paso están en `protocolos/PROTOCOLO-PLATA.md`: los seis controles de
+  lo repetido, qué manda cuando dos fuentes no coinciden, qué se completa y
+  cómo se marca una estimación. **Se lee antes de cargar cualquier extracto,
+  boleta o dato de plata.**
 - **Claude organiza la agenda de Tiempos de quien lo enciende** (8-oct-2026,
   reglas v11 de Tiempos, `herramientas/agenda.mjs`). Es la única puerta a
   `agendas/` —que sigue en `selladas` y no se lista nunca— y anda sólo si
@@ -587,6 +595,7 @@ regla que sólo llega si alguien se acordó de algo no es una regla.
 | `protocolos/PROTOCOLO-DESARROLLO.md` | el reglamento técnico común a los cuatro proyectos. Su § 10 dice qué hereda una app nueva, y este panel es el primer caso de prueba de ese párrafo |
 | `protocolos/PROTOCOLO-INTERFAZ.md` | cómo se maneja la gente en todos |
 | `protocolos/PROTOCOLO-AVISOS.md` | cuándo y cómo el agente le escribe a una persona por WhatsApp (CallMeBot), desde el 30-sep-2026, y el buzón de la Pizarra con su guía de instalación (§ 6 bis), desde el 9-oct |
+| `protocolos/PROTOCOLO-PLATA.md` | cómo entra la información de plata a Tiempos y cómo se va afinando: todo lo que llega se evalúa y se incorpora sin repetir, completando lo que había (desde el 11-oct-2026) |
 | `protocolos/ESTADO-DE-LOS-TRES.md` | qué le falta a cada proyecto y qué le puede dar a los otros |
 
 **Y son públicos, a propósito.** GitHub Pages los sirve en texto plano a

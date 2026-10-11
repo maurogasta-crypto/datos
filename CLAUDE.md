@@ -177,6 +177,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sitio: nadie las abre desde el panel, y en la raíz serían ocho archivos más
   entre los nueve del cascarón. La regla pasa a ser: **si el navegador lo pide,
   va plano; si lo lee una persona o una sesión, va en su carpeta.**
+- **Toda contraseña tiene su ojo 👁 para verla mientras se tipea** (`nucleo-7`,
+  11-oct-2026, pedido de Mauro «en todos los sitios»). Lo pone
+  `ojosEnClaves()` de `nucleo.js`, solo al cargar y también en los campos que
+  aparecen después. **Es el mismo código en los cinco sitios** —Tiempos, Casa
+  Verde, CasaYourte, remate y este panel— y en la Pizarra va en Kotlin: si
+  cambia en uno, cambia en todos en la misma tanda.
 - **El núcleo es `nucleo.js` y no se duplica.** Si algo hace falta en dos
   pantallas, sube ahí en la misma tanda.
 - **El único contacto con el SDK de Firebase es `firebase-init.js`**, y desde

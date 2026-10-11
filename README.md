@@ -500,18 +500,18 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-6` |
+| `nucleo.js` | `P.VERSION` | `nucleo-7` |
 | `index.html` | `P.PANEL` | `panel-36` |
 | `invitado.html` | `P.PANEL` | `invitado-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-4` |
-| `sw.js` | `VERSION` | `panel-shell-v27` |
+| `sw.js` | `VERSION` | `panel-shell-v28` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-6`. Sin ese número, el
+pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-7`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

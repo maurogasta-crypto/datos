@@ -121,5 +121,13 @@ await prueba("la base de costo anual viaja en el análisis, con lo registrado y 
   assert.ok(d.baseAnual.UYU.gastado >= 2000 + 2400, "suma el extracto y el movimiento");
 });
 
+await prueba("lo estimado contra lo real viaja en el análisis, acotado al proyecto pedido", () => {
+  if (!nucleo.estimadoVsReal) return;
+  const conceptos = { c: { nombre: "Combustible Hilux", categoria: "combustible", moneda: "UYU", monto: 1000, cada: 1, mes: 1, cuenta: "hx" } };
+  const d = armarDatos({ nucleo, analisis: { cuenta: "hilux", desde: "2026-09-01", hasta: "2026-09-30" }, movs: MOVS, extractos: EXT, cuentasDoc: CUENTAS, conceptos });
+  assert.equal(d.estimadoVsReal.UYU.filas[0].categoria, "combustible");
+  assert.equal(d.estimadoVsReal.UYU.estimado, 12000);
+});
+
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);
 process.exit(fallidas ? 1 : 0);

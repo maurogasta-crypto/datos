@@ -114,5 +114,12 @@ await prueba("los destinos: cada proyecto con lo dedicado y su parte; los extrac
   assert.equal(armarDatos({ nucleo, analisis: { cuenta: "hilux" }, movs: MOVS, cuentasDoc: CUENTAS }).destinos, null, "con una cuenta pedida no hace falta");
 });
 
+await prueba("la base de costo anual viaja en el análisis, con lo registrado y los extractos", () => {
+  if (!nucleo.baseAnual) return;
+  const d = armarDatos({ nucleo, analisis: { desde: "2026-09-01", hasta: "2026-09-30" }, movs: MOVS, extractos: EXT, cuentasDoc: CUENTAS });
+  assert.ok(d.baseAnual.UYU, "hay pesos");
+  assert.ok(d.baseAnual.UYU.gastado >= 2000 + 2400, "suma el extracto y el movimiento");
+});
+
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);
 process.exit(fallidas ? 1 : 0);

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ─────────────────────────────────────────────────────────────────────────────
 // herramientas/analisis.mjs — El análisis que se le pide a Claude desde Tiempos.
-// Sello: analisis-4 (10-oct-2026, tiempos:V11, V12 y V13)
+// Sello: analisis-5 (11-oct-2026, tiempos:V11, V12 y V13)
 //
 // Mauro: «se tiene que interpretar y explicar la información registrada de
 // forma coherente para poder analizar la inversión y evaluar los planes de
@@ -142,6 +142,8 @@ export function armarDatos({ nucleo, analisis = {}, movs = [], extractos = [], n
       casaVerdeLibroPropio: cv && nucleo.libroDeNegocio ? nucleo.libroDeNegocio(cv.movimientos, { desde, hasta }) : null,
       nota: "Toda la plata es de la familia. Cada movimiento va a UN destino (proyecto de su cuenta → chico → persona → la casa). `parte` = % de lo que salió en esa moneda. Casa Verde es rentable en una moneda si el neto de su libro propio menos lo que la familia le puso en esa moneda queda positivo.",
     } : null,
+    // analisis-5: lo que costó vivir un año (baseAnual), de todo lo cargado.
+    baseAnual: nucleo.baseAnual ? nucleo.baseAnual([...movs, ...(nucleo.pendientesComoMovs ? nucleo.pendientesComoMovs(extractos) : [])], { hasta: hasta || new Date().toISOString().slice(0, 10) }) : null,
     extractos: nucleo.resumenExtractos && extractos.length ? {
       ...nucleo.resumenExtractos(ids ? extractos.filter((l) => ids.has(l.cuenta)) : extractos, { desde, hasta, soloPendientes: true }),
       nota: "Lo que dicen los bancos (Prex, BTG…) y todavía NO está registrado como movimiento: va APARTE de «tiempos». Montos con signo (− salió, + entró). «revisar» es lo que no se sabe qué es: se dice, no se adivina. Cargas, cambios de moneda y señas que ya están en Casa Verde no cuentan.",

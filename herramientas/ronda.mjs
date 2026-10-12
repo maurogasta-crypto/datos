@@ -142,7 +142,12 @@ function letrasEnUso(pendientes, proyecto) {
   const mapa = new Map();
   for (const p of pendientes || []) {
     if (p.proyecto !== proyecto) continue;
-    const m = /^([A-Za-z]+)(\d+)$/.exec(String(p.clave || ""));
+    /* La clave puede venir sin el campo, o con el prefijo del proyecto
+       («tiempos:V11»): el 12-oct la ronda decía «V hasta V10 → V11» con V11 y
+       V12 ya usados, porque los dos tenían la clave escrita así. Se lee del
+       campo y, si no da, del id, siempre sin el prefijo. */
+    const sin = (x) => String(x || "").replace(/^[\w-]+:/, "");
+    const m = /^([A-Za-z]+)(\d+)$/.exec(sin(p.clave)) || /^([A-Za-z]+)(\d+)$/.exec(sin(p.id));
     if (!m) continue;                       // claves con nombre («reportes-2»)
     const letra = m[1].toUpperCase();
     const n = Number(m[2]);

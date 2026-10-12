@@ -109,6 +109,11 @@ prueba("una clave con nombre no aporta letra — no se inventa un número", () =
 prueba("un proyecto sin pendientes devuelve lista vacía, no un error", () => {
   assert.deepEqual(letrasEnUso(PEND_CLAVES, "harmonia"), []);
 });
+prueba("claves: una clave con prefijo o sin campo cuenta igual (12-oct: V11 y V12 no se contaban)", () => {
+  const l = letrasEnUso([{ id: "t:V10", proyecto: "t", clave: "V10" }, { id: "t:V12", proyecto: "t", clave: "t:V12" },
+    { id: "t:V13", proyecto: "t" }, { id: "t:reportes-2", proyecto: "t", clave: "reportes-2" }], "t");
+  assert.deepEqual(l.map((x) => x.proxima), ["V14"]);
+});
 
 /* ── El orden ────────────────────────────────────────────────────────────── */
 titulo("El orden de los abiertos");

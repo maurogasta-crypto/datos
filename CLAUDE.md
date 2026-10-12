@@ -238,7 +238,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (69 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (115 casos, sin npm ni red) para la ronda de apertura, que desde el
+  (116 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como

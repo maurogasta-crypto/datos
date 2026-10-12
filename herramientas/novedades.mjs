@@ -72,7 +72,7 @@ export const vistoVacio = () => ({ reservas: [], actividades: [], reportes: [], 
  * Lo puro: con los datos y lo ya visto, qué hay de nuevo. No lee ni escribe.
  * Devuelve { items: [{clase, texto}], visto (actualizado), primera }.
  */
-export function armarNovedades({ reservas = [], actividades = [], cabanas = [], reportes = [], mensajes = [] }, vistoIn, hoy, { para = "", ahora = Date.now(), latido = "", fallaLatido = "" } = {}) {
+export function armarNovedades({ reservas = [], actividades = [], cabanas = [], reportes = [], mensajes = [] }, vistoIn, hoy, { para = "", ahora = Date.now(), latido = "", fallaLatido = "", resueltos = new Set() } = {}) {
   const primera = !vistoIn;
   const visto = { ...vistoVacio(), ...(vistoIn || {}) };
   const ya = (k, id) => visto[k].includes(id);
@@ -115,6 +115,9 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
     // Lo que pidió la misma persona que recibe no es una novedad para ella
     // (30-sep: la primera ronda le mandó a Mauro sus propios cinco pedidos).
     if (para && String(rp.nombre || "").trim().toLowerCase() === para.toLowerCase()) continue;
+    // Lo que ya quedó resuelto en el panel no es novedad (12-oct, Mauro: «que
+    // no mande lo ya resuelto»): le llegaban cinco pedidos hechos el día antes.
+    if (resueltos.has(`${rp.base}:reportes/${rp.id}`)) continue;
     const tipo = rp.tipo === "pedido" ? "Pedido" : "Falla";
     // Lo mandado desde la app del teléfono dice «Pizarra»: es como Mauro la nombra (avisos-5).
     const sitio = rp.base === "tiempos" && rp.pagina === "pizarra" ? "pizarra" : rp.base;
@@ -162,6 +165,27 @@ const ORDEN = ["telefono", "reporte", "entrada", "salida", "reserva", "tarea", "
 
 /* El texto del WhatsApp: en el orden de lo que más apura, y sin pasar el tope.
    Si no entra, se dice cuántas cosas más hay: nunca se corta en silencio. */
+/* Los reportes que el panel ya da por resueltos: el `origen` de un pendiente
+   hecho o retirado, y los que su historia nombra (un pendiente puede juntar
+   dos reportes, como tiempos:A26). */
+export function reportesResueltos(pendientes = []) {
+  const r = new Set();
+  for (const p of pendientes) {
+    if (!p || !["hecho", "retirado"].includes(p.estado)) continue;
+    if (p.origen) r.add(String(p.origen));
+    const base = String(p.origen || "").split(":")[0];
+    if (!base) continue;
+    // «reportes/f2Fy… y 6h4A…»: el segundo id va sin prefijo. Un id de
+    // Firestore son 20 letras y números; se toman sólo en un renglón que
+    // nombra reportes/.
+    for (const h of p.historia || []) {
+      const t = String(h && h.texto || "");
+      if (t.includes("reportes/")) for (const m of t.matchAll(/(?<![A-Za-z0-9])[A-Za-z0-9]{20}(?![A-Za-z0-9])/g)) r.add(`${base}:reportes/${m[0]}`);
+    }
+  }
+  return r;
+}
+
 /* De qué sitios habla: va al título del WhatsApp (avisos-5), en el orden en
    que aparecen las líneas. */
 export function sitiosDe(items) {
@@ -215,7 +239,15 @@ export async function novedades({ a = "Mauro", bodega, seco = false } = {}) {
     const l = JSON.parse(fs.readFileSync(path.join(bodega, "latido.json"), "utf8"));
     latido = String(l.ultimo || ""); fallaLatido = String(l.falla || "");
   } catch { latido = ""; }
-  const r = armarNovedades({ reservas, actividades, cabanas, reportes, mensajes: leerMensajes(bodega) }, visto, hoy, { para: a, latido, fallaLatido });
+  // El panel dice qué ya está resuelto. Si no contesta, se sigue: mejor una
+  // novedad de más que ninguna.
+  let resueltos = new Set();
+  try {
+    const cp = F.PROYECTOS.panel, sp = await F.entrarSuave(cp);
+    if (sp.ok) resueltos = reportesResueltos(await F.listar(cp, sp.sesion, "pendientes"));
+    else fuentes.push("panel: no entró (" + sp.motivo + ")");
+  } catch (e) { fuentes.push("panel: " + e.message); }
+  const r = armarNovedades({ reservas, actividades, cabanas, reportes, mensajes: leerMensajes(bodega) }, visto, hoy, { para: a, latido, fallaLatido, resueltos });
   const salida = { primera: r.primera, items: r.items, fuentes, texto: r.items.length ? textoNovedades(r.items) : "" };
   if (seco) return { ...salida, enviado: null };
   let enviado = null;

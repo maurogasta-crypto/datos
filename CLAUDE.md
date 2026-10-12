@@ -249,8 +249,9 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (44 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
-  manda; `node pruebas/herramientas/novedades.mjs` (19 casos) para las novedades
-  que se le mandan a Mauro, que prueba que nada se avise dos veces; `node
+  manda; `node pruebas/herramientas/novedades.mjs` (20 casos) para las novedades
+  que se le mandan a Mauro, que prueba que nada se avise dos veces ni se avise
+  lo que el panel ya da por resuelto; `node
   pruebas/herramientas/ingresos.mjs` (8 casos) para los ingresos de la familia
   que se proponen a Tiempos desde Casa Verde y remate, que prueba sobre todo lo
   que NO propone; `node pruebas/herramientas/analisis.mjs` (13 casos) para el

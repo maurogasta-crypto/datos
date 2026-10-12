@@ -9,7 +9,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import assert from "node:assert/strict";
-import { armarNovedades, textoNovedades, limpiarParaAviso, vistoVacio, sitiosDe } from "../../herramientas/novedades.mjs";
+import { armarNovedades, textoNovedades, limpiarParaAviso, vistoVacio, sitiosDe, reportesResueltos } from "../../herramientas/novedades.mjs";
 import { validarTexto, LARGO_MAX, TEMAS, armarMensaje } from "../../herramientas/avisos.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -153,6 +153,17 @@ prueba("el título dice de qué sitio se habla: Tiempos, la Pizarra o Casa Verde
   assert.match(armarMensaje("casaverde", "novedades", textoNovedades(soloT.items), sitiosDe(soloT.items)), /^🔔 Claude · Tiempos y Pizarra\n/);
   const mezcla = armarNovedades({ ...base, reservas: [...base.reservas, R("r9", "2026-12-01", "2026-12-05")], reportes: [rep("c", "plata")] }, v, HOY);
   assert.deepEqual(sitiosDe(mezcla.items), ["tiempos", "casaverde"], "en el orden de las líneas");
+});
+prueba("lo ya resuelto en el panel no se manda, aunque el reporte siga «nuevo»", () => {
+  const v = armarNovedades(base, null, HOY).visto;
+  const rep = (id) => ({ id, base: "tiempos", tipo: "pedido", estado: "nuevo", nombre: "Florencia", texto: "algo" });
+  const pend = [
+    { estado: "hecho", origen: "tiempos:reportes/AAAAAAAAAAAAAAAAAAAA", historia: [{ texto: "unidos: reportes/AAAAAAAAAAAAAAAAAAAA y BBBBBBBBBBBBBBBBBBBB" }] },
+    { estado: "abierto", origen: "tiempos:reportes/CCCCCCCCCCCCCCCCCCCC" }];
+  const res = reportesResueltos(pend);
+  const r = armarNovedades({ ...base, reportes: ["AAAAAAAAAAAAAAAAAAAA", "BBBBBBBBBBBBBBBBBBBB", "CCCCCCCCCCCCCCCCCCCC", "DDDDDDDDDDDDDDDDDDDD"].map(rep) }, v, HOY, { resueltos: res });
+  assert.equal(r.items.length, 2, "el abierto y el que no tiene pendiente sí van");
+  assert.ok(r.visto.reportes.includes("tiempos/AAAAAAAAAAAAAAAAAAAA"), "lo resuelto queda visto: no vuelve");
 });
 prueba("«novedades» es un tema de avisos.mjs", () => assert.ok(TEMAS.novedades));
 

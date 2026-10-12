@@ -13,8 +13,8 @@ coinciden, manda el archivo.
 
 | Pieza | Repositorio | Versión | Último cambio |
 |---|---|---|---|
-| **Tiempos** (app web de la familia) | `maurogasta-crypto/tiempos` | `app-31` · `nucleo-36` · `sw tiempos-51` · reglas **v14** | 12-oct: el reloj sólo en lo que se cobra; los chicos se cuentan por el calendario; cada uno ordena sus tareas (app-30); la agenda de piezas (agenda-13) |
-| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-19` | 12-oct: un solo lápiz en el widget |
+| **Tiempos** (app web de la familia) | `maurogasta-crypto/tiempos` | `app-32` · `nucleo-36` · `sw tiempos-52` · reglas **v14** | 12-oct: `?solapa=agenda` para el widget; el reloj sólo en lo que se cobra; los chicos se cuentan por el calendario; cada uno ordena sus tareas (app-30); la agenda de piezas (agenda-13) |
+| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-20` | 12-oct: DOS widgets, la pizarra y «Mi agenda» (la semana de quien entró); un solo lápiz |
 | **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `nucleo-avisos-17` · `sw cv2-shell-v116` | 11-oct: el ojo 👁 en las contraseñas |
 | **CasaYourte** | `casayourte/casayourte` | `nucleo-28` · `sw cy-shell-v61` | 11-oct: el ojo 👁 |
 | **remateTaller** | `rematetaller/remate` | `utils v1.23` · reglas v1.2 en el repo | 11-oct (tanda 35): el ojo 👁 |

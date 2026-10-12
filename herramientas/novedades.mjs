@@ -28,7 +28,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { avisar, taparNumeros, hoyMontevideo, validarTexto, LARGO_MAX } from "./avisos.mjs";
 
-export const VERSION = "novedades-3";
+export const VERSION = "novedades-4";   // 12-oct: título por sitio (avisos-5) y sin lo ya resuelto
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 export const PANEL = "https://maurogasta-crypto.github.io/datos/";
 export const CV_INTERNO = "https://casaverdecanas.com.br/interno/";

@@ -604,6 +604,7 @@ regla que sólo llega si alguien se acordó de algo no es una regla.
 | `protocolos/PROTOCOLO-AVISOS.md` | cuándo y cómo el agente le escribe a una persona por WhatsApp (CallMeBot), desde el 30-sep-2026, y el buzón de la Pizarra con su guía de instalación (§ 6 bis), desde el 9-oct |
 | `protocolos/PROTOCOLO-PLATA.md` | cómo entra la información de plata a Tiempos y cómo se va afinando: todo lo que llega se evalúa y se incorpora sin repetir, completando lo que había (desde el 11-oct-2026) |
 | `protocolos/ESTADO-DE-LOS-TRES.md` | qué le falta a cada proyecto y qué le puede dar a los otros |
+| `protocolos/ESTADO-ACTUAL.md` | en qué versión está cada pieza hoy y qué encontró la última auditoría (desde el 12-oct-2026); se corrige el renglón de una pieza cuando cambia |
 
 **Y son públicos, a propósito.** GitHub Pages los sirve en texto plano a
 cualquiera que sepa la dirección, igual que los `.md` de `interno/` en remate y

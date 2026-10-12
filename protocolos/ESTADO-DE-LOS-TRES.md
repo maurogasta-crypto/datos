@@ -3,6 +3,8 @@
 Relevamiento hecho el **2026-09-07**, leyendo los tres repositorios en una sola
 sesión (posible desde hoy, ver `PROTOCOLO-GENERAL.md` § 4). Es una foto: cuando
 algo de acá se implemente, se actualiza esta tabla en la misma tanda.
+**En qué versión está cada pieza hoy**, y la última auditoría, está en
+`ESTADO-ACTUAL.md`.
 
 **Para qué sirve este documento:** los tres proyectos resolvieron los mismos
 problemas por separado, y cada uno resolvió bien algo que a los otros dos les

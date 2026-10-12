@@ -44,7 +44,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
-export const VERSION = "avisos-4";
+export const VERSION = "avisos-5";
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /* La función de Netlify de Casa Verde es el puente de TODO el ecosistema. No se
@@ -113,13 +113,34 @@ export function validarTexto(texto) {
   return { ok: motivos.length === 0, motivos };
 }
 
-/* Lo que llega al teléfono. El encabezado dice que es Claude y de qué sitio:
+/* Lo que llega al teléfono. El encabezado dice que es Claude y DE QUÉ HABLA:
    quien lo recibe tiene derecho a saber que lo escribió una IA, y un aviso sin
-   sitio obliga a adivinar de dónde viene. El pie dice cómo apagarlo. */
+   sitio obliga a adivinar de dónde viene. El pie dice cómo apagarlo, que es
+   otra cosa: dónde vive el número de esa persona.
+   avisos-5 (12-oct-2026, Mauro: «las notificaciones deberían llegar indicando
+   el título del que se informa»): hasta acá el título era la BASE por la que
+   sale —«Casa Verde»— aunque se hablara de Tiempos o de la Pizarra. Ahora el
+   título es `sobre` (uno o varios: «tiempos», ["tiempos", "casaverde"]…) y la
+   base queda sólo en el pie. */
+export const NOMBRES = { casaverde: "Casa Verde", casayourte: "CasaYourte", remate: "remateTaller", tiempos: "Tiempos",
+  pizarra: "Pizarra", hilux: "Hilux", gestos: "gestos", harmonia: "Harmonía", panel: "el panel", datos: "el panel", partitura: "partitura" };
+export const nombreDe = (k) => NOMBRES[String(k).toLowerCase()] || String(k);
+export function tituloDe(base, sobre) {
+  const lista = [...new Set((Array.isArray(sobre) ? sobre : sobre ? [sobre] : [base]).filter(Boolean).map(nombreDe))];
+  if (!lista.length) return BASES[base].sitio;
+  return lista.length === 1 ? lista[0] : lista.slice(0, -1).join(", ") + " y " + lista[lista.length - 1];
+}
+/* En el buzón `sitio` es un ID: la Pizarra arma con él el canal de Android y
+   el título de la notificación (Avisos.kt). Va el PRIMERO de lo que se habla;
+   la Pizarra es la app de Tiempos, y el panel tiene un solo nombre. */
+const CANAL = { pizarra: "tiempos", datos: "panel" };
+export function canalDe(base, sobre) {
+  const k = String((Array.isArray(sobre) ? sobre[0] : sobre) || base).toLowerCase();
+  return CANAL[k] || k;
+}
 export function armarMensaje(base, tema, texto, sobre) {
   const b = BASES[base];
-  const de = sobre && sobre !== base ? `${b.sitio} (${sobre})` : b.sitio;
-  return `${ICONO[tema] || "🤖"} Claude · ${de}\n${String(texto).trim()}\n— aviso automático; se apaga en ${b.pantalla}`;
+  return `${ICONO[tema] || "🤖"} Claude · ${tituloDe(base, sobre)}\n${String(texto).trim()}\n— aviso automático; se apaga en ${b.pantalla}`;
 }
 
 /* Lee la respuesta de CallMeBot DE VERDAD. Es la misma lectura que
@@ -292,7 +313,7 @@ export async function aBuzon({ base, a, tema, texto, sobre, seco = false }) {
     if (!b.ok) continue;
     if (seco) return { ok: true, casa, a: b.persona.nombre, seco: true };
     const dia = hoyMontevideo();
-    const r = await F.crearAviso(cfg, s.sesion, idAviso(b.persona.id, tema, texto, dia), { uid: b.persona.id, sitio: sobre || base,
+    const r = await F.crearAviso(cfg, s.sesion, idAviso(b.persona.id, tema, texto, dia), { uid: b.persona.id, sitio: canalDe(base, sobre),
       tema, texto: String(texto).trim(), creadoEn: { $timestamp: new Date().toISOString() }, leido: false });
     return { ...r, casa, a: b.persona.nombre };
   }
@@ -306,6 +327,8 @@ export async function aBuzon({ base, a, tema, texto, sobre, seco = false }) {
  * defecto: espera el minuto de CallMeBot en vez de rechazar).
  */
 export async function avisar({ base, a, tema, texto, sobre, bodega, seco = false, esperar = true, conexion, buzon }) {
+  // «enviar tiempos» sale por Casa Verde, pero habla de Tiempos (avisos-5).
+  if (!sobre && ALIAS[base]) sobre = base;
   base = baseDe(base);
   if (!TEMAS[tema]) throw new Error(`tema desconocido «${tema}». Temas: ${Object.keys(TEMAS).join(", ")}`);
   const v = validarTexto(texto);
@@ -344,7 +367,7 @@ export async function avisar({ base, a, tema, texto, sobre, bodega, seco = false
     await dormir(falta);
   }
   const r = await mandarPorElPuente(c.contacto, mensaje);
-  const archivo = anotar(bodega, { en: new Date().toISOString(), base, sobre: sobre || base, a: p.nombre, uid: p.id,
+  const archivo = anotar(bodega, { en: new Date().toISOString(), base, sobre: sobre ? [].concat(sobre).join("+") : base, a: p.nombre, uid: p.id,
     tema, texto: String(texto).trim(), intentado: true, ok: r.ok, motivo: r.motivo, detalle: String(r.detalle || "").slice(0, 240),
     huella: h, version: VERSION, app: app.ok ? (app.nuevo === false ? "ya estaba" : "buzón de " + app.casa) : "no" });
   return conApp({ ok: r.ok, motivo: r.motivo, detalle: r.detalle, a: p.nombre, archivo });

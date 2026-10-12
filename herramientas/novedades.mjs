@@ -82,18 +82,18 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
 
   // Reservas nuevas (las que el sitio todavía no tenía la vez pasada).
   for (const r of vivas.filter((r) => r.checkOut >= hoy)) {
-    if (!ya("reservas", r.id)) items.push({ clase: "reserva",
+    if (!ya("reservas", r.id)) items.push({ clase: "reserva", sitio: "casaverde",
       texto: `Reserva nueva: ${nombreHuesped(r)} · ${nombreCabana(cabanas, r.cabanaId)} · ${ddmm(r.checkIn)}–${ddmm(r.checkOut)}` });
     anotar("reservas", r.id);
   }
   // Check-in y check-out de hoy y mañana, una vez cada uno.
   for (const r of vivas) {
     if ((r.checkIn === hoy || r.checkIn === sumarDias(hoy, 1)) && !ya("entradas", r.id)) {
-      items.push({ clase: "entrada", texto: `Llega ${cuando(r.checkIn, hoy)}: ${nombreHuesped(r)} · ${nombreCabana(cabanas, r.cabanaId)}` });
+      items.push({ clase: "entrada", sitio: "casaverde", texto: `Llega ${cuando(r.checkIn, hoy)}: ${nombreHuesped(r)} · ${nombreCabana(cabanas, r.cabanaId)}` });
       anotar("entradas", r.id);
     }
     if ((r.checkOut === hoy || r.checkOut === sumarDias(hoy, 1)) && !ya("salidas", r.id)) {
-      items.push({ clase: "salida", texto: `Sale ${cuando(r.checkOut, hoy)}: ${nombreHuesped(r)} · ${nombreCabana(cabanas, r.cabanaId)}` });
+      items.push({ clase: "salida", sitio: "casaverde", texto: `Sale ${cuando(r.checkOut, hoy)}: ${nombreHuesped(r)} · ${nombreCabana(cabanas, r.cabanaId)}` });
       anotar("salidas", r.id);
     }
   }
@@ -104,7 +104,7 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
     anotar("actividades", a.id);
     if (a.eliminado || String(a.id).startsWith("limp-") || a.estado === "finalizada") continue;
     if (para && String(a.creadoNombre || "").toLowerCase() === para.toLowerCase()) continue;
-    items.push({ clase: "tarea", texto: `Tarea nueva: ${limpiarParaAviso(a.titulo, 50)}${a.creadoNombre ? ` (de ${limpiarParaAviso(a.creadoNombre, 20)})` : ""}` });
+    items.push({ clase: "tarea", sitio: "casaverde", texto: `Tarea nueva: ${limpiarParaAviso(a.titulo, 50)}${a.creadoNombre ? ` (de ${limpiarParaAviso(a.creadoNombre, 20)})` : ""}` });
   }
   // Pedidos y fallas de los sitios.
   for (const rp of reportes) {
@@ -116,7 +116,9 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
     // (30-sep: la primera ronda le mandó a Mauro sus propios cinco pedidos).
     if (para && String(rp.nombre || "").trim().toLowerCase() === para.toLowerCase()) continue;
     const tipo = rp.tipo === "pedido" ? "Pedido" : "Falla";
-    items.push({ clase: "reporte", texto: `${tipo} en ${NOMBRE_BASE[rp.base] || rp.base}${rp.nombre ? ` (${limpiarParaAviso(rp.nombre, 20)})` : ""}: «${limpiarParaAviso(rp.texto, 60)}»` });
+    // Lo mandado desde la app del teléfono dice «Pizarra»: es como Mauro la nombra (avisos-5).
+    const sitio = rp.base === "tiempos" && rp.pagina === "pizarra" ? "pizarra" : rp.base;
+    items.push({ clase: "reporte", sitio, texto: `${tipo} en ${sitio === "pizarra" ? "la Pizarra" : NOMBRE_BASE[rp.base] || rp.base}${rp.nombre ? ` (${limpiarParaAviso(rp.nombre, 20)})` : ""}: «${limpiarParaAviso(rp.texto, 60)}»` });
   }
   // Mensajes que llegaron desde el último aviso, por chat.
   const nuevos = mensajes.filter((m) => m && String(m.captado || "") > (visto.mensajesHasta || "") && !NO_ES_UN_CHAT.test(`${m.chat} ${m.texto}`));
@@ -125,7 +127,7 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
      veces un título («Nueva reserva confirmada», «Podrías ganar…», que trae
      plata): por eso se cuentan y no se nombran. */
   const deAirbnb = nuevos.filter((m) => m.app === "airbnb");
-  if (deAirbnb.length) items.push({ clase: "mensajes", texto: `Mensajes nuevos de Airbnb: ${deAirbnb.length}` });
+  if (deAirbnb.length) items.push({ clase: "mensajes", sitio: "casaverde", texto: `Mensajes nuevos de Airbnb: ${deAirbnb.length}` });
   const ultimo = mensajes.map((m) => String(m.captado || "")).sort().pop();
   if (ultimo && ultimo > (visto.mensajesHasta || "")) visto.mensajesHasta = ultimo;
 
@@ -139,11 +141,11 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
   /* Y si late pero no puede leer (`falla` en el latido), eso es lo primero:
      el teléfono está vivo y trabado, y la falla dice qué tocar. */
   if (latido && fallaLatido && visto.telefonoAvisado !== latido) {
-    items.push({ clase: "telefono", texto: `El teléfono no puede leer Airbnb: ${limpiarParaAviso(fallaLatido, 110)}` });
+    items.push({ clase: "telefono", sitio: "pizarra", texto: `El teléfono no puede leer Airbnb: ${limpiarParaAviso(fallaLatido, 110)}` });
     visto.telefonoAvisado = latido;
   } else if (latido && ahora - Date.parse(latido) > 26 * 3600e3 && visto.telefonoAvisado !== latido) {
     const h = Math.round((ahora - Date.parse(latido)) / 3600e3);
-    items.push({ clase: "telefono", texto: `El teléfono no lee Airbnb hace ${h} h: abrí la Pizarra → «📬 Mensajes de Airbnb» y mirá qué dice (o tocá «Subir ahora»)` });
+    items.push({ clase: "telefono", sitio: "pizarra", texto: `El teléfono no lee Airbnb hace ${h} h: abrí la Pizarra → «📬 Mensajes de Airbnb» y mirá qué dice (o tocá «Subir ahora»)` });
     visto.telefonoAvisado = latido;
   }
 
@@ -160,6 +162,13 @@ const ORDEN = ["telefono", "reporte", "entrada", "salida", "reserva", "tarea", "
 
 /* El texto del WhatsApp: en el orden de lo que más apura, y sin pasar el tope.
    Si no entra, se dice cuántas cosas más hay: nunca se corta en silencio. */
+/* De qué sitios habla: va al título del WhatsApp (avisos-5), en el orden en
+   que aparecen las líneas. */
+export function sitiosDe(items) {
+  const ord = [...items].sort((a, b) => ORDEN.indexOf(a.clase) - ORDEN.indexOf(b.clase));
+  return [...new Set(ord.map((i) => i.sitio || "casaverde"))];
+}
+
 export function textoNovedades(items) {
   const ord = [...items].sort((a, b) => ORDEN.indexOf(a.clase) - ORDEN.indexOf(b.clase));
   const pie = `\nDetalle: ${PANEL}`;
@@ -213,7 +222,7 @@ export async function novedades({ a = "Mauro", bodega, seco = false } = {}) {
   if (r.items.length) {
     const v = validarTexto(salida.texto);
     if (!v.ok) throw new Error("el texto armado no pasa el control: " + v.motivos.join("; "));
-    enviado = await avisar({ base: "casaverde", a, tema: "novedades", texto: salida.texto, bodega });
+    enviado = await avisar({ base: "casaverde", a, tema: "novedades", texto: salida.texto, sobre: sitiosDe(r.items), bodega });
   }
   // Lo visto se guarda si no había nada que mandar o si salió. Si el envío
   // falló, NO: la próxima corrida lo vuelve a intentar con lo mismo.

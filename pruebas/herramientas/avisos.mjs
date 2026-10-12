@@ -14,7 +14,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { validarTexto, armarMensaje, leerRespuesta, buscarPersona, estadoDe, huella, hoyMontevideo,
+import { validarTexto, armarMensaje, canalDe, leerRespuesta, buscarPersona, estadoDe, huella, hoyMontevideo,
          cuantosHoy, leerRegistro, avisar, quienes, baseDe, TEMAS, TOPE_DIA, BASES, PUENTE, idAviso } from "../../herramientas/avisos.mjs";
 import { avisoDeLlegada, textoParaEnviar } from "../../herramientas/reservas.mjs";
 import { PROYECTOS } from "../../herramientas/firestore.mjs";
@@ -103,8 +103,23 @@ await prueba("dice que es Claude, de qué sitio, y cómo se apaga", () => {
   assert.match(m, /^💬 Claude · CasaYourte\n/);
   assert.match(m, /se apaga en CasaYourte → Más → Mis avisos por WhatsApp$/);
 });
-await prueba("con --sobre dice de qué proyecto habla", () => {
-  assert.match(armarMensaje("casaverde", "urgente", "x", "hilux"), /Claude · Casa Verde \(hilux\)/);
+await prueba("con --sobre el TÍTULO es de lo que se habla, y el pie dice dónde se apaga (avisos-5)", () => {
+  const m = armarMensaje("casaverde", "urgente", "x", "hilux");
+  assert.match(m, /^⚠️ Claude · Hilux\n/);
+  assert.match(m, /se apaga en Casa Verde → Mis avisos$/);
+  assert.match(armarMensaje("casaverde", "novedades", "x", "tiempos"), /^🔔 Claude · Tiempos\n/);
+  assert.match(armarMensaje("casaverde", "novedades", "x", ["tiempos", "pizarra", "casaverde"]), /^🔔 Claude · Tiempos, Pizarra y Casa Verde\n/);
+  assert.match(armarMensaje("casaverde", "novedades", "x", ["tiempos", "tiempos"]), /^🔔 Claude · Tiempos\n/, "sin repetir");
+  assert.match(armarMensaje("casaverde", "novedades", "x"), /^🔔 Claude · Casa Verde\n/, "sin sobre, el de siempre");
+});
+await prueba("el buzón recibe un ID de canal que la Pizarra conoce", () => {
+  assert.equal(canalDe("casaverde", ["pizarra", "casaverde"]), "tiempos");
+  assert.equal(canalDe("casaverde", "hilux"), "hilux");
+  assert.equal(canalDe("casaverde"), "casaverde");
+});
+await prueba("«enviar tiempos» sale por Casa Verde pero se titula Tiempos", () => {
+  const f = fs.readFileSync(new URL("../../herramientas/avisos.mjs", import.meta.url), "utf8");
+  assert.match(f, /if \(!sobre && ALIAS\[base\]\) sobre = base;\s*\n\s*base = baseDe\(base\);/);
 });
 await prueba("entra en el tope del puente (900) con el texto más largo permitido", () => {
   for (const b of Object.keys(BASES)) assert.ok(armarMensaje(b, "resumen", "x".repeat(600), "harmonia").length <= 900, b);

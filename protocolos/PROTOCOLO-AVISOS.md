@@ -91,8 +91,17 @@ el chat:
 
 - **Dice que es Claude.** Quien lo recibe tiene derecho a saber que lo escribió
   una IA, igual que la nota del pedido de CasaYourte lo dice antes de mandar.
-- **Dice de qué sitio**, y de qué proyecto si es otro (`Casa Verde (hilux)`).
-- **Dice cómo apagarlo.** Un aviso que no se puede apagar no es un aviso, es spam.
+- **El título es DE QUÉ SE HABLA, no por dónde sale** (avisos-5, 12-oct-2026,
+  Mauro: «las notificaciones deberían llegar indicando el título del que se
+  informa»). Lo de Tiempos llega como `🔔 Claude · Tiempos` aunque salga por el
+  número cargado en Casa Verde; lo de la Hilux, `⚠️ Claude · Hilux`. Las
+  novedades que mezclan sitios los nombran todos, en el orden de sus líneas
+  (`Claude · Tiempos y Casa Verde`), y lo mandado desde la app del teléfono
+  dice «Pizarra». Lo da `--sobre` (o, en las novedades, el sitio de cada
+  línea); en el buzón de la Pizarra va como ID del canal.
+- **Dice cómo apagarlo**, y eso sí es la base donde vive el número: el pie de
+  un aviso de Tiempos dice «se apaga en Casa Verde → Mis avisos». Un aviso que
+  no se puede apagar no es un aviso, es spam.
 
 **El texto:**
 

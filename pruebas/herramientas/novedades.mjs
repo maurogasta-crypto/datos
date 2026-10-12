@@ -9,8 +9,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import assert from "node:assert/strict";
-import { armarNovedades, textoNovedades, limpiarParaAviso, vistoVacio } from "../../herramientas/novedades.mjs";
-import { validarTexto, LARGO_MAX, TEMAS } from "../../herramientas/avisos.mjs";
+import { armarNovedades, textoNovedades, limpiarParaAviso, vistoVacio, sitiosDe } from "../../herramientas/novedades.mjs";
+import { validarTexto, LARGO_MAX, TEMAS, armarMensaje } from "../../herramientas/avisos.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); }
@@ -143,6 +143,16 @@ prueba("si no entra, se recorta diciendo cuántas faltan, y nunca pasa el tope",
   const t = textoNovedades(items);
   assert.ok(t.length <= LARGO_MAX, String(t.length));
   assert.match(t, /…y \d+ más/);
+});
+prueba("el título dice de qué sitio se habla: Tiempos, la Pizarra o Casa Verde (avisos-5)", () => {
+  const v = armarNovedades(base, null, HOY).visto;
+  const rep = (id, pagina) => ({ id, base: "tiempos", tipo: "pedido", estado: "nuevo", nombre: "Florencia", pagina, texto: "algo" });
+  const soloT = armarNovedades({ ...base, reportes: [rep("a", "agenda"), rep("b", "pizarra")] }, v, HOY);
+  assert.deepEqual(sitiosDe(soloT.items), ["tiempos", "pizarra"]);
+  assert.match(soloT.items[1].texto, /^Pedido en la Pizarra \(Florencia\)/);
+  assert.match(armarMensaje("casaverde", "novedades", textoNovedades(soloT.items), sitiosDe(soloT.items)), /^🔔 Claude · Tiempos y Pizarra\n/);
+  const mezcla = armarNovedades({ ...base, reservas: [...base.reservas, R("r9", "2026-12-01", "2026-12-05")], reportes: [rep("c", "plata")] }, v, HOY);
+  assert.deepEqual(sitiosDe(mezcla.items), ["tiempos", "casaverde"], "en el orden de las líneas");
 });
 prueba("«novedades» es un tema de avisos.mjs", () => assert.ok(TEMAS.novedades));
 

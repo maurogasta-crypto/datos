@@ -1,6 +1,6 @@
 # Estado actual del ecosistema
 
-**Foto del 2026-10-12**, con una auditoría de código hecha el mismo día.
+**Foto del 2026-10-12, al día el 13-oct**, con una auditoría de código hecha el 12.
 `ESTADO-DE-LOS-TRES.md` es la comparación de septiembre entre los tres sitios;
 este documento dice **en qué versión está cada pieza hoy** y qué se encontró
 al revisarla. Cuando una pieza cambie de versión, se corrige su renglón en la
@@ -14,7 +14,7 @@ coinciden, manda el archivo.
 | Pieza | Repositorio | Versión | Último cambio |
 |---|---|---|---|
 | **Tiempos** (app web de la familia) | `maurogasta-crypto/tiempos` | `app-34` · `agenda-17` · `nucleo-37` · `sw tiempos-57` · reglas **v14** | 12-oct: `?solapa=agenda` para el widget; el reloj sólo en lo que se cobra; los chicos se cuentan por el calendario; cada uno ordena sus tareas (app-30); la agenda de piezas (agenda-13) |
-| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-27` | 13-oct: las luces de remate (Entrada y Depósito) arriba del widget de la pizarra, que reaccionan en el acto y quedan tibias de 8 a 23. 12-oct: DOS widgets, la pizarra y «Mi agenda» (la semana de quien entró, con sus alarmas; tocar abre la pieza); en la pizarra el ☐ tacha y el texto abre la tarea; un solo lápiz |
+| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-27` | 13-oct: las luces de remate (Entrada y Depósito) arriba del widget de la pizarra, que reaccionan en el acto y quedan tibias de 8 a 23 — **andando en el teléfono**. 12-oct: DOS widgets, la pizarra y «Mi agenda» (la semana de quien entró, con sus alarmas; tocar abre la pieza); en la pizarra el ☐ tacha y el texto abre la tarea; un solo lápiz |
 | **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `nucleo-avisos-17` · `sw cv2-shell-v116` | 11-oct: el ojo 👁 en las contraseñas |
 | **CasaYourte** | `casayourte/casayourte` | `nucleo-28` · `sw cy-shell-v61` | 11-oct: el ojo 👁 |
 | **remateTaller** | `rematetaller/remate` | `utils v1.23` · reglas v1.2 en el repo | 11-oct (tanda 35): el ojo 👁 |
@@ -99,3 +99,35 @@ coinciden, manda el archivo.
 - **app-31 / nucleo-36**: el reloj sólo en lo que se cobra (Casa Verde, o una
   tarea con «⏱ Lleva reloj»); el tiempo con los chicos sale del calendario,
   en días; las próximas actividades, una fecha por día.
+- **agenda-14 / nucleo-37**: «⏰ Avisarme» en el editor de cualquier pieza de
+  la agenda (alarma o recordatorio, a la hora o un rato antes).
+- **agenda-15**: el aviso sigue a la pieza al editarla y al arrastrarla, y la
+  de los chicos que cambia de día lo lleva a su clave nueva.
+- **app-32 / app-33 / agenda-16 / agenda-17**: Tiempos se puede abrir desde
+  afuera en la Agenda con una pieza abierta (`?solapa=agenda&dia=&abrir=`), en
+  la semana de la pieza y no la del aviso.
+- **app-34**: y en Tareas con una tarea abierta (`?solapa=tareas&abrir=f:<id>`),
+  desplegando lo que la tapa.
+
+---
+
+## 4. Lo que cambió en la Pizarra (12 y 13-oct), en una línea cada uno
+
+- **pizarra-19**: un solo lápiz en el widget (había dos que hacían lo mismo).
+- **pizarra-20 a 22**: el segundo widget, **«Mi agenda»**: la semana de quien
+  entró —actividades, tareas agendadas, lo de los chicos y sus alarmas— y tocar
+  un renglón abre esa pieza en Tiempos; una alarma, la suya.
+- **pizarra-23**: en la pizarra el ☐ tacha y el texto abre la tarea en Tiempos.
+- **pizarra-24**: arriba del widget de la pizarra, **Entrada** y **Depósito**,
+  las luces de remate, con una segunda sesión de remate en ⚙ y el mismo puente
+  y registro que `luces.html`.
+- **pizarra-25**: el toque de las luces en el acto (una orden, sesión guardada,
+  conexión reusada). **Traía un error**: pintaba el botón antes de decidir la
+  orden y mandaba lo que la luz ya tenía.
+- **pizarra-26**: tibia de 8 a 23 (cada 10 min, la sesión al día y el puente
+  despierto, sin tocar Tuya).
+- **pizarra-27**: el arreglo del error de la 25. **Verificado por Mauro en el
+  teléfono el 13-oct: las dos luces prenden y apagan desde el widget.**
+
+Las tandas del panel que lo cuentan: `2026-10-12-tiempos-orden-y-auditoria` y
+`2026-10-13-pizarra-widgets-y-luces`.

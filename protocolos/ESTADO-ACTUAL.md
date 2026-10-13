@@ -73,13 +73,11 @@ coinciden, manda el archivo.
   muestra una imagen rota, y está en la lista del `sw.js`. Nunca estuvo en el
   repositorio. No rompe la instalación, porque el `sw.js` guarda los archivos
   de a uno, pero la lámina del corte del muro no se ve. Hay que subir la imagen.
-- **remate no tiene `README.md`**, y `remate:D1` («remate no tiene README.md»)
-  figura **hecho** en el panel. Su documentación vive en
-  `interno/REMATETALLER-DOCUMENTACION.md`. Si se decidió que alcanza con eso,
-  conviene decirlo en el pendiente; si no, falta escribirlo.
-- **La línea `L-hilux` está tomada desde el 21-sep** por «chat de la app de la
-  Hilux y el panel»: 21 días. Ese chat ya no trabaja ahí. Mientras siga
-  tomada, por regla nadie más la toca. Hay que soltarla en el panel.
+- ~~remate sin `README.md`~~ — **resuelto el 13-oct**: Mauro decidió que
+  queda así (`remate:D1` sigue hecho); la documentación de remate es
+  `interno/REMATETALLER-DOCUMENTACION.md` y su `CLAUDE.md`.
+- ~~La línea `L-hilux` tomada desde el 21-sep~~ — **soltada el 13-oct** a
+  pedido de Mauro; queda abierta y libre.
 - **Lo de la Hilux no se verifica desde la ronda**: pide el SDK de Flutter,
   que no está en el PATH de la sesión. `hilux:S3`, `S4`, `D5` y `E1` esperan
   una sesión con Flutter.

@@ -24,9 +24,10 @@
 //   node herramientas/agenda.mjs ver <persona> [días] [--direcciones]
 //   node herramientas/agenda.mjs mover <persona> <id> <día> <desde> [hasta] --porque "…"
 //   node herramientas/agenda.mjs agregar <persona> <día> <desde> [hasta] --tipo trabajo|tarea|personal|ninos --titulo "…" [--lugar "…"] --porque "…"
+//   node herramientas/agenda.mjs editar <persona> <id> [--titulo "…"] [--nota "…"] [--lugar "…"] --porque "…"
 //   node herramientas/agenda.mjs sacar <persona> <id> --porque "…"
 //   node herramientas/agenda.mjs alerta <persona> <día> <hora> --texto "…" [--tipo alarma|recordatorio] [--sobre <id>]
-//   node herramientas/agenda.mjs correr-alerta <persona> <idAlerta> <día> <hora>
+//   node herramientas/agenda.mjs correr-alerta <persona> <idAlerta> <día> <hora> [--sobre act:<id>] [--antes <min>]
 //   node herramientas/agenda.mjs sacar-alerta <persona> <idAlerta>
 //
 // <persona> es el nombre de `miembros/` (Mauro, Florencia), sin importar
@@ -118,7 +119,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const [, , cmd, ...args] = process.argv;
   const { o, resto } = opciones(args);
   const cfg = PROYECTOS.tiempos;
-  if (!cmd) ex("falta el comando: ver, mover, agregar, sacar, alerta, correr-alerta, sacar-alerta");
+  if (!cmd) ex("falta el comando: ver, mover, agregar, editar, sacar, alerta, correr-alerta, sacar-alerta");
   const s = await entrar(cfg);
   const m = await persona(cfg, s, resto[0]);
 
@@ -178,6 +179,22 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(`  ${cmd === "mover" ? "movida" : "agregada"}: ${act.titulo} → ${h.desde}${h.hf ? "–" + h.hf : ""} (${id})`);
     console.log(`  Ojo con sus alertas: «ver» las lista; «correr-alerta» las corre.`);
 
+  } else if (cmd === "editar") {
+    // 13-oct-2026: el título, la nota y el lugar de una actividad, sin tocar
+    // el horario (eso es «mover») ni su marca, que no lleva título.
+    const ag = await agendaDe(cfg, s, m);
+    const porque = sello(o.porque);
+    if (!porque) ex("falta --porque");
+    const id = resto[1], act = (ag.actividades || {})[id];
+    if (!act) ex(`no hay una actividad «${id}» en la agenda de ${m.nombre}.`);
+    const cambios = [];
+    if (typeof o.titulo === "string" && o.titulo.trim()) cambios.push([["actividades", id, "titulo"], o.titulo.trim().slice(0, 120)]);
+    if (typeof o.nota === "string") cambios.push([["actividades", id, "nota"], o.nota.trim().slice(0, 300)]);
+    if (typeof o.lugar === "string") cambios.push([["actividades", id, "lugar"], o.lugar.trim().slice(0, 120)]);
+    if (!cambios.length) ex("nada para cambiar: --titulo, --nota o --lugar");
+    await fusionarRutas(cfg, s, "agendas", m.id, [...cambios, [["actividades", id, "claude"], porque], [["actualizadoEn"], ahoraISO()]]);
+    console.log(`  editada: ${cambios.map((c) => c[0][2]).join(", ")} de «${act.titulo}» (${id})`);
+
   } else if (cmd === "sacar") {
     const ag = await agendaDe(cfg, s, m);
     if (!sello(o.porque)) ex("falta --porque");
@@ -209,7 +226,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       if (!DIA_RE.test(String(dia)) || !HORA_RE.test(String(hora))) ex("falta el día (AAAA-MM-DD) y la hora (HH:MM)");
       // Sólo el día y la hora, y `avisada` vuelve a false para que suene de
       // nuevo: lo mismo que el ✎ de la app.
-      await fusionar(cfg, s, "alertas", id, { dia, hora, avisada: false });
+      const extra = {};
+      // La pieza de la agenda a la que pertenece (la clave de agenda.js de
+      // Tiempos) y cuántos minutos antes suena: con eso se corre con ella.
+      if (o.sobre) { if (!/^(act:|f:|cv:|ev:)/.test(o.sobre)) ex("--sobre es la clave de una pieza: act:<id>, f:<id>, cv:<id> o ev:<id>|<día>"); extra.sobre = o.sobre; }
+      if (o.antes !== undefined) { const n = Number(o.antes); if (!Number.isInteger(n) || n < 0 || n > 2880) ex("--antes son minutos, de 0 a 2880"); extra.antes = n; }
+      await fusionar(cfg, s, "alertas", id, { dia, hora, avisada: false, ...extra });
       console.log(`  corrida: ${al.texto} → ${dia} ${hora}`);
     }
 

@@ -519,6 +519,14 @@ panel de acceso».
   proyecto», y en `obra.html` lo ve **sin poder cambiarlo** (la regla v6 sólo
   le deja leer los suyos, de a uno). Quien pide acceso se avisa arriba de
   Pendientes y en la pestaña («Puerta · 1»).
+- **Y lo EDITA si Mauro le marca «✎ puede editar»** (`obra-6`, `panel-41`,
+  **reglas v7**): la ficha del invitado lleva `edita` con los proyectos que
+  puede cambiar; la regla le deja tocar SÓLO el campo `obra` (y
+  `actualizadoEn`) de un proyecto con `clase: "obra"` que esté en esa lista.
+  Probado contra el emulador (`pruebas/panel/reglas-emulador.mjs`).
+- **La página del invitado se instala como app** (`invitado-5`): trae el
+  manifiesto y el service worker del panel, y ofrece «Instalar» (o explica
+  cómo, en iPhone y desde el menú del navegador).
 - **Un gasto se carga con la foto de la factura** (`obra-4`, `nucleo-9`), como
   en Tiempos: «📷 Gasto con foto» abre la ficha con la foto primero; la IA
   (`P.leerFactura`, la `claude-proxy` del Netlify de Casa Verde) completa lo
@@ -552,12 +560,12 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-9` |
-| `index.html` | `P.PANEL` | `panel-40` |
-| `invitado.html` | `P.PANEL` | `invitado-4` |
-| `obra.html` | `P.PANEL` | `obra-5` |
+| `index.html` | `P.PANEL` | `panel-41` |
+| `invitado.html` | `P.PANEL` | `invitado-5` |
+| `obra.html` | `P.PANEL` | `obra-6` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v34` |
+| `sw.js` | `VERSION` | `panel-shell-v35` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

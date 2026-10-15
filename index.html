@@ -485,7 +485,8 @@
     <p class="gris">Quien entra a <span class="mono" id="linkInvitado"></span> crea su cuenta y pide
       acceso; acá lo aprobás y marcás qué <b>aplicaciones</b> y qué <b>proyectos</b> ve. Lo cambiás
       cuando quieras con «Guardar». En las aplicaciones ve los pendientes, pide con captura, comenta y
-      <b>sólo ve</b> sus claves; los proyectos (General Flores…) los ve sin poder cambiarlos.</p>
+      <b>sólo ve</b> sus claves. Un proyecto (General Flores…) lo ve, y con «✎ puede editar» también
+      carga gastos, trabajos, documentos y lo demás (necesita las reglas <b>v7</b> publicadas).</p>
     <div class="fila-btn"><button class="btn" id="btnCopiarInvitado">Copiar el link para invitados</button></div>
     <div id="personas"><p class="gris">Leyendo…</p></div>
     <h2 style="margin-top:1.6rem">Las reglas</h2>
@@ -555,7 +556,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-40";
+P.PANEL = "panel-41";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -768,10 +769,16 @@ async function pintarPersonas() {
       + P.esc(pr.nombre || pr.id) + "</label>";
     /* Aplicaciones y proyectos (las obras) por separado: el panel mismo no se
        ofrece, que es de Mauro. */
-    const casillas = (uid, marcados) => {
+    /* panel-41 (reglas v7): de un PROYECTO se elige además si lo EDITA. La
+       casilla ✎ escribe `edita` de la ficha; sin «ve», no edita. */
+    const edicion = (uid, edita) => (pr) =>
+      '<label class="mini" style="display:inline-flex;gap:.3rem;align-items:center"><input type="checkbox" data-edita="'
+      + P.esc(uid) + '" value="' + P.esc(pr.id) + '"' + ((edita || []).includes(pr.id) ? " checked" : "") + "> ✎ puede editar</label>";
+    const casillas = (uid, marcados, edita) => {
       const apps = PROYECTOS.filter((pr) => pr.clase !== "obra" && pr.id !== "panel"), obras = PROYECTOS.filter((pr) => pr.clase === "obra");
       return '<p class="gris" style="margin:.4rem 0 .1rem;width:100%">Aplicaciones</p>' + apps.map(casilla(uid, marcados)).join(" ")
-        + (obras.length ? '<p class="gris" style="margin:.6rem 0 .1rem;width:100%">Proyectos</p>' + obras.map(casilla(uid, marcados)).join(" ") : "");
+        + (obras.length ? '<p class="gris" style="margin:.6rem 0 .1rem;width:100%">Proyectos</p>'
+          + obras.map((pr) => '<span style="display:flex;gap:.4rem;flex-wrap:wrap;width:100%">' + casilla(uid, marcados)(pr) + edicion(uid, edita)(pr) + "</span>").join("") : "");
     };
     let h = "";
     so.forEach((d) => {
@@ -787,7 +794,7 @@ async function pintarPersonas() {
       const x = d.data();
       h += '<div class="tarj"><div class="k">' + (x.activo ? "Entra" : "Pausado") + "</div><p><b>" + P.esc(x.nombre || d.id)
         + "</b> · " + P.esc(x.mail || "") + "</p>"
-        + '<div class="fila-btn" style="flex-wrap:wrap">' + casillas(d.id, x.proyectos) + "</div>"
+        + '<div class="fila-btn" style="flex-wrap:wrap">' + casillas(d.id, x.proyectos, x.edita) + "</div>"
         + '<div class="fila-btn"><button class="btn" data-pausar="' + P.esc(d.id) + '" data-activo="' + (x.activo ? "1" : "") + '">'
         + (x.activo ? "Pausar" : "Volver a dejarlo entrar") + '</button><button class="btn p" data-guardar-persona="' + P.esc(d.id)
         + '">Guardar proyectos</button></div></div>';
@@ -797,12 +804,14 @@ async function pintarPersonas() {
     caja.innerHTML = h || '<p class="gris">Nadie todavía. Mandá el link y, cuando la persona pida acceso, aparece acá.</p>';
   } catch (e) { caja.innerHTML = '<p class="gris">' + P.esc(P.explicar(e)) + " (¿publicaste las reglas v6?)</p>"; return; }
   const marcados = (uid) => [...caja.querySelectorAll("[data-proy]:checked")].filter((i) => i.dataset.proy === uid).map((i) => i.value);
+  const editables = (uid) => { const ve = marcados(uid);
+    return [...caja.querySelectorAll("[data-edita]:checked")].filter((i) => i.dataset.edita === uid && ve.includes(i.value)).map((i) => i.value); };
   caja.querySelectorAll("[data-aprobar]").forEach((b) => b.onclick = async () => {
     const uid = b.dataset.aprobar, proyectos = marcados(uid);
     if (!proyectos.length) return P.aviso("Marcá al menos una aplicación o un proyecto.", "error");
     try {
       await setDoc(doc(db, "personas", uid), { nombre: b.dataset.nombre, mail: b.dataset.mail, proyectos,
-        activo: true, creadoEn: P.hoy() });
+        edita: editables(uid), activo: true, creadoEn: P.hoy() });
       await deleteDoc(doc(db, "solicitudes", uid));
       P.aviso("Aprobado. Al volver a entrar ve sus proyectos.");
       pintarPersonas();
@@ -814,7 +823,7 @@ async function pintarPersonas() {
     catch (e) { P.aviso(P.explicar(e), "error"); }
   });
   caja.querySelectorAll("[data-guardar-persona]").forEach((b) => b.onclick = async () => {
-    try { await setDoc(doc(db, "personas", b.dataset.guardarPersona), { proyectos: marcados(b.dataset.guardarPersona) }, { merge: true });
+    try { await setDoc(doc(db, "personas", b.dataset.guardarPersona), { proyectos: marcados(b.dataset.guardarPersona), edita: editables(b.dataset.guardarPersona) }, { merge: true });
       P.aviso("Guardado."); } catch (e) { P.aviso(P.explicar(e), "error"); }
   });
   caja.querySelectorAll("[data-pausar]").forEach((b) => b.onclick = async () => {

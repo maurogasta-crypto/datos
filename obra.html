@@ -47,7 +47,12 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-5
+  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-6
+
+  Desde obra-6 (reglas v7) un invitado EDITA el proyecto que Mauro le marcó
+  con «✎ puede editar» (`edita` de su ficha): ve los mismos botones que él.
+  La regla le deja tocar sólo el campo `obra` (y `actualizadoEn`) de esa
+  obra; el resto de lo que se le ve sigue siendo sólo para mirar.
 
   Desde obra-5 (15-oct-2026) un INVITADO entra a ver los proyectos que
   Mauro le marcó en «Puerta» (`personas/{uid}.proyectos`). Sólo VE: la regla
@@ -140,7 +145,7 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-9";
 import { doc, getDoc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
-P.PANEL = "obra-5";
+P.PANEL = "obra-6";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;
@@ -187,7 +192,6 @@ async function arrancar() {
   const f = await getDoc(doc(db, "personas", yo.uid)).catch(() => null);
   invitado = f && f.exists() ? f.data() : null;
   if (invitado && invitado.activo !== true) { location.replace("invitado.html"); return; }
-  document.body.classList.toggle("solo-ver", !!invitado);
   if (invitado) $("volverPanel").href = "./invitado.html";
   $("app").classList.remove("hide");
   await leer();
@@ -275,6 +279,7 @@ function unidadHTML(o, u, todos) {
 }
 
 function pintar() {
+  document.body.classList.toggle("solo-ver", !!invitado && !(invitado.edita || []).includes(abierta));
   $("obras").innerHTML = OBRAS.length > 1 && !unidad ? OBRAS.map((o) => `<button class="mini${o.id === abierta ? " p" : ""}" data-obra="${P.esc(o.id)}">${P.esc(o.nombre || o.id)}</button>`).join("") : "";
   const o = OBRAS.find((x) => x.id === abierta);
   if (!o) { $("obra").innerHTML = `<p class="gris">${invitado ? "Todavía no tenés proyectos habilitados." : "Todavía no hay proyectos. Los crea Claude a pedido."}</p>`; enganchar(); return; }

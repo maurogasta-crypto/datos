@@ -2,6 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
+//  v7 · 2026-10-15 · un invitado EDITA los proyectos de inmuebles que Mauro le marca (`edita`)
 //  v6 · 2026-10-06 · entran los INVITADOS: `personas/` y `solicitudes/` (panel:U2)
 //  v5 · 2026-09-14 · entra `lineas/`: en qué se está trabajando y quién
 //  v4 · 2026-09-13 · la bóveda se define por PROPÓSITO, y `fichas/` sale
@@ -210,6 +211,20 @@ service cloud.firestore {
     // Para listar pendientes, la consulta tiene que pedir `proyecto in […]`
     // con los suyos: si no, la base no puede probar que no hay uno ajeno.
     match /proyectos/{id}  { allow read: if persona() && id in susProyectos(); }
+
+    // ── v7 · un invitado EDITA un proyecto de inmueble (General Flores…) ──
+    // Sólo si Mauro se lo marcó en «Puerta» (`edita` de su ficha, que escribe
+    // sólo él), sólo un proyecto con `clase: "obra"`, y tocando SÓLO lo de la
+    // obra: ni el nombre, ni la clase, ni nada de los proyectos de las apps.
+    function editaEste(id) {
+      return id in get(/databases/$(database)/documents/personas/$(request.auth.uid)).data.get('edita', []);
+    }
+    match /proyectos/{id}  {
+      allow update: if persona() && id in susProyectos() && editaEste(id)
+        && resource.data.get('clase', '') == 'obra'
+        && request.resource.data.get('clase', '') == 'obra'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['obra', 'actualizadoEn']);
+    }
     match /pendientes/{id} {
       allow read: if persona() && resource.data.proyecto in susProyectos();
       // Un pedido nuevo: en un proyecto suyo, firmado por él, abierto, para

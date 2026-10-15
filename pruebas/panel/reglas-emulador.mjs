@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
-   reglas-emulador.mjs — las reglas v6 contra el EMULADOR de Firestore.
-   Sello: emulador-1 (panel:U2, 6-oct-2026)
+   reglas-emulador.mjs — las reglas v6 y v7 contra el EMULADOR de Firestore.
+   Sello: emulador-2 (v7: un invitado edita una obra que Mauro le marcó, 15-oct-2026)
 
    pruebas-reglas.mjs lee el TEXTO de las reglas; esto las CORRE, en el
    emulador oficial, con un invitado (Mariano), uno pausado, un extraño, el
@@ -17,7 +17,7 @@
      npx firebase emulators:exec --only firestore --project datos-prueba "node reglas-emulador.mjs"
      rm firebase.json
 
-   El 6-oct-2026: 35 bien, 0 mal.
+   El 6-oct-2026: 35 bien, 0 mal. El 15-oct-2026, con la v7: 47 bien, 0 mal.
    ═══════════════════════════════════════════════════════════ */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
 import { readFileSync } from "node:fs";
@@ -38,6 +38,11 @@ await env.withSecurityRulesDisabled(async (c) => {
   await setDoc(doc(db, "fichas/f1"), { proyecto: "harmonia" });
   await setDoc(doc(db, "fichas/f2"), { proyecto: "casaverde" });
   await setDoc(doc(db, "lineas/L1"), { a: 1 });
+  // v7: Flor ve dos obras y una app; edita SÓLO una de las obras.
+  await setDoc(doc(db, "personas/flor"), { nombre: "Flor", proyectos: ["general-flores", "otra-obra", "harmonia"], edita: ["general-flores", "harmonia"], activo: true });
+  await setDoc(doc(db, "proyectos/general-flores"), { nombre: "General Flores", clase: "obra", obra: { items: {} } });
+  await setDoc(doc(db, "proyectos/otra-obra"), { nombre: "Otra", clase: "obra", obra: {} });
+  await setDoc(doc(db, "proyectos/ajena"), { nombre: "Ajena", clase: "obra", obra: {} });
 });
 const M = env.authenticatedContext("mariano").firestore();
 const B = env.authenticatedContext("baja").firestore();
@@ -83,5 +88,20 @@ await c("Un extraño deja su solicitud", assertSucceeds(setDoc(doc(X, "solicitud
 await c("NO deja solicitud a nombre de otro", assertFails(setDoc(doc(X, "solicitudes/otro"), { nombre: "Ana", mail: "", mensaje: "", creadoEn: "x" })));
 await c("El agente lee personas (para el cupo)", assertSucceeds(getDocs(collection(A, "personas"))));
 await c("El equipo sigue igual: el agente lee todos los pendientes", assertSucceeds(getDocs(collection(A, "pendientes"))));
+// ── v7 ──
+const F = env.authenticatedContext("flor").firestore();
+const gasto = { obra: { items: { i1: { tipo: "gasto", titulo: "Portland", monto: 3450, moneda: "UYU" } } }, actualizadoEn: "2026-10-15" };
+await c("v7 · Flor agrega un gasto a General Flores (con merge)", assertSucceeds(setDoc(doc(F, "proyectos/general-flores"), gasto, { merge: true })));
+await c("v7 · Flor lo marca pagado (updateDoc de una ruta adentro de obra)", assertSucceeds(updateDoc(doc(F, "proyectos/general-flores"), { "obra.items.i1.pagado": true })));
+await c("v7 · NO cambia el nombre del proyecto", assertFails(updateDoc(doc(F, "proyectos/general-flores"), { nombre: "Otro" })));
+await c("v7 · NO le saca la clase obra", assertFails(updateDoc(doc(F, "proyectos/general-flores"), { clase: "app" })));
+await c("v7 · NO borra el proyecto", assertFails(deleteDoc(doc(F, "proyectos/general-flores"))));
+await c("v7 · NO edita una obra que sólo VE", assertFails(setDoc(doc(F, "proyectos/otra-obra"), gasto, { merge: true })));
+await c("v7 · NO edita una obra que no es suya", assertFails(setDoc(doc(F, "proyectos/ajena"), gasto, { merge: true })));
+await c("v7 · NO edita un proyecto de APP aunque figure en `edita`", assertFails(setDoc(doc(F, "proyectos/harmonia"), { obra: { x: 1 } }, { merge: true })));
+await c("v7 · NO crea un proyecto nuevo", assertFails(setDoc(doc(F, "proyectos/nueva"), { nombre: "N", clase: "obra", obra: {} })));
+await c("v7 · NO se agrega permiso de editar", assertFails(updateDoc(doc(F, "personas/flor"), { edita: ["general-flores", "otra-obra"] })));
+await c("v7 · Mariano (sin `edita`) NO edita su proyecto", assertFails(setDoc(doc(M, "proyectos/harmonia"), { obra: {} }, { merge: true })));
+await c("v7 · el agente sigue escribiendo proyectos", assertSucceeds(setDoc(doc(A, "proyectos/general-flores"), { actualizadoEn: "x" }, { merge: true })));
 console.log(`\n${ok} bien, ${mal} mal`);
 await env.cleanup(); process.exit(mal ? 1 : 0);

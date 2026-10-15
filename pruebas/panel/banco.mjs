@@ -1758,10 +1758,14 @@ console.log("\n· Quién entra al panel (panel-40)");
   ok(!$("personas").querySelector('[data-proy="uid-flor"][value="panel"]'), "el panel mismo no se ofrece");
   ok($("piden-acceso").textContent.includes("Flor") && document.querySelector('#nav [data-v="puerta"]').textContent === "Puerta · 1",
      "quien pide acceso se avisa arriba de Pendientes y en la pestaña");
+  ok(!$("personas").querySelector('[data-edita="uid-flor"][value="tiempos"]') && $("personas").querySelector('[data-edita="uid-flor"][value="general-flores"]'),
+     "«✎ puede editar» se ofrece sólo para los proyectos, no para las aplicaciones");
   $("personas").querySelector('[data-proy="uid-flor"][value="general-flores"]').checked = true;
+  $("personas").querySelector('[data-edita="uid-flor"][value="general-flores"]').checked = true;
   $("personas").querySelector('[data-aprobar="uid-flor"]').click(); await esperar(); await esperar();
   ok(BASE.personas["uid-flor"] && BASE.personas["uid-flor"].proyectos.join() === "general-flores" && !BASE.solicitudes["uid-flor"],
      "aprobar con sólo un proyecto crea la ficha con ese proyecto y borra la solicitud");
+  ok((BASE.personas["uid-flor"].edita || []).join() === "general-flores", "y guarda que lo puede editar (`edita`, reglas v7)");
   ok($("piden-acceso").textContent === "" && document.querySelector('#nav [data-v="puerta"]').textContent === "Puerta", "y el aviso se va");
 }
 

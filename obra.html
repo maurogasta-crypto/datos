@@ -34,6 +34,10 @@
   .ob-meta { font-size: .78rem; color: var(--gris); }
   .ob-resumen { display: grid; grid-template-columns: 1fr auto; gap: .15rem .6rem; font-size: .88rem; margin: .2rem 0 .4rem; }
   .ob-resumen .n { text-align: right; font-family: var(--mono); }
+  .ob-unidad { display: flex; gap: .7rem; align-items: center; padding: .7rem .2rem; border-bottom: 1px solid var(--linea); color: var(--texto); text-decoration: none; }
+  .ob-unidad .ic { font-size: 1.6rem; } .ob-unidad .tx { flex: 1; min-width: 0; }
+  .ob-unidad small { display: block; font-size: .82rem; } .ob-unidad .ir { color: var(--gris); font-size: 1.4rem; }
+  .ob-sub { font-size: 1rem; margin: 1.2rem 0 .2rem; color: var(--gris); font-weight: 600; }
   .ob-form .dos { display: flex; gap: .5rem; } .ob-form .dos > * { flex: 1; min-width: 0; }
   textarea, input, select { width: 100%; }
 </style>
@@ -41,7 +45,17 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-2
+  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-3
+
+  Desde obra-3 (15-oct-2026) un inmueble se mira en DOS niveles (Mauro:
+  «antes de esa visualización tiene que haber una visión en diferentes
+  alquileres, uno de ellos el gimnasio… y después una lista de detalles
+  generales de todo el local… van a aparecer otros proyectos con todo lo
+  charlado con cada arrendatario»). Arriba, los ALQUILERES del local
+  (`obra.unidades.<id>`: nombre, arrendatario, estado), cada uno una tarjeta
+  que abre su propia ficha (`?o=<obra>&u=<unidad>`); abajo, lo general del
+  local. Una cosa o un dato es de un alquiler si lleva `unidad`; sin ella es
+  del local. La plata de arriba suma TODO el local, alquileres incluidos.
 
   Desde obra-2 (15-oct-2026) en pantalla se llaman PROYECTOS, no obras
   (Mauro: «en el panel llamemos le proyectos»). Por dentro sigue siendo
@@ -49,8 +63,8 @@
   quien mira y obligaría a mudar lo guardado y el respaldo. Y las secciones
   son las que él pidió ese día: trabajos realizados, presupuestos, saldos
   pendientes (con su RUBRO: materiales, jornales…) y alquiler (contrato,
-  acuerdos y los datos del arrendamiento, que son `datos` con
-  `seccion: "alquiler"`). Un presupuesto es una REFERENCIA: no entra a la
+  acuerdos y los datos del arrendamiento; desde obra-3 viven en la ficha de
+  cada alquiler, con `unidad`). Un presupuesto es una REFERENCIA: no entra a la
   plata, se suma aparte.
 
   Mauro, 15-oct-2026: «la interfaz en panel para ver todos los detalles de lo
@@ -109,7 +123,7 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-8";
 import { doc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
-P.PANEL = "obra-2";
+P.PANEL = "obra-3";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;
@@ -141,7 +155,7 @@ const GRUPOS = [
 ];
 const cuenta = (t) => t.plata && t.signo !== undefined;
 const MONEDAS = ["UYU", "USD", "BRL"];
-let OBRAS = [], abierta = null, grupo = "todo", agregando = null;
+let OBRAS = [], abierta = null, unidad = null, grupo = "todo", agregando = null;
 
 async function arrancar() {
   for (const id of ["sin-sdk", "puerta", "app"]) $(id).classList.add("hide");
@@ -167,8 +181,11 @@ async function leer() {
     const s = await getDocs(query(collection(db, "proyectos"), where("clase", "==", "obra")));
     OBRAS = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
   } catch (e) { $("obra").innerHTML = `<p class="gris">${P.esc(P.explicar(e))}</p>`; return; }
-  const pedida = new URLSearchParams(location.search).get("o");
-  if (!abierta || !OBRAS.some((o) => o.id === abierta)) abierta = (OBRAS.find((o) => o.id === pedida) || OBRAS[0] || {}).id || null;
+  const q = new URLSearchParams(location.search);
+  if (!abierta || !OBRAS.some((o) => o.id === abierta)) abierta = (OBRAS.find((o) => o.id === q.get("o")) || OBRAS[0] || {}).id || null;
+  const o = OBRAS.find((x) => x.id === abierta);
+  if (unidad === null && o && listaUnidades(o).some((u) => u.id === q.get("u"))) { unidad = q.get("u"); grupo = "todo"; }
+  if (o && unidad && !listaUnidades(o).some((u) => u.id === unidad)) unidad = null;
   pintar();
 }
 
@@ -205,51 +222,82 @@ const dia = (iso) => P.fecha(/^\d{4}-\d{2}-\d{2}$/.test(String(iso || "")) ? iso
 const fmt = (n) => (Math.round(n * 100) / 100).toLocaleString("es", { maximumFractionDigits: 2 });
 const listaItems = (o) => Object.entries((o.obra && o.obra.items) || {}).map(([id, v]) => ({ id, ...(v || {}) }))
   .filter((x) => TIPOS[x.tipo]).sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")) || String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
-const listaDatos = (o, seccion = "") => Object.entries((o.obra && o.obra.datos) || {}).map(([id, v]) => ({ id, ...(v || {}) }))
-  .filter((d) => d.etiqueta && (d.seccion || "") === seccion).sort((a, b) => (a.orden || 0) - (b.orden || 0) || String(a.etiqueta).localeCompare(String(b.etiqueta)));
+const listaDatos = (o, u = "") => Object.entries((o.obra && o.obra.datos) || {}).map(([id, v]) => ({ id, ...(v || {}) }))
+  .filter((d) => d.etiqueta && (d.unidad || "") === (u || "")).sort((a, b) => (a.orden || 0) - (b.orden || 0) || String(a.etiqueta).localeCompare(String(b.etiqueta)));
+const listaUnidades = (o) => Object.entries((o.obra && o.obra.unidades) || {}).map(([id, v]) => ({ id, ...(v || {}) }))
+  .filter((u) => u.nombre).sort((a, b) => (a.orden || 0) - (b.orden || 0) || String(a.nombre).localeCompare(String(b.nombre)));
+const deAca = (x, u) => (x.unidad || "") === (u || "");
 const enlaceSeguro = (u) => /^https:\/\/\S+$/.test(String(u || ""));
 
 const enGrupo = (x, g) => TIPOS[x.tipo].grupo === g || (g === "plata" && cuenta(TIPOS[x.tipo]) && Number(x.monto) > 0);
-const datosHTML = (datos, seccion, titulo, boton) => `<div class="tarj"><div class="k">${titulo}</div>
-  ${datos.map((d) => `<div class="ob-dato"><span class="k2">${P.esc(d.etiqueta)}</span><span>${P.esc(d.valor || "—")} <button class="mini" data-dato="${P.esc(d.id)}" data-seccion="${seccion}" aria-label="Cambiar">✎</button></span></div>`).join("") || `<p class="gris">Nada todavía.</p>`}
-  <div class="fila-btn"><button class="mini" data-dato="" data-seccion="${seccion}">${boton}</button></div></div>`;
+const datosHTML = (datos, titulo, boton) => `<div class="tarj"><div class="k">${titulo}</div>
+  ${datos.map((d) => `<div class="ob-dato"><span class="k2">${P.esc(d.etiqueta)}</span><span>${P.esc(d.valor || "—")} <button class="mini" data-dato="${P.esc(d.id)}" aria-label="Cambiar">✎</button></span></div>`).join("") || `<p class="gris">Nada todavía.</p>`}
+  <div class="fila-btn"><button class="mini" data-dato="">${boton}</button></div></div>`;
+const plataTexto = (plata) => Object.entries(plata).filter(([, x]) => x.aPagar).map(([m, x]) => `${fmt(x.aPagar)} ${m}`).join(" · ");
+
+/* La tarjeta de un alquiler en la vista del local: es un ENLACE, no un botón
+   (el volver también: ver la regla del panel sobre history.back). */
+function unidadHTML(o, u, todos) {
+  const suyos = todos.filter((x) => x.unidad === u.id);
+  const pend = plataTexto(plataDe(suyos.filter((x) => x.tipo === "apagar" && !x.pagado)));
+  return `<a class="ob-unidad" href="?o=${encodeURIComponent(o.id)}&u=${encodeURIComponent(u.id)}">
+    <span class="ic">${P.esc(u.icono || "🏠")}</span>
+    <span class="tx"><b>${P.esc(u.nombre)}</b>
+      <small>${P.esc(u.arrendatario || "arrendatario sin definir")}${u.estado ? " · " + P.esc(u.estado) : ""}</small>
+      <small class="gris">${suyos.length} cosa${suyos.length === 1 ? "" : "s"} anotada${suyos.length === 1 ? "" : "s"}${pend ? ` · <span class="ob-mal">pendiente ${P.esc(pend)}</span>` : ""}</small></span>
+    <span class="ir">›</span></a>`;
+}
 
 function pintar() {
-  $("obras").innerHTML = OBRAS.length > 1 ? OBRAS.map((o) => `<button class="mini${o.id === abierta ? " p" : ""}" data-obra="${P.esc(o.id)}">${P.esc(o.nombre || o.id)}</button>`).join("") : "";
+  $("obras").innerHTML = OBRAS.length > 1 && !unidad ? OBRAS.map((o) => `<button class="mini${o.id === abierta ? " p" : ""}" data-obra="${P.esc(o.id)}">${P.esc(o.nombre || o.id)}</button>`).join("") : "";
   const o = OBRAS.find((x) => x.id === abierta);
   if (!o) { $("obra").innerHTML = `<p class="gris">Todavía no hay proyectos. Los crea Claude a pedido.</p>`; enganchar(); return; }
-  const items = listaItems(o), datos = listaDatos(o), datosAlq = listaDatos(o, "alquiler"), ob = o.obra || {};
-  const cuantos = (g) => g === "datos" ? datos.length : items.filter((x) => enGrupo(x, g)).length + (g === "alquiler" ? datosAlq.length : 0);
-  const plata = plataDe(items);
-  const pendientes = items.filter((x) => x.tipo === "apagar" && !x.pagado).sort((a, b) => String(a.vence || "9").localeCompare(String(b.vence || "9")));
+  const todos = listaItems(o), unidades = listaUnidades(o), ob = o.obra || {};
+  const u = unidad ? unidades.find((x) => x.id === unidad) : null;
+  const items = todos.filter((x) => deAca(x, unidad)), datos = listaDatos(o, unidad);
+  const grupos = GRUPOS.filter(([g]) => u ? g !== "datos" : g !== "alquiler");
+  const cuantos = (g) => items.filter((x) => enGrupo(x, g)).length + ((g === "alquiler" || g === "datos") ? datos.length : 0);
+  /* La plata del LOCAL suma todo, alquileres incluidos; la de un alquiler, lo suyo. */
+  const base = u ? items : todos;
+  const plata = plataDe(base);
+  const pendientes = base.filter((x) => x.tipo === "apagar" && !x.pagado).sort((a, b) => String(a.vence || "9").localeCompare(String(b.vence || "9")));
   const presupuestos = items.filter((x) => x.tipo === "presupuesto");
   const visibles = grupo === "todo" ? items : items.filter((x) => enGrupo(x, grupo));
+  const nombreUnidad = (x) => { const v = x.unidad && unidades.find((y) => y.id === x.unidad); return v ? ` <span class="k2">${P.esc(v.nombre)}</span>` : ""; };
 
   $("obra").innerHTML = `
-    <div class="ob-cab"><h1>${P.esc(o.nombre || o.id)}</h1>
+    ${u ? `<p style="margin:.2rem 0 0"><a href="?o=${encodeURIComponent(o.id)}" class="volver">← ${P.esc(o.nombre || o.id)}</a></p>
+      <div class="ob-cab"><h1>${P.esc(u.icono || "🏠")} ${P.esc(u.nombre)}</h1>
+        <p class="ob-dir">Arrendatario: ${P.esc(u.arrendatario || "sin definir")}${u.estado ? " · " + P.esc(u.estado) : ""}
+          <button class="mini" data-unidad-editar="${P.esc(u.id)}">✎</button></p></div>`
+    : `<div class="ob-cab"><h1>${P.esc(o.nombre || o.id)}</h1>
       <p class="ob-dir">${P.esc(ob.direccion || "")}${ob.resumen ? " · " + P.esc(ob.resumen) : ""}</p></div>
+      <div class="tarj"><div class="k">Los alquileres</div>
+        ${unidades.map((x) => unidadHTML(o, x, todos)).join("") || `<p class="gris">Todavía no hay alquileres.</p>`}
+        <div class="fila-btn"><button class="mini" data-unidad-nueva>＋ Alquiler (consultorio, local, depósito…)</button></div></div>
+      <h2 class="ob-sub">Lo general del local</h2>`}
 
     <div class="ob-tiles">
       <button class="ob-tile${grupo === "todo" ? " on" : ""}" data-grupo="todo"><b>🗂</b><span>Todo</span><small>${items.length}</small></button>
-      ${GRUPOS.map(([g, ic, n]) => `<button class="ob-tile${grupo === g ? " on" : ""}" data-grupo="${g}"><b>${ic}</b><span>${n}</span><small>${cuantos(g)}</small></button>`).join("")}
+      ${grupos.map(([g, ic, n]) => `<button class="ob-tile${grupo === g ? " on" : ""}" data-grupo="${g}"><b>${ic}</b><span>${n}</span><small>${cuantos(g)}</small></button>`).join("")}
     </div>
 
-    ${["todo", "plata", "pendientes"].includes(grupo) ? `<div class="tarj"><div class="k">La plata del proyecto</div>
+    ${["todo", "plata", "pendientes"].includes(grupo) ? `<div class="tarj"><div class="k">${u ? "La plata de este alquiler" : "La plata de todo el local (alquileres incluidos)"}</div>
       ${Object.keys(plata).length ? `<div class="ob-plata"><span></span><span class="gris n">entró</span><span class="gris n">salió</span><span class="gris n">pendiente</span>
         ${Object.entries(plata).map(([m, x]) => `<b>${m}</b><span class="n ob-ok">${fmt(x.entro)}</span><span class="n">${fmt(x.salio)}</span><span class="n${x.aPagar ? " ob-mal" : ""}">${fmt(x.aPagar)}</span>`).join("")}</div>`
         : `<p class="gris">Todavía no hay montos anotados.</p>`}
       ${resumenHTML(porRubro(pendientes), "Pendiente, por rubro:")}
-      ${pendientes.length ? `<p class="gris" style="margin:.6rem 0 .2rem">Por pagar:</p>${pendientes.map((x) => `<div class="ob-dato"><span>${P.esc(x.titulo)}${x.rubro && RUBROS[x.rubro] ? ` <span class="k2">${P.esc(RUBROS[x.rubro])}</span>` : ""}${x.vence ? ` <span class="k2">vence ${P.esc(dia(x.vence))}</span>` : ""}</span><span class="m">${fmt(x.monto)} ${P.esc(x.moneda)} <button class="mini" data-pagar="${P.esc(x.id)}">Pagado</button></span></div>`).join("")}` : ""}
+      ${pendientes.length ? `<p class="gris" style="margin:.6rem 0 .2rem">Por pagar:</p>${pendientes.map((x) => `<div class="ob-dato"><span>${P.esc(x.titulo)}${u ? "" : nombreUnidad(x)}${x.rubro && RUBROS[x.rubro] ? ` <span class="k2">${P.esc(RUBROS[x.rubro])}</span>` : ""}${x.vence ? ` <span class="k2">vence ${P.esc(dia(x.vence))}</span>` : ""}</span><span class="m">${fmt(x.monto)} ${P.esc(x.moneda)} <button class="mini" data-pagar="${P.esc(x.id)}">Pagado</button></span></div>`).join("")}` : ""}
       <p class="gris" style="font-size:.78rem">Cada moneda va aparte. Los presupuestos no entran acá: se suman en su sección.</p></div>` : ""}
 
     ${grupo === "presupuestos" ? `<div class="tarj"><div class="k">Presupuestado</div>
       ${resumenHTML(porRubro(presupuestos), "Por rubro:") || `<p class="gris">Todavía no hay presupuestos con monto.</p>`}
       <p class="gris" style="font-size:.78rem">Es una referencia: lo que se paga se anota como trabajo, gasto o saldo pendiente.</p></div>` : ""}
 
-    ${grupo === "alquiler" || grupo === "todo" ? datosHTML(datosAlq, "alquiler", "Datos del arrendamiento", "＋ Dato (precio, plazo, garantía…)") : ""}
-    ${grupo === "datos" || grupo === "todo" ? datosHTML(datos, "", "Datos del inmueble", "＋ Dato (padrón, superficie, escribano…)") : ""}
+    ${u && (grupo === "alquiler" || grupo === "todo") ? datosHTML(datos, "Datos del arrendamiento", "＋ Dato (precio, plazo, garantía…)") : ""}
+    ${!u && (grupo === "datos" || grupo === "todo") ? datosHTML(datos, "Datos generales del local", "＋ Dato (padrón, superficie, escribano…)") : ""}
 
-    <div class="fila-btn"><button class="btn p" data-agregar="${grupo === "todo" || grupo === "datos" ? "" : grupo}">＋ Agregar ${grupo === "todo" || grupo === "datos" ? "algo" : "a " + (GRUPOS.find((g) => g[0] === grupo) || [, , ""])[2].toLowerCase()}</button></div>
+    <div class="fila-btn"><button class="btn p" data-agregar="${grupo === "todo" || grupo === "datos" ? "" : grupo}">＋ Agregar ${grupo === "todo" || grupo === "datos" ? (u ? "a " + P.esc(u.nombre) : "al local") : "a " + (GRUPOS.find((g) => g[0] === grupo) || [, , ""])[2].toLowerCase()}</button></div>
     ${agregando ? formHTML() : ""}
 
     ${grupo === "datos" ? "" : `<div class="tarj">${visibles.map(itemHTML).join("") || `<p class="gris">Nada en esta sección todavía.</p>`}</div>`}
@@ -272,7 +320,7 @@ function itemHTML(x) {
 
 function formHTML() {
   const a = agregando;
-  const opciones = Object.entries(TIPOS).filter(([, t]) => !a.grupo || t.grupo === a.grupo || (a.grupo === "plata" && cuenta(t)));
+  const opciones = Object.entries(TIPOS).filter(([, t]) => (!a.grupo || t.grupo === a.grupo || (a.grupo === "plata" && cuenta(t))) && (unidad || a.grupo || t.grupo !== "alquiler"));
   const t = TIPOS[a.tipo] || {};
   return `<div class="tarj ob-form" id="form-obra">
     <label>Qué es <select data-f="tipo">${opciones.map(([k, x]) => `<option value="${k}"${a.tipo === k ? " selected" : ""}>${x.ic} ${P.esc(x.n)}</option>`).join("")}</select></label>
@@ -307,7 +355,22 @@ const idNuevo = (p) => p + Date.now().toString(36) + Math.random().toString(36).
 const recargar = () => leer().catch((e) => P.aviso(P.explicar(e), "error"));
 
 function enganchar() {
-  for (const b of document.querySelectorAll("[data-obra]")) b.onclick = () => { abierta = b.dataset.obra; grupo = "todo"; agregando = null; pintar(); };
+  for (const b of document.querySelectorAll("[data-obra]")) b.onclick = () => { abierta = b.dataset.obra; unidad = null; grupo = "todo"; agregando = null; pintar(); };
+  for (const b of document.querySelectorAll("[data-unidad-nueva], [data-unidad-editar]")) b.onclick = async () => {
+    const o = OBRAS.find((x) => x.id === abierta), v = listaUnidades(o).find((x) => x.id === b.dataset.unidadEditar);
+    const nombre = (prompt("Qué se alquila (Gimnasio, Consultorio 1, Depósito…):", v ? v.nombre : "") || "").trim();
+    if (!nombre) return;
+    const arrendatario = prompt("Arrendatario (nombre; vacío si todavía no hay):", v ? v.arrendatario || "" : "");
+    if (arrendatario === null) return;
+    const estado = prompt("En qué está (ej.: conversando · seña recibida · contrato firmado):", v ? v.estado || "" : "");
+    if (estado === null) return;
+    const id = v ? v.id : (P.slug(nombre).slice(0, 40) || idNuevo("u"));
+    if (!v && listaUnidades(o).some((x) => x.id === id)) return P.aviso("Ya hay un alquiler con ese nombre.", "error");
+    try {
+      await guardar({ unidades: { [id]: { nombre: nombre.slice(0, 60), arrendatario: arrendatario.trim().slice(0, 120), estado: estado.trim().slice(0, 120), orden: v ? v.orden || 0 : 50 } } });
+      await recargar();
+    } catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
   for (const b of document.querySelectorAll("[data-grupo]")) b.onclick = () => { grupo = b.dataset.grupo; agregando = null; pintar(); };
   for (const b of document.querySelectorAll("[data-agregar]")) b.onclick = () => {
     const g = b.dataset.agregar;
@@ -338,6 +401,7 @@ function enganchar() {
         if (a.url && a.url.trim()) item.url = a.url.trim().slice(0, 500);
         if (imagen) item.imagen = imagen;
         if (t.plata && monto > 0) { item.monto = monto; item.moneda = MONEDAS.includes(a.moneda) ? a.moneda : "UYU"; }
+        if (unidad) item.unidad = unidad;
         if (t.rubro) item.rubro = RUBROS[a.rubro] ? a.rubro : "materiales";
         if (a.tipo === "apagar") { item.pagado = false; if (a.vence) item.vence = a.vence; }
         await guardar({ items: { [idNuevo("i")]: item } });
@@ -355,15 +419,14 @@ function enganchar() {
     catch (e) { P.aviso(P.explicar(e), "error"); }
   };
   for (const b of document.querySelectorAll("[data-dato]")) b.onclick = async () => {
-    const seccion = b.dataset.seccion || "";
-    const o = OBRAS.find((x) => x.id === abierta), d = listaDatos(o, seccion).find((x) => x.id === b.dataset.dato);
-    const etiqueta = d ? d.etiqueta : (prompt(seccion ? "Qué dato del alquiler (precio, plazo, garantía…):" : "Qué dato (padrón, superficie, escribano…):") || "").trim();
+    const o = OBRAS.find((x) => x.id === abierta), d = listaDatos(o, unidad).find((x) => x.id === b.dataset.dato);
+    const etiqueta = d ? d.etiqueta : (prompt(unidad ? "Qué dato del alquiler (precio, plazo, garantía…):" : "Qué dato (padrón, superficie, escribano…):") || "").trim();
     if (!etiqueta) return;
     const valor = prompt(etiqueta + ":", d ? d.valor || "" : "");
     if (valor === null) return;
-    const id = d ? d.id : P.slug(etiqueta).slice(0, 40) || idNuevo("d");
+    const id = d ? d.id : (unidad ? unidad + "-" : "") + (P.slug(etiqueta).slice(0, 40) || idNuevo("d"));
     try {
-      await guardar({ datos: { [id]: valor.trim() ? { etiqueta: etiqueta.slice(0, 60), valor: valor.trim().slice(0, 300), orden: d ? d.orden || 0 : 50, ...(seccion ? { seccion } : {}) } : deleteField() } });
+      await guardar({ datos: { [id]: valor.trim() ? { etiqueta: etiqueta.slice(0, 60), valor: valor.trim().slice(0, 300), orden: d ? d.orden || 0 : 50, ...(unidad ? { unidad } : {}) } : deleteField() } });
       await recargar();
     } catch (e) { P.aviso(P.explicar(e), "error"); }
   };

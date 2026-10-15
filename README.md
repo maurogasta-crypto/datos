@@ -502,13 +502,18 @@ panel de acceso».
 
 - **Una página aparte**, con dos botones en la barra del panel: «🏗 General
   Flores» (acceso directo, `obra.html?o=general-flores`) y «📁 Proyectos». En
-  pantalla se llaman **proyectos** desde `obra-2` (Mauro: «llamemos le
+  pantalla se llaman **proyectos** desde `obra-3` (Mauro: «llamemos le
   proyectos. No obras»); por dentro siguen siendo `clase: "obra"`. Arriba,
   una grilla de accesos —Alquiler, Trabajos realizados, Presupuestos, Saldos
   pendientes, Plata, Facturas y servicios, Documentos y planos, Fotos, Notas,
   Datos— con cuántas cosas tiene cada uno; tocar uno filtra la lista.
-- **Alquiler**: el contrato (sus definiciones), los acuerdos, los cobros de
-  alquiler y los «Datos del arrendamiento» (`datos` con `seccion: "alquiler"`).
+- **Dos niveles desde `obra-3`**: al abrir un inmueble, primero **los
+  alquileres** del local (`obra.unidades.<id>`: nombre, arrendatario, estado),
+  cada uno una tarjeta que abre su ficha (`?o=<obra>&u=<unidad>`), y debajo
+  **lo general del local**. Una cosa o un dato es de un alquiler si lleva
+  `unidad`. La plata del local suma todo, alquileres incluidos.
+- **Alquiler** (en la ficha de cada uno): el contrato (sus definiciones), los
+  acuerdos, los cobros y los «Datos del arrendamiento».
 - **Rubro** (materiales, jornales, servicios, honorarios, otros) en trabajos,
   presupuestos, saldos pendientes, gastos y facturas: lo pendiente y lo
   presupuestado se suman por rubro y moneda. **Un presupuesto es una
@@ -536,10 +541,10 @@ teléfono.
 | `nucleo.js` | `P.VERSION` | `nucleo-8` |
 | `index.html` | `P.PANEL` | `panel-38` |
 | `invitado.html` | `P.PANEL` | `invitado-3` |
-| `obra.html` | `P.PANEL` | `obra-2` |
+| `obra.html` | `P.PANEL` | `obra-3` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v30` |
+| `sw.js` | `VERSION` | `panel-shell-v31` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

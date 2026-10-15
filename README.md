@@ -513,6 +513,12 @@ panel de acceso».
   cada uno una tarjeta que abre su ficha (`?o=<obra>&u=<unidad>`), y debajo
   **lo general del local**. Una cosa o un dato es de un alquiler si lleva
   `unidad`. La plata del local suma todo, alquileres incluidos.
+- **Un invitado también ve proyectos** (`obra-5`, `invitado-4`, `panel-40`): en
+  «Puerta → Quién entra al panel» las casillas van en dos grupos, Aplicaciones
+  y Proyectos. Un proyecto marcado aparece en su página con «Abrir el
+  proyecto», y en `obra.html` lo ve **sin poder cambiarlo** (la regla v6 sólo
+  le deja leer los suyos, de a uno). Quien pide acceso se avisa arriba de
+  Pendientes y en la pestaña («Puerta · 1»).
 - **Un gasto se carga con la foto de la factura** (`obra-4`, `nucleo-9`), como
   en Tiempos: «📷 Gasto con foto» abre la ficha con la foto primero; la IA
   (`P.leerFactura`, la `claude-proxy` del Netlify de Casa Verde) completa lo
@@ -546,12 +552,12 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-9` |
-| `index.html` | `P.PANEL` | `panel-39` |
-| `invitado.html` | `P.PANEL` | `invitado-3` |
-| `obra.html` | `P.PANEL` | `obra-4` |
+| `index.html` | `P.PANEL` | `panel-40` |
+| `invitado.html` | `P.PANEL` | `invitado-4` |
+| `obra.html` | `P.PANEL` | `obra-5` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v33` |
+| `sw.js` | `VERSION` | `panel-shell-v34` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

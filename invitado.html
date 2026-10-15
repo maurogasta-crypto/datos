@@ -95,7 +95,7 @@ import { P, $, db, auth } from "./nucleo.js?v=nucleo-9";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion }
   from "./firebase-init.js?v=init-5";
 
-P.PANEL = "invitado-3";
+P.PANEL = "invitado-4";
 P.pintarSello();
 
 // El cupo: 12 pedidos resueltos por día para todos los invitados, entre los
@@ -193,6 +193,12 @@ const pedidosHoy = (pid) => PEND.filter((x) => x.proyecto === pid && String(x.or
 
 function pintar() {
   $("proyectos").innerHTML = PROY.map((pr) => {
+    /* invitado-4: un PROYECTO de inmueble (General Flores…) no tiene
+       pendientes ni pedidos: se mira en su página, sólo para ver. */
+    if (pr.clase === "obra") return `<section class="inv-proy"><div class="tarj">
+      <h2 style="margin:0">🏗 ${P.esc(pr.nombre || pr.id)}</h2>
+      <p class="gris">${P.esc((pr.obra && pr.obra.direccion) || "")}</p>
+      <div class="fila-btn"><a class="btn p" style="text-decoration:none" href="./obra.html?o=${encodeURIComponent(pr.id)}">Abrir el proyecto</a></div></div></section>`;
     const e = pr.esquema || {};
     const pend = PEND.filter((x) => x.proyecto === pr.id)
       .sort((a, b) => Number(abierto(b)) - Number(abierto(a)) || String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));

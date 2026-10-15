@@ -1745,6 +1745,26 @@ ok(redirigido === null, "Mauro (sin ficha) se queda en el panel");
 ok(inv.includes('body: JSON.stringify({ base: "panel", reporteId: id })') && !/body:[^\n]*porQue/.test(inv),
    "despierta a Claude con la base y el id, nunca con el texto");
 
+/* ---- panel-40: quien pide acceso se ve, y se eligen aplicaciones Y proyectos ---- */
+console.log("\n· Quién entra al panel (panel-40)");
+{
+  BASE.solicitudes = { "uid-flor": { nombre: "Flor", mail: "f@ejemplo.invalido", mensaje: "", creadoEn: "2026-10-15" } };
+  BASE.personas = {};
+  BASE.proyectos = { tiempos: { nombre: "Tiempos", orden: 1 }, panel: { nombre: "Panel", orden: 0 }, "general-flores": { nombre: "General Flores", clase: "obra" } };
+  await api.leer(); await api.pintarPersonas(); await esperar();
+  const t = $("personas").textContent;
+  ok(t.includes("Aplicaciones") && t.includes("Proyectos") && t.indexOf("Tiempos") < t.indexOf("Proyectos") && t.indexOf("General Flores") > t.indexOf("Proyectos"),
+     "las casillas van en dos grupos: aplicaciones y proyectos");
+  ok(!$("personas").querySelector('[data-proy="uid-flor"][value="panel"]'), "el panel mismo no se ofrece");
+  ok($("piden-acceso").textContent.includes("Flor") && document.querySelector('#nav [data-v="puerta"]').textContent === "Puerta · 1",
+     "quien pide acceso se avisa arriba de Pendientes y en la pestaña");
+  $("personas").querySelector('[data-proy="uid-flor"][value="general-flores"]').checked = true;
+  $("personas").querySelector('[data-aprobar="uid-flor"]').click(); await esperar(); await esperar();
+  ok(BASE.personas["uid-flor"] && BASE.personas["uid-flor"].proyectos.join() === "general-flores" && !BASE.solicitudes["uid-flor"],
+     "aprobar con sólo un proyecto crea la ficha con ese proyecto y borra la solicitud");
+  ok($("piden-acceso").textContent === "" && document.querySelector('#nav [data-v="puerta"]').textContent === "Puerta", "y el aviso se va");
+}
+
 /* ---- nucleo-9: la factura leída por la IA (obra.html, «📷 Gasto con foto») ---- */
 console.log("\n· La foto de la factura");
 {

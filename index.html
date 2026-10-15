@@ -127,6 +127,7 @@
            contesta la pregunta anterior, «¿en qué estamos y quién lo tiene?».
            Contestar la segunda sin la primera es lo que hace que dos sesiones
            hagan el mismo trabajo. -->
+      <div id="piden-acceso"></div>
       <div id="lineas"></div>
 
       <div id="te-toca"></div>
@@ -470,6 +471,24 @@
 
   <section id="v-puerta" class="hide">
     <h1>La puerta</h1>
+    <!-- PERSONAS INVITADAS (panel-35, 6-oct-2026, `panel:U2`). Pedido de
+         Mauro: que Mariano vea Harmonía, pida con captura y vea sus claves.
+         Va acá, en «Puerta», porque es lo mismo: quién entra y a qué. La
+         ficha la escribe SÓLO Mauro (reglas v6); el invitado entra por
+         `invitado.html`, una página aparte que lee sólo lo suyo. -->
+    <!-- panel-40 (15-oct-2026): ARRIBA de la puerta, y con aviso en
+         Pendientes y en la pestaña. Florencia pidió acceso y Mauro no lo
+         encontraba: estaba al final, debajo de las reglas. Las casillas se
+         separan en APLICACIONES y PROYECTOS (`clase: "obra"`, General
+         Flores…), que el invitado abre en obra.html, sólo para ver. -->
+    <h2 style="margin-top:1rem">Quién entra al panel</h2>
+    <p class="gris">Quien entra a <span class="mono" id="linkInvitado"></span> crea su cuenta y pide
+      acceso; acá lo aprobás y marcás qué <b>aplicaciones</b> y qué <b>proyectos</b> ve. Lo cambiás
+      cuando quieras con «Guardar». En las aplicaciones ve los pendientes, pide con captura, comenta y
+      <b>sólo ve</b> sus claves; los proyectos (General Flores…) los ve sin poder cambiarlos.</p>
+    <div class="fila-btn"><button class="btn" id="btnCopiarInvitado">Copiar el link para invitados</button></div>
+    <div id="personas"><p class="gris">Leyendo…</p></div>
+    <h2 style="margin-top:1.6rem">Las reglas</h2>
     <p class="gris">Lo único que protege estos datos son las reglas de Firestore.
       Acá está tu UID y el texto exacto para publicarlas.</p>
     <div class="tarj">
@@ -513,17 +532,6 @@
       <div id="resProbar"></div>
     </div>
 
-    <!-- PERSONAS INVITADAS (panel-35, 6-oct-2026, `panel:U2`). Pedido de
-         Mauro: que Mariano vea Harmonía, pida con captura y vea sus claves.
-         Va acá, en «Puerta», porque es lo mismo: quién entra y a qué. La
-         ficha la escribe SÓLO Mauro (reglas v6); el invitado entra por
-         `invitado.html`, una página aparte que lee sólo lo suyo. -->
-    <h2 style="margin-top:1.6rem">Personas invitadas</h2>
-    <p class="gris">Quien entra a <span class="mono" id="linkInvitado"></span> crea su cuenta y pide
-      acceso; acá lo aprobás y elegís qué proyectos ve. Ve sus proyectos, pide con captura,
-      comenta y <b>sólo ve</b> las claves de esos proyectos. Necesita las reglas <b>v6</b> publicadas.</p>
-    <div class="fila-btn"><button class="btn" id="btnCopiarInvitado">Copiar el link para invitados</button></div>
-    <div id="personas"><p class="gris">Leyendo…</p></div>
   </section>
 </div>
 
@@ -547,7 +555,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-39";
+P.PANEL = "panel-40";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -616,6 +624,7 @@ async function entrarAlPanel() {
   /* Sin `await`: baja `reglas.txt` por su cuenta y no tiene por qué demorar la
      lista de pendientes, que es lo que se mira al entrar. */
   pintarReglas();
+  contarPidenAcceso();
   await leer();
 }
 
@@ -731,15 +740,39 @@ $("btnCopiarInvitado").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(linkInvitado()); P.aviso("Copiado: mandáselo a quien invites."); }
   catch (e) { P.aviso(linkInvitado()); }
 });
+/* panel-40: quien pide acceso se ve al abrir el panel (arriba de Pendientes)
+   y en la pestaña «Puerta», con cuántos son. */
+function avisarPidenAcceso(n, nombres = []) {
+  const b = document.querySelector('#nav [data-v="puerta"]');
+  if (b) b.textContent = n ? "Puerta · " + n : "Puerta";
+  const c = $("piden-acceso"); if (!c) return;
+  c.innerHTML = n ? '<div class="tarj" style="border-color:var(--acento)"><p style="margin:0 0 .5rem">🔔 <b>'
+    + (nombres.length ? P.esc(nombres.join(", ")) : n + " persona" + (n === 1 ? "" : "s")) + "</b> "
+    + (n === 1 ? "pide" : "piden") + ' entrar al panel.</p><div class="fila-btn"><button class="btn p" data-ir-puerta>Decidir qué ve</button></div></div>' : "";
+  const ir = c.querySelector("[data-ir-puerta]");
+  if (ir) ir.onclick = () => { if (b) b.click(); setTimeout(() => { const x = $("personas"); if (x) x.scrollIntoView({ block: "start" }); }, 60); };
+}
+async function contarPidenAcceso() {
+  try { const so = await getDocs(collection(db, "solicitudes")); const nombres = []; so.forEach((d) => { const n = String(d.data().nombre || ""); if (n) nombres.push(n); });
+    avisarPidenAcceso(nombres.length || so.size || 0, nombres); }
+  catch (e) { /* sin las reglas v6 no hay solicitudes que contar */ }
+}
 async function pintarPersonas() {
   $("linkInvitado").textContent = linkInvitado();
   const caja = $("personas");
   try {
     const [so, pe] = await Promise.all([getDocs(collection(db, "solicitudes")), getDocs(collection(db, "personas"))]);
-    const casillas = (uid, marcados) => PROYECTOS.map((pr) =>
+    const casilla = (uid, marcados) => (pr) =>
       '<label class="mini" style="display:inline-flex;gap:.3rem;align-items:center"><input type="checkbox" data-proy="'
       + P.esc(uid) + '" value="' + P.esc(pr.id) + '"' + ((marcados || []).includes(pr.id) ? " checked" : "") + "> "
-      + P.esc(pr.nombre || pr.id) + "</label>").join(" ");
+      + P.esc(pr.nombre || pr.id) + "</label>";
+    /* Aplicaciones y proyectos (las obras) por separado: el panel mismo no se
+       ofrece, que es de Mauro. */
+    const casillas = (uid, marcados) => {
+      const apps = PROYECTOS.filter((pr) => pr.clase !== "obra" && pr.id !== "panel"), obras = PROYECTOS.filter((pr) => pr.clase === "obra");
+      return '<p class="gris" style="margin:.4rem 0 .1rem;width:100%">Aplicaciones</p>' + apps.map(casilla(uid, marcados)).join(" ")
+        + (obras.length ? '<p class="gris" style="margin:.6rem 0 .1rem;width:100%">Proyectos</p>' + obras.map(casilla(uid, marcados)).join(" ") : "");
+    };
     let h = "";
     so.forEach((d) => {
       const x = d.data();
@@ -759,12 +792,14 @@ async function pintarPersonas() {
         + (x.activo ? "Pausar" : "Volver a dejarlo entrar") + '</button><button class="btn p" data-guardar-persona="' + P.esc(d.id)
         + '">Guardar proyectos</button></div></div>';
     });
+    const nombres = []; so.forEach((d) => { const n = String(d.data().nombre || ""); if (n) nombres.push(n); });
+    avisarPidenAcceso(nombres.length || so.size || 0, nombres);
     caja.innerHTML = h || '<p class="gris">Nadie todavía. Mandá el link y, cuando la persona pida acceso, aparece acá.</p>';
   } catch (e) { caja.innerHTML = '<p class="gris">' + P.esc(P.explicar(e)) + " (¿publicaste las reglas v6?)</p>"; return; }
   const marcados = (uid) => [...caja.querySelectorAll("[data-proy]:checked")].filter((i) => i.dataset.proy === uid).map((i) => i.value);
   caja.querySelectorAll("[data-aprobar]").forEach((b) => b.onclick = async () => {
     const uid = b.dataset.aprobar, proyectos = marcados(uid);
-    if (!proyectos.length) return P.aviso("Elegí al menos un proyecto.", "error");
+    if (!proyectos.length) return P.aviso("Marcá al menos una aplicación o un proyecto.", "error");
     try {
       await setDoc(doc(db, "personas", uid), { nombre: b.dataset.nombre, mail: b.dataset.mail, proyectos,
         activo: true, creadoEn: P.hoy() });

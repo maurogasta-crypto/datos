@@ -38,6 +38,8 @@
   .ob-unidad .ic { font-size: 1.6rem; } .ob-unidad .tx { flex: 1; min-width: 0; }
   .ob-unidad small { display: block; font-size: .82rem; } .ob-unidad .ir { color: var(--gris); font-size: 1.4rem; }
   .ob-sub { font-size: 1rem; margin: 1.2rem 0 .2rem; color: var(--gris); font-weight: 600; }
+  body.solo-ver [data-gasto-foto], body.solo-ver [data-agregar], body.solo-ver [data-sacar], body.solo-ver [data-pagar],
+  body.solo-ver [data-dato], body.solo-ver [data-unidad-nueva], body.solo-ver [data-unidad-editar] { display: none !important; }
   .ob-form .dos { display: flex; gap: .5rem; } .ob-form .dos > * { flex: 1; min-width: 0; }
   textarea, input, select { width: 100%; }
 </style>
@@ -45,7 +47,14 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-4
+  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-5
+
+  Desde obra-5 (15-oct-2026) un INVITADO entra a ver los proyectos que
+  Mauro le marcó en «Puerta» (`personas/{uid}.proyectos`). Sólo VE: la regla
+  v6 le deja leer `proyectos/<id>` de los suyos y nada más, así que la página
+  no le muestra ningún botón que escriba (`body.solo-ver`). Y no puede listar
+  `proyectos` por `clase`: la base no podría probar que no hay uno ajeno, así
+  que se le leen uno por uno, por id.
 
   Desde obra-4 (15-oct-2026) un gasto se carga con la FOTO DE LA FACTURA,
   como en el resto del ecosistema (Mauro): «📷 Gasto con foto» abre la ficha
@@ -102,7 +111,7 @@
 -->
 
 <div id="barra">
-  <div class="marca"><a href="./" class="volver" style="text-decoration:none">← Panel</a> · Proyectos<small id="sello"></small></div>
+  <div class="marca"><a href="./" class="volver" id="volverPanel" style="text-decoration:none">← Panel</a> · Proyectos<small id="sello"></small></div>
   <button class="btn hide" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
 </div>
 
@@ -130,8 +139,8 @@
 
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-9";
-import { doc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
-P.PANEL = "obra-4";
+import { doc, getDoc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
+P.PANEL = "obra-5";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;
@@ -163,6 +172,7 @@ const GRUPOS = [
 ];
 const cuenta = (t) => t.plata && t.signo !== undefined;
 const MONEDAS = ["UYU", "USD", "BRL"];
+let invitado = null;     // la ficha de `personas/` si quien entra es un invitado
 let OBRAS = [], abierta = null, unidad = null, grupo = "todo", agregando = null;
 
 async function arrancar() {
@@ -174,6 +184,11 @@ async function arrancar() {
   const yo = await P.quienEntra();
   if (!yo) { $("puerta").classList.remove("hide"); return; }
   $("btnSalir").classList.remove("hide");
+  const f = await getDoc(doc(db, "personas", yo.uid)).catch(() => null);
+  invitado = f && f.exists() ? f.data() : null;
+  if (invitado && invitado.activo !== true) { location.replace("invitado.html"); return; }
+  document.body.classList.toggle("solo-ver", !!invitado);
+  if (invitado) $("volverPanel").href = "./invitado.html";
   $("app").classList.remove("hide");
   await leer();
 }
@@ -186,8 +201,11 @@ $("btnSalir").onclick = async () => { await P.salir(); location.reload(); };
 
 async function leer() {
   try {
-    const s = await getDocs(query(collection(db, "proyectos"), where("clase", "==", "obra")));
-    OBRAS = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+    const docs = invitado
+      ? (await Promise.all((invitado.proyectos || []).map((id) => getDoc(doc(db, "proyectos", id)).catch(() => null))))
+          .filter((d) => d && d.exists() && d.data().clase === "obra")
+      : (await getDocs(query(collection(db, "proyectos"), where("clase", "==", "obra")))).docs;
+    OBRAS = docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
   } catch (e) { $("obra").innerHTML = `<p class="gris">${P.esc(P.explicar(e))}</p>`; return; }
   const q = new URLSearchParams(location.search);
   if (!abierta || !OBRAS.some((o) => o.id === abierta)) abierta = (OBRAS.find((o) => o.id === q.get("o")) || OBRAS[0] || {}).id || null;
@@ -259,7 +277,7 @@ function unidadHTML(o, u, todos) {
 function pintar() {
   $("obras").innerHTML = OBRAS.length > 1 && !unidad ? OBRAS.map((o) => `<button class="mini${o.id === abierta ? " p" : ""}" data-obra="${P.esc(o.id)}">${P.esc(o.nombre || o.id)}</button>`).join("") : "";
   const o = OBRAS.find((x) => x.id === abierta);
-  if (!o) { $("obra").innerHTML = `<p class="gris">Todavía no hay proyectos. Los crea Claude a pedido.</p>`; enganchar(); return; }
+  if (!o) { $("obra").innerHTML = `<p class="gris">${invitado ? "Todavía no tenés proyectos habilitados." : "Todavía no hay proyectos. Los crea Claude a pedido."}</p>`; enganchar(); return; }
   const todos = listaItems(o), unidades = listaUnidades(o), ob = o.obra || {};
   const u = unidad ? unidades.find((x) => x.id === unidad) : null;
   const items = todos.filter((x) => deAca(x, unidad)), datos = listaDatos(o, unidad);

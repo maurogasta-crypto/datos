@@ -492,7 +492,7 @@ vuelve.
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | el icono del tablero |
 | `.github/workflows/pages.yml` | publica el sitio; el único workflow, sin secretos |
 
-## Las obras (`obra.html`, desde el 15-oct-2026)
+## Los proyectos (`obra.html`, desde el 15-oct-2026)
 
 Mauro: «la interfaz en panel para ver todos los detalles de lo que se va
 acordando dentro del proyecto de General Flores… los links a los artefactos y
@@ -500,13 +500,22 @@ documentos con su respaldo… padrones, planos, fotos, facturas, servicios,
 gastos, trabajos… balances de cuentas a pagar e ingresos; clara y simple como
 panel de acceso».
 
-- **Una página aparte**, con el botón «🏗 Obras» de la barra del panel. Arriba,
-  una grilla de accesos —Datos, Acuerdos, Documentos y planos, Fotos, Facturas y
-  servicios, Trabajos, Plata, Notas— con cuántas cosas tiene cada uno; tocar uno
-  filtra la lista. Un solo «＋ Agregar» para todo: qué es, título, fecha, monto y
+- **Una página aparte**, con dos botones en la barra del panel: «🏗 General
+  Flores» (acceso directo, `obra.html?o=general-flores`) y «📁 Proyectos». En
+  pantalla se llaman **proyectos** desde `obra-2` (Mauro: «llamemos le
+  proyectos. No obras»); por dentro siguen siendo `clase: "obra"`. Arriba,
+  una grilla de accesos —Alquiler, Trabajos realizados, Presupuestos, Saldos
+  pendientes, Plata, Facturas y servicios, Documentos y planos, Fotos, Notas,
+  Datos— con cuántas cosas tiene cada uno; tocar uno filtra la lista.
+- **Alquiler**: el contrato (sus definiciones), los acuerdos, los cobros de
+  alquiler y los «Datos del arrendamiento» (`datos` con `seccion: "alquiler"`).
+- **Rubro** (materiales, jornales, servicios, honorarios, otros) en trabajos,
+  presupuestos, saldos pendientes, gastos y facturas: lo pendiente y lo
+  presupuestado se suman por rubro y moneda. **Un presupuesto es una
+  referencia**: no entra a la plata. Un solo «＋ Agregar» para todo: qué es, título, fecha, monto y
   moneda si corresponde, vencimiento si es una cuenta a pagar, detalle, enlace y
   foto (se sube al guardar).
-- **La plata de la obra**: entró, salió y a pagar, por moneda y sin convertir,
+- **La plata del proyecto**: entró, salió y pendiente, por moneda y sin convertir,
   con la lista de lo que vence y un «Pagado».
 - **Dónde vive**: en `proyectos/<id>` con `clase: "obra"`, todo adentro del campo
   `obra` (`datos` e `items`, como mapas, con merge). La regla de `proyectos/` ya
@@ -525,12 +534,12 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-8` |
-| `index.html` | `P.PANEL` | `panel-37` |
+| `index.html` | `P.PANEL` | `panel-38` |
 | `invitado.html` | `P.PANEL` | `invitado-3` |
-| `obra.html` | `P.PANEL` | `obra-1` |
+| `obra.html` | `P.PANEL` | `obra-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v29` |
+| `sw.js` | `VERSION` | `panel-shell-v30` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

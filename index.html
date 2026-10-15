@@ -23,10 +23,11 @@
        reglas, fichas. También puedo elegir el ecosistema completo». Vivía
        adentro de Pendientes; ahora manda sobre todas las pestañas. -->
   <select id="cual-app" aria-label="Qué sitio mira el panel"></select>
-  <!-- panel-37 (15-oct-2026): las OBRAS —General Flores y las que vengan—,
-       en su propia página: datos, acuerdos, documentos, fotos, facturas,
-       trabajos y la plata de cada inmueble. Ver obra.html. -->
-  <a class="btn" href="./obra.html" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;text-decoration:none">🏗 Obras</a>
+  <!-- panel-37 (15-oct-2026): los PROYECTOS de inmuebles —General Flores y los
+       que vengan—, en su propia página (obra.html). panel-38: se llaman
+       «Proyectos» y General Flores tiene su acceso directo (Mauro). -->
+  <a class="btn" href="./obra.html?o=general-flores" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;text-decoration:none">🏗 General Flores</a>
+  <a class="btn" href="./obra.html" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;text-decoration:none">📁 Proyectos</a>
   <button class="btn" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
 </div>
 
@@ -547,7 +548,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-37";
+P.PANEL = "panel-38";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO

@@ -569,7 +569,7 @@ teléfono.
 | `obra.html` | `P.PANEL` | `obra-7` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v36` |
+| `sw.js` | `VERSION` | `panel-shell-v37` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

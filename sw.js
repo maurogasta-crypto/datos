@@ -14,7 +14,7 @@
    parece que el despliegue no hizo nada y en realidad hizo la mitad.
    ═══════════════════════════════════════════════════════════ */
 
-const VERSION = 'panel-shell-v36';
+const VERSION = 'panel-shell-v37';
 
 /* Sin `?v=` a propósito. El panel pide `estilos.css?v=estilos-4` y
    `nucleo.js?v=nucleo-3`, y repetir esos números acá sería la TERCERA copia
@@ -71,6 +71,15 @@ const guardable = (r) => r && r.status === 200 && (r.type === 'basic' || r.type 
    la caché sólo se consulta cuando la red ya falló. */
 const enCache = (req) => caches.match(req, { ignoreSearch: true });
 
+/* panel-shell-v37 (15-oct-2026): «red primero» no alcanzaba. GitHub Pages
+   manda `max-age=600`, y el `fetch` de acá respetaba esa caché del navegador:
+   durante diez minutos después de subir una tanda el teléfono seguía
+   recibiendo la versión vieja, aunque «fuera a la red» (Mauro: «sigue sin
+   aparecer la edición», con obra-6 en pantalla y obra-7 ya publicado). Con
+   `no-cache` el navegador PREGUNTA siempre —una pregunta corta, que contesta
+   «no cambió» si no cambió— y la tanda nueva llega en la primera apertura. */
+const aLaRed = (req) => fetch(new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' }));
+
 function guardar(req, res) {
   if (!guardable(res)) return;
   const copia = res.clone();
@@ -87,7 +96,7 @@ self.addEventListener('fetch', (ev) => {
      panel, que es la única pantalla que existe. */
   if (ev.request.mode === 'navigate') {
     ev.respondWith(
-      fetch(ev.request)
+      aLaRed(ev.request)
         .then((r) => { guardar(ev.request, r); return r; })
         .catch(() => enCache(ev.request).then((r) => r || enCache('./index.html')))
     );
@@ -96,7 +105,7 @@ self.addEventListener('fetch', (ev) => {
 
   if (url.origin === location.origin) {
     ev.respondWith(
-      fetch(ev.request)
+      aLaRed(ev.request)
         .then((r) => { guardar(ev.request, r); return r; })
         .catch(() => enCache(ev.request))
     );

@@ -39,7 +39,7 @@
   .ob-unidad small { display: block; font-size: .82rem; } .ob-unidad .ir { color: var(--gris); font-size: 1.4rem; }
   .ob-sub { font-size: 1rem; margin: 1.2rem 0 .2rem; color: var(--gris); font-weight: 600; }
   body.solo-ver [data-gasto-foto], body.solo-ver [data-agregar], body.solo-ver [data-sacar], body.solo-ver [data-pagar],
-  body.solo-ver [data-dato], body.solo-ver [data-unidad-nueva], body.solo-ver [data-unidad-editar] { display: none !important; }
+  body.solo-ver [data-dato], body.solo-ver [data-unidad-nueva], body.solo-ver [data-unidad-editar], body.solo-ver [data-editar], body.solo-ver [data-local-editar] { display: none !important; }
   .ob-form .dos { display: flex; gap: .5rem; } .ob-form .dos > * { flex: 1; min-width: 0; }
   textarea, input, select { width: 100%; }
 </style>
@@ -47,7 +47,14 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-6
+  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-7
+
+  Desde obra-7 (15-oct-2026, Mauro: «tengo que tener la opción de editar los
+  datos») TODO lo cargado se corrige: cada cosa tiene «✎ Editar», que abre la
+  misma ficha con lo que tenía, y la dirección y la descripción del local
+  tienen su ✎. Editar REEMPLAZA la cosa entera —lo que se vació se borra con
+  `deleteField`— pero conserva cuándo se creó, su foto si no se elige otra,
+  su respaldo y si estaba pagada.
 
   Desde obra-6 (reglas v7) un invitado EDITA el proyecto que Mauro le marcó
   con «✎ puede editar» (`edita` de su ficha): ve los mismos botones que él.
@@ -145,7 +152,7 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-9";
 import { doc, getDoc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
-P.PANEL = "obra-6";
+P.PANEL = "obra-7";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;
@@ -302,7 +309,8 @@ function pintar() {
         <p class="ob-dir">Arrendatario: ${P.esc(u.arrendatario || "sin definir")}${u.estado ? " · " + P.esc(u.estado) : ""}
           <button class="mini" data-unidad-editar="${P.esc(u.id)}">✎</button></p></div>`
     : `<div class="ob-cab"><h1>${P.esc(o.nombre || o.id)}</h1>
-      <p class="ob-dir">${P.esc(ob.direccion || "")}${ob.resumen ? " · " + P.esc(ob.resumen) : ""}</p></div>
+      <p class="ob-dir">${P.esc(ob.direccion || "")}${ob.resumen ? " · " + P.esc(ob.resumen) : ""}
+        <button class="mini" data-local-editar aria-label="Cambiar la dirección y la descripción">✎</button></p></div>
       <div class="tarj"><div class="k">Los alquileres</div>
         ${unidades.map((x) => unidadHTML(o, x, todos)).join("") || `<p class="gris">Todavía no hay alquileres.</p>`}
         <div class="fila-btn"><button class="mini" data-unidad-nueva>＋ Alquiler (consultorio, local, depósito…)</button></div></div>
@@ -346,7 +354,7 @@ function itemHTML(x) {
     ${x.factura && facturaTexto(x.factura) ? `<div class="ob-meta">🧾 ${P.esc(facturaTexto(x.factura))}</div>` : ""}
     ${img ? `<a href="${P.esc(img)}" target="_blank" rel="noopener"><img src="${P.esc(img)}" alt="${P.esc(x.titulo || "")}" loading="lazy"></a>` : ""}
     ${enlaceSeguro(x.url) ? `<a href="${P.esc(x.url)}" target="_blank" rel="noopener">Abrir ↗</a>` : ""}
-    <div class="fila-btn" style="margin-top:.2rem"><button class="mini" data-sacar="${P.esc(x.id)}">Sacar</button></div>
+    <div class="fila-btn" style="margin-top:.2rem"><button class="mini" data-editar="${P.esc(x.id)}">✎ Editar</button><button class="mini" data-sacar="${P.esc(x.id)}">Sacar</button></div>
   </div>`;
 }
 
@@ -359,6 +367,7 @@ function formHTML() {
   const estadoFoto = a.leyendo ? `<span class="gris">✨ Leyendo la factura…</span>`
     : a.archivo ? `<span class="gris">${P.esc(a.archivo.name)} · ${a.leida ? "✨ leída por la IA: revisá" : "se sube al guardar"}</span>` : "";
   return `<div class="tarj ob-form" id="form-obra">
+    ${a.id ? `<div class="k">✎ Corrigiendo «${P.esc(a.titulo || "")}»</div>` : ""}
     ${t.plata ? `<div class="k">La foto de la factura</div>
       <div class="fila-btn">${fotoBtns}${estadoFoto}</div>
       <p class="gris" style="font-size:.8rem;margin:.2rem 0 .6rem">La IA completa lo que puede; lo que no se lee con seguridad queda vacío. Sin foto, se carga a mano.</p>` : ""}
@@ -373,7 +382,7 @@ function formHTML() {
     <label>Enlace (documento, artefacto, carpeta) <input type="url" data-f="url" maxlength="500" value="${P.esc(a.url || "")}" placeholder="https://…"></label>
     ${t.plata ? "" : `<div class="fila-btn">${fotoBtns}${estadoFoto}</div>`}
     ${a.factura ? `<p class="gris" style="font-size:.8rem">${P.esc(facturaTexto(a.factura))}</p>` : ""}
-    <div class="fila-btn"><button class="btn p" data-guardar${a.leyendo ? " disabled" : ""}>Guardar</button><button class="mini" data-cancelar>Cancelar</button></div>
+    <div class="fila-btn"><button class="btn p" data-guardar${a.leyendo ? " disabled" : ""}>${a.id ? "Guardar los cambios" : "Guardar"}</button><button class="mini" data-cancelar>Cancelar</button></div>
   </div>`;
 }
 
@@ -468,22 +477,50 @@ function enganchar() {
       if (t.plata && a.monto !== undefined && a.monto !== "" && !(monto > 0)) return P.aviso("El monto tiene que ser mayor que cero.", "error");
       ev.target.disabled = true;
       try {
-        let imagen = "";
+        const viejo = a.id ? (listaItems(OBRAS.find((o) => o.id === abierta)).find((x) => x.id === a.id) || null) : null;
+        if (a.id && !viejo) throw new Error("esa cosa ya no está: alguien la sacó mientras la editabas");
+        let imagen = viejo && P.esImagenNuestra(viejo.imagen) ? viejo.imagen : "";
         if (a.archivo) { P.aviso("Subiendo la imagen…"); imagen = await P.subirCaptura(a.archivo); }
         const item = { tipo: a.tipo, titulo: String(a.titulo || "").trim().slice(0, 120), fecha: a.fecha || P.hoy(),
-          texto: String(a.texto || "").trim().slice(0, 2000), creadoEn: new Date().toISOString() };
+          texto: String(a.texto || "").trim().slice(0, 2000), creadoEn: (viejo && viejo.creadoEn) || new Date().toISOString() };
+        if (viejo) { item.editadoEn = new Date().toISOString(); if (viejo.respaldo) item.respaldo = viejo.respaldo; }
         if (a.url && a.url.trim()) item.url = a.url.trim().slice(0, 500);
         if (imagen) item.imagen = imagen;
         if (t.plata && monto > 0) { item.monto = monto; item.moneda = MONEDAS.includes(a.moneda) ? a.moneda : "UYU"; }
-        if (unidad) item.unidad = unidad;
+        if (viejo ? viejo.unidad : unidad) item.unidad = viejo ? viejo.unidad : unidad;
         if (t.plata && a.factura) item.factura = a.factura;
         if (t.rubro) item.rubro = RUBROS[a.rubro] ? a.rubro : "materiales";
-        if (a.tipo === "apagar") { item.pagado = false; if (a.vence) item.vence = a.vence; }
-        await guardar({ items: { [idNuevo("i")]: item } });
+        if (a.tipo === "apagar") {
+          item.pagado = !!(viejo && viejo.pagado);
+          if (item.pagado && viejo.pagadoEl) item.pagadoEl = viejo.pagadoEl;
+          if (a.vence) item.vence = a.vence;
+        }
+        if (viejo) {
+          // Lo que tenía y ya no tiene se BORRA: si no, el merge lo dejaría.
+          for (const k of Object.keys(viejo)) if (k !== "id" && !(k in item)) item[k] = deleteField();
+        }
+        await guardar({ items: { [a.id || idNuevo("i")]: item } });
         agregando = null; P.aviso("Guardado."); await recargar();
       } catch (e) { ev.target.disabled = false; P.aviso(P.explicar(e), "error"); }
     };
   }
+  for (const b of document.querySelectorAll("[data-editar]")) b.onclick = () => {
+    const x = listaItems(OBRAS.find((o) => o.id === abierta)).find((y) => y.id === b.dataset.editar);
+    if (!x) return;
+    agregando = { grupo: "", id: x.id, tipo: x.tipo, titulo: x.titulo || "", fecha: x.fecha || "", vence: x.vence || "",
+      monto: x.monto || "", moneda: x.moneda || "", rubro: x.rubro || "", texto: x.texto || "", url: x.url || "",
+      factura: x.factura || null };
+    pintar();
+    const f = $("form-obra"); if (f) f.scrollIntoView({ block: "start" });
+  };
+  const bl = document.querySelector("[data-local-editar]");
+  if (bl) bl.onclick = async () => {
+    const ob = (OBRAS.find((o) => o.id === abierta) || {}).obra || {};
+    const direccion = prompt("Dirección:", ob.direccion || ""); if (direccion === null) return;
+    const resumen = prompt("Descripción corta (qué es el local):", ob.resumen || ""); if (resumen === null) return;
+    try { await guardar({ direccion: direccion.trim().slice(0, 160), resumen: resumen.trim().slice(0, 200) }); await recargar(); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
   for (const b of document.querySelectorAll("[data-pagar]")) b.onclick = async () => {
     try { await guardar({ items: { [b.dataset.pagar]: { pagado: true, pagadoEl: P.hoy() } } }); await recargar(); }
     catch (e) { P.aviso(P.explicar(e), "error"); }

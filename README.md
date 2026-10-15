@@ -527,6 +527,10 @@ panel de acceso».
 - **La página del invitado se instala como app** (`invitado-5`): trae el
   manifiesto y el service worker del panel, y ofrece «Instalar» (o explica
   cómo, en iPhone y desde el menú del navegador).
+- **Todo lo cargado se corrige** (`obra-7`): «✎ Editar» en cada cosa abre la
+  misma ficha con lo que tenía; guardar la reemplaza entera (lo que se vació se
+  borra) y conserva cuándo se creó, la foto, el respaldo y si estaba pagada. La
+  dirección y la descripción del local tienen su ✎.
 - **Un gasto se carga con la foto de la factura** (`obra-4`, `nucleo-9`), como
   en Tiempos: «📷 Gasto con foto» abre la ficha con la foto primero; la IA
   (`P.leerFactura`, la `claude-proxy` del Netlify de Casa Verde) completa lo
@@ -562,10 +566,10 @@ teléfono.
 | `nucleo.js` | `P.VERSION` | `nucleo-9` |
 | `index.html` | `P.PANEL` | `panel-41` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
-| `obra.html` | `P.PANEL` | `obra-6` |
+| `obra.html` | `P.PANEL` | `obra-7` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v35` |
+| `sw.js` | `VERSION` | `panel-shell-v36` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

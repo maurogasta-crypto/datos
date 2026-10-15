@@ -502,7 +502,7 @@ panel de acceso».
 
 - **Una página aparte**, con dos botones en la barra del panel: «🏗 General
   Flores» (acceso directo, `obra.html?o=general-flores`) y «📁 Proyectos». En
-  pantalla se llaman **proyectos** desde `obra-3` (Mauro: «llamemos le
+  pantalla se llaman **proyectos** desde `obra-2` (Mauro: «llamemos le
   proyectos. No obras»); por dentro siguen siendo `clase: "obra"`. Arriba,
   una grilla de accesos —Alquiler, Trabajos realizados, Presupuestos, Saldos
   pendientes, Plata, Facturas y servicios, Documentos y planos, Fotos, Notas,

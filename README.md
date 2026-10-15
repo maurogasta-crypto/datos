@@ -500,8 +500,9 @@ documentos con su respaldo… padrones, planos, fotos, facturas, servicios,
 gastos, trabajos… balances de cuentas a pagar e ingresos; clara y simple como
 panel de acceso».
 
-- **Una página aparte**, con dos botones en la barra del panel: «🏗 General
-  Flores» (acceso directo, `obra.html?o=general-flores`) y «📁 Proyectos». En
+- **Una página aparte**, con UN botón en la barra del panel, «📁 Proyectos»
+  (desde `panel-39`: el acceso directo a General Flores lo duplicaba; con un
+  solo proyecto la página abre directo en él). En
   pantalla se llaman **proyectos** desde `obra-2` (Mauro: «llamemos le
   proyectos. No obras»); por dentro siguen siendo `clase: "obra"`. Arriba,
   una grilla de accesos —Alquiler, Trabajos realizados, Presupuestos, Saldos
@@ -539,12 +540,12 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-8` |
-| `index.html` | `P.PANEL` | `panel-38` |
+| `index.html` | `P.PANEL` | `panel-39` |
 | `invitado.html` | `P.PANEL` | `invitado-3` |
 | `obra.html` | `P.PANEL` | `obra-3` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v31` |
+| `sw.js` | `VERSION` | `panel-shell-v32` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

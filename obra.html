@@ -45,7 +45,15 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-3
+  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-4
+
+  Desde obra-4 (15-oct-2026) un gasto se carga con la FOTO DE LA FACTURA,
+  como en el resto del ecosistema (Mauro): «📷 Gasto con foto» abre la ficha
+  con la foto primero, la IA (`P.leerFactura`, nucleo-9) completa lo vacío
+  —título, monto, moneda, fecha, rubro, detalle— y trae RUT, número, medio y
+  renglones al campo `factura`. La persona revisa y guarda; la imagen se
+  sube al guardar. La moneda, la fecha y el rubro del formulario son valores
+  POR DEFECTO: lo que lee la factura les gana (la lección de plata-15).
 
   Desde obra-3 (15-oct-2026) un inmueble se mira en DOS niveles (Mauro:
   «antes de esa visualización tiene que haber una visión en diferentes
@@ -121,9 +129,9 @@
 </div>
 
 <script type="module">
-import { P, $, db } from "./nucleo.js?v=nucleo-8";
+import { P, $, db } from "./nucleo.js?v=nucleo-9";
 import { doc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
-P.PANEL = "obra-3";
+P.PANEL = "obra-4";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;
@@ -297,7 +305,7 @@ function pintar() {
     ${u && (grupo === "alquiler" || grupo === "todo") ? datosHTML(datos, "Datos del arrendamiento", "＋ Dato (precio, plazo, garantía…)") : ""}
     ${!u && (grupo === "datos" || grupo === "todo") ? datosHTML(datos, "Datos generales del local", "＋ Dato (padrón, superficie, escribano…)") : ""}
 
-    <div class="fila-btn"><button class="btn p" data-agregar="${grupo === "todo" || grupo === "datos" ? "" : grupo}">＋ Agregar ${grupo === "todo" || grupo === "datos" ? (u ? "a " + P.esc(u.nombre) : "al local") : "a " + (GRUPOS.find((g) => g[0] === grupo) || [, , ""])[2].toLowerCase()}</button></div>
+    <div class="fila-btn"><button class="btn p" data-gasto-foto>📷 Gasto con foto</button><button class="btn" data-agregar="${grupo === "todo" || grupo === "datos" ? "" : grupo}">＋ Agregar ${grupo === "todo" || grupo === "datos" ? (u ? "a " + P.esc(u.nombre) : "al local") : "a " + (GRUPOS.find((g) => g[0] === grupo) || [, , ""])[2].toLowerCase()}</button></div>
     ${agregando ? formHTML() : ""}
 
     ${grupo === "datos" ? "" : `<div class="tarj">${visibles.map(itemHTML).join("") || `<p class="gris">Nada en esta sección todavía.</p>`}</div>`}
@@ -312,6 +320,7 @@ function itemHTML(x) {
     <div class="t"><span>${t.ic}</span><b>${P.esc(x.titulo || t.n)}</b>${Number(x.monto) > 0 ? `<span class="m${t.signo === 1 ? " ob-ok" : ""}">${t.signo === 1 ? "+" : t.signo === undefined ? "" : "−"}${fmt(x.monto)} ${P.esc(x.moneda || "")}</span>` : ""}</div>
     <div class="ob-meta">${P.esc(t.n)}${t.rubro && RUBROS[x.rubro] ? " · " + P.esc(RUBROS[x.rubro]) : ""}${x.fecha ? " · " + P.esc(dia(x.fecha)) : ""}${x.tipo === "apagar" ? (x.pagado ? " · pagado" : x.vence ? " · vence " + P.esc(dia(x.vence)) : " · a pagar") : ""}${x.respaldo ? " · 💾 respaldado" : (x.url || img) ? " · sin respaldo todavía" : ""}</div>
     ${x.texto ? `<p>${P.esc(x.texto)}</p>` : ""}
+    ${x.factura && facturaTexto(x.factura) ? `<div class="ob-meta">🧾 ${P.esc(facturaTexto(x.factura))}</div>` : ""}
     ${img ? `<a href="${P.esc(img)}" target="_blank" rel="noopener"><img src="${P.esc(img)}" alt="${P.esc(x.titulo || "")}" loading="lazy"></a>` : ""}
     ${enlaceSeguro(x.url) ? `<a href="${P.esc(x.url)}" target="_blank" rel="noopener">Abrir ↗</a>` : ""}
     <div class="fila-btn" style="margin-top:.2rem"><button class="mini" data-sacar="${P.esc(x.id)}">Sacar</button></div>
@@ -322,7 +331,14 @@ function formHTML() {
   const a = agregando;
   const opciones = Object.entries(TIPOS).filter(([, t]) => (!a.grupo || t.grupo === a.grupo || (a.grupo === "plata" && cuenta(t))) && (unidad || a.grupo || t.grupo !== "alquiler"));
   const t = TIPOS[a.tipo] || {};
+  const fotoBtns = `<label class="mini">📷 Sacar foto<input type="file" accept="image/*" capture="environment" data-foto hidden></label>
+      <label class="mini">🖼 Elegir imagen<input type="file" accept="image/*" data-foto hidden></label>`;
+  const estadoFoto = a.leyendo ? `<span class="gris">✨ Leyendo la factura…</span>`
+    : a.archivo ? `<span class="gris">${P.esc(a.archivo.name)} · ${a.leida ? "✨ leída por la IA: revisá" : "se sube al guardar"}</span>` : "";
   return `<div class="tarj ob-form" id="form-obra">
+    ${t.plata ? `<div class="k">La foto de la factura</div>
+      <div class="fila-btn">${fotoBtns}${estadoFoto}</div>
+      <p class="gris" style="font-size:.8rem;margin:.2rem 0 .6rem">La IA completa lo que puede; lo que no se lee con seguridad queda vacío. Sin foto, se carga a mano.</p>` : ""}
     <label>Qué es <select data-f="tipo">${opciones.map(([k, x]) => `<option value="${k}"${a.tipo === k ? " selected" : ""}>${x.ic} ${P.esc(x.n)}</option>`).join("")}</select></label>
     <label>Título <input data-f="titulo" maxlength="120" value="${P.esc(a.titulo || "")}" placeholder="Ej.: Arena y portland · Jornal de Pedro · Presupuesto eléctrico"></label>
     <div class="dos"><label>Fecha <input type="date" data-f="fecha" value="${P.esc(a.fecha || P.hoy())}"></label>
@@ -332,13 +348,39 @@ function formHTML() {
     ${t.rubro ? `<label>Rubro <select data-f="rubro">${Object.entries(RUBROS).map(([k, n]) => `<option value="${k}"${(a.rubro || "materiales") === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>` : ""}
     <label>Detalle <textarea data-f="texto" rows="3" maxlength="2000" placeholder="Qué se acordó, qué se hizo, quién, cuánto…">${P.esc(a.texto || "")}</textarea></label>
     <label>Enlace (documento, artefacto, carpeta) <input type="url" data-f="url" maxlength="500" value="${P.esc(a.url || "")}" placeholder="https://…"></label>
-    <div class="fila-btn">
-      <label class="mini">📷 Sacar foto<input type="file" accept="image/*" capture="environment" data-foto hidden></label>
-      <label class="mini">🖼 Elegir imagen<input type="file" accept="image/*" data-foto hidden></label>
-      ${a.archivo ? `<span class="gris">${P.esc(a.archivo.name)} · se sube al guardar</span>` : ""}
-    </div>
-    <div class="fila-btn"><button class="btn p" data-guardar>Guardar</button><button class="mini" data-cancelar>Cancelar</button></div>
+    ${t.plata ? "" : `<div class="fila-btn">${fotoBtns}${estadoFoto}</div>`}
+    ${a.factura ? `<p class="gris" style="font-size:.8rem">${P.esc(facturaTexto(a.factura))}</p>` : ""}
+    <div class="fila-btn"><button class="btn p" data-guardar${a.leyendo ? " disabled" : ""}>Guardar</button><button class="mini" data-cancelar>Cancelar</button></div>
   </div>`;
+}
+
+const facturaTexto = (f) => [f.rut && "RUT " + f.rut, f.numero && "N.º " + f.numero, f.medio && P.MEDIOS_PAGO[f.medio],
+  f.renglones && f.renglones.length + (f.renglones.length === 1 ? " renglón" : " renglones")].filter(Boolean).join(" · ");
+
+/* La foto, leída por la IA: completa lo que está VACÍO, y además la moneda,
+   la fecha y el rubro, que en el formulario son valores por defecto. */
+async function leerFoto(file) {
+  const a = agregando;
+  a.leyendo = true; pintar();
+  try {
+    const s = await P.leerFactura(file, { rubros: Object.keys(RUBROS) });
+    if (agregando !== a) return;
+    if (s) {
+      const titulo = [s.comercio, s.detalle].filter(Boolean).join(" · ").slice(0, 120);
+      if (!String(a.titulo || "").trim() && titulo) a.titulo = titulo;
+      if (!(Number(a.monto) > 0) && s.monto) a.monto = s.monto;
+      if (s.moneda) a.moneda = s.moneda;
+      if (s.fecha) a.fecha = s.fecha;
+      if (s.rubro) a.rubro = s.rubro;
+      if (!String(a.texto || "").trim()) {
+        const r = (s.factura && s.factura.renglones || []).map((x) => "· " + x.d + (x.m ? " — " + fmt(x.m) : "")).join("\n");
+        a.texto = [s.detalle, r].filter(Boolean).join("\n").slice(0, 2000);
+      }
+      a.factura = s.factura; a.leida = true;
+    } else P.aviso("La IA no pudo leer la factura: completala a mano.", "error");
+  } catch (e) { P.aviso("No se pudo leer con IA (" + e.message + "): completala a mano.", "error"); }
+  a.leyendo = false;
+  if (agregando === a) pintar();
 }
 
 function leerForm() {
@@ -372,6 +414,11 @@ function enganchar() {
     } catch (e) { P.aviso(P.explicar(e), "error"); }
   };
   for (const b of document.querySelectorAll("[data-grupo]")) b.onclick = () => { grupo = b.dataset.grupo; agregando = null; pintar(); };
+  for (const b of document.querySelectorAll("[data-gasto-foto]")) b.onclick = () => {
+    const tipo = { pendientes: "apagar", trabajos: "trabajo", facturas: "factura", presupuestos: "presupuesto" }[grupo] || "gasto";
+    agregando = { grupo: "", tipo }; pintar();
+    const f = $("form-obra"); if (f) f.scrollIntoView({ block: "start" });
+  };
   for (const b of document.querySelectorAll("[data-agregar]")) b.onclick = () => {
     const g = b.dataset.agregar;
     const tipo = (Object.entries(TIPOS).find(([, t]) => t.grupo === g) || ["nota"])[0];
@@ -382,7 +429,11 @@ function enganchar() {
   if (f) {
     f.oninput = leerForm;
     f.querySelector('[data-f="tipo"]').onchange = () => { leerForm(); pintar(); };
-    for (const i of f.querySelectorAll("[data-foto]")) i.onchange = () => { leerForm(); agregando.archivo = i.files && i.files[0] || null; pintar(); };
+    for (const i of f.querySelectorAll("[data-foto]")) i.onchange = () => {
+      leerForm(); const file = i.files && i.files[0] || null;
+      agregando.archivo = file; agregando.leida = false; agregando.factura = null;
+      if (file && TIPOS[agregando.tipo] && TIPOS[agregando.tipo].plata) leerFoto(file); else pintar();
+    };
     f.querySelector("[data-cancelar]").onclick = () => { agregando = null; pintar(); };
     f.querySelector("[data-guardar]").onclick = async (ev) => {
       leerForm();
@@ -402,6 +453,7 @@ function enganchar() {
         if (imagen) item.imagen = imagen;
         if (t.plata && monto > 0) { item.monto = monto; item.moneda = MONEDAS.includes(a.moneda) ? a.moneda : "UYU"; }
         if (unidad) item.unidad = unidad;
+        if (t.plata && a.factura) item.factura = a.factura;
         if (t.rubro) item.rubro = RUBROS[a.rubro] ? a.rubro : "materiales";
         if (a.tipo === "apagar") { item.pagado = false; if (a.vence) item.vence = a.vence; }
         await guardar({ items: { [idNuevo("i")]: item } });

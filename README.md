@@ -513,6 +513,12 @@ panel de acceso».
   cada uno una tarjeta que abre su ficha (`?o=<obra>&u=<unidad>`), y debajo
   **lo general del local**. Una cosa o un dato es de un alquiler si lleva
   `unidad`. La plata del local suma todo, alquileres incluidos.
+- **Un gasto se carga con la foto de la factura** (`obra-4`, `nucleo-9`), como
+  en Tiempos: «📷 Gasto con foto» abre la ficha con la foto primero; la IA
+  (`P.leerFactura`, la `claude-proxy` del Netlify de Casa Verde) completa lo
+  vacío —título, monto, moneda, fecha, rubro, detalle con los renglones— y
+  guarda RUT, número y medio en `factura`. Se revisa y se guarda; la imagen
+  se sube al guardar. Si la IA no anda, se carga a mano.
 - **Alquiler** (en la ficha de cada uno): el contrato (sus definiciones), los
   acuerdos, los cobros y los «Datos del arrendamiento».
 - **Rubro** (materiales, jornales, servicios, honorarios, otros) en trabajos,
@@ -539,19 +545,19 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-8` |
+| `nucleo.js` | `P.VERSION` | `nucleo-9` |
 | `index.html` | `P.PANEL` | `panel-39` |
 | `invitado.html` | `P.PANEL` | `invitado-3` |
-| `obra.html` | `P.PANEL` | `obra-3` |
+| `obra.html` | `P.PANEL` | `obra-4` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v32` |
+| `sw.js` | `VERSION` | `panel-shell-v33` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-8`. Sin ese número, el
+pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-9`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

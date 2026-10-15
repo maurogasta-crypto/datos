@@ -18,7 +18,7 @@ import {
 } from "./firebase-init.js?v=init-5";
 
 export const P = {};
-P.VERSION = "nucleo-8";
+P.VERSION = "nucleo-9";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */
@@ -124,18 +124,75 @@ P.crearCuenta = (mail, clave) => createUserWithEmailAndPassword(auth, mail.trim(
    foto mirada y descartada queda huérfana en Cloudinary. */
 P.CLOUDINARY = { cloud: "dnwfu8ffn", preset: "preset-comprobantes" };
 P.esImagenNuestra = (u) => /^https:\/\/res\.cloudinary\.com\/dnwfu8ffn\//.test(String(u || ""));
-P.subirCaptura = async function (file) {
+P.achicar = async function (file, lado = 1600) {
   const img = await createImageBitmap(file);
-  const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+  const k = Math.min(1, lado / Math.max(img.width, img.height));
   const c = document.createElement("canvas");
   c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
   c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-  const blob = await new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.82));
+  return new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.82));
+};
+P.subirCaptura = async function (file) {
+  const blob = await P.achicar(file);
   const fd = new FormData();
   fd.append("file", blob, "captura.jpg"); fd.append("upload_preset", P.CLOUDINARY.preset); fd.append("asset_folder", "panel");
   const r = await fetch(`https://api.cloudinary.com/v1_1/${P.CLOUDINARY.cloud}/image/upload`, { method: "POST", body: fd });
   if (!r.ok) throw new Error("Cloudinary contestó " + r.status);
   return (await r.json()).secure_url;
+};
+
+/* ---------- la foto de una factura, leída por la IA (nucleo-9) ---------- */
+/* Mauro, 15-oct-2026: «la carga de gastos dentro de General Flores con la
+   misma dinámica de la carga de fotos de facturas que ya usamos en el resto
+   del ecosistema». Es la de Tiempos (plata-15): la foto primero, la IA
+   completa lo que está vacío, la persona revisa y guarda; la imagen se sube
+   al GUARDAR. Misma función de IA (`claude-proxy` del Netlify de Casa Verde,
+   la ÚNICA clave de Gemini del ecosistema), mismo modelo y mismo límite
+   —flash-lite y 2000 tokens: el que «piensa» corta el JSON—, y lo que vuelve
+   se lee con desconfianza: lo que no se entiende queda vacío, nunca
+   inventado. Nunca bloquea: si no anda, se completa a mano. */
+P.IA = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
+P.MONEDAS_IA = ["UYU", "USD", "BRL"];
+P.MEDIOS_PAGO = { efectivo: "Efectivo", debito: "Débito", credito: "Crédito", transferencia: "Transferencia", pix: "PIX" };
+P.leerFacturaIA = function (texto, rubros = []) {
+  let j = null;
+  const t = String(texto || "").replace(/```(?:json)?/gi, "");
+  const i = t.indexOf("{"), k = t.lastIndexOf("}");
+  if (i !== -1 && k > i) { try { j = JSON.parse(t.slice(i, k + 1)); } catch { j = null; } }
+  if (!j || typeof j !== "object") return null;
+  const txt = (x, n) => String(x ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  const num = (x) => { const v = Number(String(x ?? "").replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".")); return v > 0 ? Math.round(v * 100) / 100 : ""; };
+  const moneda = String(j.moneda || "").toUpperCase().replace("R$", "BRL").replace("$U", "UYU").replace("U$S", "USD");
+  const medio = String(j.medio || "").toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+  const factura = {
+    rut: txt(j.rut, 30).replace(/[^\d./-]/g, ""), numero: txt(j.numero, 40),
+    medio: P.MEDIOS_PAGO[medio] ? medio : medio.startsWith("tarjetadecredito") ? "credito" : medio.startsWith("tarjetadedebito") ? "debito" : "",
+    renglones: (Array.isArray(j.renglones) ? j.renglones : []).slice(0, 40)
+      .map((r) => ({ d: txt(r && (r.detalle ?? r.d), 80), m: num(r && (r.monto ?? r.m)) || null })).filter((r) => r.d),
+  };
+  if (!factura.renglones.length) delete factura.renglones;
+  for (const x of Object.keys(factura)) if (factura[x] === "") delete factura[x];
+  return {
+    monto: num(j.monto), moneda: P.MONEDAS_IA.includes(moneda) ? moneda : "",
+    fecha: /^\d{4}-\d{2}-\d{2}$/.test(String(j.fecha || "")) ? j.fecha : "",
+    comercio: txt(j.comercio, 80), detalle: txt(j.detalle, 300),
+    rubro: rubros.includes(j.rubro) ? j.rubro : "",
+    factura: Object.keys(factura).length ? factura : null,
+  };
+};
+P.leerFactura = async function (file, { rubros = [], hoy = P.hoy() } = {}) {
+  const blob = await P.achicar(file);
+  const data = await new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = mal; r.readAsDataURL(blob); });
+  const r = await fetch(P.IA, { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "gemini-2.5-flash-lite", max_tokens: 2000, messages: [{ role: "user", content: [
+      { type: "image", source: { type: "base64", media_type: "image/jpeg", data } },
+      { type: "text", text: `Es una factura, boleta o comprobante de un gasto de una obra o un local en alquiler, en Uruguay o Brasil. Hoy es ${hoy}. Devolvé SOLO un JSON, sin texto alrededor:
+{"monto": número total, "moneda": "UYU" | "USD" | "BRL", "fecha": "AAAA-MM-DD", "comercio": nombre del comercio o de quien cobra, "detalle": qué se compró o qué trabajo fue, en pocas palabras, "rubro": uno de [${rubros.join(", ")}] (materiales de construcción, jornales o mano de obra, servicios como UTE u OSE, honorarios de un profesional, u otros),
+ "rut": el RUT o CNPJ del comercio, "numero": número o serie del comprobante, "medio": "efectivo" | "debito" | "credito" | "transferencia" | "pix" | "", "renglones": [{"detalle": cada cosa, "monto": su importe}] (hasta 40)}.
+Si un dato no se lee con seguridad, dejalo vacío (""). No inventes.` }] }] }) });
+  if (!r.ok) throw new Error("la IA contestó " + r.status);
+  const j = await r.json();
+  return P.leerFacturaIA(((j.content || [])[0] || {}).text, rubros);
 };
 
 /* ---------- preguntar antes de algo irreversible ---------- */

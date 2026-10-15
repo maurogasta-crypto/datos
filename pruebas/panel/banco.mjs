@@ -1745,5 +1745,23 @@ ok(redirigido === null, "Mauro (sin ficha) se queda en el panel");
 ok(inv.includes('body: JSON.stringify({ base: "panel", reporteId: id })') && !/body:[^\n]*porQue/.test(inv),
    "despierta a Claude con la base y el id, nunca con el texto");
 
+/* ---- nucleo-9: la factura leída por la IA (obra.html, «📷 Gasto con foto») ---- */
+console.log("\n· La foto de la factura");
+{
+  const R = ["materiales", "jornales", "servicios", "honorarios", "otros"];
+  const f = P.leerFacturaIA('```json\n{"monto":"$ 12.500,50","moneda":"$U","fecha":"2026-10-14","comercio":"Barraca X","detalle":"arena y portland","rubro":"materiales","rut":"21 234567 0012","numero":"A-123","medio":"Tarjeta de débito","renglones":[{"detalle":"Arena","monto":"2.500"},{"detalle":""}]}\n```', R);
+  ok(f && f.monto === 12500.5 && f.moneda === "UYU" && f.fecha === "2026-10-14", "lee el total con miles y coma, la moneda «$U» y la fecha");
+  ok(f && f.rubro === "materiales" && f.comercio === "Barraca X", "trae el comercio y un rubro válido");
+  ok(f && f.factura && f.factura.rut === "212345670012" && f.factura.numero === "A-123" && f.factura.medio === "debito"
+     && f.factura.renglones.length === 1 && f.factura.renglones[0].m === 2500, "RUT, número, medio y renglones (sin los vacíos) van a `factura`");
+  const g = P.leerFacturaIA('{"monto":"no se ve","moneda":"pesos","fecha":"14/10","rubro":"comida"}', R);
+  ok(g && g.monto === "" && g.moneda === "" && g.fecha === "" && g.rubro === "" && g.factura === null, "lo que no se entiende queda VACÍO, nunca inventado");
+  ok(P.leerFacturaIA("no pude leer la imagen", R) === null && P.leerFacturaIA("{roto", R) === null, "una respuesta sin JSON es null: se completa a mano");
+  const ob = fs.readFileSync(RAIZ + "obra.html", "utf8");
+  ok(ob.includes("data-gasto-foto") && ob.includes("P.leerFactura(file") && /item\.factura = a\.factura/.test(ob),
+     "la obra carga el gasto con la foto, la lee con la IA y guarda lo de la factura");
+  ok(!/subirCaptura[^\n]*onchange|onchange[^\n]*subirCaptura/.test(ob), "la imagen se sube al GUARDAR, nunca al elegirla");
+}
+
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

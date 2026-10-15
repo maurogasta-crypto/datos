@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel · obras</title>
+<link rel="stylesheet" href="estilos.css?v=estilos-14">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" href="./icono-192.png">
+<link rel="manifest" href="./manifest.json">
+<style>
+  .ob-cab h1 { margin: .2rem 0 0; }
+  .ob-dir { color: var(--gris); margin: 0 0 .6rem; }
+  .ob-obras { display: flex; gap: .4rem; flex-wrap: wrap; margin: .4rem 0 .8rem; }
+  .ob-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .5rem; margin: .8rem 0; }
+  .ob-tile { background: var(--tinta2); border: 1px solid var(--linea); border-radius: var(--r); padding: .7rem .4rem;
+    text-align: center; color: var(--texto); font: inherit; cursor: pointer; min-height: 84px; }
+  .ob-tile b { display: block; font-size: 1.6rem; line-height: 1.2; }
+  .ob-tile span { display: block; font-size: .8rem; }
+  .ob-tile small { color: var(--gris); font-family: var(--mono); font-size: .72rem; }
+  .ob-tile.on { border-color: var(--acento); background: var(--tinta3); }
+  .ob-plata { display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: .2rem .6rem; font-size: .9rem; align-items: baseline; }
+  .ob-plata .n { text-align: right; font-family: var(--mono); }
+  .ob-ok { color: var(--ok); } .ob-mal { color: var(--mal); }
+  .ob-dato { display: flex; justify-content: space-between; gap: .6rem; padding: .3rem 0; border-bottom: 1px solid var(--linea); }
+  .ob-dato .k2 { color: var(--gris); font-size: .85rem; }
+  .ob-item { padding: .6rem 0; border-bottom: 1px solid var(--linea); }
+  .ob-item .t { display: flex; gap: .5rem; align-items: baseline; }
+  .ob-item .t b { flex: 1; }
+  .ob-item .m { font-family: var(--mono); white-space: nowrap; }
+  .ob-item p { margin: .2rem 0; white-space: pre-wrap; font-size: .9rem; }
+  .ob-item img { max-width: 100%; max-height: 240px; border-radius: var(--r-s); display: block; margin: .3rem 0; }
+  .ob-meta { font-size: .78rem; color: var(--gris); }
+  .ob-form .dos { display: flex; gap: .5rem; } .ob-form .dos > * { flex: 1; min-width: 0; }
+  textarea, input, select { width: 100%; }
+</style>
+</head>
+<body>
+<!--
+  ════════════════════════════════════════════════════════════════
+  obra.html — Las OBRAS: un lugar por inmueble. Sello: obra-1
+
+  Mauro, 15-oct-2026: «la interfaz en panel para ver todos los detalles de lo
+  que se va acordando dentro del proyecto de General Flores… los links a los
+  artefactos y documentos con su respaldo dentro del repositorio de datos.
+  Puedo agregar padrones, planos, fotos, facturas, servicios, gastos,
+  trabajos… balances de cuentas a pagar e ingresos; clara y simple como panel
+  de acceso».
+
+  DÓNDE VIVE: en `proyectos/<id>` de ESTA base, con `clase: "obra"` y todo lo
+  de la obra adentro del campo `obra` (`datos` y `items`, como MAPAS: dos
+  teléfonos no se pisan). La regla de `proyectos/` ya deja leer y escribir a
+  Mauro y al agente: sin colección ni regla nuevas. Un invitado no lo ve
+  salvo que Mauro le habilite ese proyecto.
+
+  EL RESPALDO no va a este repositorio, que es PÚBLICO: va a la bodega
+  (`maurogasta-crypto/bodega`, privada). Lo hace la ronda con
+  `herramientas/obras.mjs respaldar`: baja cada archivo y la ficha entera a
+  `obras/<id>/` y anota acá, en cada cosa, dónde quedó (`respaldo`). Un
+  documento de claude.ai (el bosquejo del contrato) lo exporta la sesión.
+
+  LA PLATA de acá es la de la obra: lo que se le cobra, lo que se le gasta y
+  lo que hay que pagar, por moneda y sin convertir. Lo que se registra acá lo
+  PROPONE la ronda en Tiempos (Plata, cuenta de la obra) para que el gestor
+  central no lo pierda; nada se escribe dos veces por su cuenta.
+  ════════════════════════════════════════════════════════════════
+-->
+
+<div id="barra">
+  <div class="marca"><a href="./" class="volver" style="text-decoration:none">← Panel</a> · Obras<small id="sello"></small></div>
+  <button class="btn hide" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
+</div>
+
+<div id="sin-sdk" class="contenedor hide">
+  <h1>Falta Firebase</h1>
+  <div class="tarj"><p id="sin-sdk-que" class="gris"></p>
+    <div class="fila-btn"><button class="btn p" id="btnReintentar">Reintentar</button></div></div>
+</div>
+
+<div id="puerta" class="contenedor hide">
+  <h1>Entrar</h1>
+  <div class="tarj">
+    <label for="mail">Mail</label>
+    <input type="email" id="mail" inputmode="email" autocomplete="username">
+    <label for="clave">Contraseña</label>
+    <input type="password" id="clave" autocomplete="current-password">
+    <div class="fila-btn"><button class="btn p" id="btnEntrar">Entrar</button></div>
+  </div>
+</div>
+
+<div id="app" class="contenedor hide">
+  <div id="obras" class="ob-obras"></div>
+  <div id="obra"></div>
+</div>
+
+<script type="module">
+import { P, $, db } from "./nucleo.js?v=nucleo-8";
+import { doc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
+P.PANEL = "obra-1";
+P.pintarSello();
+
+/* Los tipos de cosa que se le anotan a una obra. `plata`: si lleva monto;
+   `signo`: +1 entra, −1 sale, 0 es una cuenta a pagar (sale cuando se paga). */
+const TIPOS = {
+  acuerdo:   { ic: "🤝", n: "Acuerdo",          grupo: "acuerdos" },
+  documento: { ic: "📄", n: "Documento",        grupo: "documentos" },
+  plano:     { ic: "📐", n: "Plano",            grupo: "documentos" },
+  foto:      { ic: "📷", n: "Foto",             grupo: "fotos" },
+  factura:   { ic: "🧾", n: "Factura",          grupo: "facturas", plata: true, signo: -1 },
+  servicio:  { ic: "💡", n: "Servicio (UTE, OSE…)", grupo: "facturas", plata: true, signo: -1 },
+  trabajo:   { ic: "🔧", n: "Trabajo",          grupo: "trabajos", plata: true, signo: -1 },
+  gasto:     { ic: "💸", n: "Gasto",            grupo: "plata", plata: true, signo: -1 },
+  ingreso:   { ic: "💵", n: "Ingreso (cobro, seña)", grupo: "plata", plata: true, signo: 1 },
+  apagar:    { ic: "⏳", n: "Cuenta a pagar",   grupo: "plata", plata: true, signo: 0 },
+  nota:      { ic: "📝", n: "Nota",             grupo: "notas" },
+};
+const GRUPOS = [
+  ["datos", "🏷", "Datos"], ["acuerdos", "🤝", "Acuerdos"], ["documentos", "📄", "Documentos y planos"],
+  ["fotos", "📷", "Fotos"], ["facturas", "🧾", "Facturas y servicios"], ["trabajos", "🔧", "Trabajos"],
+  ["plata", "💵", "Plata"], ["notas", "📝", "Notas"],
+];
+const MONEDAS = ["UYU", "USD", "BRL"];
+let OBRAS = [], abierta = null, grupo = "todo", agregando = null;
+
+async function arrancar() {
+  for (const id of ["sin-sdk", "puerta", "app"]) $(id).classList.add("hide");
+  if (!(await P.arrancarFirebase())) {
+    $("sin-sdk-que").textContent = P.fallaFirebase ? P.fallaFirebase.message : "No bajó el SDK.";
+    $("sin-sdk").classList.remove("hide"); return;
+  }
+  const yo = await P.quienEntra();
+  if (!yo) { $("puerta").classList.remove("hide"); return; }
+  $("btnSalir").classList.remove("hide");
+  $("app").classList.remove("hide");
+  await leer();
+}
+$("btnReintentar").onclick = arrancar;
+$("btnEntrar").onclick = async () => {
+  try { await P.entrar($("mail").value, $("clave").value); location.reload(); }
+  catch (e) { P.aviso(P.explicar(e), "error"); }
+};
+$("btnSalir").onclick = async () => { await P.salir(); location.reload(); };
+
+async function leer() {
+  try {
+    const s = await getDocs(query(collection(db, "proyectos"), where("clase", "==", "obra")));
+    OBRAS = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+  } catch (e) { $("obra").innerHTML = `<p class="gris">${P.esc(P.explicar(e))}</p>`; return; }
+  const pedida = new URLSearchParams(location.search).get("o");
+  if (!abierta || !OBRAS.some((o) => o.id === abierta)) abierta = (OBRAS.find((o) => o.id === pedida) || OBRAS[0] || {}).id || null;
+  pintar();
+}
+
+/* ---------- las cuentas de la obra, por moneda ---------- */
+function plataDe(items) {
+  const out = {};
+  for (const x of items) {
+    const t = TIPOS[x.tipo];
+    if (!t || !t.plata || !(Number(x.monto) > 0) || !MONEDAS.includes(x.moneda)) continue;
+    const o = (out[x.moneda] = out[x.moneda] || { entro: 0, salio: 0, aPagar: 0 });
+    const v = Number(x.monto);
+    if (t.signo === 1) o.entro += v;
+    else if (t.signo === -1 || x.pagado) o.salio += v;
+    else o.aPagar += v;
+  }
+  return out;
+}
+/* «2026-10-15» es un día, no un instante: con new Date() a secas el día se lee
+   en UTC y en Uruguay aparece el anterior. */
+const dia = (iso) => P.fecha(/^\d{4}-\d{2}-\d{2}$/.test(String(iso || "")) ? iso + "T12:00" : iso);
+const fmt = (n) => (Math.round(n * 100) / 100).toLocaleString("es", { maximumFractionDigits: 2 });
+const listaItems = (o) => Object.entries((o.obra && o.obra.items) || {}).map(([id, v]) => ({ id, ...(v || {}) }))
+  .filter((x) => TIPOS[x.tipo]).sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")) || String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
+const listaDatos = (o) => Object.entries((o.obra && o.obra.datos) || {}).map(([id, v]) => ({ id, ...(v || {}) }))
+  .filter((d) => d.etiqueta).sort((a, b) => (a.orden || 0) - (b.orden || 0) || String(a.etiqueta).localeCompare(String(b.etiqueta)));
+const enlaceSeguro = (u) => /^https:\/\/\S+$/.test(String(u || ""));
+
+function pintar() {
+  $("obras").innerHTML = OBRAS.length > 1 ? OBRAS.map((o) => `<button class="mini${o.id === abierta ? " p" : ""}" data-obra="${P.esc(o.id)}">${P.esc(o.nombre || o.id)}</button>`).join("") : "";
+  const o = OBRAS.find((x) => x.id === abierta);
+  if (!o) { $("obra").innerHTML = `<p class="gris">Todavía no hay obras. Las crea Claude a pedido.</p>`; enganchar(); return; }
+  const items = listaItems(o), datos = listaDatos(o), ob = o.obra || {};
+  const cuenta = (g) => g === "datos" ? datos.length : items.filter((x) => TIPOS[x.tipo].grupo === g || (g === "plata" && TIPOS[x.tipo].plata && Number(x.monto) > 0)).length;
+  const plata = plataDe(items);
+  const pendientes = items.filter((x) => x.tipo === "apagar" && !x.pagado).sort((a, b) => String(a.vence || "9").localeCompare(String(b.vence || "9")));
+  const visibles = grupo === "todo" ? items : items.filter((x) => TIPOS[x.tipo].grupo === grupo || (grupo === "plata" && TIPOS[x.tipo].plata && Number(x.monto) > 0));
+
+  $("obra").innerHTML = `
+    <div class="ob-cab"><h1>${P.esc(o.nombre || o.id)}</h1>
+      <p class="ob-dir">${P.esc(ob.direccion || "")}${ob.resumen ? " · " + P.esc(ob.resumen) : ""}</p></div>
+
+    <div class="ob-tiles">
+      <button class="ob-tile${grupo === "todo" ? " on" : ""}" data-grupo="todo"><b>🗂</b><span>Todo</span><small>${items.length}</small></button>
+      ${GRUPOS.map(([g, ic, n]) => `<button class="ob-tile${grupo === g ? " on" : ""}" data-grupo="${g}"><b>${ic}</b><span>${n}</span><small>${cuenta(g)}</small></button>`).join("")}
+    </div>
+
+    <div class="tarj"><div class="k">La plata de la obra</div>
+      ${Object.keys(plata).length ? `<div class="ob-plata"><span></span><span class="gris n">entró</span><span class="gris n">salió</span><span class="gris n">a pagar</span>
+        ${Object.entries(plata).map(([m, x]) => `<b>${m}</b><span class="n ob-ok">${fmt(x.entro)}</span><span class="n">${fmt(x.salio)}</span><span class="n${x.aPagar ? " ob-mal" : ""}">${fmt(x.aPagar)}</span>`).join("")}</div>`
+        : `<p class="gris">Todavía no hay montos anotados.</p>`}
+      ${pendientes.length ? `<p class="gris" style="margin:.6rem 0 .2rem">Por pagar:</p>${pendientes.map((x) => `<div class="ob-dato"><span>${P.esc(x.titulo)}${x.vence ? ` <span class="k2">vence ${P.esc(dia(x.vence))}</span>` : ""}</span><span class="m">${fmt(x.monto)} ${P.esc(x.moneda)} <button class="mini" data-pagar="${P.esc(x.id)}">Pagado</button></span></div>`).join("")}` : ""}
+      <p class="gris" style="font-size:.78rem">Cada moneda va aparte. Lo de acá lo propone la ronda en Tiempos, en la cuenta de la obra.</p></div>
+
+    ${grupo === "datos" || grupo === "todo" ? `<div class="tarj"><div class="k">Datos</div>
+      ${datos.map((d) => `<div class="ob-dato"><span class="k2">${P.esc(d.etiqueta)}</span><span>${P.esc(d.valor || "—")} <button class="mini" data-dato="${P.esc(d.id)}" aria-label="Cambiar">✎</button></span></div>`).join("") || `<p class="gris">Nada todavía.</p>`}
+      <div class="fila-btn"><button class="mini" data-dato="">＋ Dato (padrón, superficie, escribano…)</button></div></div>` : ""}
+
+    <div class="fila-btn"><button class="btn p" data-agregar="${grupo === "todo" || grupo === "datos" ? "" : grupo}">＋ Agregar ${grupo === "todo" || grupo === "datos" ? "algo" : (GRUPOS.find((g) => g[0] === grupo) || [, , ""])[2].toLowerCase()}</button></div>
+    ${agregando ? formHTML() : ""}
+
+    ${grupo === "datos" ? "" : `<div class="tarj">${visibles.map(itemHTML).join("") || `<p class="gris">Nada en esta sección todavía.</p>`}</div>`}
+  `;
+  enganchar();
+}
+
+function itemHTML(x) {
+  const t = TIPOS[x.tipo];
+  const img = P.esImagenNuestra(x.imagen) ? x.imagen : "";
+  return `<div class="ob-item">
+    <div class="t"><span>${t.ic}</span><b>${P.esc(x.titulo || t.n)}</b>${Number(x.monto) > 0 ? `<span class="m${t.signo === 1 ? " ob-ok" : ""}">${t.signo === 1 ? "+" : "−"}${fmt(x.monto)} ${P.esc(x.moneda || "")}</span>` : ""}</div>
+    <div class="ob-meta">${P.esc(t.n)}${x.fecha ? " · " + P.esc(dia(x.fecha)) : ""}${x.tipo === "apagar" ? (x.pagado ? " · pagado" : x.vence ? " · vence " + P.esc(dia(x.vence)) : " · a pagar") : ""}${x.respaldo ? " · 💾 respaldado" : (x.url || img) ? " · sin respaldo todavía" : ""}</div>
+    ${x.texto ? `<p>${P.esc(x.texto)}</p>` : ""}
+    ${img ? `<a href="${P.esc(img)}" target="_blank" rel="noopener"><img src="${P.esc(img)}" alt="${P.esc(x.titulo || "")}" loading="lazy"></a>` : ""}
+    ${enlaceSeguro(x.url) ? `<a href="${P.esc(x.url)}" target="_blank" rel="noopener">Abrir ↗</a>` : ""}
+    <div class="fila-btn" style="margin-top:.2rem"><button class="mini" data-sacar="${P.esc(x.id)}">Sacar</button></div>
+  </div>`;
+}
+
+function formHTML() {
+  const a = agregando;
+  const opciones = Object.entries(TIPOS).filter(([, t]) => !a.grupo || t.grupo === a.grupo || (a.grupo === "plata" && t.plata));
+  const t = TIPOS[a.tipo] || {};
+  return `<div class="tarj ob-form" id="form-obra">
+    <label>Qué es <select data-f="tipo">${opciones.map(([k, x]) => `<option value="${k}"${a.tipo === k ? " selected" : ""}>${x.ic} ${P.esc(x.n)}</option>`).join("")}</select></label>
+    <label>Título <input data-f="titulo" maxlength="120" value="${P.esc(a.titulo || "")}" placeholder="Ej.: Plano del local · Recibo de seña · Factura UTE de octubre"></label>
+    <div class="dos"><label>Fecha <input type="date" data-f="fecha" value="${P.esc(a.fecha || P.hoy())}"></label>
+      ${a.tipo === "apagar" ? `<label>Vence <input type="date" data-f="vence" value="${P.esc(a.vence || "")}"></label>` : ""}</div>
+    ${t.plata ? `<div class="dos"><label>Monto <input type="number" step="0.01" min="0" data-f="monto" value="${P.esc(a.monto || "")}"></label>
+      <label>Moneda <select data-f="moneda">${MONEDAS.map((m) => `<option${(a.moneda || "UYU") === m ? " selected" : ""}>${m}</option>`).join("")}</select></label></div>` : ""}
+    <label>Detalle <textarea data-f="texto" rows="3" maxlength="2000" placeholder="Qué se acordó, qué se hizo, quién, cuánto…">${P.esc(a.texto || "")}</textarea></label>
+    <label>Enlace (documento, artefacto, carpeta) <input type="url" data-f="url" maxlength="500" value="${P.esc(a.url || "")}" placeholder="https://…"></label>
+    <div class="fila-btn">
+      <label class="mini">📷 Sacar foto<input type="file" accept="image/*" capture="environment" data-foto hidden></label>
+      <label class="mini">🖼 Elegir imagen<input type="file" accept="image/*" data-foto hidden></label>
+      ${a.archivo ? `<span class="gris">${P.esc(a.archivo.name)} · se sube al guardar</span>` : ""}
+    </div>
+    <div class="fila-btn"><button class="btn p" data-guardar>Guardar</button><button class="mini" data-cancelar>Cancelar</button></div>
+  </div>`;
+}
+
+function leerForm() {
+  const f = $("form-obra"); if (!f || !agregando) return;
+  for (const el of f.querySelectorAll("[data-f]")) agregando[el.dataset.f] = el.value;
+}
+
+/* Sólo la parte de ESTA obra, con merge: lo que otro teléfono agregó en el
+   medio queda. */
+function guardar(campos) {
+  return setDoc(doc(db, "proyectos", abierta), { obra: campos, actualizadoEn: P.hoy() }, { merge: true });
+}
+const idNuevo = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const recargar = () => leer().catch((e) => P.aviso(P.explicar(e), "error"));
+
+function enganchar() {
+  for (const b of document.querySelectorAll("[data-obra]")) b.onclick = () => { abierta = b.dataset.obra; grupo = "todo"; agregando = null; pintar(); };
+  for (const b of document.querySelectorAll("[data-grupo]")) b.onclick = () => { grupo = b.dataset.grupo; agregando = null; pintar(); };
+  for (const b of document.querySelectorAll("[data-agregar]")) b.onclick = () => {
+    const g = b.dataset.agregar;
+    const tipo = (Object.entries(TIPOS).find(([, t]) => t.grupo === g) || ["nota"])[0];
+    agregando = { grupo: g, tipo }; pintar();
+    const f = $("form-obra"); if (f) f.scrollIntoView({ block: "start" });
+  };
+  const f = $("form-obra");
+  if (f) {
+    f.oninput = leerForm;
+    f.querySelector('[data-f="tipo"]').onchange = () => { leerForm(); pintar(); };
+    for (const i of f.querySelectorAll("[data-foto]")) i.onchange = () => { leerForm(); agregando.archivo = i.files && i.files[0] || null; pintar(); };
+    f.querySelector("[data-cancelar]").onclick = () => { agregando = null; pintar(); };
+    f.querySelector("[data-guardar]").onclick = async (ev) => {
+      leerForm();
+      const a = agregando, t = TIPOS[a.tipo];
+      if (!t) return P.aviso("Elegí qué es.", "error");
+      if (!String(a.titulo || "").trim() && !String(a.texto || "").trim()) return P.aviso("Poné un título o un detalle.", "error");
+      if (a.url && !enlaceSeguro(a.url.trim())) return P.aviso("El enlace tiene que empezar con https://", "error");
+      const monto = Math.round(Number(a.monto) * 100) / 100;
+      if (t.plata && a.monto !== undefined && a.monto !== "" && !(monto > 0)) return P.aviso("El monto tiene que ser mayor que cero.", "error");
+      ev.target.disabled = true;
+      try {
+        let imagen = "";
+        if (a.archivo) { P.aviso("Subiendo la imagen…"); imagen = await P.subirCaptura(a.archivo); }
+        const item = { tipo: a.tipo, titulo: String(a.titulo || "").trim().slice(0, 120), fecha: a.fecha || P.hoy(),
+          texto: String(a.texto || "").trim().slice(0, 2000), creadoEn: new Date().toISOString() };
+        if (a.url && a.url.trim()) item.url = a.url.trim().slice(0, 500);
+        if (imagen) item.imagen = imagen;
+        if (t.plata && monto > 0) { item.monto = monto; item.moneda = MONEDAS.includes(a.moneda) ? a.moneda : "UYU"; }
+        if (a.tipo === "apagar") { item.pagado = false; if (a.vence) item.vence = a.vence; }
+        await guardar({ items: { [idNuevo("i")]: item } });
+        agregando = null; P.aviso("Guardado."); await recargar();
+      } catch (e) { ev.target.disabled = false; P.aviso(P.explicar(e), "error"); }
+    };
+  }
+  for (const b of document.querySelectorAll("[data-pagar]")) b.onclick = async () => {
+    try { await guardar({ items: { [b.dataset.pagar]: { pagado: true, pagadoEl: P.hoy() } } }); await recargar(); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+  for (const b of document.querySelectorAll("[data-sacar]")) b.onclick = async () => {
+    if (!(await P.preguntar("¿Sacar esto de la obra? (Si tiene respaldo en la bodega, el respaldo queda.)"))) return;
+    try { await guardar({ items: { [b.dataset.sacar]: deleteField() } }); await recargar(); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+  for (const b of document.querySelectorAll("[data-dato]")) b.onclick = async () => {
+    const o = OBRAS.find((x) => x.id === abierta), d = listaDatos(o).find((x) => x.id === b.dataset.dato);
+    const etiqueta = d ? d.etiqueta : (prompt("Qué dato (padrón, superficie, escribano…):") || "").trim();
+    if (!etiqueta) return;
+    const valor = prompt(etiqueta + ":", d ? d.valor || "" : "");
+    if (valor === null) return;
+    const id = d ? d.id : P.slug(etiqueta).slice(0, 40) || idNuevo("d");
+    try {
+      await guardar({ datos: { [id]: valor.trim() ? { etiqueta: etiqueta.slice(0, 60), valor: valor.trim().slice(0, 300), orden: d ? d.orden || 0 : 50 } : deleteField() } });
+      await recargar();
+    } catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+}
+
+arrancar();
+</script>
+</body>
+</html>

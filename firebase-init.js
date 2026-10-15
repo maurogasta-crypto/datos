@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    firebase-init.js — EL ÚNICO CONTACTO CON EL SDK DE FIREBASE.
-   Sello: init-4
+   Sello: init-5
 
    Ninguna otra página importa nada de firebase directamente. Si mañana
    cambia la versión del SDK, o el proyecto, o hay que agregar una función,
@@ -61,7 +61,7 @@ export let onAuthStateChanged, signInWithEmailAndPassword, signOut,
            sendPasswordResetEmail, createUserWithEmailAndPassword;
 export let doc, getDoc, setDoc, deleteDoc, collection, getDocs,
            query, orderBy, serverTimestamp, writeBatch,
-           where, updateDoc, arrayUnion;
+           where, updateDoc, arrayUnion, deleteField;
 
 /* `null` mientras no se intentó; `true` si anduvo. Lo mira el diagnóstico. */
 export let cargado = false;
@@ -104,7 +104,9 @@ export function cargarFirebase() {
     // para la página de los invitados.
     ({ doc, getDoc, setDoc, deleteDoc, collection, getDocs,
        query, orderBy, serverTimestamp, writeBatch,
-       where, updateDoc, arrayUnion } = modFs);
+       where, updateDoc, arrayUnion, deleteField } = modFs);
+    // init-5 (obra-1): `deleteField`, para sacar una cosa de una obra sin
+    // reescribir el documento entero.
 
     /* LA CACHÉ PERSISTENTE. Es lo que hace que el panel instalado sirva de
        algo sin señal: sin ella el cascarón abre y no hay un solo dato

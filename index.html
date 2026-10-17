@@ -491,7 +491,7 @@
     <div id="personas"><p class="gris">Leyendo…</p></div>
     <h2 style="margin-top:1.6rem">Las reglas</h2>
     <p class="gris">Lo único que protege estos datos son las reglas de Firestore.
-      Acá está tu UID y el texto exacto para publicarlas.</p>
+      Acá están los dos UID que las arman y la prueba de que están vivas.</p>
     <div class="tarj">
       <label>Tu UID</label>
       <input id="miUid" readonly class="mono" style="font-size:.8rem;">
@@ -502,7 +502,7 @@
       <input id="uidAgente" class="mono" style="font-size:.8rem;" autocomplete="off"
              placeholder="pegalo una vez y queda guardado acá">
       <p class="gris" style="margin-bottom:0;font-size:.78rem;">Se pega <b>una sola
-        vez</b>: queda guardado en este teléfono y las reglas de abajo salen completas
+        vez</b>: queda guardado en este teléfono y las reglas del panel salen completas
         cada vez que entrás. Lo imprime <code>node herramientas/firestore.mjs panel
         quien</code> en este mismo repositorio, o te lo pasa el chat.
         <b>Vacío, las reglas salen sólo para vos.</b> Con él, el agente puede leer y
@@ -511,18 +511,16 @@
         no lo toca nadie más que vos. Las <b>fichas</b> sí las administra él desde la
         <b>v4</b>: ahí va de quién es cada cuenta, que no abre nada.</p>
     </div>
+    <!-- panel-42 (17-oct-2026, Mauro: «estas reglas aparecen en Puerta… no
+         debería aparecer en dos lugares diferentes»). El texto para copiar
+         vive SÓLO en la ficha del panel en «Sitio», con los mismos botones que
+         los demás sitios (`botonesDeReglas`). Acá quedan los dos UID, que lo
+         arman, y la prueba de que lo publicado está vivo. -->
     <div class="tarj">
-      <label>Las reglas, prontas para pegar</label>
-      <p class="gris" id="reglasEstado" style="margin-top:.2rem;font-size:.78rem;">Leyendo…</p>
-      <textarea id="reglas" readonly style="min-height:14rem;"></textarea>
-      <div class="fila-btn"><button class="btn p" id="btnCopiarReglas">Copiar las reglas</button></div>
-      <p class="gris" style="margin-bottom:0;">Firebase → proyecto <b>datos-830f8</b> →
-        Firestore Database → Reglas → seleccionar todo, pegar y <b>Publicar</b>.
-        Completo, nunca un pedazo: las reglas se suman.</p>
-      <p class="gris" style="margin-bottom:0;font-size:.78rem;">Este texto sale de
-        <code>reglas.txt</code> con los dos UID puestos adentro. <b>En el repositorio
-        esa plantilla tiene los marcadores, no los UID</b> — es público, y la versión
-        completa no existe en ningún archivo: sólo acá, en pantalla.</p>
+      <label>Copiar y publicar las reglas</label>
+      <p class="gris" style="margin-top:.2rem;">Están en <b>Sitio → Panel</b>, igual que las de
+        cada sitio: copiar, abrir la consola y «Ya las publiqué».</p>
+      <div class="fila-btn"><button class="btn p" id="btnIrReglasPanel">Ir a las reglas del panel</button></div>
     </div>
     <div class="tarj">
       <label>Probar que están vivas</label>
@@ -556,7 +554,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-41";
+P.PANEL = "panel-42";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -4012,6 +4010,8 @@ async function bajarPlantilla() {
 async function pintarReglas() {
   if (!yo) return;
   const ta = $("reglas"), btn = $("btnCopiarReglas"), est = $("reglasEstado");
+  // panel-42: el cuadro de las reglas ya no está en la Puerta (vive en Sitio → Panel).
+  if (!ta || !btn || !est) return;
   const a = uidAgentePropio();
   let t;
   try {
@@ -4073,7 +4073,8 @@ $("btnCopiarUid").addEventListener("click", () => copiar($("miUid").value, "UID 
    siempre: el que se publica termina siendo el que no se probó. El cuadro de
    arriba sigue mostrando el texto entero a propósito — ahí SÍ se lee, y es de
    donde se copia a mano si el portapapeles falla. */
-$("btnCopiarReglas").addEventListener("click", () => {
+$("btnIrReglasPanel").addEventListener("click", () => { elegirSitio("panel"); irA("sitios"); });
+if ($("btnCopiarReglas")) $("btnCopiarReglas").addEventListener("click", () => {
   const t = $("reglas").value;
   const p = paraPegar(t, "Panel");
   copiar(p, "Copiadas sin comentarios: " + (p.split("\n").length - 1)

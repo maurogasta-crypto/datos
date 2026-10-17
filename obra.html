@@ -39,7 +39,12 @@
   .ob-unidad small { display: block; font-size: .82rem; } .ob-unidad .ir { color: var(--gris); font-size: 1.4rem; }
   .ob-sub { font-size: 1rem; margin: 1.2rem 0 .2rem; color: var(--gris); font-weight: 600; }
   body.solo-ver [data-gasto-foto], body.solo-ver [data-agregar], body.solo-ver [data-sacar], body.solo-ver [data-pagar],
-  body.solo-ver [data-dato], body.solo-ver [data-unidad-nueva], body.solo-ver [data-unidad-editar], body.solo-ver [data-editar], body.solo-ver [data-local-editar] { display: none !important; }
+  body.solo-ver [data-dato], body.solo-ver [data-unidad-nueva], body.solo-ver [data-unidad-editar], body.solo-ver [data-editar], body.solo-ver [data-local-editar],
+  body.solo-ver [data-jornal-nuevo], body.solo-ver [data-jornal-pago], body.solo-ver [data-jornal-sacar], body.solo-ver [data-pagar-jornales] { display: none !important; }
+  .ob-jornales { margin: .3rem 0; padding: .3rem 0 .1rem .6rem; border-left: 2px solid var(--linea); }
+  .ob-jornal { display: flex; justify-content: space-between; gap: .5rem; align-items: center; font-size: .88rem; padding: .15rem 0; }
+  .ob-jornal .m { font-family: var(--mono); white-space: nowrap; }
+  .ob-jornal-form { margin-top: .4rem; }
   .ob-form .dos { display: flex; gap: .5rem; } .ob-form .dos > * { flex: 1; min-width: 0; }
   textarea, input, select { width: 100%; }
 </style>
@@ -47,7 +52,18 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-7
+  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-8
+
+  Desde obra-8 (17-oct-2026, Mauro: «los jornales por una tarea deberían ser
+  una lista en la que se vaya agregando día a día cada jornal con detalles de
+  quién y cuánto») un TRABAJO lleva su lista de jornales:
+  `items.<id>.jornales.<jid> = {fecha, quien, monto, detalle, pagado}`, en la
+  moneda del trabajo. Con jornales, el monto del trabajo es la SUMA (se
+  calcula al leer, no se guarda): lo pagado cuenta como salió y lo que no,
+  como pendiente, y aparece en «Por pagar» con un «Pagado» que salda los
+  suyos. Al anotar el primer jornal de un trabajo que ya tenía un monto, ese
+  monto pasa a ser un renglón «lo de antes, sin detalle por día», pagado,
+  para que el total no cambie.
 
   Desde obra-7 (15-oct-2026, Mauro: «tengo que tener la opción de editar los
   datos») TODO lo cargado se corrige: cada cosa tiene «✎ Editar», que abre la
@@ -152,7 +168,7 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-9";
 import { doc, getDoc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
-P.PANEL = "obra-7";
+P.PANEL = "obra-8";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;
@@ -184,6 +200,7 @@ const GRUPOS = [
 ];
 const cuenta = (t) => t.plata && t.signo !== undefined;
 const MONEDAS = ["UYU", "USD", "BRL"];
+let anotandoJornal = null;  // { item, fecha, quien, monto, pagado, detalle }
 let invitado = null;     // la ficha de `personas/` si quien entra es un invitado
 let OBRAS = [], abierta = null, unidad = null, grupo = "todo", agregando = null;
 
@@ -234,6 +251,7 @@ function plataDe(items) {
     if (!t || !cuenta(t) || !(Number(x.monto) > 0) || !MONEDAS.includes(x.moneda)) continue;
     const o = (out[x.moneda] = out[x.moneda] || { entro: 0, salio: 0, aPagar: 0 });
     const v = Number(x.monto);
+    if (x._jornales) { o.aPagar += x.impago; o.salio += v - x.impago; continue; }
     if (t.signo === 1) o.entro += v;
     else if (t.signo === -1 || x.pagado) o.salio += v;
     else o.aPagar += v;
@@ -257,7 +275,19 @@ const resumenHTML = (filas, titulo) => filas.length ? `<p class="gris" style="ma
    en UTC y en Uruguay aparece el anterior. */
 const dia = (iso) => P.fecha(/^\d{4}-\d{2}-\d{2}$/.test(String(iso || "")) ? iso + "T12:00" : iso);
 const fmt = (n) => (Math.round(n * 100) / 100).toLocaleString("es", { maximumFractionDigits: 2 });
-const listaItems = (o) => Object.entries((o.obra && o.obra.items) || {}).map(([id, v]) => ({ id, ...(v || {}) }))
+/* Los jornales de un trabajo, del más nuevo al más viejo. */
+const jornalesDe = (x) => Object.entries((x && x.jornales) || {}).map(([id, j]) => ({ id, ...(j || {}) }))
+  .filter((j) => Number(j.monto) > 0).sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")) || String(b.id).localeCompare(String(a.id)));
+const conJornales = (x) => x.tipo === "trabajo";
+/* Con jornales, el monto ES la suma: se calcula, no se guarda. */
+function conSuma(x) {
+  const js = jornalesDe(x);
+  if (!js.length) return x;
+  const total = js.reduce((s, j) => s + Number(j.monto), 0);
+  const impago = js.filter((j) => !j.pagado).reduce((s, j) => s + Number(j.monto), 0);
+  return { ...x, monto: Math.round(total * 100) / 100, impago: Math.round(impago * 100) / 100, moneda: MONEDAS.includes(x.moneda) ? x.moneda : "UYU", _jornales: js };
+}
+const listaItems = (o) => Object.entries((o.obra && o.obra.items) || {}).map(([id, v]) => conSuma({ id, ...(v || {}) }))
   .filter((x) => TIPOS[x.tipo]).sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")) || String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
 const listaDatos = (o, u = "") => Object.entries((o.obra && o.obra.datos) || {}).map(([id, v]) => ({ id, ...(v || {}) }))
   .filter((d) => d.etiqueta && (d.unidad || "") === (u || "")).sort((a, b) => (a.orden || 0) - (b.orden || 0) || String(a.etiqueta).localeCompare(String(b.etiqueta)));
@@ -298,7 +328,11 @@ function pintar() {
   /* La plata del LOCAL suma todo, alquileres incluidos; la de un alquiler, lo suyo. */
   const base = u ? items : todos;
   const plata = plataDe(base);
-  const pendientes = base.filter((x) => x.tipo === "apagar" && !x.pagado).sort((a, b) => String(a.vence || "9").localeCompare(String(b.vence || "9")));
+  const pendientes = [
+    ...base.filter((x) => x.tipo === "apagar" && !x.pagado),
+    // Lo que se debe de jornales: el trabajo, con lo que falta pagar.
+    ...base.filter((x) => x._jornales && x.impago > 0).map((x) => ({ ...x, monto: x.impago, deJornales: true })),
+  ].sort((a, b) => String(a.vence || "9").localeCompare(String(b.vence || "9")));
   const presupuestos = items.filter((x) => x.tipo === "presupuesto");
   const visibles = grupo === "todo" ? items : items.filter((x) => enGrupo(x, grupo));
   const nombreUnidad = (x) => { const v = x.unidad && unidades.find((y) => y.id === x.unidad); return v ? ` <span class="k2">${P.esc(v.nombre)}</span>` : ""; };
@@ -326,7 +360,7 @@ function pintar() {
         ${Object.entries(plata).map(([m, x]) => `<b>${m}</b><span class="n ob-ok">${fmt(x.entro)}</span><span class="n">${fmt(x.salio)}</span><span class="n${x.aPagar ? " ob-mal" : ""}">${fmt(x.aPagar)}</span>`).join("")}</div>`
         : `<p class="gris">Todavía no hay montos anotados.</p>`}
       ${resumenHTML(porRubro(pendientes), "Pendiente, por rubro:")}
-      ${pendientes.length ? `<p class="gris" style="margin:.6rem 0 .2rem">Por pagar:</p>${pendientes.map((x) => `<div class="ob-dato"><span>${P.esc(x.titulo)}${u ? "" : nombreUnidad(x)}${x.rubro && RUBROS[x.rubro] ? ` <span class="k2">${P.esc(RUBROS[x.rubro])}</span>` : ""}${x.vence ? ` <span class="k2">vence ${P.esc(dia(x.vence))}</span>` : ""}</span><span class="m">${fmt(x.monto)} ${P.esc(x.moneda)} <button class="mini" data-pagar="${P.esc(x.id)}">Pagado</button></span></div>`).join("")}` : ""}
+      ${pendientes.length ? `<p class="gris" style="margin:.6rem 0 .2rem">Por pagar:</p>${pendientes.map((x) => `<div class="ob-dato"><span>${P.esc(x.titulo)}${u ? "" : nombreUnidad(x)}${x.rubro && RUBROS[x.rubro] ? ` <span class="k2">${P.esc(RUBROS[x.rubro])}</span>` : ""}${x.vence ? ` <span class="k2">vence ${P.esc(dia(x.vence))}</span>` : ""}</span><span class="m">${fmt(x.monto)} ${P.esc(x.moneda)} <button class="mini" ${x.deJornales ? "data-pagar-jornales" : "data-pagar"}="${P.esc(x.id)}">Pagado</button></span></div>`).join("")}` : ""}
       <p class="gris" style="font-size:.78rem">Cada moneda va aparte. Los presupuestos no entran acá: se suman en su sección.</p></div>` : ""}
 
     ${grupo === "presupuestos" ? `<div class="tarj"><div class="k">Presupuestado</div>
@@ -351,10 +385,43 @@ function itemHTML(x) {
     <div class="t"><span>${t.ic}</span><b>${P.esc(x.titulo || t.n)}</b>${Number(x.monto) > 0 ? `<span class="m${t.signo === 1 ? " ob-ok" : ""}">${t.signo === 1 ? "+" : t.signo === undefined ? "" : "−"}${fmt(x.monto)} ${P.esc(x.moneda || "")}</span>` : ""}</div>
     <div class="ob-meta">${P.esc(t.n)}${t.rubro && RUBROS[x.rubro] ? " · " + P.esc(RUBROS[x.rubro]) : ""}${x.fecha ? " · " + P.esc(dia(x.fecha)) : ""}${x.tipo === "apagar" ? (x.pagado ? " · pagado" : x.vence ? " · vence " + P.esc(dia(x.vence)) : " · a pagar") : ""}${x.respaldo ? " · 💾 respaldado" : (x.url || img) ? " · sin respaldo todavía" : ""}</div>
     ${x.texto ? `<p>${P.esc(x.texto)}</p>` : ""}
+    ${conJornales(x) ? jornalesHTML(x) : ""}
     ${x.factura && facturaTexto(x.factura) ? `<div class="ob-meta">🧾 ${P.esc(facturaTexto(x.factura))}</div>` : ""}
     ${img ? `<a href="${P.esc(img)}" target="_blank" rel="noopener"><img src="${P.esc(img)}" alt="${P.esc(x.titulo || "")}" loading="lazy"></a>` : ""}
     ${enlaceSeguro(x.url) ? `<a href="${P.esc(x.url)}" target="_blank" rel="noopener">Abrir ↗</a>` : ""}
     <div class="fila-btn" style="margin-top:.2rem"><button class="mini" data-editar="${P.esc(x.id)}">✎ Editar</button><button class="mini" data-sacar="${P.esc(x.id)}">Sacar</button></div>
+  </div>`;
+}
+
+/* La lista de jornales de un trabajo, con el resumen por persona y el
+   formulario para anotar uno (abierto en `anotandoJornal`). */
+function jornalesHTML(x) {
+  const js = x._jornales || [];
+  const mon = MONEDAS.includes(x.moneda) ? x.moneda : "UYU";
+  const porQuien = {};
+  const antes = js.filter((j) => j.antes).reduce((t, j) => t + Number(j.monto), 0);
+  const dias = js.filter((j) => !j.antes);
+  for (const j of dias) {
+    const q = String(j.quien || "").trim() || "sin nombre";
+    const o = (porQuien[q] = porQuien[q] || { n: 0, m: 0 });
+    o.n++; o.m += Number(j.monto);
+  }
+  const abierto = anotandoJornal && anotandoJornal.item === x.id;
+  return `<div class="ob-jornales">
+    ${js.length ? `<div class="k2" style="margin:.3rem 0">👷 ${dias.length} jornal${dias.length === 1 ? "" : "es"}${antes ? ` + lo de antes (${fmt(antes)})` : ""} · total ${fmt(x.monto)} ${P.esc(mon)}${x.impago ? ` · <span class="ob-mal">sin pagar ${fmt(x.impago)}</span>` : ""}
+        <br>${Object.entries(porQuien).map(([q, o]) => `${P.esc(q)}: ${o.n} (${fmt(o.m)})`).join(" · ")}</div>
+      ${js.map((j) => `<div class="ob-jornal"><span>${P.esc(dia(j.fecha) || "—")} · <b>${P.esc(j.quien || "—")}</b>${j.detalle ? ` <span class="k2">${P.esc(j.detalle)}</span>` : ""}</span>
+        <span class="m">${fmt(j.monto)} <button class="mini" data-jornal-pago="${P.esc(x.id)}|${P.esc(j.id)}" title="${j.pagado ? "Pagado: tocar para marcar sin pagar" : "Sin pagar: tocar para marcar pagado"}">${j.pagado ? "✓" : "⏳"}</button><button class="mini" data-jornal-sacar="${P.esc(x.id)}|${P.esc(j.id)}" aria-label="Sacar este jornal">✕</button></span></div>`).join("")}`
+      : `<p class="gris" style="margin:.3rem 0;font-size:.85rem">Sin jornales anotados.${Number(x.monto) > 0 ? " Al anotar el primero, los " + fmt(x.monto) + " de ahora quedan como «lo de antes»." : ""}</p>`}
+    ${abierto ? `<div class="ob-form ob-jornal-form" id="form-jornal">
+        <div class="dos"><label>Día <input type="date" data-j="fecha" value="${P.esc(anotandoJornal.fecha)}"></label>
+          <label>Quién <input data-j="quien" list="quienes-${P.esc(x.id)}" maxlength="60" value="${P.esc(anotandoJornal.quien)}"></label></div>
+        <datalist id="quienes-${P.esc(x.id)}">${Object.keys(porQuien).filter((q) => q !== "sin nombre").map((q) => `<option value="${P.esc(q)}">`).join("")}</datalist>
+        <div class="dos"><label>Cuánto (${P.esc(mon)}) <input type="number" step="0.01" min="0" data-j="monto" value="${P.esc(anotandoJornal.monto)}"></label>
+          <label class="mini" style="align-self:end"><input type="checkbox" data-j="pagado"${anotandoJornal.pagado ? " checked" : ""}> ya pagado</label></div>
+        <label>Detalle <input data-j="detalle" maxlength="200" value="${P.esc(anotandoJornal.detalle)}" placeholder="Qué hizo ese día (opcional)"></label>
+        <div class="fila-btn"><button class="btn p" data-jornal-guardar="${P.esc(x.id)}">Anotar el jornal</button><button class="mini" data-jornal-cancelar>Cancelar</button></div>
+      </div>` : `<div class="fila-btn" style="margin-top:.2rem"><button class="mini" data-jornal-nuevo="${P.esc(x.id)}">＋ Jornal</button></div>`}
   </div>`;
 }
 
@@ -375,7 +442,8 @@ function formHTML() {
     <label>Título <input data-f="titulo" maxlength="120" value="${P.esc(a.titulo || "")}" placeholder="Ej.: Arena y portland · Jornal de Pedro · Presupuesto eléctrico"></label>
     <div class="dos"><label>Fecha <input type="date" data-f="fecha" value="${P.esc(a.fecha || P.hoy())}"></label>
       ${a.tipo === "apagar" ? `<label>Vence <input type="date" data-f="vence" value="${P.esc(a.vence || "")}"></label>` : ""}</div>
-    ${t.plata ? `<div class="dos"><label>Monto <input type="number" step="0.01" min="0" data-f="monto" value="${P.esc(a.monto || "")}"></label>
+    ${a.conJornales ? `<p class="gris" style="font-size:.85rem">El monto es la suma de sus jornales: se cambia en la lista de jornales.</p>` : ""}
+    ${t.plata && !a.conJornales ? `<div class="dos"><label>Monto <input type="number" step="0.01" min="0" data-f="monto" value="${P.esc(a.monto || "")}"></label>
       <label>Moneda <select data-f="moneda">${MONEDAS.map((m) => `<option${(a.moneda || "UYU") === m ? " selected" : ""}>${m}</option>`).join("")}</select></label></div>` : ""}
     ${t.rubro ? `<label>Rubro <select data-f="rubro">${Object.entries(RUBROS).map(([k, n]) => `<option value="${k}"${(a.rubro || "materiales") === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>` : ""}
     <label>Detalle <textarea data-f="texto" rows="3" maxlength="2000" placeholder="Qué se acordó, qué se hizo, quién, cuánto…">${P.esc(a.texto || "")}</textarea></label>
@@ -497,7 +565,9 @@ function enganchar() {
         }
         if (viejo) {
           // Lo que tenía y ya no tiene se BORRA: si no, el merge lo dejaría.
-          for (const k of Object.keys(viejo)) if (k !== "id" && !(k in item)) item[k] = deleteField();
+          // Los jornales no se tocan desde la ficha: se conservan tal cual.
+          if (viejo.jornales) { item.jornales = viejo.jornales; delete item.monto; if (MONEDAS.includes(a.moneda)) item.moneda = a.moneda; }
+          for (const k of Object.keys(viejo)) if (!["id", "_jornales", "impago"].includes(k) && !(k in item)) item[k] = deleteField();
         }
         await guardar({ items: { [a.id || idNuevo("i")]: item } });
         agregando = null; P.aviso("Guardado."); await recargar();
@@ -507,7 +577,7 @@ function enganchar() {
   for (const b of document.querySelectorAll("[data-editar]")) b.onclick = () => {
     const x = listaItems(OBRAS.find((o) => o.id === abierta)).find((y) => y.id === b.dataset.editar);
     if (!x) return;
-    agregando = { grupo: "", id: x.id, tipo: x.tipo, titulo: x.titulo || "", fecha: x.fecha || "", vence: x.vence || "",
+    agregando = { grupo: "", id: x.id, conJornales: !!x._jornales, tipo: x.tipo, titulo: x.titulo || "", fecha: x.fecha || "", vence: x.vence || "",
       monto: x.monto || "", moneda: x.moneda || "", rubro: x.rubro || "", texto: x.texto || "", url: x.url || "",
       factura: x.factura || null };
     pintar();
@@ -521,6 +591,71 @@ function enganchar() {
     try { await guardar({ direccion: direccion.trim().slice(0, 160), resumen: resumen.trim().slice(0, 200) }); await recargar(); }
     catch (e) { P.aviso(P.explicar(e), "error"); }
   };
+  /* ── Los jornales (obra-8) ── */
+  const itemDe = (id) => listaItems(OBRAS.find((o) => o.id === abierta)).find((x) => x.id === id);
+  for (const b of document.querySelectorAll("[data-jornal-nuevo]")) b.onclick = () => {
+    const x = itemDe(b.dataset.jornalNuevo); if (!x) return;
+    const js = x._jornales || [];
+    const ultimo = js[0] || {};
+    anotandoJornal = { item: x.id, fecha: P.hoy(), quien: ultimo.quien || "", monto: ultimo.monto || "", pagado: false, detalle: "" };
+    pintar();
+    const f = $("form-jornal"); if (f) f.scrollIntoView({ block: "center" });
+  };
+  const fj = $("form-jornal");
+  if (fj) {
+    fj.oninput = () => {
+      for (const el of fj.querySelectorAll("[data-j]")) anotandoJornal[el.dataset.j] = el.type === "checkbox" ? el.checked : el.value;
+      // Al elegir a alguien que ya cobró, su último monto.
+      const x = itemDe(anotandoJornal.item);
+      const suyo = (x && x._jornales || []).find((j) => j.quien === anotandoJornal.quien);
+      const m = fj.querySelector('[data-j="monto"]');
+      if (suyo && m && !m.dataset.tocado) { m.value = suyo.monto; anotandoJornal.monto = suyo.monto; }
+    };
+    const m = fj.querySelector('[data-j="monto"]');
+    if (m) m.addEventListener("input", () => { m.dataset.tocado = "1"; });
+    fj.querySelector("[data-jornal-cancelar]").onclick = () => { anotandoJornal = null; pintar(); };
+    fj.querySelector("[data-jornal-guardar]").onclick = async (ev) => {
+      for (const el of fj.querySelectorAll("[data-j]")) anotandoJornal[el.dataset.j] = el.type === "checkbox" ? el.checked : el.value;
+      const a = anotandoJornal, x = itemDe(a.item);
+      if (!x) return P.aviso("Ese trabajo ya no está.", "error");
+      const monto = Math.round(Number(a.monto) * 100) / 100;
+      if (!(monto > 0)) return P.aviso("Poné cuánto se pagó (o se debe) por ese jornal.", "error");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(a.fecha || ""))) return P.aviso("Poné el día.", "error");
+      ev.target.disabled = true;
+      const jornales = { [idNuevo("j")]: { fecha: a.fecha, quien: String(a.quien || "").trim().slice(0, 60),
+        monto, pagado: !!a.pagado, detalle: String(a.detalle || "").trim().slice(0, 200), creadoEn: new Date().toISOString() } };
+      const cambio = { jornales, moneda: MONEDAS.includes(x.moneda) ? x.moneda : "UYU" };
+      // El primero de un trabajo que ya tenía monto: ese monto pasa a ser «lo de antes».
+      if (!x._jornales && Number(x.monto) > 0) {
+        jornales[idNuevo("j")] = { fecha: x.fecha || P.hoy(), quien: "", monto: Number(x.monto), pagado: true,
+          detalle: "Lo de antes, sin detalle por día", antes: true, creadoEn: new Date().toISOString() };
+        cambio.monto = deleteField();
+      }
+      try { await guardar({ items: { [x.id]: cambio } }); anotandoJornal = null; P.aviso("Jornal anotado."); await recargar(); }
+      catch (e) { ev.target.disabled = false; P.aviso(P.explicar(e), "error"); }
+    };
+  }
+  for (const b of document.querySelectorAll("[data-jornal-pago]")) b.onclick = async () => {
+    const [i, j] = b.dataset.jornalPago.split("|");
+    const x = itemDe(i), jo = x && (x._jornales || []).find((y) => y.id === j);
+    if (!jo) return;
+    try { await guardar({ items: { [i]: { jornales: { [j]: { pagado: !jo.pagado } } } } }); await recargar(); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+  for (const b of document.querySelectorAll("[data-jornal-sacar]")) b.onclick = async () => {
+    const [i, j] = b.dataset.jornalSacar.split("|");
+    if (!(await P.preguntar("¿Sacar este jornal?"))) return;
+    try { await guardar({ items: { [i]: { jornales: { [j]: deleteField() } } } }); await recargar(); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+  for (const b of document.querySelectorAll("[data-pagar-jornales]")) b.onclick = async () => {
+    const x = itemDe(b.dataset.pagarJornales); if (!x) return;
+    const js = (x._jornales || []).filter((j) => !j.pagado);
+    if (!(await P.preguntar(`¿Marcar pagados los ${js.length} jornal${js.length === 1 ? "" : "es"} sin pagar de «${x.titulo}»?`))) return;
+    try { await guardar({ items: { [x.id]: { jornales: Object.fromEntries(js.map((j) => [j.id, { pagado: true }])) } } }); await recargar(); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+
   for (const b of document.querySelectorAll("[data-pagar]")) b.onclick = async () => {
     try { await guardar({ items: { [b.dataset.pagar]: { pagado: true, pagadoEl: P.hoy() } } }); await recargar(); }
     catch (e) { P.aviso(P.explicar(e), "error"); }

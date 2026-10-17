@@ -145,8 +145,8 @@ decide.
 > **Y el orden no se saltea.** Publicar la v4 con la contraseña del 2026-09-11
 > todavía adentro de una ficha significa que un agente la leyó, y obliga a
 > rotarla. Primero se mueve a `claves/` (pendiente `panel:R4`), después se
-> publica. «La puerta» lo avisa al lado del botón de copiar, que es el único
-> momento en que alguien lo va a leer.
+> publica. Hasta `panel-41` «La puerta» lo avisaba al lado de su botón de
+> copiar; ese botón ya no está (las reglas se copian en Sitio → Panel).
 
 ### En qué estamos: las líneas de trabajo
 
@@ -441,8 +441,11 @@ La primera vez, y en este orden:
    existir.
 2. **Entrar al panel** con ese mail. Todavía no vas a poder leer ni escribir
    nada, y está bien.
-3. **Solapa «La puerta»**: ahí está tu UID y el texto de las reglas **con tu UID
-   ya adentro**, con un botón para copiarlo.
+3. **Solapa «La puerta»**: ahí está tu UID. El texto de las reglas **con los
+   dos UID ya adentro** se copia en **Sitio → Panel**, con los mismos botones
+   que los demás sitios; desde `panel-42` la Puerta no tiene una segunda copia
+   (Mauro: «no debería aparecer en dos lugares diferentes») y lleva ahí con
+   «Ir a las reglas del panel».
 4. **Publicarlas**: Firebase → Firestore Database → Reglas → seleccionar todo,
    pegar, **Publicar**. Completo, nunca un pedazo: las reglas se suman.
 5. **Probar que están vivas**: el botón «Probar» de esa misma solapa intenta
@@ -531,6 +534,12 @@ panel de acceso».
   misma ficha con lo que tenía; guardar la reemplaza entera (lo que se vació se
   borra) y conserva cuándo se creó, la foto, el respaldo y si estaba pagada. La
   dirección y la descripción del local tienen su ✎.
+- **Un trabajo lleva sus JORNALES** (`obra-8`): día, quién, cuánto, detalle y
+  si ya se pagó, uno por renglón, con el resumen por persona. Con jornales el
+  monto del trabajo es la suma (se calcula, no se guarda); lo no pagado va a
+  «Por pagar», con un «Pagado» que salda los suyos. El primer jornal de un
+  trabajo que ya tenía monto lo deja como «lo de antes», pagado, y el total
+  no cambia.
 - **Un gasto se carga con la foto de la factura** (`obra-4`, `nucleo-9`), como
   en Tiempos: «📷 Gasto con foto» abre la ficha con la foto primero; la IA
   (`P.leerFactura`, la `claude-proxy` del Netlify de Casa Verde) completa lo
@@ -564,12 +573,12 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-9` |
-| `index.html` | `P.PANEL` | `panel-41` |
+| `index.html` | `P.PANEL` | `panel-42` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
-| `obra.html` | `P.PANEL` | `obra-7` |
+| `obra.html` | `P.PANEL` | `obra-8` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v37` |
+| `sw.js` | `VERSION` | `panel-shell-v38` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

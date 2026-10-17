@@ -14,7 +14,7 @@
    parece que el despliegue no hizo nada y en realidad hizo la mitad.
    ═══════════════════════════════════════════════════════════ */
 
-const VERSION = 'panel-shell-v37';
+const VERSION = 'panel-shell-v38';
 
 /* Sin `?v=` a propósito. El panel pide `estilos.css?v=estilos-4` y
    `nucleo.js?v=nucleo-3`, y repetir esos números acá sería la TERCERA copia
@@ -71,7 +71,7 @@ const guardable = (r) => r && r.status === 200 && (r.type === 'basic' || r.type 
    la caché sólo se consulta cuando la red ya falló. */
 const enCache = (req) => caches.match(req, { ignoreSearch: true });
 
-/* panel-shell-v37 (15-oct-2026): «red primero» no alcanzaba. GitHub Pages
+/* panel-shell-v38 (15-oct-2026): «red primero» no alcanzaba. GitHub Pages
    manda `max-age=600`, y el `fetch` de acá respetaba esa caché del navegador:
    durante diez minutos después de subir una tanda el teléfono seguía
    recibiendo la versión vieja, aunque «fuera a la red» (Mauro: «sigue sin

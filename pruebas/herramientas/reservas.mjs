@@ -359,7 +359,7 @@ prueba("revisar: la disponibilidad y la limpieza tienen que decir lo mismo que l
     { id: "B", clienteNombre: "Bien", cabanaId: "c3", checkIn: "2026-12-10", checkOut: "2026-12-12", estado: "confirmada" },
   ];
   const disponibilidad = [{ id: "N", cabanaId: "c2", desde: "2026-11-20", hasta: "2026-11-22" }, { id: "A", cabanaId: "c1", desde: "2026-12-01", hasta: "2026-12-03" },
-    { id: "B", cabanaId: "c3", desde: "2026-12-10", hasta: "2026-12-12" }, { id: "X", cabanaId: "c1", desde: "2026-12-20", hasta: "2026-12-22" }];
+    { id: "B", cabanaId: "c3", desde: "2026-12-10", hasta: "2026-12-12", origen: "directa" }, { id: "X", cabanaId: "c1", desde: "2026-12-20", hasta: "2026-12-22" }];
   const actividades = [{ id: "limp-N", titulo: "Limpieza Loft · entrada 2026-11-20", cabanaId: "c2", reservaId: "N", fechaInicio: "2026-11-19", fechaVencimiento: "2026-11-20" },
     { id: "limp-A", hecho: false }, { id: "limp-B", titulo: "Limpieza Casa · entrada 2026-12-10", cabanaId: "c3", reservaId: "B", fechaInicio: "2026-12-09", fechaVencimiento: "2026-12-10" }];
   const cabanas = [{ id: "c2", nombre: { es: "Loft" } }, { id: "c3", nombre: "Casa" }];
@@ -380,6 +380,13 @@ prueba("proponer el importe del mail: va al acuerdo, se propone aunque esté en 
   assert.equal(planPropuesta({ ...r, total: 637.94 }, { total: 637.94 }).vacio, true);
   assert.equal(planPropuesta(r, { total: -5 }).vacio, true);
   assert.equal(planPropuesta(r, { total: "mucho" }).vacio, true);
+});
+
+prueba("revisar: el espejo dice de dónde vino la reserva, para que Airbnb no reciba lo suyo", () => {
+  const r = { id: "A1", clienteNombre: "X", cabanaId: "c2", checkIn: "2026-12-01", checkOut: "2026-12-03", estado: "confirmada", origen: "airbnb" };
+  const l = revisarDerivados({ reservas: [r], disponibilidad: [{ id: "A1", cabanaId: "c2", desde: "2026-12-01", hasta: "2026-12-03" }],
+    actividades: [{ id: "limp-A1", titulo: "Limpieza c2 · entrada 2026-12-01", cabanaId: "c2", reservaId: "A1", fechaInicio: "2026-11-30", fechaVencimiento: "2026-12-01" }] }, "2026-10-18");
+  assert.deepEqual(l.map((x) => x.datos && x.datos.origen), ["airbnb"]);
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // reservas.mjs — Completar las reservas de Casa Verde con lo que dicen los
-// mensajes de Airbnb (WhatsApp no, desde reservas-7). Sello: reservas-10
+// mensajes de Airbnb (WhatsApp no, desde reservas-7). Sello: reservas-11
 //
 //   node herramientas/reservas.mjs estado
 //       Las reservas que vienen, con lo que les falta.
@@ -520,10 +520,15 @@ export function revisarDerivados({ reservas = [], disponibilidad = [], actividad
     const quien = `${limpiar(r.clienteNombre)} (${r.checkIn}→${r.checkOut}, ${r.cabanaId})`;
     const d = disp[r.id];
     if (r.estado === "confirmada") {
-      if (!d) arreglos.push({ que: "crear", col: "disponibilidad", id: r.id, datos: { cabanaId: r.cabanaId, desde: r.checkIn, hasta: r.checkOut }, por: `${quien}: el sitio público no la muestra ocupada` });
+      // `origen` (18-oct): el calendario que lee Airbnb no le devuelve lo suyo.
+      const espejo = { cabanaId: r.cabanaId, desde: r.checkIn, hasta: r.checkOut, origen: r.origen === "airbnb" ? "airbnb" : "directa" };
+      if (!d) arreglos.push({ que: "crear", col: "disponibilidad", id: r.id, datos: espejo, por: `${quien}: el sitio público no la muestra ocupada` });
       else if (d.cabanaId !== r.cabanaId || d.desde !== r.checkIn || d.hasta !== r.checkOut)
-        arreglos.push({ que: "corregir", col: "disponibilidad", id: r.id, datos: { cabanaId: r.cabanaId, desde: r.checkIn, hasta: r.checkOut },
+        arreglos.push({ que: "corregir", col: "disponibilidad", id: r.id, datos: espejo,
           por: `${quien}: el sitio público la muestra ${d.desde}→${d.hasta} en ${d.cabanaId}` });
+      else if (d.origen !== espejo.origen)
+        arreglos.push({ que: "corregir", col: "disponibilidad", id: r.id, datos: espejo,
+          por: `${quien}: el espejo no dice de dónde vino (${espejo.origen}), y el calendario de Airbnb lo necesita` });
       if (r.checkIn >= hoy) {
         const cab = nombreCabana(cabanas, r.cabanaId);
         const debe = { titulo: "Limpieza " + cab + " · entrada " + r.checkIn, cabanaId: r.cabanaId, reservaId: r.id,

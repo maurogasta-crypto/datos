@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // reservas.mjs — Completar las reservas de Casa Verde con lo que dicen los
-// mensajes de Airbnb (WhatsApp no, desde reservas-7). Sello: reservas-8
+// mensajes de Airbnb (WhatsApp no, desde reservas-7). Sello: reservas-9
 //
 //   node herramientas/reservas.mjs estado
 //       Las reservas que vienen, con lo que les falta.
@@ -15,6 +15,13 @@
 //       `cambios_reserva/` y se confirma en Casa Verde → Reservas.
 //   node herramientas/reservas.mjs propuestas
 //       Los cambios propuestos que esperan que alguien los confirme.
+//   node herramientas/reservas.mjs revisar [--arreglar]
+//       (reservas-9, 18-oct, Mauro: «que actualices y revises todos los
+//       registros de Casa Verde») Lo que DEPENDE de cada reserva —la
+//       disponibilidad pública y la limpieza de entrada— contra la reserva. Lo
+//       que no coincide se arregla con --arreglar, con la misma forma que
+//       escribe reservas-core.js (y su copia en _historial). La reserva no se
+//       toca: es la fuente.
 //   node herramientas/reservas.mjs llegadas [--dias N] [--bodega <dir>] [--enviar --a <nombre>]
 //       Las llegadas de los próximos N días (3) que todavía no se avisaron,
 //       con el aviso para quien recibe: el enlace a la FICHA DE LLEGADA de
@@ -496,6 +503,83 @@ async function vincularCli(dir, dias) {
   console.log("");
 }
 
+/* ── REVISAR (reservas-9) ──────────────────────────────────────────────────
+   Lo mismo que hace RCore.sincronizarLimpiezas de Casa Verde, en seco: qué
+   habría que escribir para que lo derivado diga lo mismo que la reserva. */
+const sumarDiasIso = (iso, n) => { const d = new Date(iso + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const nombreCabana = (cabanas, id) => { const n = ((cabanas || []).find((c) => c.id === id) || {}).nombre; return (n && typeof n === "object" ? (n.es ?? n.pt ?? n.en) : n) || id; };
+
+export function revisarDerivados({ reservas = [], disponibilidad = [], actividades = [], cabanas = [] }, hoy) {
+  const arreglos = [];
+  const disp = Object.fromEntries(disponibilidad.map((d) => [d.id, d]));
+  const act = Object.fromEntries(actividades.map((a) => [a.id, a]));
+  const porId = Object.fromEntries(reservas.map((r) => [r.id, r]));
+  const fechas = (r) => typeof r.checkIn === "string" && typeof r.checkOut === "string";
+  for (const r of reservas) {
+    if (!fechas(r) || r.checkOut < hoy) continue;
+    const quien = `${limpiar(r.clienteNombre)} (${r.checkIn}→${r.checkOut}, ${r.cabanaId})`;
+    const d = disp[r.id];
+    if (r.estado === "confirmada") {
+      if (!d) arreglos.push({ que: "crear", col: "disponibilidad", id: r.id, datos: { cabanaId: r.cabanaId, desde: r.checkIn, hasta: r.checkOut }, por: `${quien}: el sitio público no la muestra ocupada` });
+      else if (d.cabanaId !== r.cabanaId || d.desde !== r.checkIn || d.hasta !== r.checkOut)
+        arreglos.push({ que: "corregir", col: "disponibilidad", id: r.id, datos: { cabanaId: r.cabanaId, desde: r.checkIn, hasta: r.checkOut },
+          por: `${quien}: el sitio público la muestra ${d.desde}→${d.hasta} en ${d.cabanaId}` });
+      if (r.checkIn >= hoy) {
+        const cab = nombreCabana(cabanas, r.cabanaId);
+        const debe = { titulo: "Limpieza " + cab + " · entrada " + r.checkIn, cabanaId: r.cabanaId, reservaId: r.id,
+          fechaInicio: sumarDiasIso(r.checkIn, -1), fechaVencimiento: r.checkIn };
+        const a = act["limp-" + r.id];
+        if (!a) arreglos.push({ que: "crear", col: "actividades", id: "limp-" + r.id, datos: debe, por: `${quien}: no tiene limpieza de entrada` });
+        else if (!a.hecho && Object.keys(debe).some((k) => a[k] !== debe[k]))
+          arreglos.push({ que: "corregir", col: "actividades", id: "limp-" + r.id, datos: debe, por: `${quien}: la limpieza dice «${a.titulo}» (vence ${a.fechaVencimiento})` });
+      }
+    } else if (d) {
+      arreglos.push({ que: "borrar", col: "disponibilidad", id: r.id, por: `${quien}: está «${r.estado}» y el sitio público la muestra ocupada` });
+    }
+    if (r.estado === "anulada") {
+      const a = act["limp-" + r.id];
+      if (a && !a.hecho) arreglos.push({ que: "borrar", col: "actividades", id: a.id, por: `${quien}: está anulada y su limpieza sigue pendiente` });
+    }
+  }
+  for (const d of disponibilidad) {
+    if (!porId[d.id] && String(d.hasta || "") >= hoy) arreglos.push({ que: "borrar", col: "disponibilidad", id: d.id, por: `el sitio público muestra ocupado ${d.desde}→${d.hasta} en ${d.cabanaId} y no hay reserva` });
+  }
+  return arreglos;
+}
+
+async function revisarCli(arreglar) {
+  const { F, cfg, sesion } = await base();
+  const [reservas, disponibilidad, actividades, cabanas, cs, gs] = await Promise.all(
+    ["reservas", "disponibilidad", "actividades", "cabanas", "clientes", "grupos"].map((c) => F.listar(cfg, sesion, c)));
+  const hoy = hoyISO();
+  const l = revisarDerivados({ reservas, disponibilidad, actividades, cabanas }, hoy);
+  console.log(`\n  ${reservas.length} reservas · ${disponibilidad.length} en el espejo público · ${actividades.filter((a) => a.id.startsWith("limp-")).length} limpiezas`);
+  if (!l.length) console.log("  ✔ lo que depende de cada reserva coincide con ella");
+  for (const x of l) console.log(`  ${arreglar ? "✓" : "⚠"} ${x.que} ${x.col}/${x.id} — ${x.por}`);
+  if (arreglar) {
+    const marca = { $timestamp: new Date().toISOString() };
+    for (const x of l) {
+      if (x.que === "borrar") await F.borrar(cfg, sesion, x.col, x.id);
+      else if (x.col === "disponibilidad") await F.escribir(cfg, sesion, x.col, x.id, { ...x.datos, actualizadoEn: marca });
+      else if (x.que === "corregir") await F.fusionar(cfg, sesion, x.col, x.id, { ...x.datos, actualizadoEn: marca });
+      else {
+        const r = reservas.find((y) => y.id === x.datos.reservaId);
+        const t = Number(((cabanas.find((c) => c.id === r.cabanaId) || {}).tarifas || {}).limpieza) || 0;
+        await F.escribir(cfg, sesion, x.col, x.id, { ...x.datos, detalle: ("Preparar para " + (r.clienteNombre || "")).trim(), fase: "entrada", monto: t,
+          parentId: "proj-limpiezas", tipo: "normal", alcance: "equipo", competencias: [], recurrenciaDias: 0, esCompra: false, proveedor: null,
+          hecho: false, estado: "pendiente", sesionActualId: null, ultimoCierreEn: null, orden: 0,
+          creadoEn: marca, actualizadoEn: marca, creadoPor: sesion.uid || "agente", creadoNombre: "Claude (agente)" });
+      }
+    }
+    if (l.length) console.log(`\n  ${l.length} arreglados (cada uno con su copia en _historial).`);
+  } else if (l.length) console.log(`\n  Con --arreglar se escriben.`);
+  // Y lo que le falta a cada reserva que viene, como en «estado».
+  const cli = Object.fromEntries(cs.map((c) => [c.id, c])), gr = Object.fromEntries(gs.map((g) => [g.id, g]));
+  const vienen = reservas.filter((r) => r.estado !== "anulada" && r.checkOut >= hoy);
+  const conFalta = vienen.map((r) => ({ r, f: faltantes(r, cli[r.clienteId], { grupo: gr[r.grupoId], hoy }) })).filter((x) => x.f.length);
+  console.log(`\n  ${vienen.length} reservas que vienen; a ${conFalta.length} les falta algo (lo completa la ronda con lo que digan los mensajes y los mails).\n`);
+}
+
 /* ── PROPONER (reservas-8) ────────────────────────────────────────────────── */
 export const PROPONIBLES = ["checkIn", "checkOut", "cabanaId", "estado", "adultos", "ninos", "bebes", "mascotas", "llegadaEstimada"];
 const DIA = /^\d{4}-\d{2}-\d{2}$/;
@@ -682,6 +766,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     : cmd === "completar" && args[0] && args[1] ? completarCli(args[0], args[1], args.includes("--seco"))
     : cmd === "proponer" && args[0] && args[1] ? proponerCli(args[0], args[1], args.includes("--seco"))
     : cmd === "propuestas" ? propuestasCli()
+    : cmd === "revisar" ? revisarCli(args.includes("--arreglar"))
     : cmd === "llegadas" ? llegadasCli(Number(opt("--dias", DIAS_ANTES)), opt("--bodega"),
         args.includes("--enviar") ? (opt("--a") || true) : null)
     : cmd === "capturas" ? (async () => {

@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { planPropuesta, PROPONIBLES, limpiar, digitos, telefonoEn, mismoTelefono, paisDeTelefono, codigoAirbnb, nombreDeAirbnb,
+import { revisarDerivados, planPropuesta, PROPONIBLES, limpiar, digitos, telefonoEn, mismoTelefono, paisDeTelefono, codigoAirbnb, nombreDeAirbnb,
          faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO, fechasEn, cabanaDeAnuncio, esConfirmacion, ultimos4, capturasSinLeer,
          llegadasPorAvisar, avisoDeLlegada, cuandoLlega } from "../../herramientas/reservas.mjs";
 
@@ -348,6 +348,29 @@ prueba("proponer: la plata no, llenar un vacío no, fechas al revés no, y anula
   assert.deepEqual(b.doc.cambios.estado, { antes: "confirmada", despues: "anulada" });
   assert.ok(PROPONIBLES.every((k) => !["total", "precio", "monto", "grupoId"].includes(k)));
   assert.equal(planPropuesta(r, { adultos: 2 }).vacio, true);
+});
+
+prueba("revisar: la disponibilidad y la limpieza tienen que decir lo mismo que la reserva", () => {
+  const hoy = "2026-10-18";
+  const reservas = [
+    { id: "N", clienteNombre: "Natalia", cabanaId: "c2", checkIn: "2026-11-27", checkOut: "2026-11-29", estado: "confirmada" },
+    { id: "A", clienteNombre: "Anulada", cabanaId: "c1", checkIn: "2026-12-01", checkOut: "2026-12-03", estado: "anulada" },
+    { id: "V", clienteNombre: "Vieja", cabanaId: "c1", checkIn: "2026-09-01", checkOut: "2026-09-03", estado: "confirmada" },
+    { id: "B", clienteNombre: "Bien", cabanaId: "c3", checkIn: "2026-12-10", checkOut: "2026-12-12", estado: "confirmada" },
+  ];
+  const disponibilidad = [{ id: "N", cabanaId: "c2", desde: "2026-11-20", hasta: "2026-11-22" }, { id: "A", cabanaId: "c1", desde: "2026-12-01", hasta: "2026-12-03" },
+    { id: "B", cabanaId: "c3", desde: "2026-12-10", hasta: "2026-12-12" }, { id: "X", cabanaId: "c1", desde: "2026-12-20", hasta: "2026-12-22" }];
+  const actividades = [{ id: "limp-N", titulo: "Limpieza Loft · entrada 2026-11-20", cabanaId: "c2", reservaId: "N", fechaInicio: "2026-11-19", fechaVencimiento: "2026-11-20" },
+    { id: "limp-A", hecho: false }, { id: "limp-B", titulo: "Limpieza Casa · entrada 2026-12-10", cabanaId: "c3", reservaId: "B", fechaInicio: "2026-12-09", fechaVencimiento: "2026-12-10" }];
+  const cabanas = [{ id: "c2", nombre: { es: "Loft" } }, { id: "c3", nombre: "Casa" }];
+  const l = revisarDerivados({ reservas, disponibilidad, actividades, cabanas }, hoy);
+  const k = l.map((x) => `${x.que} ${x.col}/${x.id}`).sort();
+  assert.deepEqual(k, ["borrar actividades/limp-A", "borrar disponibilidad/A", "borrar disponibilidad/X", "corregir actividades/limp-N", "corregir disponibilidad/N"]);
+  const lim = l.find((x) => x.id === "limp-N").datos;
+  assert.equal(lim.titulo, "Limpieza Loft · entrada 2026-11-27");
+  assert.equal(lim.fechaInicio, "2026-11-26");
+  // Una limpieza ya hecha no se toca.
+  assert.equal(revisarDerivados({ reservas, disponibilidad, actividades: [{ ...actividades[0], hecho: true }], cabanas }, hoy).some((x) => x.id === "limp-N"), false);
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

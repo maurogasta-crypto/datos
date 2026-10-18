@@ -579,12 +579,14 @@ async function revisarCli(arreglar) {
     if (l.length) console.log(`\n  ${l.length} arreglados (cada uno con su copia en _historial).`);
   } else if (l.length) console.log(`\n  Con --arreglar se escriben.`);
   // La IDA hacia Airbnb (reservas-10): lo que dejó la última sincronización
-  // de Casa Verde en airbnb_estado/. Si Airbnb no bloquea una reserva directa,
-  // esa fecha se puede vender dos veces.
+  // de Casa Verde en airbnb_estado/. OJO (18-oct): Airbnb CIERRA las fechas que
+  // importa pero no siempre las vuelve a publicar en su .ics —las de Darío y
+  // Ximena estaban tachadas en la app y no figuraban—, así que esto es un dato,
+  // no una alarma.
   try {
     const ida = await F.listar(cfg, sesion, "airbnb_estado");
     if (!ida.length) console.log("\n  ⚠ Airbnb: todavía no se comprobó si bloquea nuestras reservas directas (tocá «Airbnb» en Reservas para que se compruebe).");
-    for (const x of ida) console.log(`  ${(x.faltan || []).length ? "⚠" : "✔"} Airbnb, ${x.id}: bloquea ${x.bloqueadas} de ${x.directas} reservas directas` +
+    for (const x of ida) console.log(`  ${(x.faltan || []).length ? "ℹ" : "✔"} Airbnb, ${x.id}: ${x.bloqueadas} de ${x.directas} reservas directas figuran en el .ics de Airbnb` +
       ((x.faltan || []).length ? ` — faltan ${(x.faltan || []).map((f) => f.checkIn + "→" + f.checkOut + (f.noches ? ` (noches ${f.noches.map((n) => n.slice(5)).join(" ")})` : "")).join(", ")}` : "") + (x.bloqueosAirbnb !== undefined ? ` · el .ics de Airbnb trae ${x.bloqueosAirbnb} bloqueos de ${x.eventosAirbnb} eventos` : "") + ` (revisado ${String(x.revisadoEn || "").slice(0, 10)})`);
   } catch (e) { console.log("\n  ⚠ Airbnb: no se pudo leer airbnb_estado (" + e.message + "): faltan publicar las reglas de Casa Verde."); }
   // Y lo que le falta a cada reserva que viene, como en «estado».

@@ -984,8 +984,9 @@ prueba("los borradores se validan: sin texto no hay borrador, y el número son s
 });
 prueba("un borrador dice por dónde se manda: airbnb si lo dice, y si no WhatsApp", () => {
   const t = armar({ "borradores.json": JSON.stringify([
-    { id: "a", texto: "hola", canal: "airbnb" }, { id: "b", texto: "hola", canal: "javascript:" }, { id: "c", texto: "hola" }]) });
-  assert.deepEqual(W.borradores(t).map((b) => b.canal), ["airbnb", "whatsapp", "whatsapp"]);
+    { id: "a", texto: "hola", canal: "airbnb" }, { id: "b", texto: "hola", canal: "javascript:" }, { id: "c", texto: "hola" },
+    { id: "d", texto: "hola", canal: "facebook" }]) });
+  assert.deepEqual(W.borradores(t).map((b) => b.canal), ["airbnb", "whatsapp", "whatsapp", "facebook"]);
 });
 
 pruebaA("la pantalla muestra los borradores que le pasan", async () => {

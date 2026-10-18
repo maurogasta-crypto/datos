@@ -158,6 +158,20 @@ la lectura**, para que no escriban dos el mismo latido:
 `rm ~/.termux/boot/bodega-vigilar.sh; pkill -f vigilar`. Lo de abajo queda
 para un teléfono donde Termux:API sí ande.
 
+**Desde el 18-oct-2026 el teléfono de captura es el Redmi 13C** (`pizarra-34`),
+y su Pizarra lee además los **pedidos de alquiler en Canasvieiras** de los
+grupos de Facebook: SÓLO una notificación de Facebook que hable de alquilar
+(alquiler, alugar, aluguel…) **y** nombre Canasvieiras o «Canas». Van a la
+misma `mensajes/<fecha>.json` con `app: "facebook"` y el grupo en `chat`; las
+novedades los cuentan aparte, sin nombrar a nadie. Facebook no da el enlace a
+la publicación: la Pizarra reusa la acción de su notificación en un aviso
+propio que la abre (hasta reiniciar). **El chat prepara la respuesta** —en
+`borradores.json` con `canal: "facebook"`, y en el buzón de avisos de Mauro
+para que le llegue a la Pizarra— y **Mauro contesta en Facebook**: una app que
+contesta sola es lo que hace que Facebook bloquee una cuenta. Para que lleguen,
+en cada grupo: ⋯ → Notificaciones → «Todas las publicaciones». **Lee un solo
+teléfono**: en el Redmi 15 se le saca a la Pizarra el acceso a notificaciones.
+
 **Que arranque solo** (30-sep-2026). `--vigilar` sólo lee mientras corre, y
 Android lo corta al reiniciar o cuando cierra Termux: ahí no llega nada y
 **no hay ningún error**, que se ve igual que un día sin mensajes. Una vez:

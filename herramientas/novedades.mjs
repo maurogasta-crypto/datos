@@ -131,6 +131,11 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
      plata): por eso se cuentan y no se nombran. */
   const deAirbnb = nuevos.filter((m) => m.app === "airbnb");
   if (deAirbnb.length) items.push({ clase: "mensajes", sitio: "casaverde", texto: `Mensajes nuevos de Airbnb: ${deAirbnb.length}` });
+  /* Los pedidos de alquiler en Canasvieiras de los grupos de Facebook
+     (pizarra-34, 18-oct-2026, en el Redmi 13C). Se cuentan y no se nombran,
+     igual que Airbnb: quien pide es un tercero. */
+  const deFacebook = nuevos.filter((m) => m.app === "facebook");
+  if (deFacebook.length) items.push({ clase: "mensajes", sitio: "casaverde", texto: `Pedidos de alquiler en Canasvieiras (Facebook): ${deFacebook.length}` });
   const ultimo = mensajes.map((m) => String(m.captado || "")).sort().pop();
   if (ultimo && ultimo > (visto.mensajesHasta || "")) visto.mensajesHasta = ultimo;
 

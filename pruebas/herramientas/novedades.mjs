@@ -113,6 +113,16 @@ prueba("sólo Airbnb, y se cuenta sin nombrar (el «chat» puede ser un título 
     .filter((i) => i.clase === "mensajes").map((i) => i.texto);
   assert.deepEqual(t, ["Mensajes nuevos de Airbnb: 1"]);
 });
+prueba("los pedidos de alquiler de Facebook se cuentan aparte, sin nombrar a nadie (pizarra-34)", () => {
+  const d = { ...base, mensajes: [
+    { app: "facebook", chat: "Aluguel Floripa", texto: "Ana: busco aluguel em Canasvieiras", captado: "2026-09-30T11:00:00Z" },
+    { app: "facebook", chat: "Canasvieiras alquileres", texto: "alquiler enero", captado: "2026-09-30T11:02:00Z" },
+    { app: "airbnb", chat: "Natalia", captado: "2026-09-30T11:01:00Z" }] };
+  const t = armarNovedades(d, { ...vistoVacio(), mensajesHasta: "2026-09-30T10:00:00Z" }, HOY).items
+    .filter((i) => i.clase === "mensajes").map((i) => i.texto);
+  assert.deepEqual(t, ["Mensajes nuevos de Airbnb: 1", "Pedidos de alquiler en Canasvieiras (Facebook): 2"]);
+  assert.ok(!t.join(" ").includes("Ana"));
+});
 prueba("26 h sin latido del teléfono se avisa, una sola vez por silencio", () => {
   const v = { ...vistoVacio(), reservas: ["r1"] };
   const ahora = Date.parse("2026-09-30T11:00:00Z");

@@ -346,6 +346,8 @@ function pintarBorradores() {
           try { await navigator.clipboard.writeText(b.texto); aviso("Copiado."); } catch { aviso("No se pudo copiar: mantené apretado el texto."); } } }, "Copiar"),
         " · ", b.canal === "airbnb"
           ? el("a", { class: "link", href: "https://www.airbnb.com/hosting/messages", target: "_blank", rel: "noopener" }, "Abrir Airbnb")
+          : b.canal === "facebook"
+          ? el("a", { class: "link", href: "https://www.facebook.com/", target: "_blank", rel: "noopener" }, "Abrir Facebook")
           : el("a", { class: "link", href: "https://wa.me/" + (b.numero || "") + "?text=" + encodeURIComponent(b.texto), target: "_blank", rel: "noopener" }, "Abrir WhatsApp"),
         " · ", el("button", { class: "link", onclick: marcar }, "Listo")))));
   }

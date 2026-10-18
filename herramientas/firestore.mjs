@@ -231,7 +231,7 @@ const PROYECTOS = {
        lo escribe en `propuestas` y una persona lo aprueba desde la app. */
     colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
                   "bloques", "marcas", "movimientos", "recurrentes", "propuestas", "auditoria",
-                  "reportes", "_historial", "alertas", "deseos", "extractos"],
+                  "reportes", "_historial", "alertas", "deseos", "extractos", "mensajes"],
     /* v14 (10-oct-2026, tiempos:V12): `extractos`, lo que dice cada banco
        línea por línea. El agente las carga (`extractos.mjs`) y las clasifica
        mientras están pendientes; registrarlas es de una persona. */

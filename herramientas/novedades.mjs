@@ -114,6 +114,9 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
     if (rp.estado && rp.estado !== "nuevo") continue;
     // Un pedido de alquiler de Facebook ya se cuenta desde la bodega (abajo).
     if (rp.pagina === "facebook-pedido") continue;
+    // El diagnóstico que se manda a mano desde la Pizarra no es una falla
+    // (18-oct: la ronda le mandó a Mauro cuatro «fallas» que eran pruebas).
+    if (rp.pagina === "app-telefono" && /^Diagnóstico pedido a mano/.test(String(rp.texto || ""))) continue;
     // Lo que pidió la misma persona que recibe no es una novedad para ella
     // (30-sep: la primera ronda le mandó a Mauro sus propios cinco pedidos).
     if (para && String(rp.nombre || "").trim().toLowerCase() === para.toLowerCase()) continue;

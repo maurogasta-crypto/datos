@@ -128,6 +128,12 @@ prueba("el reporte de un pedido de Facebook no se avisa dos veces: va por la bod
   const r = armarNovedades(d, vistoVacio(), HOY);
   assert.equal(r.items.filter((i) => i.clase === "reporte").length, 0);
 });
+prueba("el diagnóstico pedido a mano desde la Pizarra no es una falla nueva", () => {
+  const d = { ...base, reportes: [{ base: "tiempos", id: "d1", estado: "nuevo", pagina: "app-telefono", texto: "Diagnóstico pedido a mano desde la app.\nX" },
+    { base: "tiempos", id: "d2", estado: "nuevo", pagina: "app-telefono", texto: "La alarma no sonó", nombre: "Florencia" }] };
+  const r = armarNovedades(d, vistoVacio(), HOY, { para: "Mauro" });
+  assert.equal(r.items.filter((i) => i.clase === "reporte").length, 1);
+});
 prueba("26 h sin latido del teléfono se avisa, una sola vez por silencio", () => {
   const v = { ...vistoVacio(), reservas: ["r1"] };
   const ahora = Date.parse("2026-09-30T11:00:00Z");

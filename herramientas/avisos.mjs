@@ -16,6 +16,11 @@
 //   node herramientas/avisos.mjs registro [--dias N] [--bodega <dir>]
 //       Lo que se mandó, de la bodega.
 //
+//   node herramientas/avisos.mjs buzon <base> --a <nombre> --tema <tema>
+//                                --texto "…" [--sobre <proyecto>] [--seco]
+//       Sólo el buzón de la Pizarra, sin WhatsApp (pizarra-35): la respuesta
+//       preparada a un pedido de alquiler de Facebook.
+//
 // avisos-1 · 30-sep-2026 · línea L-avisos del panel.
 //
 // Pedido de Mauro: extender a todo el ecosistema lo de CallMeBot que hasta hoy
@@ -416,6 +421,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         ? "Prueba de los avisos de Claude: si leés esto, te pueden llegar los avisos de la ronda diaria."
         : opt("--texto");
       decir(await avisar({ base, a: opt("--a"), tema, texto, sobre: opt("--sobre"), bodega, seco: args.includes("--seco") }));
+    } else if (cmd === "buzon") {
+      /* Sólo el buzón de la Pizarra, sin WhatsApp (pizarra-35): lo usa la
+         consulta en vivo para dejarle a Mauro la respuesta preparada a un
+         pedido de alquiler de Facebook. Lo lee sólo su dueño, así que puede
+         llevar lo que lleve un borrador; no va a nadie más que al equipo. */
+      const base = libres[0];
+      if (!base) throw new Error("falta la base");
+      const texto = String(opt("--texto") || "").trim();
+      if (!texto) throw new Error("falta el texto");
+      if (texto.length > 3000) throw new Error("el texto pasa de 3000 caracteres");
+      if (!TEMAS[opt("--tema")]) throw new Error("tema desconocido: " + opt("--tema"));
+      const r = await aBuzon({ base, a: opt("--a"), tema: opt("--tema"), texto, sobre: opt("--sobre"), seco: args.includes("--seco") });
+      console.log(`\n  ${r.ok ? "✓" : "✖"} ${r.a || ""} ${r.ok ? (r.seco ? "iría al buzón de " + r.casa : "en el buzón de " + r.casa) : r.motivo}\n`);
     } else if (cmd === "registro") {
       const l = leerRegistro(bodega, Number(opt("--dias", 7)));
       if (!l.length) console.log("\n  No se mandó ningún aviso en esos días.\n");
@@ -426,6 +444,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   node herramientas/avisos.mjs enviar <base> --a <nombre> --tema <tema> --texto "…" [--sobre <proyecto>] [--seco]
   node herramientas/avisos.mjs probar <base> --a <nombre>
   node herramientas/avisos.mjs registro [--dias N]
+  node herramientas/avisos.mjs buzon <base> --a <nombre> --tema <tema> --texto "…" [--sobre <proyecto>] [--seco]
       (todas aceptan --bodega <dir>; por defecto ../bodega)
 
   Bases: ${Object.keys(BASES).join(", ")}  ·  tiempos → casaverde

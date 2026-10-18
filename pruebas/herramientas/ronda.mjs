@@ -68,6 +68,12 @@ prueba("un pendiente sin `origen` no tapa nada", () => {
   assert.equal(cruzar("remate", [{ id: "r1" }], pend).nuevos.length, 1);
 });
 
+prueba("un pedido de alquiler de Facebook no se vuelve pendiente (pizarra-35)", () => {
+  const r = cruzar("tiempos", [{ id: "f1", pagina: "facebook-pedido" }, { id: "r2", pagina: "pizarra" }], []);
+  assert.deepEqual(r.nuevos.map((x) => x.id), ["r2"]);
+  assert.equal(r.yaTraidos.length, 0);
+});
+
 prueba("sin reportes y sin pendientes no se rompe", () => {
   const r = cruzar("remate", undefined, undefined);
   assert.deepEqual(r, { nuevos: [], yaTraidos: [] });

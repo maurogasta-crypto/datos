@@ -113,6 +113,7 @@ const NOMBRE_DE_LO_QUE_GUARDA = { fallas: "reportes", viajes: "viajes", sesiones
    único que evita traer dos veces el mismo reporte: el agente no escribe en la
    base del sitio, así que no puede marcarlo allá. Se mira de este lado. */
 const origenDe = (proyecto, id) => `${proyecto}:reportes/${id}`;
+export const PAGINA_FACEBOOK = "facebook-pedido";
 
 /* ── Las funciones puras ─────────────────────────────────────────────────────
    Separadas a propósito de todo lo que toca la red, para que el banco de
@@ -128,6 +129,11 @@ function cruzar(proyecto, reportes, pendientes) {
   const nuevos = [];
   const yaTraidos = [];
   for (const r of reportes || []) {
+    /* Un pedido de alquiler de Facebook (pizarra-35) no es un pedido del
+       equipo: lo contesta la consulta en vivo con un borrador en el buzón de
+       Mauro, y las novedades lo cuentan desde la bodega. Como pendiente sería
+       un renglón por cada interesado. */
+    if (r && r.pagina === PAGINA_FACEBOOK) continue;
     (traidos.has(origenDe(proyecto, r.id)) ? yaTraidos : nuevos).push(r);
   }
   return { nuevos, yaTraidos };

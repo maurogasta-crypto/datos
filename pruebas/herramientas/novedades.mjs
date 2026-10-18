@@ -123,6 +123,11 @@ prueba("los pedidos de alquiler de Facebook se cuentan aparte, sin nombrar a nad
   assert.deepEqual(t, ["Mensajes nuevos de Airbnb: 1", "Pedidos de alquiler en Canasvieiras (Facebook): 2"]);
   assert.ok(!t.join(" ").includes("Ana"));
 });
+prueba("el reporte de un pedido de Facebook no se avisa dos veces: va por la bodega (pizarra-35)", () => {
+  const d = { ...base, reportes: [{ base: "tiempos", id: "f1", tipo: "pedido", estado: "nuevo", pagina: "facebook-pedido", texto: "Pedido de alquiler…" }] };
+  const r = armarNovedades(d, vistoVacio(), HOY);
+  assert.equal(r.items.filter((i) => i.clase === "reporte").length, 0);
+});
 prueba("26 h sin latido del teléfono se avisa, una sola vez por silencio", () => {
   const v = { ...vistoVacio(), reservas: ["r1"] };
   const ahora = Date.parse("2026-09-30T11:00:00Z");

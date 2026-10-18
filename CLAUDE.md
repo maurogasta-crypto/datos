@@ -238,7 +238,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (69 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (116 casos, sin npm ni red) para la ronda de apertura, que desde el
+  (117 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
@@ -249,7 +249,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (44 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
-  manda; `node pruebas/herramientas/novedades.mjs` (21 casos) para las novedades
+  manda; `node pruebas/herramientas/novedades.mjs` (22 casos) para las novedades
   que se le mandan a Mauro, que prueba que nada se avise dos veces ni se avise
   lo que el panel ya da por resuelto; `node
   pruebas/herramientas/ingresos.mjs` (8 casos) para los ingresos de la familia
@@ -553,7 +553,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   de los grupos de Facebook** (`pizarra-34`, en el Redmi 13C, el teléfono de
   captura): SÓLO lo que habla de alquilar Y nombra Canasvieiras, a la misma
   `mensajes/` con `app: "facebook"`. El borrador lleva `canal: "facebook"` y
-  **contesta Mauro, en Facebook**. Ver `herramientas/TELEFONO.md`.
+  **contesta Mauro, en Facebook**. Ver `herramientas/TELEFONO.md`. **Y desde
+  pizarra-35 despierta al chat en el acto**: la Pizarra deja un pedido en
+  `reportes/` de Tiempos (`pagina: "facebook-pedido"`, con el texto, porque la
+  sesión en vivo no tiene la bodega) y llama a `avisar-claude`; la consulta en
+  vivo prepara la respuesta y la deja en el buzón de Mauro (`avisos.mjs
+  buzon`, TRASPASO § 4 bis). La ronda no los convierte en pendientes.
 - **El agente le escribe por WhatsApp a una persona del equipo, y sólo si ella
   lo encendió** (`herramientas/avisos.mjs`, 30-sep-2026, línea `L-avisos`).
   Cada sitio con gente —Casa Verde, CasaYourte, remate; Tiempos va por Casa

@@ -112,6 +112,8 @@ export function armarNovedades({ reservas = [], actividades = [], cabanas = [], 
     if (ya("reportes", clave)) continue;
     anotar("reportes", clave);
     if (rp.estado && rp.estado !== "nuevo") continue;
+    // Un pedido de alquiler de Facebook ya se cuenta desde la bodega (abajo).
+    if (rp.pagina === "facebook-pedido") continue;
     // Lo que pidió la misma persona que recibe no es una novedad para ella
     // (30-sep: la primera ronda le mandó a Mauro sus propios cinco pedidos).
     if (para && String(rp.nombre || "").trim().toLowerCase() === para.toLowerCase()) continue;

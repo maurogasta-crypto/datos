@@ -238,8 +238,8 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (69 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
-  (117 casos, sin npm ni red) para la ronda de apertura, que desde el
-  14-sep-2026 corre sola una vez por día y por eso no puede equivocarse en
+  (118 casos, sin npm ni red) para la ronda de apertura, que desde el
+  14-sep-2026 corre sola (una vez por día, tres en temporada) y por eso no puede equivocarse en
   silencio — desde el 21-sep-2026 cubre también la separación entre fallas y
   pedidos, y sobre todo que **un reporte sin `tipo` se siga leyendo como
   falla**: si eso cambiara, los reportes viejos desaparecerían de la sección 3
@@ -595,7 +595,8 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   llama a `avisar-claude` del Netlify de Casa Verde, que verifica la sesión y
   la ficha activa y dispara la rutina con un renglón fijo: el sitio y el id. **El
   texto de la persona nunca viaja en el disparo**: se lee de la base, como dato.
-  Los pasos, en `TRASPASO.md` § 4 bis. Airbnb sigue una vez por día.
+  Los pasos, en `TRASPASO.md` § 4 bis. Airbnb, Facebook y los mails van en la
+  ronda: una vez por día, tres en temporada.
 - **Las reservas de Casa Verde se COMPLETAN con los mensajes, y nada más**
   (`herramientas/reservas.mjs`, 29-sep-2026; las notificaciones de Airbnb
   entran por la misma captura). El agente llena el cliente, la cantidad, la

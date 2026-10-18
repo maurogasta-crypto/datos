@@ -1267,7 +1267,7 @@ el punto 0, que es lo único que no se resuelve leyendo un archivo. Y no
 reemplaza el punto 4: la sección FUENTES es la que lo hace visible, porque un
 `permission-denied` callado parece una corrida que anduvo bien.
 
-**Y desde el 14-sep-2026 esta ronda también corre sola, una vez por día**, como
+**Y desde el 14-sep-2026 esta ronda también corre sola, una vez por día (en temporada, tres: 7:47, 13:47 y 19:47; la de la mañana es la completa)**, como
 una *routine* de Claude Code — gasta de la suscripción y no cuesta aparte. Lee y
 escribe en el panel; **no toca código**. El porqué de cada una de esas dos
 decisiones, los límites de cuota y el prompt exacto están en

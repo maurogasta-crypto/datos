@@ -71,8 +71,11 @@ privada, las variables del entorno).
   `llegadas` (aviso para quien recibe, como borrador en la bodega).
 - `telefono.mjs` y compañía, en el teléfono de Mauro (Termux): notificaciones
   de Airbnb a la bodega (WhatsApp dejó de leerse el 30-sep, a pedido de Mauro),
-  capturas de Airbnb, borradores para huéspedes, latido cada 12 horas y
-  arranque solo con Termux:Boot (`telefono.mjs arranque`). Banco 100 casos.
+  capturas de Airbnb, borradores para huéspedes y arranque solo con Termux:Boot
+  (`telefono.mjs arranque`). Banco 100 casos. **Desde el 6-oct lee la Pizarra**
+  (pizarra-9) y desde el 18-oct sólo en el Redmi 13C, con Facebook también; el
+  Termux del 13C hace el respaldo de las 4:17 (`sincronizar`). El latido lo deja
+  la Pizarra cada 6 h y lo controla `latido.mjs`.
 - `firestore.mjs`: escribir con copia en `_historial/`, `$timestamp`, `$crudo`,
   `leerCrudo`. Banco 50 casos. `ronda.mjs`: banco 108 casos.
 
@@ -269,7 +272,7 @@ sitios». El formulario de cada sitio guarda el reporte y llama a
 ficha activa y dispara esta rutina con UN renglón fijo:
 `CONSULTA EN VIVO · <sitio>: reportes/<id> (de <nombre>)`. Lo que escribió la
 persona **no viene en el disparo**: se lee de la base. Los mensajes de
-Airbnb siguen yendo una vez por día, en la ronda (§ 4).
+Airbnb y de Facebook, y los mails, van en la ronda (§ 4), tres veces por día en temporada.
 
 **Lo que se aprendió el 4-oct probándola, y por qué este bloque es así:**
 

@@ -159,7 +159,7 @@ anduvo bien.
 ### Quién lo corre
 
 Una persona, al abrir una tanda; y desde el 14-sep-2026 también una **routine**
-de Claude Code, una vez por día, sola. Eso está en `RUTINA-AUTOMATICA.md`: qué
+de Claude Code, sola: una vez por día, tres en temporada. Eso está en `RUTINA-AUTOMATICA.md`: qué
 hace, qué no hace y por qué, y por qué no cuesta nada aparte de la suscripción.
 
 ### El banco

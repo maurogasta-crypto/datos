@@ -95,6 +95,16 @@ se toca, venga de donde venga. El banco prueba las cuatro cosas.
 
 ## Airbnb: los mensajes, y las respuestas preparadas
 
+> **Cómo es HOY (18-oct-2026).** Las notificaciones ya no las lee Termux: las lee
+> la **Pizarra** (pizarra-9 desde el 6-oct, `Bodega.kt` del repo `pizarra`), y
+> desde el 18-oct en UN solo teléfono, el **Redmi 13C**, que lee Airbnb y los
+> pedidos de alquiler de Facebook. El Redmi 15 quedó desvinculado (sin acceso a
+> notificaciones, sin token). El Termux del 13C hace sólo el respaldo de las
+> 4:17 (`sincronizar`). El latido lo deja la Pizarra cada 6 horas, con la prueba
+> de que el lector escucha, y lo controla `herramientas/latido.mjs` en cada
+> ronda. Lo de abajo cuenta el camino de Termux, que sigue andando como
+> respaldo.
+
 **Sólo Airbnb, desde el 30-sep-2026.** Del 29 al 30 se leyeron también todos
 los chats de WhatsApp; Mauro lo cortó: «los mensajes de Airbnb llegan por la
 app de Airbnb, no por WhatsApp; por el momento no preciso que se monitoree

@@ -92,6 +92,17 @@ diarias, una por hora se comería la cuota antes del mediodía y además le saca
 a Mauro la ventana de 5 horas que usa para trabajar. Una corrida diaria deja
 cuatro libres y casi toda la ventana.
 
+**En temporada alta son tres (18-oct-2026, Mauro: «que pueda aumentarse la
+cantidad de veces por día para despertar el chat en temporada alta»):** 7:47,
+13:47 y 19:47 de Montevideo. La de la mañana es la completa; las otras dos son
+corridas EXTRA (TRASPASO § 4, paso 0 bis) que sólo miran lo que cambia en el
+día —mensajes, mails, pedidos de Facebook, reservas— y no hacen respaldo ni
+trabajo de código. **La cuenta que hay que tener a la vista:** tres rondas dejan
+dos corridas libres para la «Consulta en vivo» (cada consulta o falla que manda
+alguien desde un sitio es una). Un día con más de dos consultas, la tercera se
+rechaza —no se encola— y la trae la ronda siguiente. Fuera de temporada se
+vuelve a una (`update_trigger` del disparador de la ronda).
+
 **Y por eso lo que se puede juntar con código, se junta con código.** Ésa es la
 razón de `herramientas/ronda.mjs`: cruzar reportes contra pendientes es trabajo
 determinado, y cada dato que junta el script es un dato que el modelo no tiene

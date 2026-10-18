@@ -585,7 +585,7 @@ async function revisarCli(arreglar) {
     const ida = await F.listar(cfg, sesion, "airbnb_estado");
     if (!ida.length) console.log("\n  ⚠ Airbnb: todavía no se comprobó si bloquea nuestras reservas directas (tocá «Airbnb» en Reservas para que se compruebe).");
     for (const x of ida) console.log(`  ${(x.faltan || []).length ? "⚠" : "✔"} Airbnb, ${x.id}: bloquea ${x.bloqueadas} de ${x.directas} reservas directas` +
-      ((x.faltan || []).length ? ` — faltan ${(x.faltan || []).map((f) => f.checkIn + "→" + f.checkOut).join(", ")}` : "") + ` (revisado ${String(x.revisadoEn || "").slice(0, 10)})`);
+      ((x.faltan || []).length ? ` — faltan ${(x.faltan || []).map((f) => f.checkIn + "→" + f.checkOut + (f.noches ? ` (noches ${f.noches.map((n) => n.slice(5)).join(" ")})` : "")).join(", ")}` : "") + (x.bloqueosAirbnb !== undefined ? ` · el .ics de Airbnb trae ${x.bloqueosAirbnb} bloqueos de ${x.eventosAirbnb} eventos` : "") + ` (revisado ${String(x.revisadoEn || "").slice(0, 10)})`);
   } catch (e) { console.log("\n  ⚠ Airbnb: no se pudo leer airbnb_estado (" + e.message + "): faltan publicar las reglas de Casa Verde."); }
   // Y lo que le falta a cada reserva que viene, como en «estado».
   const cli = Object.fromEntries(cs.map((c) => [c.id, c])), gr = Object.fromEntries(gs.map((g) => [g.id, g]));

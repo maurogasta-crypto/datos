@@ -559,6 +559,15 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sesión en vivo no tiene la bodega) y llama a `avisar-claude`; la consulta en
   vivo prepara la respuesta y la deja en el buzón de Mauro (`avisos.mjs
   buzon`, TRASPASO § 4 bis). La ronda no los convierte en pendientes.
+  **Y se listan en Casa Verde** (18-oct-2026, Mauro: «listadas por fecha…
+  para que Florencia y otro usuario logueado llegue a ver»):
+  `herramientas/facebook.mjs` los pasa a `pedidos_alquiler/` de
+  `casaverde-20` —`desde-reporte` en la consulta en vivo, con la respuesta;
+  `cargar` en la ronda, desde la bodega— y `interno/pedidos-alquiler.html`
+  los muestra con «Buscar en Facebook» (la notificación no trae el enlace:
+  se busca con las palabras de la publicación). Lo escribe sólo el agente;
+  el equipo marca respondido o descartado. Banco: `node
+  pruebas/herramientas/facebook.mjs` (6 casos).
 - **El agente le escribe por WhatsApp a una persona del equipo, y sólo si ella
   lo encendió** (`herramientas/avisos.mjs`, 30-sep-2026, línea `L-avisos`).
   Cada sitio con gente —Casa Verde, CasaYourte, remate; Tiempos va por Casa

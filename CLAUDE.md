@@ -568,6 +568,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   Pizarra la avisa y con un toque copia y abre la publicación exacta
   (pizarra-37). Publicar es de una persona. Banco: `node
   pruebas/herramientas/facebook.mjs` (8 casos).
+  **Y la ronda prueba que el 13C escucha** (`herramientas/latido.mjs`,
+  latido-1, 18-oct-2026): el latido de la Pizarra (cada 6 h) trae desde
+  pizarra-39 la hora de la última notificación de cualquier app, sin
+  contenido; tener el permiso no alcanza, un lector desconectado se ve igual
+  que un día sin mensajes. Banco: `node pruebas/herramientas/latido.mjs`.
 - **El agente le escribe por WhatsApp a una persona del equipo, y sólo si ella
   lo encendió** (`herramientas/avisos.mjs`, 30-sep-2026, línea `L-avisos`).
   Cada sitio con gente —Casa Verde, CasaYourte, remate; Tiempos va por Casa

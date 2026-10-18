@@ -275,7 +275,7 @@ const PROYECTOS = {
                   "pagos", "movimientos", "liquidaciones", "cierres", "honorarios",
                   // 18-oct-2026: los pedidos de alquiler de Facebook
                   // (herramientas/facebook.mjs). Los escribe el agente.
-                  "pedidos_alquiler",
+                  "pedidos_alquiler", "cambios_reserva",
                   "_historial"],
     /* Hasta el 29-sep-2026 eran tres familias selladas: credenciales, el
        libro del negocio y la gente. Ese día Mauro abrió las dos últimas

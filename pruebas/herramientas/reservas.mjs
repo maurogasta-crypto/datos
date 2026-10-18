@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { limpiar, digitos, telefonoEn, mismoTelefono, paisDeTelefono, codigoAirbnb, nombreDeAirbnb,
+import { planPropuesta, PROPONIBLES, limpiar, digitos, telefonoEn, mismoTelefono, paisDeTelefono, codigoAirbnb, nombreDeAirbnb,
          faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO, fechasEn, cabanaDeAnuncio, esConfirmacion, ultimos4, capturasSinLeer,
          llegadasPorAvisar, avisoDeLlegada, cuandoLlega } from "../../herramientas/reservas.mjs";
 
@@ -186,7 +186,7 @@ prueba("de un mensaje de Airbnb: crea el cliente con el país del prefijo, y la 
 prueba("«cambiame al martes», «anulá» y «haceme precio» REBOTAN, con el motivo", () => {
   const p = planCompletar(AIRBNB, null, { checkIn: "2027-01-05", estado: "anulada", precio: 100, cabanaId: "c1" });
   assert.equal(p.rechazados.length, 4);
-  assert.ok(p.rechazados.every((r) => /las decide Mauro/.test(r)));
+  assert.ok(p.rechazados.every((r) => /las decide una persona/.test(r)));
   assert.equal(p.vacio, true);
   assert.deepEqual(Object.keys(p.reserva), []);
 });
@@ -322,6 +322,32 @@ prueba("cuándo: hoy, mañana, o el día con fecha", () => {
   assert.equal(cuandoLlega("2026-10-02", "2026-10-02"), "hoy");
   assert.equal(cuandoLlega("2026-10-03", "2026-10-02"), "mañana");
   assert.equal(cuandoLlega("2026-10-04", "2026-10-02"), "el dom 04/10");
+});
+
+prueba("proponer: un cambio de fechas se propone, con el choque a la vista y un id estable", () => {
+  const r = { id: "R1", clienteNombre: "Airbnb · HM2 Natalia", cabanaId: "c2", checkIn: "2026-11-20", checkOut: "2026-11-22", estado: "confirmada", adultos: 2 };
+  const otras = [r, { id: "X", cabanaId: "c2", estado: "confirmada", checkIn: "2026-11-28", checkOut: "2026-11-30" },
+    { id: "Y", cabanaId: "c2", estado: "anulada", checkIn: "2026-11-27", checkOut: "2026-11-29" }];
+  const p = planPropuesta(r, { checkIn: "2026-11-27", checkOut: "2026-11-29", adultos: 2 }, { fuente: "mail", otras, ahora: "2026-10-18T00:00:00Z" });
+  assert.equal(p.vacio, false);
+  assert.deepEqual(Object.keys(p.doc.cambios).sort(), ["checkIn", "checkOut"]); // lo igual no se propone
+  assert.deepEqual(p.doc.cambios.checkIn, { antes: "2026-11-20", despues: "2026-11-27" });
+  assert.deepEqual(p.choca, ["X"]);                                              // la anulada no choca
+  assert.equal(p.doc.estado, "pendiente");
+  assert.equal(planPropuesta(r, { checkOut: "2026-11-29", checkIn: "2026-11-27" }, { otras }).id, p.id); // el mismo pedido, el mismo documento
+});
+
+prueba("proponer: la plata no, llenar un vacío no, fechas al revés no, y anular sí", () => {
+  const r = { id: "R1", cabanaId: "c2", checkIn: "2026-11-20", checkOut: "2026-11-22", estado: "confirmada", adultos: 2 };
+  const a = planPropuesta(r, { total: 900, mascotas: "1 perro", checkOut: "2026-11-19", estado: "confirmada" });
+  assert.equal(a.vacio, true);
+  assert.equal(a.rechazados.length, 4);
+  assert.ok(a.rechazados.some((x) => x.startsWith("total:")));
+  assert.ok(a.rechazados.some((x) => x.includes("completar")));
+  const b = planPropuesta(r, { estado: "anulada" });
+  assert.deepEqual(b.doc.cambios.estado, { antes: "confirmada", despues: "anulada" });
+  assert.ok(PROPONIBLES.every((k) => !["total", "precio", "monto", "grupoId"].includes(k)));
+  assert.equal(planPropuesta(r, { adultos: 2 }).vacio, true);
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

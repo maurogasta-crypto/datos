@@ -339,14 +339,14 @@ prueba("proponer: un cambio de fechas se propone, con el choque a la vista y un 
 
 prueba("proponer: la plata no, llenar un vacío no, fechas al revés no, y anular sí", () => {
   const r = { id: "R1", cabanaId: "c2", checkIn: "2026-11-20", checkOut: "2026-11-22", estado: "confirmada", adultos: 2 };
-  const a = planPropuesta(r, { total: 900, mascotas: "1 perro", checkOut: "2026-11-19", estado: "confirmada" });
+  const a = planPropuesta(r, { precio: 900, mascotas: "1 perro", checkOut: "2026-11-19", estado: "confirmada" });
   assert.equal(a.vacio, true);
   assert.equal(a.rechazados.length, 4);
-  assert.ok(a.rechazados.some((x) => x.startsWith("total:")));
+  assert.ok(a.rechazados.some((x) => x.startsWith("precio:")));
   assert.ok(a.rechazados.some((x) => x.includes("completar")));
   const b = planPropuesta(r, { estado: "anulada" });
   assert.deepEqual(b.doc.cambios.estado, { antes: "confirmada", despues: "anulada" });
-  assert.ok(PROPONIBLES.every((k) => !["total", "precio", "monto", "grupoId"].includes(k)));
+  assert.ok(PROPONIBLES.every((k) => !["precio", "monto", "grupoId"].includes(k)));
   assert.equal(planPropuesta(r, { adultos: 2 }).vacio, true);
 });
 
@@ -371,6 +371,15 @@ prueba("revisar: la disponibilidad y la limpieza tienen que decir lo mismo que l
   assert.equal(lim.fechaInicio, "2026-11-26");
   // Una limpieza ya hecha no se toca.
   assert.equal(revisarDerivados({ reservas, disponibilidad, actividades: [{ ...actividades[0], hecho: true }], cabanas }, hoy).some((x) => x.id === "limp-N"), false);
+});
+
+prueba("proponer el importe del mail: va al acuerdo, se propone aunque esté en cero, y un importe raro no", () => {
+  const r = { id: "R1", cabanaId: "c2", checkIn: "2026-11-27", checkOut: "2026-11-29", estado: "confirmada", total: 0 };
+  const p = planPropuesta(r, { total: "637.94" });
+  assert.deepEqual(p.doc.cambios.total, { antes: 0, despues: 637.94 });
+  assert.equal(planPropuesta({ ...r, total: 637.94 }, { total: 637.94 }).vacio, true);
+  assert.equal(planPropuesta(r, { total: -5 }).vacio, true);
+  assert.equal(planPropuesta(r, { total: "mucho" }).vacio, true);
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

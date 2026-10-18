@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // reservas.mjs — Completar las reservas de Casa Verde con lo que dicen los
-// mensajes de Airbnb (WhatsApp no, desde reservas-7). Sello: reservas-9
+// mensajes de Airbnb (WhatsApp no, desde reservas-7). Sello: reservas-10
 //
 //   node herramientas/reservas.mjs estado
 //       Las reservas que vienen, con lo que les falta.
@@ -573,6 +573,15 @@ async function revisarCli(arreglar) {
     }
     if (l.length) console.log(`\n  ${l.length} arreglados (cada uno con su copia en _historial).`);
   } else if (l.length) console.log(`\n  Con --arreglar se escriben.`);
+  // La IDA hacia Airbnb (reservas-10): lo que dejó la última sincronización
+  // de Casa Verde en airbnb_estado/. Si Airbnb no bloquea una reserva directa,
+  // esa fecha se puede vender dos veces.
+  try {
+    const ida = await F.listar(cfg, sesion, "airbnb_estado");
+    if (!ida.length) console.log("\n  ⚠ Airbnb: todavía no se comprobó si bloquea nuestras reservas directas (tocá «Airbnb» en Reservas para que se compruebe).");
+    for (const x of ida) console.log(`  ${(x.faltan || []).length ? "⚠" : "✔"} Airbnb, ${x.id}: bloquea ${x.bloqueadas} de ${x.directas} reservas directas` +
+      ((x.faltan || []).length ? ` — faltan ${(x.faltan || []).map((f) => f.checkIn + "→" + f.checkOut).join(", ")}` : "") + ` (revisado ${String(x.revisadoEn || "").slice(0, 10)})`);
+  } catch (e) { console.log("\n  ⚠ Airbnb: no se pudo leer airbnb_estado (" + e.message + "): faltan publicar las reglas de Casa Verde."); }
   // Y lo que le falta a cada reserva que viene, como en «estado».
   const cli = Object.fromEntries(cs.map((c) => [c.id, c])), gr = Object.fromEntries(gs.map((g) => [g.id, g]));
   const vienen = reservas.filter((r) => r.estado !== "anulada" && r.checkOut >= hoy);
@@ -581,7 +590,11 @@ async function revisarCli(arreglar) {
 }
 
 /* ── PROPONER (reservas-8) ────────────────────────────────────────────────── */
-export const PROPONIBLES = ["checkIn", "checkOut", "cabanaId", "estado", "adultos", "ninos", "bebes", "mascotas", "llegadaEstimada"];
+export const PROPONIBLES = ["checkIn", "checkOut", "cabanaId", "estado", "adultos", "ninos", "bebes", "mascotas", "llegadaEstimada", "total"];
+/* `total` (18-oct, Mauro: «que la ronda proponga el importe del mail») es el
+   del ACUERDO (grupos/{grupoId}.total), no de la reserva: lo que GANA Casa
+   Verde según el mail de Airbnb («GANAS»). Es plata, así que nunca se escribe
+   solo, ni para llenar un cero: siempre se propone y lo confirma una persona. */
 const DIA = /^\d{4}-\d{2}-\d{2}$/;
 
 /* El documento de `cambios_reserva/` para una reserva, o por qué no. Sólo lo
@@ -597,6 +610,13 @@ export function planPropuesta(r, cambios, { fuente = "Airbnb", motivo = "", ahor
     if (k === "estado" && v !== "anulada") { rechazados.push(`estado: sólo se propone «anulada» (Airbnb canceló)`); continue; }
     if (["adultos", "ninos", "bebes"].includes(k) && !(Number.isInteger(v) && v >= 0 && v <= 30)) { rechazados.push(`${k}: «${v}» no es una cantidad`); continue; }
     if (k === "llegadaEstimada" && !HORA.test(String(v))) { rechazados.push(`llegadaEstimada: «${v}» no es una hora (HH:MM)`); continue; }
+    if (k === "total") {
+      const n = Number(v);
+      if (!(n > 0 && n < 1e7)) { rechazados.push(`total: «${v}» no es un importe`); continue; }
+      if (Number(r.total || 0) === Math.round(n * 100) / 100) continue;
+      propuesta.total = { antes: Number(r.total || 0), despues: Math.round(n * 100) / 100 };
+      continue;
+    }
     if (r[k] === undefined || r[k] === null || r[k] === "") { rechazados.push(`${k}: la reserva no lo tiene: eso es completar, no proponer`); continue; }
     if (String(r[k]) === String(v)) continue;
     propuesta[k] = { antes: r[k], despues: v };
@@ -623,7 +643,10 @@ async function proponerCli(id, archivo, seco) {
   const r = await F.leerUno(cfg, sesion, "reservas", id);
   if (!r) throw new Error(`no hay una reserva «${id}»`);
   const otras = await F.listar(cfg, sesion, "reservas");
-  const p = planPropuesta({ ...r, id }, cambios, { fuente, motivo, otras });
+  // El importe vive en el acuerdo.
+  const g = r.grupoId ? await F.leerUno(cfg, sesion, "grupos", r.grupoId) : null;
+  if ("total" in cambios && !g) throw new Error("esa reserva no tiene acuerdo: el importe no tiene dónde ir");
+  const p = planPropuesta({ ...r, id, total: g ? g.total : undefined }, cambios, { fuente, motivo, otras });
   console.log(`\n  ${limpiar(r.clienteNombre)} · ${r.checkIn} · ${r.cabanaId}`);
   for (const [k, v] of Object.entries((p.doc && p.doc.cambios) || {})) console.log(`    ⚠ ${k}: ${v.antes} → ${v.despues}`);
   for (const l of p.rechazados) console.log("    ✗ " + l);

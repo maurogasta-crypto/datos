@@ -150,7 +150,7 @@ Si falta alguno (el contenedor pudo haberse renovado), clonalo ahí: git clone h
 
 0. Actualizá cada uno:  git -C /home/user/<repo> pull --ff-only origin main
    Si alguno no es fast-forward, no lo fuerces: decilo y seguí.
-0 bis. ¿CORRIDA EXTRA? (18-oct, Mauro: que el chat se despierte más veces por día en temporada alta, y que cada vez corra lo de la ronda). Si  git -C /home/user/bodega log --since=midnight --oneline | grep "Respaldo diario"  encuentra el de HOY, ésta es una corrida extra del día: hacé sólo 2, 3, 4, 5, 5 bis, 5 bis ¼, 5 bis ½ y la PARTE 3 (10 bis a 12). Saltá 5 ter, 5 quater, 6, 6 bis 0, 6 bis, 6 ter y la PARTE 2: el respaldo, los esquemas y el trabajo de código son una vez por día. En la última línea, «Ronda extra del <fecha> <hora>: …».
+0 bis. ¿CORRIDA EXTRA? (18-oct, Mauro: que el chat se despierte más veces por día en temporada alta, y que cada vez corra lo de la ronda). En temporada corre a las 7:47, 13:47 y 19:47 de Montevideo (pedido de Mauro del 18-oct: «8:00, 14:00 y 20:00»; 13 minutos antes para no caer en la hora en punto): la primera es la completa, las otras dos son extra. Si  git -C /home/user/bodega log --since=midnight --oneline | grep "Respaldo diario"  encuentra el de HOY, ésta es una corrida extra del día: hacé sólo 2, 3, 4, 5, 5 bis, 5 bis ¼, 5 bis ½ y la PARTE 3 (10 bis a 12). Saltá 5 ter, 5 quater, 6, 6 bis 0, 6 bis, 6 ter y la PARTE 2: el respaldo, los esquemas y el trabajo de código son una vez por día. En la última línea, «Ronda extra del <fecha> <hora>: …».
 
 ════ PARTE 1 · MIRAR (siempre) ════
 1. Leé /home/user/datos2/CLAUDE.md y protocolos/PROTOCOLO-GENERAL.md §§ 2.1 ter, quinquies, sexies, septies, octies, 6, 8 y 9. Si esto y RUTINA-AUTOMATICA.md se contradicen, gana el archivo y lo decís.

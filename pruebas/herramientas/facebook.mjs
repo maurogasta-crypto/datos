@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { enlaceBusqueda, pedidoDesdeMensaje, pedidoDesdeReporte, leerDeLaBodega, COLECCION } from "../../herramientas/facebook.mjs";
+import { enlaceBusqueda, pedidoDesdeMensaje, pedidoDesdeReporte, leerDeLaBodega, sinRespuesta, COLECCION } from "../../herramientas/facebook.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); } catch (e) { fallidas++; console.log("  ✗ " + n + "\n      " + e.message); } };
@@ -68,6 +68,17 @@ prueba("de la bodega se leen sólo los de Facebook y de los días pedidos", () =
   const l = leerDeLaBodega(dir, 30, new Date("2026-10-18T13:00:00Z"));
   assert.deepEqual(l.map((m) => m.id), ["abc123"]);
   fs.rmSync(dir, { recursive: true });
+});
+
+prueba("esperan respuesta los sin atender y sin respuesta, del más viejo al más nuevo", () => {
+  const l = sinRespuesta([
+    { id: "c", cuando: 3, estado: "nuevo" },
+    { id: "a", cuando: 1 },
+    { id: "r", cuando: 0, estado: "nuevo", respuesta: "hola" },
+    { id: "d", cuando: 2, estado: "respondido" },
+    { id: "b", cuando: 2, estado: "nuevo", respuesta: "  " },
+  ]);
+  assert.deepEqual(l.map((p) => p.id), ["a", "b", "c"]);
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

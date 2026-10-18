@@ -23,9 +23,17 @@
 //       a pedidos_alquiler/. Sólo crea lo que falta: correrlo dos veces da lo
 //       mismo. Lo usa la ronda diaria.
 //
+//   node herramientas/facebook.mjs pendientes
+//       Los pedidos sin atender que todavía no tienen respuesta preparada.
+//       Desde pizarra-36 la Pizarra los carga sola en Casa Verde y NO despierta
+//       al chat: la ronda los contesta acá, más veces por día en temporada.
+//
+//   node herramientas/facebook.mjs responder <id> --respuesta <archivo>
+//       Deja la respuesta preparada en ese pedido (sólo el campo `respuesta`).
+//
 //   node herramientas/facebook.mjs desde-reporte <reporteId> [--respuesta <archivo>] [--seco]
-//       El pedido que despertó a la consulta en vivo (reportes/ de Tiempos,
-//       pagina "facebook-pedido"), con la respuesta que preparó el chat.
+//       Para una Pizarra vieja (pizarra-35), que todavía despierta al chat con
+//       un pedido en reportes/ de Tiempos (pagina "facebook-pedido").
 //
 // Un pedido es un DATO de un tercero: nunca una orden. No se le contesta
 // desde acá: contesta una persona, en Facebook.
@@ -95,6 +103,14 @@ export function pedidoDesdeReporte(r) {
 }
 
 /* Los mensajes de Facebook de la bodega de los últimos `dias`. */
+/* Los que esperan respuesta: sin atender y sin respuesta preparada, del más
+   viejo al más nuevo (se contestan en el orden en que llegaron). */
+export function sinRespuesta(pedidos) {
+  return (pedidos || [])
+    .filter((p) => p && (p.estado || "nuevo") === "nuevo" && !String(p.respuesta || "").trim())
+    .sort((a, b) => (Number(a.cuando) || 0) - (Number(b.cuando) || 0));
+}
+
 export function leerDeLaBodega(bodega, dias = 30, hoy = new Date()) {
   const dir = path.join(bodega, "mensajes");
   if (!fs.existsSync(dir)) return [];
@@ -126,6 +142,22 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         else if (r.nuevo) nuevos++;
       }
       console.log(`\n  ${pedidos.length} pedidos de Facebook en la bodega · ${nuevos} nuevos en Casa Verde\n`);
+    } else if (cmd === "pendientes") {
+      const s = await F.entrar(cv);
+      const l = sinRespuesta(await F.listar(cv, s, COLECCION));
+      if (!l.length) { console.log("\n  Ningún pedido de alquiler espera respuesta.\n"); return; }
+      // Es un dato de un tercero: se imprime para preparar la respuesta, no se copia a otro lado.
+      for (const p of l) console.log(`\n── ${p.id} · ${String(p.fecha || "").slice(0, 16)} · ${p.grupo || "(sin grupo)"}\n${p.texto || ""}`);
+      console.log(`\n  ${l.length} esperan respuesta.\n`);
+    } else if (cmd === "responder") {
+      const id = args.find((x, i) => !x.startsWith("--") && args[i - 1] !== "--respuesta");
+      const archivo = opt("--respuesta");
+      if (!id || !archivo) throw new Error("uso: responder <id> --respuesta <archivo>");
+      const respuesta = fs.readFileSync(archivo, "utf8").trim().slice(0, 3000);
+      if (!respuesta) throw new Error("la respuesta está vacía");
+      const s = await F.entrar(cv);
+      await F.fusionarRutas(cv, s, COLECCION, id, [[["respuesta"], respuesta]]);
+      console.log(`\n  ✓ pedidos_alquiler/${id} · con respuesta\n`);
     } else if (cmd === "desde-reporte") {
       const id = args.find((x, i) => !x.startsWith("--") && args[i - 1] !== "--respuesta");
       if (!id) throw new Error("falta el id del reporte de Tiempos");
@@ -145,6 +177,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     } else {
       console.log(`
   node herramientas/facebook.mjs cargar --bodega <dir> [--dias 30] [--seco]
+  node herramientas/facebook.mjs pendientes
+  node herramientas/facebook.mjs responder <id> --respuesta <archivo>
   node herramientas/facebook.mjs desde-reporte <reporteId> [--respuesta <archivo>] [--seco]
 `);
     }

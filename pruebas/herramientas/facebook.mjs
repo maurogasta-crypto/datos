@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { enlaceBusqueda, pedidoDesdeMensaje, pedidoDesdeReporte, leerDeLaBodega, sinRespuesta, COLECCION } from "../../herramientas/facebook.mjs";
+import { enlaceBusqueda, pedidoDesdeMensaje, pedidoDesdeReporte, leerDeLaBodega, sinRespuesta, vencidos, COLECCION } from "../../herramientas/facebook.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); } catch (e) { fallidas++; console.log("  ✗ " + n + "\n      " + e.message); } };
@@ -79,6 +79,17 @@ prueba("esperan respuesta los sin atender y sin respuesta, del más viejo al má
     { id: "b", cuando: 2, estado: "nuevo", respuesta: "  " },
   ]);
   assert.deepEqual(l.map((p) => p.id), ["a", "b", "c"]);
+});
+
+prueba("se vencen los sin atender de más de N días, y nada sin fecha", () => {
+  const dia = 864e5, ahora = 100 * dia;
+  const l = vencidos([
+    { id: "viejo", cuando: ahora - 8 * dia },
+    { id: "nuevo", cuando: ahora - 2 * dia, estado: "nuevo" },
+    { id: "hecho", cuando: ahora - 30 * dia, estado: "respondido" },
+    { id: "sinfecha", cuando: 0 },
+  ], 7, ahora);
+  assert.deepEqual(l.map((p) => p.id), ["viejo"]);
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

@@ -553,21 +553,20 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   de los grupos de Facebook** (`pizarra-34`, en el Redmi 13C, el teléfono de
   captura): SÓLO lo que habla de alquilar Y nombra Canasvieiras, a la misma
   `mensajes/` con `app: "facebook"`. El borrador lleva `canal: "facebook"` y
-  **contesta Mauro, en Facebook**. Ver `herramientas/TELEFONO.md`. **Y desde
-  pizarra-35 despierta al chat en el acto**: la Pizarra deja un pedido en
-  `reportes/` de Tiempos (`pagina: "facebook-pedido"`, con el texto, porque la
-  sesión en vivo no tiene la bodega) y llama a `avisar-claude`; la consulta en
-  vivo prepara la respuesta y la deja en el buzón de Mauro (`avisos.mjs
-  buzon`, TRASPASO § 4 bis). La ronda no los convierte en pendientes.
+  **contesta Mauro, en Facebook**. Ver `herramientas/TELEFONO.md`.
   **Y se listan en Casa Verde** (18-oct-2026, Mauro: «listadas por fecha…
-  para que Florencia y otro usuario logueado llegue a ver»):
-  `herramientas/facebook.mjs` los pasa a `pedidos_alquiler/` de
-  `casaverde-20` —`desde-reporte` en la consulta en vivo, con la respuesta;
-  `cargar` en la ronda, desde la bodega— y `interno/pedidos-alquiler.html`
-  los muestra con «Buscar en Facebook» (la notificación no trae el enlace:
-  se busca con las palabras de la publicación). Lo escribe sólo el agente;
-  el equipo marca respondido o descartado. Banco: `node
-  pruebas/herramientas/facebook.mjs` (6 casos).
+  para que Florencia y otro usuario logueado llegue a ver»): desde
+  pizarra-36 la Pizarra del 13C los crea ella en `pedidos_alquiler/` de
+  `casaverde-20` y **no despierta al chat** (pizarra-35 lo hacía con cada
+  uno; `desde-reporte` queda para esa versión). La ronda —más veces por día
+  en temporada, § 0 bis de TRASPASO— corre `facebook.mjs cargar` (lo que no
+  llegó), `vencer` (lo de más de 7 días) y `pendientes`/`responder`: una
+  respuesta breve y distinta para cada uno, sin enlaces, para que Facebook no
+  bloquee la cuenta. `interno/pedidos-alquiler.html` muestra cuántos hay y,
+  primero, los que ya tienen respuesta, con «Copiar y abrir»; en el 13C la
+  Pizarra la avisa y con un toque copia y abre la publicación exacta
+  (pizarra-37). Publicar es de una persona. Banco: `node
+  pruebas/herramientas/facebook.mjs` (8 casos).
 - **El agente le escribe por WhatsApp a una persona del equipo, y sólo si ella
   lo encendió** (`herramientas/avisos.mjs`, 30-sep-2026, línea `L-avisos`).
   Cada sitio con gente —Casa Verde, CasaYourte, remate; Tiempos va por Casa

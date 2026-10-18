@@ -31,6 +31,12 @@
 //   node herramientas/facebook.mjs responder <id> --respuesta <archivo>
 //       Deja la respuesta preparada en ese pedido (sólo el campo `respuesta`).
 //
+//   node herramientas/facebook.mjs vencer [--dias 7] [--seco]
+//       Los sin atender de hace más de N días pasan a «descartado», con la nota
+//       de por qué: una publicación de hace una semana ya se alquiló, y la
+//       lista tiene que mostrar sólo lo que todavía se puede contestar
+//       (pedidos-alquiler-2, Mauro: «simplificar y no tener que escrolear»).
+//
 //   node herramientas/facebook.mjs desde-reporte <reporteId> [--respuesta <archivo>] [--seco]
 //       Para una Pizarra vieja (pizarra-35), que todavía despierta al chat con
 //       un pedido en reportes/ de Tiempos (pagina "facebook-pedido").
@@ -111,6 +117,12 @@ export function sinRespuesta(pedidos) {
     .sort((a, b) => (Number(a.cuando) || 0) - (Number(b.cuando) || 0));
 }
 
+/* Los sin atender que ya pasaron de `dias`. Sin fecha no se vence nada. */
+export function vencidos(pedidos, dias = 7, ahora = Date.now()) {
+  const tope = ahora - dias * 864e5;
+  return (pedidos || []).filter((p) => p && (p.estado || "nuevo") === "nuevo" && Number(p.cuando) > 0 && Number(p.cuando) < tope);
+}
+
 export function leerDeLaBodega(bodega, dias = 30, hoy = new Date()) {
   const dir = path.join(bodega, "mensajes");
   if (!fs.existsSync(dir)) return [];
@@ -158,6 +170,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       const s = await F.entrar(cv);
       await F.fusionarRutas(cv, s, COLECCION, id, [[["respuesta"], respuesta]]);
       console.log(`\n  ✓ pedidos_alquiler/${id} · con respuesta\n`);
+    } else if (cmd === "vencer") {
+      const dias = Number(opt("--dias", 7));
+      const s = await F.entrar(cv);
+      const l = vencidos(await F.listar(cv, s, COLECCION), dias);
+      if (seco) { for (const p of l) console.log(`  · ${p.id} · ${String(p.fecha || "").slice(0, 10)} · ${p.grupo || ""}`); console.log(`\n  ${l.length} vencerían.\n`); return; }
+      for (const p of l) await F.fusionarRutas(cv, s, COLECCION, p.id, [[["estado"], "descartado"], [["atendidoPor"], "Claude (ronda)"], [["nota"], `sin responder en ${dias} días`]]);
+      console.log(`\n  ${l.length} pedidos de más de ${dias} días pasaron a descartados.\n`);
     } else if (cmd === "desde-reporte") {
       const id = args.find((x, i) => !x.startsWith("--") && args[i - 1] !== "--respuesta");
       if (!id) throw new Error("falta el id del reporte de Tiempos");
@@ -179,6 +198,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   node herramientas/facebook.mjs cargar --bodega <dir> [--dias 30] [--seco]
   node herramientas/facebook.mjs pendientes
   node herramientas/facebook.mjs responder <id> --respuesta <archivo>
+  node herramientas/facebook.mjs vencer [--dias 7] [--seco]
   node herramientas/facebook.mjs desde-reporte <reporteId> [--respuesta <archivo>] [--seco]
 `);
     }

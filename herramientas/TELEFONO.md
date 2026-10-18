@@ -171,13 +171,13 @@ para que le llegue a la Pizarra— y **Mauro contesta en Facebook**: una app que
 contesta sola es lo que hace que Facebook bloquee una cuenta. Para que lleguen,
 en cada grupo: ⋯ → Notificaciones → «Todas las publicaciones». **Lee un solo
 teléfono**: en el Redmi 15 se le saca a la Pizarra el acceso a notificaciones.
-**Y desde pizarra-35 un pedido despierta al chat en el acto**: la Pizarra lo
-deja como pedido en `reportes/` de Tiempos y llama a `avisar-claude`; la
-consulta en vivo prepara la respuesta y la deja en el buzón de Mauro
-(`avisos.mjs buzon`, TRASPASO § 4 bis). Para eso la Pizarra del 13C tiene que
-estar con la cuenta de Tiempos de Mauro. **Y quedan listados en Casa Verde**,
-en «Pedidos de alquiler» (`interno/pedidos-alquiler.html`), para todo el
-equipo: los pasa `herramientas/facebook.mjs`.
+**Y quedan listados en Casa Verde**, en «Pedidos de alquiler»
+(`interno/pedidos-alquiler.html`), para todo el equipo: desde pizarra-36 los
+carga la misma Pizarra con la cuenta de Casa Verde del 13C, sin despertar al
+chat. La ronda prepara las respuestas (`herramientas/facebook.mjs`), y desde
+pizarra-37 el aviso del pedido en el 13C pasa a «✍️ Respuesta lista»:
+«Copiar y abrir» copia la respuesta y abre la publicación exacta. Queda
+Comentar → Pegar → Publicar, a mano.
 
 **Que arranque solo** (30-sep-2026). `--vigilar` sólo lee mientras corre, y
 Android lo corta al reiniciar o cuando cierra Termux: ahí no llega nada y

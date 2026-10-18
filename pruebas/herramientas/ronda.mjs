@@ -73,6 +73,12 @@ prueba("un pedido de alquiler de Facebook no se vuelve pendiente (pizarra-35)", 
   assert.deepEqual(r.nuevos.map((x) => x.id), ["r2"]);
   assert.equal(r.yaTraidos.length, 0);
 });
+prueba("el diagnóstico pedido a mano desde la Pizarra no es una falla nueva", () => {
+  const r = cruzar("tiempos", [{ id: "d1", pagina: "app-telefono", texto: "Diagnóstico pedido a mano desde la app.\nX" },
+    { id: "d2", pagina: "app-telefono", texto: "La alarma no sonó" }], []);
+  assert.deepEqual(r.nuevos.map((x) => x.id), ["d2"]);
+});
+
 
 prueba("sin reportes y sin pendientes no se rompe", () => {
   const r = cruzar("remate", undefined, undefined);

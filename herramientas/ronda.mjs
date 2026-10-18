@@ -114,6 +114,7 @@ const NOMBRE_DE_LO_QUE_GUARDA = { fallas: "reportes", viajes: "viajes", sesiones
    base del sitio, así que no puede marcarlo allá. Se mira de este lado. */
 const origenDe = (proyecto, id) => `${proyecto}:reportes/${id}`;
 export const PAGINA_FACEBOOK = "facebook-pedido";
+export const esDiagnostico = (r) => !!r && r.pagina === "app-telefono" && /^Diagnóstico pedido a mano/.test(String(r.texto || ""));
 
 /* ── Las funciones puras ─────────────────────────────────────────────────────
    Separadas a propósito de todo lo que toca la red, para que el banco de
@@ -134,6 +135,10 @@ function cruzar(proyecto, reportes, pendientes) {
        Mauro, y las novedades lo cuentan desde la bodega. Como pendiente sería
        un renglón por cada interesado. */
     if (r && r.pagina === PAGINA_FACEBOOK) continue;
+    /* El diagnóstico que se manda a mano desde la Pizarra («🩺 Mandar
+       diagnóstico») no es una falla: lo pide un chat para mirarlo en el
+       momento. Como pendiente sería un renglón por cada vez que se probó. */
+    if (esDiagnostico(r)) continue;
     (traidos.has(origenDe(proyecto, r.id)) ? yaTraidos : nuevos).push(r);
   }
   return { nuevos, yaTraidos };

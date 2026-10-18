@@ -37,6 +37,14 @@
 //       lista tiene que mostrar sólo lo que todavía se puede contestar
 //       (pedidos-alquiler-2, Mauro: «simplificar y no tener que escrolear»).
 //
+//   node herramientas/facebook.mjs agregar <archivo.json> [--seco]
+//       (18-oct, Mauro: que la ronda busque también en los MAILS de Facebook)
+//       Un pedido que la ronda sacó de un mail de Facebook (una publicación de
+//       un grupo, o un comentario en una publicación de Casa Verde). El mail
+//       sí trae el ENLACE a la publicación: va en `enlace`, sin el rastreo.
+//       El archivo: {id: "mail-<hilo>", grupo, texto, cuando (ms), enlace,
+//       respuesta?}. Sólo crea lo que falta.
+//
 //   node herramientas/facebook.mjs desde-reporte <reporteId> [--respuesta <archivo>] [--seco]
 //       Para una Pizarra vieja (pizarra-35), que todavía despierta al chat con
 //       un pedido en reportes/ de Tiempos (pagina "facebook-pedido").
@@ -108,6 +116,36 @@ export function pedidoDesdeReporte(r) {
   };
 }
 
+/* El enlace de una publicación sacado de un mail de Facebook, sin lo que
+   identifica a quien lo recibió (los parámetros de rastreo y la sesión).
+   Sólo facebook.com; cualquier otra cosa da "". */
+export function enlaceLimpio(url) {
+  try {
+    const u = new URL(String(url || "").trim());
+    if (!/(^|\.)facebook\.com$/.test(u.hostname)) return "";
+    // Los mails envuelven el destino en /nd/?<ruta>&…: se desenvuelve.
+    if (u.pathname === "/nd/" || u.pathname === "/nd") {
+      const ruta = decodeURIComponent(u.search.slice(1).split("&")[0] || "");
+      return ruta && !ruta.includes("=") ? "https://www.facebook.com/" + ruta.replace(/^\/+/, "") : "";
+    }
+    return "https://www.facebook.com" + u.pathname;
+  } catch { return ""; }
+}
+
+/* El pedido que armó la ronda a partir de un mail. */
+export function pedidoDesdeMail(m, ahora = Date.now()) {
+  if (!m || !/^mail-[\w-]{6,40}$/.test(String(m.id || ""))) return null;
+  const texto = String(m.texto || "").trim().slice(0, 4000);
+  if (!texto) return null;
+  const ms = Number(m.cuando) > 0 ? Number(m.cuando) : ahora;
+  const enlace = enlaceLimpio(m.enlace);
+  return { id: String(m.id), datos: {
+    grupo: String(m.grupo || "").slice(0, 120), texto, cuando: ms, fecha: new Date(ms).toISOString(),
+    buscar: enlaceBusqueda(texto), ...(enlace ? { enlace } : {}), estado: "nuevo", fuente: "mail",
+    ...(String(m.respuesta || "").trim() ? { respuesta: String(m.respuesta).trim().slice(0, 3000) } : {}),
+  } };
+}
+
 /* Los mensajes de Facebook de la bodega de los últimos `dias`. */
 /* Los que esperan respuesta: sin atender y sin respuesta preparada, del más
    viejo al más nuevo (se contestan en el orden en que llegaron). */
@@ -177,6 +215,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       if (seco) { for (const p of l) console.log(`  · ${p.id} · ${String(p.fecha || "").slice(0, 10)} · ${p.grupo || ""}`); console.log(`\n  ${l.length} vencerían.\n`); return; }
       for (const p of l) await F.fusionarRutas(cv, s, COLECCION, p.id, [[["estado"], "descartado"], [["atendidoPor"], "Claude (ronda)"], [["nota"], `sin responder en ${dias} días`]]);
       console.log(`\n  ${l.length} pedidos de más de ${dias} días pasaron a descartados.\n`);
+    } else if (cmd === "agregar") {
+      const archivo = args.find((x) => !x.startsWith("--"));
+      if (!archivo) throw new Error("uso: agregar <archivo.json> [--seco]");
+      const p = pedidoDesdeMail(JSON.parse(fs.readFileSync(archivo, "utf8")));
+      if (!p) throw new Error("el archivo no es un pedido: hace falta id «mail-<hilo>» y texto");
+      if (seco) { console.log(JSON.stringify(p, null, 1)); return; }
+      const s = await F.entrar(cv);
+      const c = await F.crearNuevo(cv, s, COLECCION, p.id, { ...p.datos, creadoEn: { $timestamp: new Date().toISOString() } });
+      if (!c.ok) throw new Error(c.motivo);
+      console.log(`\n  ${c.nuevo ? "✓ cargado" : "ya estaba"}: pedidos_alquiler/${p.id}${p.datos.enlace ? " · con enlace" : ""}\n`);
     } else if (cmd === "desde-reporte") {
       const id = args.find((x, i) => !x.startsWith("--") && args[i - 1] !== "--respuesta");
       if (!id) throw new Error("falta el id del reporte de Tiempos");
@@ -199,6 +247,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   node herramientas/facebook.mjs pendientes
   node herramientas/facebook.mjs responder <id> --respuesta <archivo>
   node herramientas/facebook.mjs vencer [--dias 7] [--seco]
+  node herramientas/facebook.mjs agregar <archivo.json> [--seco]
   node herramientas/facebook.mjs desde-reporte <reporteId> [--respuesta <archivo>] [--seco]
 `);
     }

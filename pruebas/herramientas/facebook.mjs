@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { enlaceBusqueda, pedidoDesdeMensaje, pedidoDesdeReporte, leerDeLaBodega, sinRespuesta, vencidos, COLECCION } from "../../herramientas/facebook.mjs";
+import { enlaceBusqueda, pedidoDesdeMensaje, pedidoDesdeReporte, leerDeLaBodega, sinRespuesta, vencidos, enlaceLimpio, pedidoDesdeMail, COLECCION } from "../../herramientas/facebook.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); } catch (e) { fallidas++; console.log("  ✗ " + n + "\n      " + e.message); } };
@@ -90,6 +90,24 @@ prueba("se vencen los sin atender de más de N días, y nada sin fecha", () => {
     { id: "sinfecha", cuando: 0 },
   ], 7, ahora);
   assert.deepEqual(l.map((p) => p.id), ["viejo"]);
+});
+
+prueba("el enlace de un mail de Facebook se desenvuelve y pierde el rastreo", () => {
+  assert.equal(enlaceLimpio("https://www.facebook.com/nd/?groups%2Falugueltemporadafloripa%2Fposts%2F123%2F&aref=1&n_m=x%40gmail.com"),
+    "https://www.facebook.com/groups/alugueltemporadafloripa/posts/123/");
+  assert.equal(enlaceLimpio("https://www.facebook.com/groups/g/permalink/9/?n_m=a%40b.com&mid=1"), "https://www.facebook.com/groups/g/permalink/9/");
+  assert.equal(enlaceLimpio("https://evil.com/groups/g"), "");
+  assert.equal(enlaceLimpio("no es"), "");
+});
+
+prueba("un pedido de un mail: id mail-, fuente mail, con enlace y búsqueda", () => {
+  const p = pedidoDesdeMail({ id: "mail-1a0c61fe47d802ea", grupo: "alquileres en Florianópolis", texto: "Busco alquiler en Canasvieiras", cuando: 5,
+    enlace: "https://www.facebook.com/groups/g/posts/1/?n_m=x" });
+  assert.equal(p.datos.fuente, "mail");
+  assert.equal(p.datos.enlace, "https://www.facebook.com/groups/g/posts/1/");
+  assert.ok(p.datos.buscar.includes("Busco"));
+  assert.equal(pedidoDesdeMail({ id: "otro", texto: "x" }), null);
+  assert.equal(pedidoDesdeMail({ id: "mail-1a0c61fe47d802ea", texto: " " }), null);
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

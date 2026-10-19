@@ -145,7 +145,13 @@ const PROYECTOS = {
        (Mauro: «quiero que desde el chat puedas modificar el sitio público»),
        así que cada cambio deja antes su copia en `_historial`, como en Casa
        Verde. La regla (REGLAS.txt de CasaYourte) deja crear ahí y nada más. */
-    historial: true
+    historial: true,
+    /* Los álbumes y sus fotos los EDITA libremente; CREAR o BORRAR uno pide
+       la autorización de Mauro (19-oct-2026: «quiero que puedas crear y
+       eliminar bajo mi autorización»). La regla no puede leer el chat, así
+       que lo frena esta herramienta: sin `--autorizado "<lo que dijo>"` no
+       crea ni borra, y lo que dijo queda en la entrada del historial. */
+    conAutorizacion: ["albums"]
   },
 
   hilux: {
@@ -617,7 +623,10 @@ async function anotar(cfg, sesion, op, coleccion, id, cambio) {
     method: "PATCH",
     body: JSON.stringify({ fields: campos({
       coleccion, docId: String(id), op, antes, pedido,
-      en: new Date().toISOString(), quien: sesion.mail || "agente" }) }) });
+      en: new Date().toISOString(), quien: sesion.mail || "agente",
+      // La autorización de Mauro para crear o borrar, cuando la pide la base
+      // (`conAutorizacion`): queda al lado de la copia, con sus palabras.
+      ...(sesion.autorizado ? { autorizado: sesion.autorizado } : {}) }) }) });
   // Lo que se le pasa a `deshacer`: el id solo si está en `_historial`, la
   // ruta entera si quedó en las copias de una agenda.
   return destino === HISTORIAL ? hid : `${destino}/${hid}`;
@@ -851,8 +860,20 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     console.log(`  copiado ${coleccion}/${desde} → ${coleccion}/${hacia} (${c.length} campos)`);
 
   } else if (cmd === "escribir" || cmd === "fusionar" || cmd === "borrar") {
+    const iA = args.indexOf("--autorizado");
+    if (iA >= 0) { sesion.autorizado = String(args[iA + 1] || "").trim(); args.splice(iA, 2); }
     const [coleccion, id, archivo] = args;
     if (!coleccion || !id) ex("faltan la colección y el id");
+    /* Crear o borrar en lo que pide autorización (`conAutorizacion`): sin la
+       frase de Mauro, no. Crear es escribir o fusionar un documento que no
+       existe; editar uno que existe no la pide. */
+    const raizA = String(coleccion).split("/")[0];
+    if ((cfg.conAutorizacion || []).includes(raizA)) {
+      const crea = cmd !== "borrar" && !(await leerCrudo(cfg, sesion, coleccion, id));
+      if ((cmd === "borrar" || crea) && !sesion.autorizado)
+        ex(`${cmd === "borrar" ? "Borrar" : "Crear"} ${coleccion}/${id} pide la autorización de Mauro.\n`
+         + `  Con ella: --autorizado "<lo que dijo, y cuándo>". Editar algo que ya existe no la pide.`);
+    }
     if (cmd === "borrar") { await borrar(cfg, sesion, coleccion, id); console.log(`  borrado ${coleccion}/${id}`); }
     else {
       if (!archivo) ex("falta el archivo .json con el contenido");
@@ -875,6 +896,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     escribir <coleccion> <id> <archivo.json>
     fusionar <coleccion> <id> <archivo.json>
     borrar <coleccion> <id>
+      [--autorizado "<lo que dijo Mauro>"]   para crear o borrar donde la base lo
+                                   pide (casayourte: los álbumes y sus fotos)
     copiar <coleccion> <desde> <hacia>   un documento ENTERO sobre otro, con su
                                    copia previa (casayourte: sitio taller publicado
                                    es «Al sitio»)

@@ -105,7 +105,15 @@ se toca, venga de donde venga. El banco prueba las cuatro cosas.
 > ronda. Lo de abajo cuenta el camino de Termux, que sigue andando como
 > respaldo.
 
-**Sólo Airbnb, desde el 30-sep-2026.** Del 29 al 30 se leyeron también todos
+**Y desde el 19-oct-2026, TODAS las notificaciones del 13C** (pizarra-42, Mauro:
+«que lea todo… y que la ronda lo clasifique y descarte»): además de lo de abajo,
+la Pizarra manda cada notificación —WhatsApp incluido, con los códigos de
+verificación tapados— a `notificaciones/` de casaverde-20, NO a la bodega. La
+ronda las clasifica con `herramientas/notificaciones.mjs` y borra lo que no
+sirve; todo vence a los 7 días. `mensajes/` de la bodega sigue igual: sólo
+Airbnb y los pedidos de alquiler de Facebook.
+
+**Sólo Airbnb, desde el 30-sep-2026** (a la bodega; ver arriba lo del 19-oct). Del 29 al 30 se leyeron también todos
 los chats de WhatsApp; Mauro lo cortó: «los mensajes de Airbnb llegan por la
 app de Airbnb, no por WhatsApp; por el momento no preciso que se monitoree
 WhatsApp, y eso ahorrará mucho recurso cotidiano y disminuye riesgos». Las

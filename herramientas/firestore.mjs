@@ -313,7 +313,12 @@ const PROYECTOS = {
        y editar todo»), con historial de cada cambio. Los `cierres` no: son
        el registro de los balances y la regla los hace inmutables para todos. */
     historial: true,
-    soloLectura: ["cierres"]
+    soloLectura: ["cierres"],
+    /* Desde el 19-oct-2026 (pizarra-42): TODAS las notificaciones del teléfono
+       de captura, para que la ronda las clasifique (`notificaciones.mjs`). Sin
+       copia en `_historial` al marcarlas o borrarlas, y fuera de `colecciones`
+       a propósito: no se respaldan en la bodega, que es git y no olvida. */
+    efimeras: ["notificaciones"]
   }
 };
 
@@ -611,6 +616,10 @@ function adondeAnota(cfg, coleccion, id, crudo, cambio) {
 
 async function anotar(cfg, sesion, op, coleccion, id, cambio) {
   if (!cfg.historial) return null;
+  // Lo EFÍMERO no deja copia (19-oct-2026, `notificaciones` de Casa Verde): son
+  // datos de terceros que la ronda descarta, y una copia en `_historial` —que
+  // leen los administradores— desharía el descarte.
+  if ((cfg.efimeras || []).includes(String(coleccion || "").split("/")[0])) return null;
   const crudo = await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}`);
   const antes = crudo ? JSON.stringify(crudo.fields || {}) : null;
   const pedido = cambio == null ? null : JSON.stringify(cambio);

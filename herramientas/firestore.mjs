@@ -133,14 +133,19 @@ const PROYECTOS = {
        molde de remate. El agente la LEE y no la escribe —lo dice el CLAUDE.md
        del proyecto y lo aplica la regla—, y para saber qué reporte ya trajo se
        mira el campo `origen` del pendiente que creó en el panel. */
-    colecciones: ["sitio", "albums", "usuarios", "reportes"],
+    colecciones: ["sitio", "albums", "usuarios", "reportes", "_historial"],
     /* `calculos`: datos de clientes y medidas de obra, y detrás costos,
        márgenes y tarifas — lo que el CLAUDE.md del proyecto prohíbe publicar.
        `invitaciones`: mails de gente que todavía no entró.
        `avisos_contacto` (30-sep-2026): la clave de CallMeBot de cada persona.
        Se LEE de a una y sólo para mandarle un aviso: ver `contactoAviso`. */
     selladas: ["calculos", "invitaciones", "avisos_contacto"],
-    avisos: "avisos_contacto"
+    avisos: "avisos_contacto",
+    /* Desde el 19-oct-2026 el agente escribe también `sitio/publicado`
+       (Mauro: «quiero que desde el chat puedas modificar el sitio público»),
+       así que cada cambio deja antes su copia en `_historial`, como en Casa
+       Verde. La regla (REGLAS.txt de CasaYourte) deja crear ahí y nada más. */
+    historial: true
   },
 
   hilux: {
@@ -641,6 +646,29 @@ const escribir = async (cfg, sesion, coleccion, id, datos) => {
     { method: "PATCH", body: JSON.stringify({ fields: campos(datos) }) });
 };
 
+/* `copiar` pone un documento ENTERO sobre otro de la misma colección, con sus
+   tipos de Firestore tal cual (19-oct-2026, para «Al sitio» de CasaYourte:
+   sitio/taller → sitio/publicado, lo mismo que el botón del editor). Copia
+   entera y no mezcla: es lo que hace el editor, y la mezcla es lo que hacía
+   fallar al borrador de agosto. Si el origen tiene `guardado`/`guardadoPor`,
+   se reemplazan por los de ahora y quien copia; `extra` suma campos. La copia
+   de cómo estaba el destino queda en el historial antes, como en todo. */
+const copiar = async (cfg, sesion, coleccion, desde, hacia, extra = {}) => {
+  guardiaEscritura(cfg, coleccion, hacia);
+  const origen = await leerCrudo(cfg, sesion, coleccion, desde);
+  if (!origen) ex(`${coleccion}/${desde} no existe: no hay nada que copiar.`);
+  const campos2 = { ...origen };
+  if ("guardado" in campos2 || "guardadoPor" in campos2) {
+    campos2.guardado = { timestampValue: new Date().toISOString() };
+    campos2.guardadoPor = { stringValue: sesion.mail || "agente" };
+  }
+  Object.assign(campos2, campos(extra));
+  await anotar(cfg, sesion, "copiar", coleccion, hacia, { desde: `${coleccion}/${desde}`, extra });
+  await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(hacia)}`,
+    { method: "PATCH", body: JSON.stringify({ fields: campos2 }) });
+  return Object.keys(campos2);
+};
+
 /* `fusionar` escribe SÓLO los campos que se le pasan y deja intacto el resto,
    como el `setDoc({merge:true})` del panel. Existe desde el 2026-09-14 por un
    footgun concreto: tomar una línea de trabajo es escribir UN campo, y hacerlo
@@ -739,7 +767,7 @@ async function deshacer(cfg, sesion, hid) {
 }
 
 export { HISTORIAL, deshacer, crearAviso, crearNuevo, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
-         entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, borrar, guardia, aFirestore, deFirestore };
+         entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, copiar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/
 if (import.meta.url === `file://${process.argv[1]}`) {
@@ -813,6 +841,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     for (const h of todo.slice(0, Number(args[0]) || 20))
       console.log(`  ${h.id}  ${String(h.op).padEnd(9)} ${h.coleccion}/${h.docId}`);
 
+  } else if (cmd === "copiar") {
+    /* casayourte copiar sitio taller publicado  ==  «⇄ Al sitio» del editor. */
+    const [coleccion, desde, hacia] = args;
+    if (!coleccion || !desde || !hacia) ex("faltan la colección, el origen y el destino");
+    const extra = (proy === "casayourte" && coleccion === "sitio" && desde === "taller")
+      ? { vinoDelTaller: true } : {};
+    const c = await copiar(cfg, sesion, coleccion, desde, hacia, extra);
+    console.log(`  copiado ${coleccion}/${desde} → ${coleccion}/${hacia} (${c.length} campos)`);
+
   } else if (cmd === "escribir" || cmd === "fusionar" || cmd === "borrar") {
     const [coleccion, id, archivo] = args;
     if (!coleccion || !id) ex("faltan la colección y el id");
@@ -838,6 +875,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     escribir <coleccion> <id> <archivo.json>
     fusionar <coleccion> <id> <archivo.json>
     borrar <coleccion> <id>
+    copiar <coleccion> <desde> <hacia>   un documento ENTERO sobre otro, con su
+                                   copia previa (casayourte: sitio taller publicado
+                                   es «Al sitio»)
     historial [n]                  los últimos cambios del agente (bases con historial)
     deshacer <id-del-historial>    devuelve un documento a como estaba
                                    (o la ruta agendas/<uid>/copias/<id>)

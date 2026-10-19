@@ -494,7 +494,7 @@ vuelve.
 | `manifest.json` | nombre, colores e iconos de la app instalada |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | el icono del tablero |
 | `.github/workflows/pages.yml` | publica el sitio; el único workflow, sin secretos |
-| `guias/` | procedimientos en PDF para leer en el teléfono, enlazados desde los avisos de la Pizarra. Desde el 19-oct-2026: `instagram-casayourte.pdf`. **Sin datos ni claves**: el repositorio es público |
+| `guias/` | procedimientos en PDF para leer en el teléfono, enlazados desde los avisos de la Pizarra. Desde el 19-oct-2026: `instagram-casayourte.pdf` e `instagram-casaverde.pdf`. **Sin datos ni claves**: el repositorio es público |
 
 ## Los proyectos (`obra.html`, desde el 15-oct-2026)
 

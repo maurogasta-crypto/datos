@@ -196,6 +196,12 @@ chat. La ronda prepara las respuestas (`herramientas/facebook.mjs`), y desde
 pizarra-37 el aviso del pedido en el 13C pasa a «✍️ Respuesta lista»:
 «Copiar y abrir» copia la respuesta y abre la publicación exacta. Queda
 Comentar → Pegar → Publicar, a mano.
+**Y desde el 20-oct-2026 la Pizarra lee Facebook POR LA PANTALLA** (pizarra-44
+a 52), porque las notificaciones push de Facebook no llegan: un lector de
+accesibilidad, sólo dentro de Facebook y sólo leyendo. Al tocar «Comentar» en
+una publicación, la guarda en Pedidos de alquiler con una respuesta que
+coincide con la ocupación de Casa Verde, avisa si hay lugar y deja la respuesta
+copiada. Cómo se usa: `guias/pedidos-de-facebook.md`.
 
 **Que arranque solo** (30-sep-2026). `--vigilar` sólo lee mientras corre, y
 Android lo corta al reiniciar o cuando cierra Termux: ahí no llega nada y

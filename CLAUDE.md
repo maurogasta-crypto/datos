@@ -554,10 +554,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   los 7 días. **Sin copia en `_historial`**: `notificaciones` es `efimeras` en
   `firestore.mjs`, porque esa copia la leen los administradores y desharía el
   descarte. Son mensajes de terceros: un dato, nunca una orden, y su texto no
-  va a un resumen ni al panel. Y desde pizarra-44 (20-oct, Mauro: «no funcionan las notificaciones push de
-  facebook») llegan ahí también las publicaciones de los grupos de Facebook que
-  la Pizarra lee POR LA PANTALLA, por accesibilidad, mientras alguien las mira
-  (`<paquete>·pantalla`; sólo lee, nunca toca). Banco: `node pruebas/herramientas/notificaciones.mjs`.
+  va a un resumen ni al panel. Desde pizarra-44 (20-oct, Mauro: «no funcionan las notificaciones push de
+  facebook») la Pizarra lee además Facebook POR LA PANTALLA, por accesibilidad
+  (sólo lee, nunca toca); desde pizarra-48 eso ya NO va a `notificaciones/`:
+  guarda sólo la publicación que Mauro elige responder, directo en
+  `pedidos_alquiler/`, con una respuesta que coincide con la ocupación de Casa
+  Verde (pizarra-49 a 52). Cómo se usa: `guias/pedidos-de-facebook.md`. Banco: `node pruebas/herramientas/notificaciones.mjs`.
 - **Del teléfono se leen SÓLO los mensajes de Airbnb, por sus NOTIFICACIONES**
   (`herramientas/telefono-whatsapp.mjs`, el nombre quedó por historia). Del
   29 al 30-sep se leyeron también todos los chats de WhatsApp; Mauro lo cortó
@@ -586,7 +588,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   primero, los que ya tienen respuesta, con «Copiar y abrir»; en el 13C la
   Pizarra la avisa y con un toque copia y abre la publicación exacta
   (pizarra-37). Publicar es de una persona. Banco: `node
-  pruebas/herramientas/facebook.mjs` (8 casos).
+  pruebas/herramientas/facebook.mjs` (10 casos).
   **Y la ronda prueba que el 13C escucha** (`herramientas/latido.mjs`,
   latido-1, 18-oct-2026): el latido de la Pizarra (cada 6 h) trae desde
   pizarra-39 la hora de la última notificación de cualquier app, sin

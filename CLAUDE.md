@@ -259,7 +259,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   análisis que se pide desde Tiempos, con los extractos, los destinos, la base anual y lo estimado contra lo real; `node
   pruebas/herramientas/extractos.mjs` (5 casos) para la carga de extractos de
   los bancos, que prueba que nada se duplique ni se guarde un número de
-  cuenta; `node pruebas/herramientas/notificaciones.mjs` (10 casos) para las
+  cuenta; `node pruebas/herramientas/notificaciones.mjs` (12 casos) para las
   notificaciones del 13C, que prueba sobre todo que descartar no deje copia;
   y `pruebas/panel/banco.mjs` (con `npm install`
   una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más

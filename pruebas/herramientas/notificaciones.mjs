@@ -29,6 +29,13 @@ prueba("…de las últimas N horas, y de una app si se pide", () => {
   assert.deepEqual(sinRevisar(L, 24, AHORA).map((n) => n.id), ["e", "a"]);
   assert.deepEqual(sinRevisar(L, 0, AHORA, "com.airbnb.android").map((n) => n.id), ["e"]);
 });
+prueba("…y hasta una hora: lo que llegó después de leer no entra (notificaciones-3)", () => {
+  assert.deepEqual(sinRevisar(L, 0, AHORA, "", AHORA - 2 * 36e5).map((n) => n.id), ["d", "b", "e"]);
+});
+prueba("descartar una app entera exige --hasta", () => {
+  const t = fs.readFileSync(new URL("../../herramientas/notificaciones.mjs", import.meta.url), "utf8");
+  assert.match(t, /if \(app && !hasta\) throw/);
+});
 prueba("vencen las de más de 7 días, revisadas o no; sin fecha no vence", () => {
   assert.deepEqual(vencidas(L, 7, AHORA).map((n) => n.id), ["d"]);
   assert.deepEqual(vencidas([N("r", 200, { revisado: true }), { id: "x" }], 7, AHORA).map((n) => n.id), ["r"]);

@@ -30,7 +30,7 @@
 //   node herramientas/notificaciones.mjs resumen
 //   node herramientas/notificaciones.mjs usar <id> --para "<a qué fue>"
 //   node herramientas/notificaciones.mjs descartar <id> [<id>…]
-//   node herramientas/notificaciones.mjs descartar --app <paquete> [--horas N]   (todas las sin revisar de esa app)
+//   node herramientas/notificaciones.mjs descartar --app <paquete> --hasta <fecha>   (las sin revisar de esa app, hasta lo leído)
 //   node herramientas/notificaciones.mjs vencer [--dias 7] [--seco]
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -57,9 +57,11 @@ export const nombreApp = (p) => {
 
 const ms = (n) => Number(n?.cuando) || Date.parse(n?.fecha || n?.creadoEn || "") || 0;
 
-/** Las que nadie revisó todavía, de las últimas N horas (0 = todas), las más viejas primero. */
-export function sinRevisar(lista, horas = 0, ahora = Date.now(), app = "") {
-  return lista.filter((n) => !n.revisado && (!app || n.app === app) && (!horas || ahora - ms(n) <= horas * 36e5))
+/** Las que nadie revisó todavía, de las últimas N horas (0 = todas), las más viejas primero.
+ *  `hasta` (ms): sólo las que llegaron hasta ahí — lo que se leyó, y no lo que entró después. */
+export function sinRevisar(lista, horas = 0, ahora = Date.now(), app = "", hasta = 0) {
+  return lista.filter((n) => !n.revisado && (!app || n.app === app) && (!horas || ahora - ms(n) <= horas * 36e5)
+    && (!hasta || ms(n) <= hasta))
     .sort((a, b) => ms(a) - ms(b));
 }
 
@@ -102,7 +104,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       if (!l.length) { console.log("\n  Ninguna notificación sin revisar.\n"); return; }
       // Datos de terceros: se imprimen para clasificarlos acá, no se copian a otro lado.
       for (const n of l) console.log(renglon(n));
-      console.log("\n  " + porApp(l).map((x) => `${x.nombre} ${x.total}`).join(" · ") + `\n  ${l.length} sin revisar.\n`);
+      // notificaciones-3: «descartar --app» pide hasta dónde se leyó. El 20-oct
+      // un descarte por app se llevó doce que habían llegado mientras se leía.
+      const ultima = new Date(Math.max(...l.map(ms))).toISOString();
+      console.log("\n  " + porApp(l).map((x) => `${x.nombre} ${x.total}`).join(" · ") + `\n  ${l.length} sin revisar.` +
+        `\n  Para descartar una app entera de lo listado:  descartar --app <paquete> --hasta ${ultima}\n`);
     } else if (cmd === "resumen") {
       const r = porApp(todas);
       if (!r.length) { console.log("\n  No hay notificaciones guardadas.\n"); return; }
@@ -116,7 +122,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log(`\n  ✓ ${sueltos[0]} · usada: ${para}\n`);
     } else if (cmd === "descartar") {
       const app = opt("--app", "");
-      const ids = app ? sinRevisar(todas, Number(opt("--horas", 0)), Date.now(), app).map((n) => n.id) : sueltos;
+      const hasta = Date.parse(opt("--hasta", "")) || 0;
+      if (app && !hasta) throw new Error("descartar --app pide --hasta <la fecha que imprimió pendientes>: lo que llegó después nadie lo leyó");
+      const ids = app ? sinRevisar(todas, Number(opt("--horas", 0)), Date.now(), app, hasta).map((n) => n.id) : sueltos;
       if (!ids.length) throw new Error("uso: descartar <id> [<id>…]  o  descartar --app <paquete> [--horas N]");
       if (seco) { console.log(`\n  ${ids.length} se descartarían.\n`); return; }
       for (const id of ids) await F.borrar(cv, s, COLECCION, id);
@@ -133,7 +141,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   node herramientas/notificaciones.mjs resumen
   node herramientas/notificaciones.mjs usar <id> --para "<a qué fue>"
   node herramientas/notificaciones.mjs descartar <id> [<id>…]
-  node herramientas/notificaciones.mjs descartar --app <paquete> [--horas N] [--seco]
+  node herramientas/notificaciones.mjs descartar --app <paquete> --hasta <fecha> [--horas N] [--seco]
   node herramientas/notificaciones.mjs vencer [--dias 7] [--seco]
 `);
     }

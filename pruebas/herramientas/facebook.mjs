@@ -107,6 +107,9 @@ prueba("un pedido de un mail: id mail-, fuente mail, con enlace y búsqueda", ()
   assert.equal(p.datos.enlace, "https://www.facebook.com/groups/g/posts/1/");
   assert.ok(p.datos.buscar.includes("Busco"));
   assert.equal(pedidoDesdeMail({ id: "otro", texto: "x" }), null);
+  // pizarra-44: lo leído en la pantalla de Facebook entra igual, con su fuente
+  const q = pedidoDesdeMail({ id: "pantalla-de7d1aecb811e4940c7a", grupo: "Noemi", texto: "familia en Canasvieiras para semana santa" });
+  assert.equal(q.datos.fuente, "pantalla"); assert.equal(q.id, "pantalla-de7d1aecb811e4940c7a");
   assert.equal(pedidoDesdeMail({ id: "mail-1a0c61fe47d802ea", texto: " " }), null);
 });
 

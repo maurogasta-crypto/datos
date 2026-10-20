@@ -134,14 +134,17 @@ export function enlaceLimpio(url) {
 
 /* El pedido que armó la ronda a partir de un mail. */
 export function pedidoDesdeMail(m, ahora = Date.now()) {
-  if (!m || !/^mail-[\w-]{6,40}$/.test(String(m.id || ""))) return null;
+  // «mail-<hilo>» de un mail de Facebook; «pantalla-<huella>», de lo que la
+  // Pizarra leyó en la pantalla de Facebook (pizarra-44): la fuente lo dice.
+  const de = /^(mail|pantalla)-[\w-]{6,40}$/.exec(String(m?.id || ""));
+  if (!de) return null;
   const texto = String(m.texto || "").trim().slice(0, 4000);
   if (!texto) return null;
   const ms = Number(m.cuando) > 0 ? Number(m.cuando) : ahora;
   const enlace = enlaceLimpio(m.enlace);
   return { id: String(m.id), datos: {
     grupo: String(m.grupo || "").slice(0, 120), texto, cuando: ms, fecha: new Date(ms).toISOString(),
-    buscar: enlaceBusqueda(texto), ...(enlace ? { enlace } : {}), estado: "nuevo", fuente: "mail",
+    buscar: enlaceBusqueda(texto), ...(enlace ? { enlace } : {}), estado: "nuevo", fuente: de[1],
     ...(String(m.respuesta || "").trim() ? { respuesta: String(m.respuesta).trim().slice(0, 3000) } : {}),
   } };
 }
@@ -219,7 +222,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       const archivo = args.find((x) => !x.startsWith("--"));
       if (!archivo) throw new Error("uso: agregar <archivo.json> [--seco]");
       const p = pedidoDesdeMail(JSON.parse(fs.readFileSync(archivo, "utf8")));
-      if (!p) throw new Error("el archivo no es un pedido: hace falta id «mail-<hilo>» y texto");
+      if (!p) throw new Error("el archivo no es un pedido: hace falta id «mail-<hilo>» o «pantalla-<huella>» y texto");
       if (seco) { console.log(JSON.stringify(p, null, 1)); return; }
       const s = await F.entrar(cv);
       const c = await F.crearNuevo(cv, s, COLECCION, p.id, { ...p.datos, creadoEn: { $timestamp: new Date().toISOString() } });

@@ -1,6 +1,6 @@
 # Pedidos de alquiler de Facebook — cómo funciona y cómo se usa
 
-Al 20-oct-2026 · Pizarra `pizarra-53` · Casa Verde `pedidos-alquiler-5`.
+Al 20-oct-2026 · Pizarra `pizarra-54` · Casa Verde `pedidos-alquiler-5`.
 Para Mauro y Florencia. Sin datos de personas: este repositorio es público.
 
 ---
@@ -16,7 +16,7 @@ Pedidos de alquiler**. Pegás la respuesta y la mandás vos.
 
 ## Antes de empezar (una sola vez)
 
-1. **Instalar la Pizarra** en el 13C: la versión `pizarra-53` o posterior
+1. **Instalar la Pizarra** en el 13C: la versión `pizarra-54` o posterior
    (el enlace de siempre, `pizarra.html` del panel).
 2. **Encender el lector de Facebook**: Pizarra → sección Casa Verde → «Encender
    el lector de Facebook» → Accesibilidad → Apps descargadas → «Pizarra · lector

@@ -14,7 +14,7 @@ coinciden, manda el archivo.
 | Pieza | Repositorio | Versión | Último cambio |
 |---|---|---|---|
 | **Tiempos** (app web de la familia) | `maurogasta-crypto/tiempos` | `app-38` · `nucleo-43` · `agenda-19` · `sugerir-22` · `plata-15` · `proyecto-1` · `sw tiempos-64` · reglas **v15** | 19-oct: al guardar una pieza en otra semana, la agenda la sigue (agenda-19). 18-oct: reglas v15 (`mensajes/`). Antes: ver § 3 |
-| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-53` | 19 y 20-oct: todas las notificaciones del 13C a Casa Verde (pizarra-42/43) y el lector de Facebook por accesibilidad con la respuesta según la ocupación (pizarra-44 a 52). Ver § 6 |
+| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-54` | 19 y 20-oct: todas las notificaciones del 13C a Casa Verde (pizarra-42/43) y el lector de Facebook por accesibilidad con la respuesta según la ocupación (pizarra-44 a 52). Ver § 6 |
 | **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `nucleo-avisos-18` · `pedidos-alquiler-5` · `reservas-ical-13` · `sw cv2-shell-v128` | 20-oct: «🔎 Qué busco ahora» (`pedidos_busqueda/`), la respuesta al crear un pedido, `notificaciones/`, y en Cabañas la condición del máximo y el extra por persona — **hay que publicar `interno/firestore.rules`**. Ver § 6 |
 | **CasaYourte** | `casayourte/casayourte` | `nucleo-28` · `idiomas-5` · `sw cy-shell-v63` | 19-oct: el teléfono (pestañas en rejilla, la última obra, la foto de portada) y los buscadores de Francia, Bélgica, Brasil, Argentina y Uruguay (idiomas-5, hreflang, Search Console) |
 | **remateTaller** | `rematetaller/remate` | `utils v1.23` · reglas v1.2 en el repo | 11-oct (tanda 35): el ojo 👁 |

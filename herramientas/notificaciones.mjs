@@ -47,7 +47,13 @@ export const NOMBRES = {
   "com.mercadolibre": "Mercado Libre", "com.google.android.apps.messaging": "Mensajes (SMS)",
   "com.google.android.calendar": "Calendario", "org.telegram.messenger": "Telegram",
 };
-export const nombreApp = (p) => NOMBRES[p] || p || "(sin app)";
+/* pizarra-44: lo que la Pizarra leyó POR LA PANTALLA de Facebook llega como
+   «<paquete>·pantalla»: una publicación de un grupo, no una notificación. */
+export const nombreApp = (p) => {
+  const [paq, como] = String(p || "").split("·");
+  const n = NOMBRES[paq] || paq || "(sin app)";
+  return como === "pantalla" ? n + " (pantalla)" : n;
+};
 
 const ms = (n) => Number(n?.cuando) || Date.parse(n?.fecha || n?.creadoEn || "") || 0;
 

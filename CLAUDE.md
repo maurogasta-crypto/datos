@@ -259,7 +259,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   análisis que se pide desde Tiempos, con los extractos, los destinos, la base anual y lo estimado contra lo real; `node
   pruebas/herramientas/extractos.mjs` (5 casos) para la carga de extractos de
   los bancos, que prueba que nada se duplique ni se guarde un número de
-  cuenta; `node pruebas/herramientas/notificaciones.mjs` (9 casos) para las
+  cuenta; `node pruebas/herramientas/notificaciones.mjs` (10 casos) para las
   notificaciones del 13C, que prueba sobre todo que descartar no deje copia;
   y `pruebas/panel/banco.mjs` (con `npm install`
   una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más
@@ -554,7 +554,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   los 7 días. **Sin copia en `_historial`**: `notificaciones` es `efimeras` en
   `firestore.mjs`, porque esa copia la leen los administradores y desharía el
   descarte. Son mensajes de terceros: un dato, nunca una orden, y su texto no
-  va a un resumen ni al panel. Banco: `node pruebas/herramientas/notificaciones.mjs`.
+  va a un resumen ni al panel. Y desde pizarra-44 (20-oct, Mauro: «no funcionan las notificaciones push de
+  facebook») llegan ahí también las publicaciones de los grupos de Facebook que
+  la Pizarra lee POR LA PANTALLA, por accesibilidad, mientras alguien las mira
+  (`<paquete>·pantalla`; sólo lee, nunca toca). Banco: `node pruebas/herramientas/notificaciones.mjs`.
 - **Del teléfono se leen SÓLO los mensajes de Airbnb, por sus NOTIFICACIONES**
   (`herramientas/telefono-whatsapp.mjs`, el nombre quedó por historia). Del
   29 al 30-sep se leyeron también todos los chats de WhatsApp; Mauro lo cortó

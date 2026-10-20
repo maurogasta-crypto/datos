@@ -41,6 +41,10 @@ prueba("el resumen cuenta por app y separa las sin revisar", () => {
 prueba("un paquete desconocido se muestra tal cual", () => {
   assert.equal(nombreApp("com.ejemplo.app"), "com.ejemplo.app"); assert.equal(nombreApp("com.whatsapp"), "WhatsApp");
 });
+prueba("lo leído por la pantalla de Facebook se nombra aparte (pizarra-44)", () => {
+  assert.equal(nombreApp("com.facebook.katana·pantalla"), "Facebook (pantalla)");
+  assert.equal(nombreApp("com.raro·pantalla"), "com.raro (pantalla)");
+});
 prueba("el renglón trae id, app, título, texto y líneas", () => {
   const t = renglon(N("z", 1, { lineas: ["uno", "dos"] }));
   assert.ok(t.startsWith("── z · 10-19 17:00 · WhatsApp · Juan")); assert.ok(t.includes("Hola")); assert.ok(t.includes("dos"));

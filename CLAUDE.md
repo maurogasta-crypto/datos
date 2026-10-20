@@ -583,8 +583,9 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   uno; `desde-reporte` queda para esa versión). La ronda —más veces por día
   en temporada, § 0 bis de TRASPASO— corre `facebook.mjs cargar` (lo que no
   llegó), `vencer` (lo de más de 7 días) y `pendientes`/`responder`: una
-  respuesta breve y distinta para cada uno, sin enlaces, para que Facebook no
-  bloquee la cuenta. `interno/pedidos-alquiler.html` muestra cuántos hay y,
+  respuesta breve y distinta para cada uno, que siempre sugiere
+  casaverdecanas.com.br y ningún otro enlace (Mauro, 20-oct; antes, sin
+  enlaces), según «Qué busco ahora» y la ocupación. `interno/pedidos-alquiler.html` muestra cuántos hay y,
   primero, los que ya tienen respuesta, con «Copiar y abrir»; en el 13C la
   Pizarra la avisa y con un toque copia y abre la publicación exacta
   (pizarra-37). Publicar es de una persona. Banco: `node

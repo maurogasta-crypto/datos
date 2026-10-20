@@ -202,6 +202,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       // Es un dato de un tercero: se imprime para preparar la respuesta, no se copia a otro lado.
       for (const p of l) console.log(`\n── ${p.id} · ${String(p.fecha || "").slice(0, 16)} · ${p.grupo || "(sin grupo)"}\n${p.texto || ""}`);
       console.log(`\n  ${l.length} esperan respuesta.\n`);
+      // pizarra-46: lo que se busca ahora («🔎 Qué busco ahora» de Casa Verde), para responder sólo lo que cuadra.
+      const b = await F.leerUno(cv, s, "pedidos_busqueda", "actual").catch(() => null);
+      console.log(b ? `  Qué se busca ahora: ${(b.tipos || []).join("/")} · hasta ${b.personasMax} personas · ${(b.publico || []).join("/") || "cualquiera"} · ${(b.zonas || []).join("/")}${b.nota ? " · " + b.nota : ""}\n`
+        : "  Qué se busca ahora: no está guardado (por días, hasta 20, Canasvieiras y el norte).\n");
     } else if (cmd === "responder") {
       const id = args.find((x, i) => !x.startsWith("--") && args[i - 1] !== "--respuesta");
       const archivo = opt("--respuesta");

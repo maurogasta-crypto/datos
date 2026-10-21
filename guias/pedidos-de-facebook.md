@@ -1,6 +1,6 @@
 # Pedidos de alquiler de Facebook — cómo funciona y cómo se usa
 
-Al 21-oct-2026 · Pizarra `pizarra-56` · Casa Verde `pedidos-alquiler-6`.
+Al 21-oct-2026 · Pizarra `pizarra-56` · Casa Verde `pedidos-alquiler-7`.
 Para Mauro y Florencia. Sin datos de personas: este repositorio es público.
 
 ---
@@ -89,8 +89,8 @@ pide un mes y queda una tirada libre), y el filtro **«🟢 Llenan huecos»** de
 ésos; el **Inicio** los muestra en «Pedidos que caen en fechas libres». Para
 ofrecer:
 
-1. **«Copiar para buscar»** copia unas palabras de la publicación.
-2. En Facebook, en el grupo, tocás 🔍 y pegás: aparece la publicación.
+1. **«Copiar y abrir Facebook»** copia unas palabras de la publicación y abre Facebook, en un toque.
+2. Tocás 🔍 y pegás: aparece la publicación.
 3. Tocás **«Comentar»**: la Pizarra deja la respuesta en el portapapeles. Pegás y
    mandás.
 

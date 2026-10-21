@@ -15,7 +15,7 @@ coinciden, manda el archivo.
 |---|---|---|---|
 | **Tiempos** (app web de la familia) | `maurogasta-crypto/tiempos` | `app-38` · `nucleo-43` · `agenda-19` · `sugerir-22` · `plata-15` · `proyecto-1` · `sw tiempos-64` · reglas **v15** | 19-oct: al guardar una pieza en otra semana, la agenda la sigue (agenda-19). 18-oct: reglas v15 (`mensajes/`). Antes: ver § 3 |
 | **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-56` | 19 a 21-oct: todas las notificaciones del 13C a Casa Verde (pizarra-42/43) y el lector de Facebook por accesibilidad con la respuesta según la ocupación (pizarra-44 a 56: registra todo pedido al recorrer, cartel en vez de notificación). Ver § 6 |
-| **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `nucleo-avisos-19` · `pedidos-alquiler-6` · `reservas-ical-13` · `sw cv2-shell-v129` | 21-oct: qué pedidos de Facebook caen en fechas libres (lista e Inicio) y «Copiar para buscar»; 20-oct: «🔎 Qué busco ahora» (`pedidos_busqueda/`), la respuesta al crear un pedido, `notificaciones/`, y en Cabañas la condición del máximo y el extra por persona — **hay que publicar `interno/firestore.rules`**. Ver § 6 |
+| **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `nucleo-avisos-19` · `pedidos-alquiler-7` · `reservas-ical-13` · `sw cv2-shell-v130` | 21-oct: qué pedidos de Facebook caen en fechas libres (lista e Inicio) y «Copiar para buscar»; 20-oct: «🔎 Qué busco ahora» (`pedidos_busqueda/`), la respuesta al crear un pedido, `notificaciones/`, y en Cabañas la condición del máximo y el extra por persona — **hay que publicar `interno/firestore.rules`**. Ver § 6 |
 | **CasaYourte** | `casayourte/casayourte` | `nucleo-28` · `idiomas-5` · `sw cy-shell-v63` | 19-oct: el teléfono (pestañas en rejilla, la última obra, la foto de portada) y los buscadores de Francia, Bélgica, Brasil, Argentina y Uruguay (idiomas-5, hreflang, Search Console) |
 | **remateTaller** | `rematetaller/remate` | `utils v1.23` · reglas v1.2 en el repo | 11-oct (tanda 35): el ojo 👁 |
 | **El panel** | `maurogasta-crypto/datos` | `panel-42` · `nucleo-9` · `sw panel-shell-v38` | 17-oct: las reglas del panel en un solo lugar (Sitio → Panel); obras (obra-8) |
@@ -181,7 +181,7 @@ app ya muestra. La guía de uso está en `guias/pedidos-de-facebook.md`.
   copiada para pegar desde el teclado.
 - Casa Verde cruza esos pedidos con la ocupación (`CV2.huecoDelPedido`): «🟢 cae
   en fechas libres» en la lista, filtro «Llenan huecos» y un bloque en Inicio. En
-  la lista, «Copiar para buscar» copia palabras para el buscador del grupo.
+  la lista, «Copiar y abrir Facebook» copia palabras para el buscador y abre Facebook.
 - Al abrir Facebook (tras media hora) se trae **una vez** la ocupación
   (`disponibilidad/`) y las cabañas. Al comentar sale **un aviso**: hay lugar
   (con fechas), o no hay y se copia **lo que sí hay** (otras fechas, una parte,

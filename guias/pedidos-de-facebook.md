@@ -1,6 +1,6 @@
 # Pedidos de alquiler de Facebook — cómo funciona y cómo se usa
 
-Al 20-oct-2026 · Pizarra `pizarra-54` · Casa Verde `pedidos-alquiler-5`.
+Al 20-oct-2026 · Pizarra `pizarra-55` · Casa Verde `pedidos-alquiler-5`.
 Para Mauro y Florencia. Sin datos de personas: este repositorio es público.
 
 ---
@@ -16,7 +16,7 @@ Pedidos de alquiler**. Pegás la respuesta y la mandás vos.
 
 ## Antes de empezar (una sola vez)
 
-1. **Instalar la Pizarra** en el 13C: la versión `pizarra-54` o posterior
+1. **Instalar la Pizarra** en el 13C: la versión `pizarra-55` o posterior
    (el enlace de siempre, `pizarra.html` del panel).
 2. **Encender el lector de Facebook**: Pizarra → sección Casa Verde → «Encender
    el lector de Facebook» → Accesibilidad → Apps descargadas → «Pizarra · lector
@@ -69,6 +69,11 @@ cuadro de una publicación abierta se toma la de arriba de todo. **El nombre** v
 sólo si la publicación está firmada por una persona (nombre y apellido); si la
 firma un grupo o no se ve, se saluda sin nombre. Si lo que tocaste no habla de
 alojamiento, no se guarda nada y el aviso dice «No reconocí un pedido».
+
+**Lo que ya se comentó se advierte**: si debajo de la publicación ya hay una
+respuesta nuestra (con casaverdecanas.com.br), el aviso dice **«⚠️ YA
+COMENTADA»**, no copia nada y en la lista queda respondida. Si la elegiste antes
+en este teléfono pero no se ve la respuesta, el aviso dice el día y copia igual.
 
 **La respuesta siempre**: corta, con el nombre si está claro, en portugués si
 escribieron en portugués, distinta cada vez (tres formas), y sugiere

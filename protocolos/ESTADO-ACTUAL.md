@@ -14,8 +14,8 @@ coinciden, manda el archivo.
 | Pieza | Repositorio | Versión | Último cambio |
 |---|---|---|---|
 | **Tiempos** (app web de la familia) | `maurogasta-crypto/tiempos` | `app-38` · `nucleo-43` · `agenda-19` · `sugerir-22` · `plata-15` · `proyecto-1` · `sw tiempos-64` · reglas **v15** | 19-oct: al guardar una pieza en otra semana, la agenda la sigue (agenda-19). 18-oct: reglas v15 (`mensajes/`). Antes: ver § 3 |
-| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-55` | 19 y 20-oct: todas las notificaciones del 13C a Casa Verde (pizarra-42/43) y el lector de Facebook por accesibilidad con la respuesta según la ocupación (pizarra-44 a 52). Ver § 6 |
-| **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `nucleo-avisos-18` · `pedidos-alquiler-5` · `reservas-ical-13` · `sw cv2-shell-v128` | 20-oct: «🔎 Qué busco ahora» (`pedidos_busqueda/`), la respuesta al crear un pedido, `notificaciones/`, y en Cabañas la condición del máximo y el extra por persona — **hay que publicar `interno/firestore.rules`**. Ver § 6 |
+| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-56` | 19 a 21-oct: todas las notificaciones del 13C a Casa Verde (pizarra-42/43) y el lector de Facebook por accesibilidad con la respuesta según la ocupación (pizarra-44 a 56: registra todo pedido al recorrer, cartel en vez de notificación). Ver § 6 |
+| **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `nucleo-avisos-19` · `pedidos-alquiler-6` · `reservas-ical-13` · `sw cv2-shell-v129` | 21-oct: qué pedidos de Facebook caen en fechas libres (lista e Inicio) y «Copiar para buscar»; 20-oct: «🔎 Qué busco ahora» (`pedidos_busqueda/`), la respuesta al crear un pedido, `notificaciones/`, y en Cabañas la condición del máximo y el extra por persona — **hay que publicar `interno/firestore.rules`**. Ver § 6 |
 | **CasaYourte** | `casayourte/casayourte` | `nucleo-28` · `idiomas-5` · `sw cy-shell-v63` | 19-oct: el teléfono (pestañas en rejilla, la última obra, la foto de portada) y los buscadores de Francia, Bélgica, Brasil, Argentina y Uruguay (idiomas-5, hreflang, Search Console) |
 | **remateTaller** | `rematetaller/remate` | `utils v1.23` · reglas v1.2 en el repo | 11-oct (tanda 35): el ojo 👁 |
 | **El panel** | `maurogasta-crypto/datos` | `panel-42` · `nucleo-9` · `sw panel-shell-v38` | 17-oct: las reglas del panel en un solo lugar (Sitio → Panel); obras (obra-8) |
@@ -173,15 +173,19 @@ notificaciones no alcanzaba para los grupos. La API de grupos de Meta cerró en
 abril de 2024: lo único que queda sin riesgo para la cuenta es leer lo que la
 app ya muestra. La guía de uso está en `guias/pedidos-de-facebook.md`.
 
-**Cómo quedó (pizarra-53):**
+**Cómo quedó (pizarra-56):**
 - Un **servicio de accesibilidad** atado a las apps de Facebook, que **sólo
-  lee**. Recorrer no guarda nada. Al tocar «Comentar», la publicación de arriba
-  de ese toque va a «Pedidos de alquiler» con una respuesta rápida, y la
-  respuesta queda copiada para pegar desde el teclado.
+  lee**. Al recorrer **registra en silencio** cada pedido de alojamiento, con
+  `desde`/`hasta`/`mes`/`personas`. Al tocar «Comentar», la publicación de arriba
+  de ese toque va a «Pedidos de alquiler» con una respuesta rápida, que queda
+  copiada para pegar desde el teclado.
+- Casa Verde cruza esos pedidos con la ocupación (`CV2.huecoDelPedido`): «🟢 cae
+  en fechas libres» en la lista, filtro «Llenan huecos» y un bloque en Inicio. En
+  la lista, «Copiar para buscar» copia palabras para el buscador del grupo.
 - Al abrir Facebook (tras media hora) se trae **una vez** la ocupación
   (`disponibilidad/`) y las cabañas. Al comentar sale **un aviso**: hay lugar
   (con fechas), o no hay y se copia **lo que sí hay** (otras fechas, una parte,
-  o para cuántos).
+  o para cuántos). Desde pizarra-56 es un cartel que se va solo, no una notificación.
 - Se ofrece con la **base** de cada espacio y el **máximo** sólo con su
   condición: 6/8, 5/7 y 4/5, «con extra por persona y en situaciones
   especiales», leídos de `cabanas/`.
@@ -190,10 +194,10 @@ app ya muestra. La guía de uso está en `guias/pedidos-de-facebook.md`.
 - **Qué busco ahora** (`pedidos_busqueda/actual`) decide tipo, personas,
   público y zona.
 
-**Lo que se probó y lo que no.** 139 casos en el banco de la Pizarra (con la
+**Lo que se probó y lo que no.** 146 casos en el banco de la Pizarra (con la
 ocupación real del 20-oct y los pedidos de esa mañana), las reglas nuevas en el
-emulador de Firestore (14 casos). **No se probó en el teléfono** la versión
-52: el primer recorrido de Mauro con ella es la prueba real.
+emulador de Firestore (22 casos), y el cruce con los huecos (7 casos). **No se
+probó en el teléfono** la versión 56: el primer recorrido de Mauro con ella es la prueba real.
 
 **En el camino, y quedó arreglado:** la cabaña 1 decía capacidad 1 (ahora
 6–8); el editor de Cabañas borraba el extra por persona del Loft al guardar;
@@ -203,6 +207,6 @@ cuadro se respondía un comentario con el nombre de quien comentó (pizarra-53);
 flotantes al recorrer molestaban (sacados).
 
 **Lo que queda de Mauro:** publicar `interno/firestore.rules` de Casa Verde;
-instalar pizarra-53 en el 13C y encender el lector; cargar el extra por persona
+instalar pizarra-56 en el 13C y encender el lector; cargar el extra por persona
 de la cabaña 1 y del depto si corresponde.
 

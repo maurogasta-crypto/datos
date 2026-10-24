@@ -28,8 +28,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const VERSION = "charla-1";
+export const VERSION = "charla-2";   // 24-oct: flash-lite y tope por corrida (PROTOCOLO-DESARROLLO § 13, los cupos gratis)
 export const PROXY = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
+/** Cuántos audios se transcriben por corrida, como mucho: el resto queda «sin transcribir» y se lee en la próxima. */
+export const TOPE_TRANSCRIPCIONES = 30;
 export const PIDE = "Transcribí literalmente este mensaje de voz, en el idioma en que se habla. " +
   "Sólo la transcripción, sin comillas ni comentarios. Si no se entiende nada, contestá «(no se entiende)».";
 
@@ -62,7 +64,8 @@ export function filtrar(lista, { dias = 0, desde = "", ahora = Date.now() } = {}
 
 /** El pedido a claude-proxy para transcribir un audio (base64). */
 export function pedidoTranscripcion(base64, tipo) {
-  return { model: "gemini-2.5-flash", max_tokens: 1500, messages: [{ role: "user", content: [
+  // flash-lite: el cupo gratis más amplio de Gemini (§ 13 de PROTOCOLO-DESARROLLO).
+  return { model: "gemini-2.5-flash-lite", max_tokens: 1500, messages: [{ role: "user", content: [
     { type: "document", source: { type: "base64", media_type: tipo || "audio/ogg", data: base64 } },
     { type: "text", text: PIDE }] }] };
 }
@@ -103,9 +106,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const l = filtrar(todos, { dias: cmd === "leer" ? Number(opt("--dias", 2)) : (desde ? 0 : 2), desde });
     if (!l.length) { console.log("\n  Nada nuevo en la charla.\n"); return; }
     // La voz de alguien: se transcribe para trabajar acá; no se guarda en ningún lado.
+    let hechas = 0;
     for (const m of l) {
       let tr = null;
-      if (m.audio && !args.includes("--sin-audio")) {
+      if (m.audio && !args.includes("--sin-audio") && hechas++ < TOPE_TRANSCRIPCIONES) {
         try {
           const a = await F.leerUno(t, s, "audios", m.audio);
           tr = a && a.datos ? await transcribir(a.datos, a.tipo) : "(el audio ya no está)";

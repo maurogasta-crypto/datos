@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { destinoDe, renglonMensaje, filtrar, pedidoTranscripcion, transcribir, leerVisto, anotarVisto, PROXY } from "../../herramientas/charla.mjs";
+import { destinoDe, renglonMensaje, filtrar, pedidoTranscripcion, transcribir, leerVisto, anotarVisto, PROXY, TOPE_TRANSCRIPCIONES } from "../../herramientas/charla.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = async (n, f) => { try { await f(); pasadas++; console.log("  ✓ " + n); } catch (e) { fallidas++; console.log("  ✗ " + n + "\n      " + e.message); } };
@@ -32,6 +32,9 @@ await prueba("el pedido a la IA lleva el audio en base64 con su tipo, y sólo pi
   const p = pedidoTranscripcion("QUJD", "audio/ogg");
   assert.equal(p.messages[0].content[0].source.media_type, "audio/ogg");
   assert.equal(p.messages[0].content[0].source.data, "QUJD");
+  // § 13 de PROTOCOLO-DESARROLLO: el modelo del cupo gratis más amplio, y un tope por corrida.
+  assert.equal(p.model, "gemini-2.5-flash-lite");
+  assert.ok(TOPE_TRANSCRIPCIONES > 0 && TOPE_TRANSCRIPCIONES <= 50);
   let url = "";
   const t = await transcribir("QUJD", "audio/ogg", async (u) => { url = u; return { ok: true, json: async () => ({ content: [{ type: "text", text: " hola " }] }) }; });
   assert.equal(t, "hola"); assert.equal(url, PROXY);

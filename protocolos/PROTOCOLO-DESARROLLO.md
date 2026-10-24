@@ -1204,3 +1204,56 @@ suponiéndolo—, que es por qué se coló en un `git add -A`. Se agregó la lí
 día, con el motivo escrito al lado y la instrucción de que adoptarlo es borrarla.
 Así, que no esté es una decisión y no un olvido — y ésa es toda la diferencia
 entre las dos cosas.
+
+## 13. Ningún desarrollo pasa de los cupos gratuitos
+
+**Es una condición para desarrollar, no una preferencia** (Mauro, 24-oct-2026:
+«no quiero que ningún desarrollo pase de los cupos gratuitos que se puedan
+conseguir… es una condición para el desarrollo hoy día»). Rige para los cinco
+sitios, la Pizarra, la Hilux y lo que venga.
+
+### 13.1 La garantía no es el cálculo: es el plan de cada cuenta
+
+Una cuenta que **no puede cobrar** no cobra aunque el cálculo esté mal: cuando
+se pasa del cupo, el servicio se frena, no factura. Por eso lo primero es que
+cada cuenta esté en un plan sin facturación:
+
+| Servicio | Plan que no cobra | Qué pasa si se pasa |
+|---|---|---|
+| Firebase (cada base: `casaverde-20`, `tiempos-71d42`, `datos-830f8`, `remate-acbc9`, `casayourte-mauro`, `hilux-1b6f1`, `avisos-23b6a`) | **Spark**, sin tarjeta asociada. Nunca Blaze | Firestore contesta «cuota excedida» hasta el día siguiente |
+| Firebase Cloud Messaging | gratis en cualquier plan | — |
+| Gemini (`GEMINI_API_KEY`) | una clave de Google AI Studio cuyo proyecto **no tiene facturación** | la IA contesta «demasiados pedidos» hasta que se renueva el cupo |
+| Netlify | el plan gratuito, sin tarjeta | las funciones se frenan hasta el mes siguiente |
+| Cloudinary | Free | no sube más hasta el mes siguiente |
+| GitHub (Pages y Actions) | gratis para repositorios públicos | — |
+
+Que cada cuenta esté así lo comprueba Mauro en cada consola —un agente no ve
+la facturación— y queda anotado en la ficha de titularidad de cada sitio.
+
+### 13.2 Y además se calcula, antes de entregar
+
+Una tanda que agrega uso (lecturas, escrituras, llamadas a una función o a la
+IA, almacenamiento) **dice en su documentación cuánto agrega, para 10
+personas**, contra el cupo. Si no entra con margen holgado, no se entrega así:
+se rediseña (traer sólo lo nuevo, juntar avisos, borrar lo viejo) o se deja.
+
+Los cupos de referencia (aproximados; los que mandan son los de cada consola,
+y cambian):
+
+| Servicio | Cupo gratis | Uso de hoy, estimado para 10 personas |
+|---|---|---|
+| Firestore, por base | 50.000 lecturas, 20.000 escrituras y 20.000 borrados por día; 1 GB guardado | Tiempos: unas 10.000 lecturas por día con la charla trayendo sólo lo nuevo (pizarra-62); audios unos 30 MB, borrados a los 30 días |
+| Netlify | el del plan gratuito (invocaciones de funciones y transferencia por mes) | `despertar` unas 15.000 por mes; `claude-proxy`, unas pocas por día |
+| Gemini | un tope de pedidos por día y por minuto, distinto por modelo (`flash-lite` tiene el más amplio) | facturas, boletas, consultas y las transcripciones de la ronda (`charla.mjs`, con tope por corrida) |
+| Cloudinary | 25 créditos por mes | fotos de los sitios |
+
+### 13.3 Lo que no se hace
+
+- Nada que **exija** activar facturación: Cloud Storage para Firebase (pide
+  Blaze), Cloud Functions de Firebase, un servidor pago, un TURN pago.
+- Ninguna consulta que traiga una colección entera cada pocos minutos: se trae
+  lo nuevo (`creadoEn > última`).
+- Ningún archivo pesado en Firestore sin un borrado que lo saque.
+- La llamada en vivo de la Pizarra (`general:C2`, Fase B) entra **sólo** si el
+  servidor puente que necesita el 4G tiene un cupo gratuito que alcance; si no,
+  no se hace.

@@ -621,6 +621,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   charla, no guarda transcripciones** (la bodega es git): anota sólo hasta
   cuándo revisó (`charla/visto.json`). Las Pizarras dicen a la vista que
   Claude lee y escucha. Banco: `node pruebas/herramientas/charla.mjs` (6 casos).
+- **Ningún desarrollo pasa de los cupos gratuitos** (24-oct-2026, Mauro: «es
+  una condición para el desarrollo hoy día»). La garantía es que cada cuenta
+  esté en un plan que no puede cobrar (Firebase Spark, Gemini sin
+  facturación, Netlify y Cloudinary gratis); y además cada tanda que agrega
+  uso dice cuánto, para 10 personas, contra el cupo. Lo que exige facturación
+  no se hace. Está en `protocolos/PROTOCOLO-DESARROLLO.md` § 13.
 - **Una consulta desde un sitio despierta a este chat en el acto** (3-oct-2026,
   rutina «Consulta en vivo», `trig_01Ep6kQCNo2JFwXVvZv8cuDE`, sin horario). El
   formulario de Casa Verde, CasaYourte, remate y Tiempos guarda el reporte y

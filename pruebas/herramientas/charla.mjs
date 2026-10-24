@@ -22,6 +22,10 @@ await prueba("un audio se lee por su transcripción; sin ella lo dice", () => {
   assert.match(renglonMensaje(m, nombres), /\(sin transcribir\)/);
   assert.match(renglonMensaje(m, nombres), /Mauro · Redmi 15 → Florencia/);
 });
+await prueba("un archivo se muestra por su nombre, con cómo bajarlo para mirarlo", () => {
+  const m = { id: "m2", de: "flor", nombre: "Florencia", dispositivo: "A15", texto: "📎 plano.pdf (1,2 MB)", creadoEn: "2026-10-24T18:00:00Z", para: "yo|*", archivo: "f1", nombreArchivo: "plano.pdf", partes: 2 };
+  assert.match(renglonMensaje(m, nombres), /📎 plano\.pdf \(2 partes\) · para verlo: bajar f1/);
+});
 await prueba("filtra por días o desde lo ya revisado, los más viejos primero", () => {
   const ahora = Date.parse("2026-10-24T20:00:00Z");
   const l = [{ id: "b", creadoEn: "2026-10-24T19:00:00Z" }, { id: "a", creadoEn: "2026-10-24T10:00:00Z" }, { id: "v", creadoEn: "2026-10-10T10:00:00Z" }];

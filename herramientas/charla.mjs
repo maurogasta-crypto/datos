@@ -4,6 +4,7 @@
 //   node herramientas/charla.mjs leer [--dias 2] [--sin-audio]
 //   node herramientas/charla.mjs nuevos --bodega <copia>     (lo que no se revisó)
 //   node herramientas/charla.mjs revisado --bodega <copia>   (marca hasta ahora)
+//   node herramientas/charla.mjs bajar <id del archivo> --a <carpeta FUERA de todo repositorio>
 //
 // charla-1 · 24-oct-2026 · general:C2. Mauro: «quiero que la IA pueda auditar
 // las comunicaciones… porque ellas serán propuestas o trabajos de desarrollo en
@@ -28,7 +29,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const VERSION = "charla-2";   // 24-oct: flash-lite y tope por corrida (PROTOCOLO-DESARROLLO § 13, los cupos gratis)
+export const VERSION = "charla-3";   // 24-oct: muestra los archivos (pizarra-64) y «bajar» para mirarlos   // 24-oct: flash-lite y tope por corrida (PROTOCOLO-DESARROLLO § 13, los cupos gratis)
 export const PROXY = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
 /** Cuántos audios se transcriben por corrida, como mucho: el resto queda «sin transcribir» y se lee en la próxima. */
 export const TOPE_TRANSCRIPCIONES = 30;
@@ -47,7 +48,9 @@ export function destinoDe(para, nombres = {}) {
 export function renglonMensaje(m, nombres = {}, transcripcion = null) {
   const cuando = String(m.creadoEn || "").slice(5, 16).replace("T", " ");
   const quien = `${m.nombre || nombres[m.de] || "alguien"} · ${m.dispositivo || "?"}`;
-  const cuerpo = m.audio
+  const cuerpo = m.archivo
+    ? `📎 ${m.nombreArchivo || "archivo"} (${m.partes || 1} parte${(m.partes || 1) > 1 ? "s" : ""}) · para verlo: bajar ${m.archivo}`
+    : m.audio
     ? `🎙 (${Math.floor((m.dur || 0) / 60)}:${String((m.dur || 0) % 60).padStart(2, "0")}) ` + (transcripcion == null ? "(sin transcribir)" : `«${transcripcion}»`)
     : m.texto;
   return `── ${m.id} · ${cuando} · ${quien} → ${destinoDe(m.para, nombres)}\n      ${cuerpo}`;
@@ -93,6 +96,26 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       if (!bodega) throw new Error("revisado pide --bodega <copia>");
       const hasta = new Date().toISOString(); anotarVisto(bodega, hasta);
       console.log(`\n  ✓ charla revisada hasta ${hasta}. Falta: commit y push de la bodega.\n`); return;
+    }
+    if (cmd === "bajar") {
+      // Una foto o un documento de la charla, para mirarlo acá (pizarra-64). Va a una carpeta FUERA de los
+      // repositorios: es de alguien, y git no olvida.
+      const [id] = args.filter((x, i) => !x.startsWith("--") && !(i > 0 && args[i - 1].startsWith("--")));
+      const a = opt("--a", "");
+      if (!id || !a) throw new Error("uso: bajar <id del archivo> --a <carpeta fuera de los repositorios>");
+      if (/\/home\/user\/(datos2|bodega|casaverdecanas|CasaYourte|remate|tiempos|pizarra|gestos|sitd-hilux)(\/|$)/.test(path.resolve(a)))
+        throw new Error("no adentro de un repositorio: usá el scratchpad");
+      const F = await import("./firestore.mjs");
+      const t = F.PROYECTOS.tiempos;
+      const s = await F.entrar(t);
+      const p0 = await F.leerUno(t, s, "archivos", `${id}-0`);
+      if (!p0) { console.log("\n  Ese archivo ya no está (se borran a los 7 días).\n"); return; }
+      const partes = [Buffer.from(p0.datos, "base64")];
+      for (let n = 1; n < (p0.partes || 1); n++) partes.push(Buffer.from((await F.leerUno(t, s, "archivos", `${id}-${n}`)).datos, "base64"));
+      fs.mkdirSync(a, { recursive: true });
+      const destino = path.join(a, `${id}-${String(p0.nombre || "archivo").replace(/[^\w.\-]/g, "_")}`);
+      fs.writeFileSync(destino, Buffer.concat(partes));
+      console.log(`\n  ✓ ${destino} (${p0.tipo}, ${Buffer.concat(partes).length} bytes)\n`); return;
     }
     if (cmd !== "leer" && cmd !== "nuevos") {
       console.log("\n  node herramientas/charla.mjs leer [--dias 2] [--sin-audio]\n  node herramientas/charla.mjs nuevos --bodega <copia>\n  node herramientas/charla.mjs revisado --bodega <copia>\n"); return;

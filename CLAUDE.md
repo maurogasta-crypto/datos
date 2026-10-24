@@ -620,7 +620,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `origen: "charla:<id>"` (TRASPASO § 4, paso 5 bis ⅞ ½). **No contesta en la
   charla, no guarda transcripciones** (la bodega es git): anota sólo hasta
   cuándo revisó (`charla/visto.json`). Las Pizarras dicen a la vista que
-  Claude lee y escucha. Banco: `node pruebas/herramientas/charla.mjs` (6 casos).
+  Claude lee y escucha. Desde charla-3 muestra también las fotos y documentos (pizarra-64), y `bajar` los deja en una carpeta FUERA de los repositorios para mirarlos. Banco: `node pruebas/herramientas/charla.mjs` (7 casos).
 - **Ningún desarrollo pasa de los cupos gratuitos** (24-oct-2026, Mauro: «es
   una condición para el desarrollo hoy día»). La garantía es que cada cuenta
   esté en un plan que no puede cobrar (Firebase Spark, Gemini sin

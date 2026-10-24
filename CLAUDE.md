@@ -611,6 +611,16 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `_historial` —es nuevo y no pisa nada— (`crearAviso` de `firestore.mjs`). La
   guía de instalación de la app, para todo el equipo, es `pizarra.html` de
   este repositorio (§ 6 bis del protocolo).
+- **La charla de las Pizarras la lee y la ESCUCHA la ronda**
+  (`herramientas/charla.mjs`, charla-1, 24-oct-2026, `general:C2`, Mauro:
+  «quiero que la IA pueda auditar las comunicaciones… serán propuestas o
+  trabajos de desarrollo en el que siempre se incluirá la IA»). Lee
+  `mensajes/` de Tiempos y transcribe los de voz (`audios/`, reglas v18) con
+  `claude-proxy`; lo que se propone o se pide pasa al panel como pedido, con
+  `origen: "charla:<id>"` (TRASPASO § 4, paso 5 bis ⅞ ½). **No contesta en la
+  charla, no guarda transcripciones** (la bodega es git): anota sólo hasta
+  cuándo revisó (`charla/visto.json`). Las Pizarras dicen a la vista que
+  Claude lee y escucha. Banco: `node pruebas/herramientas/charla.mjs` (6 casos).
 - **Una consulta desde un sitio despierta a este chat en el acto** (3-oct-2026,
   rutina «Consulta en vivo», `trig_01Ep6kQCNo2JFwXVvZv8cuDE`, sin horario). El
   formulario de Casa Verde, CasaYourte, remate y Tiempos guarda el reporte y

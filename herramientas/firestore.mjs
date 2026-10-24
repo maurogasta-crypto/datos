@@ -474,6 +474,7 @@ function deFirestore(v) {
   if ("integerValue" in v) return Number(v.integerValue);
   if ("doubleValue" in v) return v.doubleValue;
   if ("timestampValue" in v) return v.timestampValue;
+  if ("bytesValue" in v) return v.bytesValue;   // base64, como viene (los audios del handy de Tiempos)
   if ("arrayValue" in v) return (v.arrayValue.values || []).map(deFirestore);
   if ("mapValue" in v) return objeto(v.mapValue.fields || {});
   return v.stringValue ?? null;

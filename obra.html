@@ -60,7 +60,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-9
+  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-10
 
   Desde obra-9 (25-oct-2026) el local tiene su ÁLBUM WEB: fotos y videos por
   sección, en `albumes/<id>`, que album.html muestra a quien tenga el enlace,
@@ -180,7 +180,7 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-9";
 import { doc, getDoc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
-P.PANEL = "obra-9";
+P.PANEL = "obra-10";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;
@@ -404,8 +404,10 @@ function pintar() {
    tal cual, hasta 100 MB (el techo del plan gratis de Cloudinary). Sacar uno
    lo saca del álbum: el archivo queda en Cloudinary, porque acá no hay
    `api_secret` (lo mismo que en CasaYourte). */
-const SECCIONES_INICIALES = ["Todo el edificio", "Primer piso · showroom y depósito",
-  "Segundo piso · oficinas y depósito", "Tercer piso · oficina y depósito"];
+/* Los pisos con los nombres de Mauro del 25-oct: «planta baja a la planta de
+   entrada, primer piso al piso siguiente, y segundo piso es el último». */
+const SECCIONES_INICIALES = ["Todo el edificio", "Planta baja · showroom y depósito del fondo",
+  "Primer piso · oficinas y depósito", "Segundo piso · oficina y depósito"];
 const VIDEO_MAX = 100 * 1024 * 1024;
 const enlaceAlbum = (id) => new URL("album.html?a=" + encodeURIComponent(id), location.href).href;
 const seccionesAlbum = (a) => Object.entries((a && a.secciones) || {}).map(([id, s]) => ({ id, ...(s || {}) }))

@@ -571,8 +571,10 @@ panel de acceso».
 - **El ÁLBUM WEB del local** (`obra-9`, `album.html`, reglas v8, 25-oct-2026,
   Mauro: «un álbum web simple que se divida en todo el edificio, primer piso
   showroom y depósito, segundo piso oficinas y depósito, tercer piso oficina y
-  depósito… Y videos»). En la vista del local, «🖼 Álbum web» lo crea con esas
-  cuatro secciones (se renombran y se suman), carga fotos y videos por sección
+  depósito… Y videos»). En la vista del local, «🖼 Álbum web» lo crea con
+  cuatro secciones —desde `obra-10` con los nombres de pisos del 25-oct:
+  todo el edificio, planta baja (la de entrada), primer piso y segundo piso
+  (el último)— que se renombran y se suman, carga fotos y videos por sección
   a Cloudinary (misma cuenta y preset sin firma que los sitios; las fotos se
   achican a 2000 px en el teléfono, los videos van tal cual hasta 100 MB) y da
   el enlace: `album.html?a=<id del proyecto>`. **Lo ve quien tenga el enlace,
@@ -595,11 +597,11 @@ teléfono.
 | `nucleo.js` | `P.VERSION` | `nucleo-9` |
 | `index.html` | `P.PANEL` | `panel-43` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
-| `obra.html` | `P.PANEL` | `obra-9` |
+| `obra.html` | `P.PANEL` | `obra-10` |
 | `album.html` | `SELLO` | `album-1` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v40` |
+| `sw.js` | `VERSION` | `panel-shell-v41` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

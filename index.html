@@ -554,7 +554,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-42";
+P.PANEL = "panel-43";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2067,8 +2067,37 @@ function pintarTandas() {
         ? '<p class="gris mono" style="margin:.35rem 0 0;font-size:.72rem">'
           + t.sellos.map((x) => P.esc(x)).join(" · ") + "</p>"
         : "")
+      + pasosDeTanda(t.pasos)
       + "</div>";
   }).join("") || (TANDAS.length ? '<p class="gris">Ninguna en este proyecto.</p>' : "");
+}
+
+/* panel-43 (25-oct-2026, Mauro: «en la pestaña de tandas una lista de los
+   pasos para las pruebas… todos los pasos para seguir en las pruebas con el
+   vehículo en ruta»). Una tanda puede traer `pasos`: [{grupo, titulo, como,
+   para}], que se muestran numerados y agrupados en el orden en que vienen
+   («En el garage», «En ruta»…). Sigue siendo de LECTURA: lo escribe quien
+   hizo la tanda, y lo que Mauro contesta va al pendiente de cada paso. */
+function pasosDeTanda(pasos) {
+  if (!Array.isArray(pasos) || !pasos.length) return "";
+  const grupos = [];
+  for (const x of pasos) {
+    if (!x || !x.titulo) continue;
+    const g = String(x.grupo || "");
+    let caja = grupos.find((y) => y.g === g);
+    if (!caja) grupos.push(caja = { g, lista: [] });
+    caja.lista.push(x);
+  }
+  return grupos.map((g) => (g.g ? '<h3 style="margin:.8rem 0 .2rem;font-size:.95rem">'
+      + P.esc(g.g) + "</h3>" : "")
+    + '<ol style="margin:.2rem 0 0;padding-left:1.3rem">'
+    + g.lista.map((x) => '<li style="margin:.45rem 0"><b>' + P.esc(x.titulo) + "</b>"
+      + (x.como ? '<div style="margin-top:.15rem">' + P.esc(x.como) + "</div>" : "")
+      + (x.para ? '<div class="gris" style="margin-top:.15rem;font-size:.85rem">Para qué: '
+        + P.esc(x.para) + "</div>" : "")
+      + (x.pendiente ? '<div class="gris mono" style="font-size:.72rem">' + P.esc(x.pendiente) + "</div>" : "")
+      + "</li>").join("")
+    + "</ol>").join("");
 }
 
 let reglasLeidas = false;

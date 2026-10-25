@@ -1787,5 +1787,14 @@ console.log("\n· La foto de la factura");
   ok(!/subirCaptura[^\n]*onchange|onchange[^\n]*subirCaptura/.test(ob), "la imagen se sube al GUARDAR, nunca al elegirla");
 }
 
+// panel-43: una tanda puede traer la lista de pruebas (`pasos`), agrupada y escapada.
+{
+  console.log("\n· Los pasos de una tanda (panel-43)");
+  ok(html.includes("+ pasosDeTanda(t.pasos)") && /function pasosDeTanda\(pasos\)/.test(html),
+     "la tarjeta de una tanda muestra sus pasos");
+  ok(/P\.esc\(x\.titulo\)/.test(html) && /P\.esc\(x\.como\)/.test(html) && /P\.esc\(g\.g\)/.test(html),
+     "lo que se escribe en un paso se escapa: es texto, nunca HTML");
+}
+
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

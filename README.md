@@ -381,7 +381,11 @@ lista que mantener. Lo escribe quien hizo el trabajo, con la herramienta, en la
 misma tanda.
 
 Cada tanda lleva `fecha`, `titulo`, `proyectos` (puede tocar varios), `entrega`,
-`porQue` y opcionalmente los `sellos` que subieron. Sigue al selector de app
+`porQue` y opcionalmente los `sellos` que subieron. Desde `panel-43` puede
+traer además `pasos` —`[{grupo, titulo, como, para, pendiente}]`—, que se
+muestran numerados y agrupados («En el garage», «En ruta»): es la lista de
+pruebas que una tanda le deja a Mauro (pedido del 25-oct-2026 para la Hilux).
+Lo que él contesta va al pendiente de cada paso, no a la tanda. Sigue al selector de app
 como todo lo demás, y se ordena de la más nueva a la más vieja: lo que se quiere
 ver al abrir es qué pasó último.
 
@@ -574,12 +578,12 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-9` |
-| `index.html` | `P.PANEL` | `panel-42` |
+| `index.html` | `P.PANEL` | `panel-43` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
 | `obra.html` | `P.PANEL` | `obra-8` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v38` |
+| `sw.js` | `VERSION` | `panel-shell-v39` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

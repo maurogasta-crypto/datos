@@ -2,6 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
+//  v8 · 2026-10-25 · los ÁLBUMES públicos de un proyecto de inmueble (General Flores): se leen sin cuenta, de a uno
 //  v7 · 2026-10-15 · un invitado EDITA los proyectos de inmuebles que Mauro le marca (`edita`)
 //  v6 · 2026-10-06 · entran los INVITADOS: `personas/` y `solicitudes/` (panel:U2)
 //  v5 · 2026-09-14 · entra `lineas/`: en qué se está trabajando y quién
@@ -333,6 +334,26 @@ service cloud.firestore {
     match /fichas/{id}     { allow read: if persona() && resource.data.proyecto in susProyectos(); }
 
     // ── El cierre, que NO cierra ──
+    // ── v8 · LOS ÁLBUMES PÚBLICOS (2026-10-25) ──
+    // Mauro: «un álbum web simple» de General Flores —el edificio, y cada
+    // piso con su showroom, oficinas y depósito—, con fotos y videos, «con
+    // enlace, sin cuenta», para mostrárselo a quien quiera alquilar.
+    //
+    // Es la ÚNICA colección que se lee sin sesión, y por eso es aparte: el
+    // proyecto (`proyectos/`) tiene la plata, los contratos y los
+    // arrendatarios, y no se abre ni un campo. Acá sólo hay títulos de
+    // secciones y direcciones de imágenes de Cloudinary, que ya son públicas
+    // por diseño.
+    //
+    // Sólo `get`: con la dirección exacta se lee UN álbum, y no se puede
+    // listar la colección para ver cuáles hay. Escribe el equipo (Mauro
+    // desde la ficha del proyecto, el agente si se lo pide), y el equipo
+    // también lista: es lo que deja al agente bajarla en el respaldo.
+    match /albumes/{id} {
+      allow get: if true;
+      allow list, write: if equipo();
+    }
+
     // Ojo con leerlo como un candado: en Firestore los permisos se SUMAN y
     // un `if false` no le resta nada a lo de arriba. Lo que niega de verdad
     // es el deny por defecto — una colección sin bloque propio es

@@ -1796,5 +1796,56 @@ console.log("\n· La foto de la factura");
      "lo que se escribe en un paso se escapa: es texto, nunca HTML");
 }
 
+// album-1 / obra-9: el álbum público de un proyecto (General Flores).
+{
+  console.log("\n· El álbum web público (album-1)");
+  const fuente = fs.readFileSync(RAIZ + "album.html", "utf8");
+  const codigo = (fuente.match(/<script type="module">([\s\S]*?)<\/script>/) || [])[1] || "";
+  ok(!/import\s/.test(codigo), "la página pública no importa nada del panel (ni el SDK)");
+  const S = (v) => ({ stringValue: v }), M = (f) => ({ mapValue: { fields: f } });
+  const C = "https://res.cloudinary.com/dnwfu8ffn/";
+  const docAlbum = { fields: {
+    titulo: S("General Flores <b>"),
+    secciones: M({ s1: M({ nombre: S("Todo el edificio"), orden: { integerValue: "10" } }),
+                   s2: M({ nombre: S("Primer piso"), orden: { integerValue: "20" } }),
+                   s3: M({ nombre: S("Vacía"), orden: { integerValue: "30" } }) }),
+    medios: M({ a: M({ url: S(C + "image/upload/v1/albumes/x/f1.jpg"), tipo: S("foto"), seccion: S("s2"), orden: { integerValue: "1" } }),
+                b: M({ url: S(C + "video/upload/v1/albumes/x/v1.mp4"), tipo: S("video"), seccion: S("s1"), orden: { integerValue: "2" }, titulo: S("Recorrida") }),
+                c: M({ url: S("https://otro.com/x.jpg"), tipo: S("foto"), seccion: S("s1") }),
+                d: M({ url: S(C + "image/upload/v1/f2.jpg"), tipo: S("foto"), seccion: S("borrada") }) }) } };
+  const correr = async (busqueda, respuesta) => {
+    const dom = new JSDOM(fuente.replace(/<script type="module">[\s\S]*?<\/script>/, ""), { url: "https://x.github.io/datos/album.html" + busqueda, runScripts: "outside-only" });
+    const pedidos = [];
+    dom.window.fetch = async (u) => { pedidos.push(String(u)); return respuesta; };
+    dom.window.scrollTo = () => {};
+    dom.window.eval(codigo);
+    await new Promise((r) => setTimeout(r, 20));
+    return { d: dom.window.document, pedidos };
+  };
+  let { d, pedidos } = await correr("?a=general-flores", { ok: true, status: 200, json: async () => docAlbum });
+  ok(pedidos.length === 1 && /documents\/albumes\/general-flores\?key=/.test(pedidos[0]), "lee UN documento por REST, por su id");
+  ok(d.getElementById("titulo").textContent === "General Flores <b>" && !d.getElementById("titulo").querySelector("b"), "el título es texto, nunca HTML");
+  const tabs = [...d.querySelectorAll("[data-tab]")].map((b) => b.dataset.tab);
+  ok(tabs.join() === "todo,s1,s2", "pestañas: Todo y las secciones que tienen algo, en su orden (la vacía no)");
+  const imgs = [...d.querySelectorAll(".med img")].map((i) => i.getAttribute("src"));
+  ok(imgs.length === 3 && !imgs.some((u) => u.includes("otro.com")), "sólo dibuja lo de NUESTRA cuenta de Cloudinary");
+  ok(imgs[0].includes("/video/upload/so_1,") && imgs[0].endsWith(".jpg") && d.querySelector(".med .play"), "un video muestra un cuadro como tapa, con ▶");
+  ok(d.body.textContent.includes("Otras"), "lo de una sección borrada no se pierde: va a «Otras»");
+  d.querySelector("[data-i='0']").click();
+  ok(d.getElementById("visor").classList.contains("on") && d.querySelector("#visorMedio video[controls]"), "tocar un video lo abre en el visor, con controles");
+  d.getElementById("visorSig").click();
+  ok(d.querySelector("#visorMedio img") && d.getElementById("visorCuenta").textContent === "2 de 3", "el visor pasa a la siguiente");
+  d.querySelector("[data-tab='s2']").click();
+  ok(d.querySelectorAll(".med").length === 1, "una pestaña muestra sólo su sección");
+  ({ d, pedidos } = await correr("?a=../claves", { ok: true, json: async () => ({}) }));
+  ok(pedidos.length === 0 && /ningún álbum/.test(d.body.textContent), "un id raro no se pide: no hay forma de salir de `albumes/`");
+  ({ d } = await correr("?a=otro", { ok: false, status: 404, json: async () => ({}) }));
+  ok(/todavía no existe/.test(d.body.textContent), "un álbum que no existe lo dice");
+  const ob = fs.readFileSync(RAIZ + "obra.html", "utf8");
+  ok(/!u && !invitado && \(grupo === "fotos" \|\| grupo === "todo"\) \? albumHTML\(o\)/.test(ob), "el editor del álbum no se le muestra a un invitado (la regla tampoco lo deja)");
+  ok(/VIDEO_MAX = 100 \* 1024 \* 1024/.test(ob) && /P\.achicar\(file, 2000\)/.test(ob), "videos hasta 100 MB (plan gratis) y fotos achicadas en el teléfono");
+  ok(!fs.readFileSync(RAIZ + "sw.js", "utf8").includes("album.html"), "la página pública no está en el SHELL del panel");
+}
+
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

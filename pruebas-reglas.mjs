@@ -185,8 +185,18 @@ caso("el equipo llega a las seis colecciones del estado, y a ninguna más", () =
     trae(r, "match /" + c + "/{id}", "falta la colección");
   }
   const declaradas = [...new Set([...r.matchAll(/match \/([a-z-]+)\/\{(?:id|uid)\}/g)].map((m) => m[1]))].sort();
-  igual(declaradas.join(","), "claves,fichas,lineas,pendientes,personas,protocolos,proyectos,reservas,solicitudes,tandas",
+  igual(declaradas.join(","), "albumes,claves,fichas,lineas,pendientes,personas,protocolos,proyectos,reservas,solicitudes,tandas",
     "cambió la lista de colecciones: si entró una nueva, agregala acá y a las reglas");
+});
+
+caso("v8: un álbum se LEE sin cuenta, de a uno, y nada más se abre", () => {
+  const al = r.slice(r.indexOf("match /albumes/{id}"), r.indexOf("}", r.indexOf("write: if equipo", r.indexOf("match /albumes/{id}"))) + 1);
+  trae(al, "allow get: if true;", "el álbum tiene que leerse sin sesión");
+  noTrae(al, "allow read", "`read` incluye `list`: se podría ver qué álbumes hay");
+  trae(al, "allow list, write: if equipo();", "lista y escribe el equipo y nadie más: sin sesión no se lista");
+  // Ninguna otra colección se abre sin sesión.
+  const abiertas = r.split("\n").filter((l) => /if true;/.test(l));
+  igual(abiertas.length, 1, "un solo `if true` en todas las reglas: el del álbum");
 });
 
 console.log("\nlos casos límite, que son los que rompen de verdad\n");

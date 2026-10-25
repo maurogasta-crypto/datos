@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Álbum</title>
+<meta name="theme-color" content="#f4f1ea">
+<link rel="icon" href="./icono-192.png">
+<!--
+  album.html — El ÁLBUM PÚBLICO de un proyecto de inmueble. Sello: album-1
+  (25-oct-2026, Mauro: «un álbum web simple que se divida en todo el
+  edificio, primer piso showroom y depósito, segundo piso oficinas y
+  depósito, tercer piso oficina y depósito… cargar las imágenes igual que en
+  los sitios de Casa Verde y Casa Yourte en Cloudinary. Y videos». Lo ve
+  quien tenga el enlace, SIN cuenta).
+
+  · Lee UN documento, `albumes/<id>`, por la API REST de Firestore, sin SDK
+    y sin sesión: la regla deja `get` a cualquiera y nunca `list`, así que
+    sin el id no se encuentra nada. Es la misma lectura que la portada de
+    CasaYourte. Lo escribe obra.html (sólo Mauro y el agente).
+  · No importa nucleo.js ni firebase-init.js a propósito: una página pública
+    no carga lo del panel, y si gstatic no contesta igual se ve.
+  · Sólo muestra direcciones de NUESTRA cuenta de Cloudinary: lo que no
+    empiece con res.cloudinary.com/dnwfu8ffn/ no se dibuja.
+  · No está en el SHELL del service worker: es para gente de afuera.
+  · noindex: un enlace que se comparte no es una página para buscadores.
+-->
+<style>
+  :root {
+    --fondo:#f4f1ea; --papel:#fffdf8; --tinta:#1f1d1a; --gris:#6d6860; --linea:#e2ddd2; --acento:#8a5a2b;
+    --r:10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --fondo:#15171a; --papel:#1d2024; --tinta:#ece9e3; --gris:#a49f96; --linea:#2f343b; --acento:#d8a657; }
+  }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--fondo); color:var(--tinta);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.45; }
+  .cont { max-width:1100px; margin:0 auto; padding:0 16px calc(env(safe-area-inset-bottom,0px) + 32px); }
+  header { padding:calc(env(safe-area-inset-top,0px) + 22px) 0 6px; }
+  h1 { font-size:clamp(1.4rem, 4vw, 2rem); margin:0; letter-spacing:-.01em; }
+  .sub { color:var(--gris); margin:.2rem 0 0; }
+  .tabs { position:sticky; top:0; z-index:5; background:var(--fondo); display:flex; gap:.4rem; overflow-x:auto;
+    padding:.7rem 0; margin:0 0 .4rem; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab { flex:none; border:1px solid var(--linea); background:var(--papel); color:var(--tinta); border-radius:999px;
+    padding:.45rem .9rem; font:inherit; font-size:.9rem; cursor:pointer; white-space:nowrap; }
+  .tab small { color:var(--gris); margin-left:.3rem; }
+  .tab.on { background:var(--tinta); color:var(--fondo); border-color:var(--tinta); }
+  .tab.on small { color:inherit; opacity:.7; }
+  h2 { font-size:1.05rem; margin:1.4rem 0 .6rem; }
+  .grilla { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:8px; }
+  @media (min-width:700px) { .grilla { grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:10px; } }
+  .med { position:relative; aspect-ratio:4/3; border:0; padding:0; border-radius:var(--r); overflow:hidden;
+    background:var(--linea); cursor:pointer; display:block; width:100%; }
+  .med img { width:100%; height:100%; object-fit:cover; display:block; }
+  .med .play { position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
+  .med .play span { width:48px; height:48px; border-radius:50%; background:rgba(0,0,0,.55); color:#fff;
+    display:grid; place-items:center; font-size:1.2rem; padding-left:3px; }
+  .med .tit { position:absolute; left:0; right:0; bottom:0; padding:.9rem .5rem .35rem; font-size:.78rem; color:#fff;
+    background:linear-gradient(transparent, rgba(0,0,0,.6)); text-align:left; }
+  .vacio, .falla { color:var(--gris); padding:2rem 0; text-align:center; }
+  /* el visor */
+  #visor { position:fixed; inset:0; z-index:50; background:rgba(0,0,0,.94); display:none; flex-direction:column; }
+  #visor.on { display:flex; }
+  #visor .arriba { display:flex; justify-content:space-between; align-items:center; gap:.5rem; color:#ddd;
+    padding:calc(env(safe-area-inset-top,0px) + 8px) 12px 8px; font-size:.9rem; }
+  #visor .medio { flex:1; min-height:0; display:grid; place-items:center; position:relative; }
+  #visor img, #visor video { max-width:100%; max-height:100%; object-fit:contain; display:block; }
+  #visor button { background:rgba(255,255,255,.12); color:#fff; border:0; border-radius:999px; font:inherit;
+    min-width:44px; min-height:44px; cursor:pointer; font-size:1.1rem; }
+  #visor .ant, #visor .sig { position:absolute; top:50%; transform:translateY(-50%); }
+  #visor .ant { left:8px; } #visor .sig { right:8px; }
+  #visor .pie { color:#ccc; text-align:center; padding:8px 12px calc(env(safe-area-inset-bottom,0px) + 12px); font-size:.88rem; min-height:2rem; }
+</style>
+</head>
+<body>
+<div class="cont">
+  <header><h1 id="titulo">Álbum</h1><p class="sub" id="sub"></p></header>
+  <nav class="tabs" id="tabs" aria-label="Secciones"></nav>
+  <main id="contenido"><p class="vacio">Cargando…</p></main>
+</div>
+
+<div id="visor" role="dialog" aria-modal="true" aria-label="Foto o video">
+  <div class="arriba"><span id="visorCuenta"></span><button id="visorCerrar" aria-label="Cerrar">✕</button></div>
+  <div class="medio" id="visorMedio"></div>
+  <button class="ant" id="visorAnt" aria-label="Anterior">‹</button>
+  <button class="sig" id="visorSig" aria-label="Siguiente">›</button>
+  <div class="pie" id="visorPie"></div>
+</div>
+
+<script type="module">
+const SELLO = "album-1";
+/* Identifica el proyecto de Firebase del panel; NO da permisos (los da la
+   regla de `albumes/`). Es el mismo valor de firebase-init.js. */
+const CLAVE = "AIzaSyAxWOM9ZEHt6CXh8Nf1qU6FvL2uh1wFbug", PROYECTO = "datos-830f8";
+const NUESTRA = /^https:\/\/res\.cloudinary\.com\/dnwfu8ffn\/(image|video)\/upload\//;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* Un valor de la API REST trae su tipo adentro ({stringValue: "…"}). */
+function valor(v) {
+  if (!v || typeof v !== "object") return null;
+  if ("stringValue" in v) return v.stringValue;
+  if ("integerValue" in v) return Number(v.integerValue);
+  if ("doubleValue" in v) return Number(v.doubleValue);
+  if ("booleanValue" in v) return v.booleanValue;
+  if ("timestampValue" in v) return v.timestampValue;
+  if ("mapValue" in v) return campos(v.mapValue.fields);
+  if ("arrayValue" in v) return (v.arrayValue.values || []).map(valor);
+  return null;
+}
+const campos = (f) => Object.fromEntries(Object.entries(f || {}).map(([k, v]) => [k, valor(v)]));
+
+/* Las transformaciones de Cloudinary van después de «/upload/». */
+const conTransf = (url, t) => url.replace(/\/(image|video)\/upload\//, (m) => m + t + "/");
+const miniatura = (m) => m.tipo === "video"
+  ? conTransf(m.url, "so_1,w_600,h_450,c_fill,q_auto").replace(/\.[a-z0-9]+$/i, ".jpg")
+  : conTransf(m.url, "w_600,h_450,c_fill,q_auto,f_auto");
+const grande = (m) => m.tipo === "video" ? m.url : conTransf(m.url, "w_2000,c_limit,q_auto,f_auto");
+
+let A = null, SECC = [], MEDIOS = [], tab = "todo", lista = [], pos = 0;
+
+async function cargar() {
+  const id = new URLSearchParams(location.search).get("a") || "";
+  if (!/^[a-z0-9][a-z0-9-]{0,59}$/.test(id)) { $("contenido").innerHTML = `<p class="falla">Este enlace no lleva a ningún álbum.</p>`; return; }
+  try {
+    const r = await fetch(`https://firestore.googleapis.com/v1/projects/${PROYECTO}/databases/(default)/documents/albumes/${id}?key=${CLAVE}`);
+    if (r.status === 404) { $("contenido").innerHTML = `<p class="falla">Este álbum todavía no existe.</p>`; return; }
+    if (!r.ok) throw new Error("la base contestó " + r.status);
+    A = campos((await r.json()).fields);
+  } catch (e) {
+    $("contenido").innerHTML = `<p class="falla">No se pudo cargar el álbum (${esc(e.message)}). Probá de nuevo en un rato.</p>`; return;
+  }
+  document.title = A.titulo || "Álbum";
+  $("titulo").textContent = A.titulo || "Álbum";
+  $("sub").textContent = A.subtitulo || "";
+  SECC = Object.entries(A.secciones || {}).map(([id, s]) => ({ id, ...(s || {}) })).filter((s) => s.nombre)
+    .sort((a, b) => (a.orden || 0) - (b.orden || 0) || String(a.nombre).localeCompare(String(b.nombre)));
+  const ordenSecc = (id) => { const i = SECC.findIndex((s) => s.id === id); return i < 0 ? 999 : i; };
+  MEDIOS = Object.entries(A.medios || {}).map(([id, m]) => ({ id, ...(m || {}) }))
+    .filter((m) => NUESTRA.test(String(m.url || "")) && (m.tipo === "foto" || m.tipo === "video"))
+    .sort((a, b) => ordenSecc(a.seccion) - ordenSecc(b.seccion) || (a.orden || 0) - (b.orden || 0) || String(a.creadoEn || "").localeCompare(String(b.creadoEn || "")));
+  pintar();
+}
+
+function pintar() {
+  const deSecc = (id) => MEDIOS.filter((m) => m.seccion === id);
+  const conAlgo = SECC.filter((s) => deSecc(s.id).length);
+  if (tab !== "todo" && !conAlgo.some((s) => s.id === tab)) tab = "todo";
+  $("tabs").innerHTML = conAlgo.length > 1
+    ? `<button class="tab${tab === "todo" ? " on" : ""}" data-tab="todo">Todo<small>${MEDIOS.length}</small></button>` +
+      conAlgo.map((s) => `<button class="tab${tab === s.id ? " on" : ""}" data-tab="${esc(s.id)}">${esc(s.nombre)}<small>${deSecc(s.id).length}</small></button>`).join("")
+    : "";
+  const mostrar = tab === "todo" ? conAlgo : conAlgo.filter((s) => s.id === tab);
+  lista = mostrar.flatMap((s) => deSecc(s.id));
+  // Lo que quedó sin sección (una sección borrada) va al final, para que no se pierda.
+  if (tab === "todo") lista = lista.concat(MEDIOS.filter((m) => !SECC.some((s) => s.id === m.seccion)));
+  if (!lista.length) { $("contenido").innerHTML = `<p class="vacio">Todavía no hay fotos ni videos.</p>`; enganchar(); return; }
+  let i = 0;
+  const tarjeta = (m) => `<button class="med" data-i="${i++}" aria-label="${esc(m.titulo || (m.tipo === "video" ? "Video" : "Foto"))}">
+      <img src="${esc(miniatura(m))}" alt="" loading="lazy">
+      ${m.tipo === "video" ? `<span class="play"><span>▶</span></span>` : ""}
+      ${m.titulo ? `<span class="tit">${esc(m.titulo)}</span>` : ""}</button>`;
+  const sueltos = tab === "todo" ? MEDIOS.filter((m) => !SECC.some((s) => s.id === m.seccion)) : [];
+  $("contenido").innerHTML = mostrar.map((s) => `<section>${mostrar.length > 1 || tab === "todo" ? `<h2>${esc(s.nombre)}</h2>` : ""}
+      <div class="grilla">${deSecc(s.id).map(tarjeta).join("")}</div></section>`).join("")
+    + (sueltos.length ? `<section><h2>Otras</h2><div class="grilla">${sueltos.map(tarjeta).join("")}</div></section>` : "");
+  enganchar();
+}
+
+function enganchar() {
+  for (const b of document.querySelectorAll("[data-tab]")) b.onclick = () => { tab = b.dataset.tab; pintar(); window.scrollTo({ top: 0 }); };
+  for (const b of document.querySelectorAll("[data-i]")) b.onclick = () => abrir(Number(b.dataset.i));
+}
+
+/* ── el visor ── */
+function abrir(i) {
+  pos = (i + lista.length) % lista.length;
+  const m = lista[pos];
+  $("visorMedio").innerHTML = m.tipo === "video"
+    ? `<video src="${esc(grande(m))}" poster="${esc(miniatura(m))}" controls playsinline autoplay></video>`
+    : `<img src="${esc(grande(m))}" alt="${esc(m.titulo || "")}">`;
+  const s = SECC.find((x) => x.id === m.seccion);
+  $("visorPie").textContent = [m.titulo, s && s.nombre].filter(Boolean).join(" · ");
+  $("visorCuenta").textContent = `${pos + 1} de ${lista.length}`;
+  $("visorAnt").style.display = $("visorSig").style.display = lista.length > 1 ? "" : "none";
+  $("visor").classList.add("on");
+  document.body.style.overflow = "hidden";
+}
+function cerrar() {
+  $("visor").classList.remove("on"); $("visorMedio").innerHTML = ""; document.body.style.overflow = "";
+}
+$("visorCerrar").onclick = cerrar;
+$("visorAnt").onclick = () => abrir(pos - 1);
+$("visorSig").onclick = () => abrir(pos + 1);
+document.addEventListener("keydown", (e) => {
+  if (!$("visor").classList.contains("on")) return;
+  if (e.key === "Escape") cerrar(); else if (e.key === "ArrowLeft") abrir(pos - 1); else if (e.key === "ArrowRight") abrir(pos + 1);
+});
+/* Deslizar con el dedo, sólo en las fotos: en un video el gesto es de los controles. */
+let x0 = null;
+$("visorMedio").addEventListener("touchstart", (e) => { x0 = e.target.tagName === "IMG" ? e.touches[0].clientX : null; }, { passive: true });
+$("visorMedio").addEventListener("touchend", (e) => {
+  if (x0 === null) return;
+  const dx = e.changedTouches[0].clientX - x0; x0 = null;
+  if (Math.abs(dx) > 50) abrir(pos + (dx < 0 ? 1 : -1));
+});
+
+window.ALBUM = { valor, campos, miniatura, grande, SELLO };
+cargar();
+</script>
+</body>
+</html>

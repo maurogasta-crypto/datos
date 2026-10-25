@@ -229,6 +229,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   y el banco de reglas y el emulador lo comprueban. El cupo de los invitados
   —12 pedidos resueltos por día, entre los sitios en desarrollo— lo aplica el
   agente al resolver, no la base.
+- **Hay UNA colección que se lee sin cuenta: `albumes/`** (reglas v8,
+  25-oct-2026, `obra-9`, `album.html`). Es el álbum web de un proyecto de
+  inmueble —General Flores—, que Mauro pidió «con enlace, sin cuenta»: sólo
+  `get` de un documento por su id, **nunca listar**, y lo escriben Mauro y el
+  agente. Nada que no sea una foto o un video para mostrar va ahí: es público
+  para quien tenga el enlace. El banco de reglas falla si aparece otro
+  `if true`.
 - **Las reglas se editan completas, nunca por fragmentos:** se suman. Y lo que
   el agente no toca está escrito **en dos lugares**: `reglas.txt` acá y
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El

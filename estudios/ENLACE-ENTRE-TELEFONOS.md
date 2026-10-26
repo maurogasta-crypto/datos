@@ -103,21 +103,49 @@ Pizarra, que ya existe (`avisos/`), y te llegan como notificación.
 en cualquier lado». El directo es más rápido y no gasta base; el de la base
 anda siempre.
 
-### C · Cerca y sin internet: Bluetooth o wi-fi directo
+### C · Cerca y sin datos: el wi-fi de la casa y el Bluetooth del auto
 
-Para cuando estás en la camioneta, al lado, o en el campo sin señal: los dos
-teléfonos se encuentran solos por Bluetooth y wi-fi directo.
+**Mauro, 26-oct: «me interesa que se pueda utilizar sin consumir datos, para
+que ande offline en el caso de tener dos dispositivos cercanos dentro del
+mismo auto o dentro de la misma casa, y que pueda despertar al teléfono».**
+Esto pasa a ser lo primero, y se puede hacer **sin biblioteca nueva**: todo lo
+que hace falta viene con Android.
 
-- Lo resuelve **Nearby Connections**, de los servicios de Google que ya traen
-  los dos Xiaomi: elige solo entre Bluetooth y wi-fi directo, sin internet y
-  sin cupo.
-- Es **una tercera dependencia** para la Pizarra, que hoy tiene dos y un banco
-  que falla si aparece otra. Hay que decidirlo a propósito.
-- Pide permisos de dispositivos cercanos, la primera vez.
+| Dónde | Cómo se encuentran | Cómo hablan | Datos móviles | Probabilidad |
+|---|---|---|---|---|
+| **En la casa** (los dos en el mismo wi-fi) | se anuncian en la red local (NSD, el «mDNS» de Android) | directo por la red de la casa | **cero**: no sale a internet | 90 % |
+| **En el auto** (no hay wi-fi) | Bluetooth, **emparejados una vez** desde los ajustes del teléfono | Bluetooth clásico, unos 10 m | **cero** | 80 % |
 
-**Probabilidad de que ande: 80 %** a menos de 30 m; con el teléfono adentro de
-la cabina y vos afuera, menos. Lo que más suele fallar: permisos negados y
-MIUI cortando el Bluetooth en segundo plano.
+**Despertar sin internet.** Sin internet no hay aviso de Firebase, así que el
+teléfono que tiene que «despertarse» deja una escucha liviana: un servicio de
+la Pizarra con su notificación fija («Pizarra · escuchando cerca»), con el
+Bluetooth y la red local abiertos. Cuando llega algo —una línea marcada, un
+viaje que terminó, un «llamame» del handy—, suena y lo muestra aunque la
+pantalla esté apagada. **Probabilidad: 85 %**; lo que más falla es MIUI
+matando servicios (autostart y batería sin restricciones, en los dos).
+
+- La escucha gasta poco: un Bluetooth esperando conexión y la red local
+  anunciada. En el Note 9, que va enchufado, no importa; en tu teléfono, la
+  notificación fija dice que está escuchando y se apaga con un toque.
+- Pide los permisos de Bluetooth y de dispositivos cercanos una vez.
+- **Lo que no se puede probar desde un chat**: el Bluetooth y la red local se
+  prueban en los dos teléfonos.
+
+**Y Nearby Connections** (de Google: elige solo entre Bluetooth y wi-fi directo
+y no pide emparejar) queda como alternativa si el Bluetooth emparejado da
+problemas. Es la tercera dependencia de la Pizarra: se decide después de
+probar lo de arriba.
+
+### Y el registro no depende del enlace
+
+Mauro, el mismo día: «la propia apk, al estar conectada e iniciada en el
+dispositivo que va a funcionar como detector, debería funcionar
+automáticamente los recorridos para que siga habiendo un registro». Hecho en
+**`sitd-56`**: el viaje empieza solo con el cargador —también si la app se abre
+con el motor ya en marcha— y se cierra con el cargador cortado y la camioneta
+quieta 3 minutos (el cargador del encendedor se corta andando). **Hay que
+prender «Empezar y terminar con el motor» en el Note 9**: estaba apagado. La
+Pizarra no mide nada: si el enlace se cae, la Hilux sigue registrando igual.
 
 ---
 
@@ -172,18 +200,18 @@ ya está decidido que, si se carga, es uno de cupo fijo sin tarjeta.
 
 ---
 
-## 6 · En qué orden, y cuánto lleva
+## 6 · En qué orden, y cuánto lleva (rehecho el 26-oct, sin datos primero)
 
 | Paso | Qué | Repos | Tandas | Decide Mauro |
 |---|---|---|---|---|
-| 0 | Publicar las reglas de la Hilux de `sitd-55` (las publicadas son de antes: no traen `grabaciones/`) | — | — | sí |
-| 1 | Puerta local Hilux → Pizarra, y los **eventos** al buzón | sitd-hilux, pizarra | 1 | no |
-| 2 | «🚙 Hilux en vivo»: canal directo + plan B por la base, `enlaces/` con su regla | pizarra, tiempos (regla) | 1 a 2 | publicar las reglas de Tiempos |
-| 3 | Bluetooth / wi-fi directo (Nearby) | pizarra | 1 a 2 | **la tercera dependencia** |
-| 4 | Handy en vivo, por internet y sin internet | pizarra | 1 | no |
-| — | Un TURN de cupo fijo, para que el directo ande 4G contra 4G | Netlify | — | elegir el proveedor y cargar `TURN_*` |
+| 0 | Publicar las reglas de la Hilux de `sitd-55` (276 líneas) y prender «Empezar y terminar con el motor» en el Note 9 | — | — | sí |
+| ✓ | Viajes solos en el detector (`sitd-56`) | sitd-hilux | hecho | — |
+| 1 | Puerta local Hilux → Pizarra en el Note 9 | sitd-hilux, pizarra | 1 | no |
+| 2 | **Enlace sin datos**: wi-fi de la casa + Bluetooth del auto, con la escucha que despierta | pizarra | 1 a 2 | no (sin biblioteca nueva) |
+| 3 | Handy en vivo por ese mismo enlace, sin datos | pizarra | 1 | no |
+| 4 | El enlace por internet (lejos): canal directo + por la base | pizarra, tiempos (regla) | 1 a 2 | publicar las reglas de Tiempos |
+| — | Nearby, si el Bluetooth emparejado no alcanza | pizarra | 1 | la tercera dependencia |
 
-**Recomendación:** hacer 1 y 2 juntos —con eso ya ves la camioneta en vivo
-desde cualquier lado y te llegan los eventos— y decidir 3 después de usarlo
-una semana. El 3 es el único que agrega una dependencia, y el que más depende
-de probarlo en la mano.
+**Recomendación:** 1 y 2 juntos —el Note 9 le pasa todo a su Pizarra, y tu
+Pizarra lo recibe sin datos en la casa o en el auto, y suena cuando hay algo—,
+después el handy (3) y recién después lo de lejos (4).

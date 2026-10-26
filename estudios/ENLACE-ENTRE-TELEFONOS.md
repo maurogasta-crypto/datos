@@ -206,8 +206,8 @@ ya está decidido que, si se carga, es uno de cupo fijo sin tarjeta.
 |---|---|---|---|---|
 | 0 | Publicar las reglas de la Hilux de `sitd-55` (276 líneas) y prender «Empezar y terminar con el motor» en el Note 9 | — | — | sí |
 | ✓ | Viajes solos en el detector (`sitd-56`) | sitd-hilux | hecho | — |
-| 1 | Puerta local Hilux → Pizarra en el Note 9 | sitd-hilux, pizarra | 1 | no |
-| 2 | **Enlace sin datos**: wi-fi de la casa + Bluetooth del auto, con la escucha que despierta | pizarra | 1 a 2 | no (sin biblioteca nueva) |
+| ✓ | Puerta local Hilux → Pizarra en el Note 9 (`sitd-57`, `pizarra-70`: un proveedor de contenido, por paquete y firma) | sitd-hilux, pizarra | hecho | — |
+| ✓ | **Enlace sin datos**: wi-fi de la casa + Bluetooth del auto, con la escucha que despierta (`pizarra-70`; falta probarlo en los teléfonos) | pizarra | hecho | — |
 | 3 | Handy en vivo por ese mismo enlace, sin datos | pizarra | 1 | no |
 | 4 | El enlace por internet (lejos): canal directo + por la base | pizarra, tiempos (regla) | 1 a 2 | publicar las reglas de Tiempos |
 | — | Nearby, si el Bluetooth emparejado no alcanza | pizarra | 1 | la tercera dependencia |

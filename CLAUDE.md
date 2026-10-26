@@ -241,7 +241,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay doce bancos de pruebas, y se corren antes de subir.** `node
+- **Hay trece bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (69 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
@@ -266,7 +266,9 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   análisis que se pide desde Tiempos, con los extractos, los destinos, la base anual y lo estimado contra lo real; `node
   pruebas/herramientas/extractos.mjs` (5 casos) para la carga de extractos de
   los bancos, que prueba que nada se duplique ni se guarde un número de
-  cuenta; `node pruebas/herramientas/notificaciones.mjs` (12 casos) para las
+  cuenta; `node pruebas/herramientas/grabaciones.mjs` (5 casos) para las grabaciones de
+  10 s de la Hilux (sitd-55: el .wav, el acelerómetro, los picos y lo que se
+  le pide a la IA); `node pruebas/herramientas/notificaciones.mjs` (12 casos) para las
   notificaciones del 13C, que prueba sobre todo que descartar no deje copia;
   y `pruebas/panel/banco.mjs` (con `npm install`
   una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más

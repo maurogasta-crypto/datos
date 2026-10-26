@@ -208,8 +208,8 @@ ya está decidido que, si se carga, es uno de cupo fijo sin tarjeta.
 | ✓ | Viajes solos en el detector (`sitd-56`) | sitd-hilux | hecho | — |
 | ✓ | Puerta local Hilux → Pizarra en el Note 9 (`sitd-57`, `pizarra-70`: un proveedor de contenido, por paquete y firma) | sitd-hilux, pizarra | hecho | — |
 | ✓ | **Enlace sin datos**: wi-fi de la casa + Bluetooth del auto, con la escucha que despierta (`pizarra-70`; falta probarlo en los teléfonos) | pizarra | hecho | — |
-| 3 | Handy en vivo por ese mismo enlace, sin datos | pizarra | 1 | no |
-| 4 | El enlace por internet (lejos): canal directo + por la base | pizarra, tiempos (regla) | 1 a 2 | publicar las reglas de Tiempos |
+| ✓ | Handy en vivo por ese mismo enlace, sin datos (`pizarra-71`, `Radio.kt`: PCM 8 kHz en trozos de 100 ms, no se graba) | pizarra | hecho | — |
+| ✓ | El enlace por internet (lejos), **por la base** (`pizarra-71`, `EnlaceLejos.kt`, `enlace/` con las reglas v21 de Tiempos). El canal directo WebRTC no se hizo: la base anda siempre y cabe en el cupo; queda para si 10 s no alcanzan | pizarra, tiempos (regla) | hecho | publicar las reglas v21 de Tiempos |
 | — | Nearby, si el Bluetooth emparejado no alcanza | pizarra | 1 | la tercera dependencia |
 
 **Recomendación:** 1 y 2 juntos —el Note 9 le pasa todo a su Pizarra, y tu

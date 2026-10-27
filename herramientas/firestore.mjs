@@ -135,7 +135,11 @@ const PROYECTOS = {
        molde de remate. El agente la LEE y no la escribe —lo dice el CLAUDE.md
        del proyecto y lo aplica la regla—, y para saber qué reporte ya trajo se
        mira el campo `origen` del pendiente que creó en el panel. */
-    colecciones: ["sitio", "albums", "usuarios", "reportes", "_historial"],
+    /* `consultas` (27-oct-2026): las consultas de clientes y su conversación.
+       El agente las lee y las crea o completa (con copia en `_historial`) para
+       preparar las respuestas; llevan el contacto de una persona: no se
+       copian enteras a un chat. */
+    colecciones: ["sitio", "albums", "usuarios", "reportes", "consultas", "_historial"],
     /* `calculos`: datos de clientes y medidas de obra, y detrás costos,
        márgenes y tarifas — lo que el CLAUDE.md del proyecto prohíbe publicar.
        `invitaciones`: mails de gente que todavía no entró.

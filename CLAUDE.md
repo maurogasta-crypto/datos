@@ -630,6 +630,16 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   charla, no guarda transcripciones** (la bodega es git): anota sólo hasta
   cuándo revisó (`charla/visto.json`). Las Pizarras dicen a la vista que
   Claude lee y escucha. Desde charla-3 muestra también las fotos y documentos (pizarra-64), y `bajar` los deja en una carpeta FUERA de los repositorios para mirarlos. Banco: `node pruebas/herramientas/charla.mjs` (7 casos).
+- **Las consultas de clientes de CasaYourte se llevan desde el chat**
+  (`herramientas/consultas.mjs`, 27-oct-2026, Mauro: «que el chat pueda
+  escribir lo que le voy a dar y deje registrado ahí en las consultas todo el
+  hilo, y pueda también hacer las modificaciones»). `ver`, `nueva`, `ficha`,
+  `agregar` (lo que escribió el cliente, lo que se le contestó, una nota; un
+  borrador), `editar <n>` (también «ya lo mandé») y `quitar <n>`, con la MISMA
+  forma que `consultas.html` y cada cambio con su copia en `_historial/`. Fotos,
+  capturas y audios: `firestore.mjs casayourte adjuntar`. Lleva el contacto de
+  una persona: `ver` tapa el teléfono, y nada de eso va a un repositorio.
+  Banco: `node pruebas/herramientas/consultas.mjs` (11 casos).
 - **Ningún desarrollo pasa de los cupos gratuitos** (24-oct-2026, Mauro: «es
   una condición para el desarrollo hoy día»). La garantía es que cada cuenta
   esté en un plan que no puede cobrar (Firebase Spark, Gemini sin

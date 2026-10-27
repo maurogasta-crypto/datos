@@ -243,7 +243,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   el otro en la misma tanda.
 - **Hay trece bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
-  pruebas/herramientas/firestore.mjs` (69 casos, sin npm ni red) para la
+  pruebas/herramientas/firestore.mjs` (71 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
   (118 casos, sin npm ni red) para la ronda de apertura, que desde el
   14-sep-2026 corre sola (una vez por día, tres en temporada) y por eso no puede equivocarse en

@@ -157,7 +157,12 @@ const PROYECTOS = {
        eliminar bajo mi autorización»). La regla no puede leer el chat, así
        que lo frena esta herramienta: sin `--autorizado "<lo que dijo>"` no
        crea ni borra, y lo que dijo queda en la entrada del historial. */
-    conAutorizacion: ["albums"]
+    conAutorizacion: ["albums"],
+    /* Las capturas y los audios de una consulta (consultas-2, 27-oct-2026,
+       Mauro: «sacar fotos de las conversaciones de WhatsApp… copiar también
+       los audios»): `adjuntar consultas <id> <archivo>` los guarda como bytes
+       en `consultas/<id>/adjuntos/`. La regla deja al agente sólo crearlos. */
+    adjuntos: ["consultas"]
   },
 
   hilux: {
@@ -457,6 +462,20 @@ async function entrarSuave(cfg) {
    · { $crudo: <valor de Firestore> } → se manda tal cual. Es lo que deja
      AGREGAR un renglón a una lista sin reescribir los anteriores: se leen
      crudos (`leerCrudo`) y se devuelven crudos, con sus tipos intactos. */
+/* Lo que se puede adjuntar y cómo se nombra: la MISMA forma y el MISMO techo
+   que exigen la regla de `adjuntos` y `consultas.html` de CasaYourte. */
+export const MAXIMO_ADJUNTO = 900000;
+const MIMES = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+  ogg: "audio/ogg", opus: "audio/ogg", oga: "audio/ogg", m4a: "audio/mp4", mp4: "audio/mp4",
+  aac: "audio/aac", mp3: "audio/mpeg", wav: "audio/wav", amr: "audio/amr" };
+export function adjuntoDe(archivo, datos) {
+  const nombre = String(archivo).split(/[\\/]/).pop().slice(0, 120);
+  const mime = MIMES[(nombre.split(".").pop() || "").toLowerCase()];
+  if (!mime) ex(`«${nombre}»: sólo imágenes (jpg, png, webp) y audios (ogg, opus, m4a, mp3, aac, wav, amr).`);
+  if (datos.length > MAXIMO_ADJUNTO) ex(`«${nombre}» pesa ${Math.round(datos.length / 1024)} KB: el techo es ${Math.round(MAXIMO_ADJUNTO / 1024)} KB. Achicalo antes.`);
+  return { tipo: mime.startsWith("image/") ? "imagen" : "audio", mime, nombre, datos: new Uint8Array(datos) };
+}
+
 function aFirestore(v) {
   if (v && typeof v === "object" && !Array.isArray(v)) {
     const k = Object.keys(v);
@@ -464,6 +483,8 @@ function aFirestore(v) {
     if (k.length === 1 && k[0] === "$crudo") return v.$crudo;
   }
   if (v === null || v === undefined) return { nullValue: null };
+  // Bytes (27-oct-2026, `adjuntar`): un Buffer va como `bytesValue`, en base64.
+  if (v instanceof Uint8Array) return { bytesValue: Buffer.from(v).toString("base64") };
   if (typeof v === "boolean") return { booleanValue: v };
   if (typeof v === "number")
     return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
@@ -902,6 +923,26 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log(`  ${cmd === "fusionar" ? "fusionado" : "escrito"} ${coleccion}/${id}`);
     }
 
+  } else if (cmd === "adjuntar") {
+    /* adjuntar <coleccion> <id> <archivo> [--nota "…"] [--en <ISO>]
+       Una captura o un audio, PRIVADO, como bytes en la base (nunca a
+       Cloudinary, cuyas direcciones son públicas y no se pueden borrar sin el
+       secreto). Es un documento NUEVO que no pisa nada: no deja copia en
+       `_historial` (no hay «antes»), como un aviso. El agente no los borra. */
+    const opc = (n) => { const i = args.indexOf(n); if (i < 0) return null; const v = args[i + 1]; args.splice(i, 2); return v; };
+    const nota = opc("--nota"), en = opc("--en");
+    const [coleccion, id, archivo] = args;
+    if (!coleccion || !id || !archivo) ex("faltan la colección, el id y el archivo");
+    if (!(cfg.adjuntos || []).includes(coleccion)) ex(`«${coleccion}» no lleva adjuntos en ${proy}.`);
+    guardiaEscritura(cfg, coleccion, id);
+    if (!(await leerCrudo(cfg, sesion, coleccion, id))) ex(`no existe ${coleccion}/${id}: primero la ficha.`);
+    const a = adjuntoDe(archivo, fs.readFileSync(archivo));
+    const aid = "a-" + Date.now().toString(36);
+    await pedir(cfg, sesion, `/${coleccion}/${encodeURIComponent(id)}/adjuntos/${aid}?currentDocument.exists=false`, {
+      method: "PATCH",
+      body: JSON.stringify({ fields: campos({ ...a, en: en || new Date().toISOString(), por: "Claude", ...(nota ? { nota } : {}) }) }) });
+    console.log(`  adjuntado ${coleccion}/${id}/adjuntos/${aid} (${a.tipo}, ${Math.round(a.datos.length / 1024)} KB)`);
+
   } else {
     console.log(`
   node herramientas/firestore.mjs <proyecto> <comando>
@@ -912,6 +953,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     escribir <coleccion> <id> <archivo.json>
     fusionar <coleccion> <id> <archivo.json>
     borrar <coleccion> <id>
+    adjuntar <coleccion> <id> <archivo> [--nota "…"] [--en <ISO>]
+                                   una captura o un audio, en <coleccion>/<id>/adjuntos/
       [--autorizado "<lo que dijo Mauro>"]   para crear o borrar donde la base lo
                                    pide (casayourte: los álbumes y sus fotos)
     copiar <coleccion> <desde> <hacia>   un documento ENTERO sobre otro, con su

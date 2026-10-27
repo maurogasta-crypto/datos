@@ -86,7 +86,7 @@ globalThis.fetch = async (url, op = {}) => {
 
 const { PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
         entrar, entrarSuave, listar, leerUno, escribir, fusionar, borrar, aFirestore, deFirestore,
-        deshacer, HISTORIAL, fusionarRutas, rutaCampo, crearAviso } =
+        deshacer, HISTORIAL, fusionarRutas, rutaCampo, crearAviso, adjuntoDe, MAXIMO_ADJUNTO } =
   await import("../../herramientas/firestore.mjs");
 const cfg = PROYECTOS.panel;
 
@@ -571,6 +571,21 @@ await prueba("lo que toca Claude lleva el porqué; sin porqué no hay cambio", (
 await prueba("las opciones de la línea de comandos", () => {
   const { o, resto } = AG.opciones(["Mauro", "a1", "2026-10-14", "--porque", "así", "--direcciones"]);
   assert.deepEqual(resto, ["Mauro", "a1", "2026-10-14"]); assert.equal(o.porque, "así"); assert.equal(o.direcciones, true);
+});
+
+titulo("adjuntos de una consulta (consultas-2)");
+await prueba("una captura o un audio se reconocen; otra cosa, o de más, no", async () => {
+  assert.equal(adjuntoDe("a/b/captura.PNG", Buffer.alloc(5)).tipo, "imagen");
+  const au = adjuntoDe("nota de voz.opus", Buffer.alloc(5));
+  assert.equal(au.tipo, "audio"); assert.equal(au.mime, "audio/ogg"); assert.equal(au.nombre, "nota de voz.opus");
+  assert.ok(await frena(() => adjuntoDe("x.exe", Buffer.alloc(5))));
+  assert.ok(await frena(() => adjuntoDe("x.jpg", Buffer.alloc(MAXIMO_ADJUNTO + 1))));
+});
+await prueba("los bytes viajan como bytesValue y vuelven en base64", () => {
+  const v = aFirestore(new Uint8Array([1, 2, 255]));
+  assert.deepEqual(v, { bytesValue: "AQL/" });
+  assert.equal(deFirestore(v), "AQL/");
+  assert.ok(PROYECTOS.casayourte.adjuntos.includes("consultas"));
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

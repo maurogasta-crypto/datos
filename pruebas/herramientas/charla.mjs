@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { destinoDe, renglonMensaje, filtrar, pedidoTranscripcion, transcribir, leerVisto, anotarVisto, PROXY, TOPE_TRANSCRIPCIONES,
+import { auditarSalud, esParaAparato, destinoDe, renglonMensaje, filtrar, pedidoTranscripcion, transcribir, leerVisto, anotarVisto, PROXY, TOPE_TRANSCRIPCIONES,
          pareceDePrueba, paraLimpiar, piezasDe, anotarLimpieza } from "../../herramientas/charla.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -104,6 +104,53 @@ await prueba("borrar pide --autorizado: sin eso, la herramienta no borra", () =>
   const src = fs.readFileSync(new URL("../../herramientas/charla.mjs", import.meta.url), "utf8");
   assert.match(src, /if \(borrarlo && !autorizado\.trim\(\)\)/);
   assert.match(src, /limpiadoEn: new Date\(\)\.toISOString\(\)/, "deja la marca que miran las Pizarras");
+});
+
+// charla-5: la salud de la charla (pizarra-78, reglas v24).
+const AHORA = Date.parse("2026-10-28T18:00:00Z");
+const M = [
+  { id: "m1", de: "flor", nombre: "Florencia", dispositivo: "A15", creadoEn: "2026-10-28T12:00:00Z", texto: "hola" },
+  { id: "m2", de: "flor", nombre: "Florencia", dispositivo: "A15", creadoEn: "2026-10-28T13:00:00Z", texto: "", audio: "au2", handy: true, para: "mauro|Redmi" },
+  { id: "m3", de: "flor", nombre: "Florencia", dispositivo: "A15", creadoEn: "2026-10-28T14:00:00Z", archivo: "ar3", partes: 2, nombreArchivo: "plano.pdf" },
+  { id: "m4", de: "flor", nombre: "Florencia", dispositivo: "A15", creadoEn: "2026-10-28T17:55:00Z", texto: "recién" },
+  { id: "m5", de: "flor", nombre: "Florencia", dispositivo: "A15", creadoEn: "2026-10-28T15:00:00Z", texto: "a otra persona", para: "otra|X" },
+  { id: "m6", de: "mauro", nombre: "Mauro", dispositivo: "Redmi", creadoEn: "2026-10-28T15:30:00Z", texto: "mío" },
+];
+const parte = { de: "mauro", dispositivo: "Redmi", sello: "pizarra-78", actualizado: "2026-10-28T17:58:00Z", charlaHasta: "2026-10-28T17:55:00Z",
+  recibidos: ["m1", "m3"], eventos: ["enlace: se cortó con A15 (wifi, sin latido)", "mensajes: al día"],
+  contadores: { "voz.rondasMandadas": 5, "voz.acuse.escucho": 3, "voz.trozosPerdidos": 2, "voz.rondasOidas": 4 } };
+await prueba("salud: es para el aparato igual que esParaMi de la Pizarra", () => {
+  assert.ok(esParaAparato({ para: "" }, "mauro", "Redmi"));
+  assert.ok(esParaAparato({ para: "mauro|Redmi" }, "mauro", "Redmi"));
+  assert.ok(esParaAparato({ para: "mauro|13C", de: "flor" }, "mauro", "Redmi"));
+  assert.ok(!esParaAparato({ para: "mauro|13C", de: "mauro" }, "mauro", "Redmi"));
+  assert.ok(!esParaAparato({ para: "flor|A15" }, "mauro", "Redmi"));
+});
+await prueba("salud: dice qué no llegó (y no lo recién mandado, lo de otro, ni lo propio), el audio que falta y el archivo partido", () => {
+  const r = auditarSalud({ mensajes: M, audios: new Set(), archivos: new Set(["ar3-0"]), partes: [parte], ahora: AHORA });
+  const de = (t) => r.problemas.filter((p) => p.tipo === t).map((p) => p.texto);
+  assert.equal(de("no-llego").length, 1); assert.match(de("no-llego")[0], /\[m2\]/); assert.match(de("no-llego")[0], /handy/);
+  assert.match(de("falta-audio")[0], /\[m2\]/);
+  assert.match(de("archivo-incompleto")[0], /sin 1 de 2/);
+  assert.ok(!r.problemas.some((p) => /\[m4\]|\[m5\]|\[m6\]/.test(p.texto)));
+});
+await prueba("salud: el handy cerca (trozos perdidos, rondas sin acuse), el parte viejo y la llamada colgada", () => {
+  const viejo = { ...parte, actualizado: "2026-10-28T10:00:00Z" };
+  const r = auditarSalud({ mensajes: M, audios: new Set(["au2"]), archivos: new Set(["ar3-0", "ar3-1"]), partes: [viejo], ahora: AHORA,
+    llamadas: [{ estado: "llamando", creadoEn: "2026-10-28T17:00:00Z", nombre: "Florencia", dispositivo: "A15", para: "mauro|Redmi" },
+               { estado: "cortada", creadoEn: "2026-10-28T17:00:00Z" }] });
+  const t = r.problemas.map((p) => p.texto).join("\n");
+  assert.match(t, /2 trozo\(s\) de voz cerca no llegaron/);
+  assert.match(t, /2 de 5 ronda\(s\) que habló no tuvieron acuse/);
+  assert.match(t, /hace 8 h/);
+  assert.equal(r.problemas.filter((p) => p.tipo === "llamada-colgada").length, 1);
+  assert.deepEqual(r.aparatos[0].eventos, ["enlace: se cortó con A15 (wifi, sin latido)"]);
+});
+await prueba("salud: lee y no escribe", () => {
+  const src = fs.readFileSync(new URL("../../herramientas/charla.mjs", import.meta.url), "utf8");
+  const b = src.slice(src.indexOf('if (cmd === "salud")'), src.indexOf('if (cmd !== "leer"'));
+  assert.doesNotMatch(b, /F\.(borrar|escribir|fusionar|crear)/);
+  assert.match(b, /F\.listar\(t, ses, "audios", false, \["de"\]\)/, "los audios sin bajar sus bytes");
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

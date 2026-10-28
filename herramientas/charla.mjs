@@ -5,6 +5,7 @@
 //   node herramientas/charla.mjs nuevos --bodega <copia>     (lo que no se revisó)
 //   node herramientas/charla.mjs revisado --bodega <copia>   (marca hasta ahora)
 //   node herramientas/charla.mjs bajar <id del archivo> --a <carpeta FUERA de todo repositorio>
+//   node herramientas/charla.mjs salud [--dias 7]               (¿se pierde algo entre los teléfonos?)
 //
 // charla-1 · 24-oct-2026 · general:C2. Mauro: «quiero que la IA pueda auditar
 // las comunicaciones… porque ellas serán propuestas o trabajos de desarrollo en
@@ -29,8 +30,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const VERSION = "charla-4";   // 28-oct: «limpiar», el gestor de la charla (reglas v23 de Tiempos)
-export const VERSION_ANTERIOR = "charla-3";   // 24-oct: muestra los archivos (pizarra-64) y «bajar» para mirarlos   // 24-oct: flash-lite y tope por corrida (PROTOCOLO-DESARROLLO § 13, los cupos gratis)
+export const VERSION = "charla-5";   // 28-oct: «salud», la auditoría de lo que se pierde (pizarra-78, reglas v24)
+export const VERSION_ANTERIOR = "charla-4";   // 28-oct: «limpiar», el gestor de la charla (reglas v23 de Tiempos)
+export const VERSION_VIEJA = "charla-3";   // 24-oct: muestra los archivos (pizarra-64) y «bajar» para mirarlos   // 24-oct: flash-lite y tope por corrida (PROTOCOLO-DESARROLLO § 13, los cupos gratis)
 export const PROXY = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
 /** Cuántos audios se transcriben por corrida, como mucho: el resto queda «sin transcribir» y se lee en la próxima. */
 export const TOPE_TRANSCRIPCIONES = 30;
@@ -136,6 +138,86 @@ export function anotarVisto(bodega, hasta) {
   fs.writeFileSync(VISTO(bodega), JSON.stringify({ hasta }, null, 1) + "\n");
 }
 
+/* ── charla-5 · la SALUD de la comunicación (28-oct-2026, pizarra-78, reglas v24) ──────────────────────────
+   Mauro: «encontrar errores… al hacer las comunicaciones entre los teléfonos, para confirmar que no se estén
+   perdiendo datos, mensajes o transmisiones de handy entre uno y otro, como mantenimiento». La base sabe lo que
+   se MANDÓ; cada Pizarra sube en `salud/<uid>|<aparato>` lo que LE LLEGÓ, lo que sonó y lo que se cortó. Esto
+   cruza las dos cosas. Lee y no escribe nada. */
+
+/** ¿Este mensaje es para ese aparato? La misma cuenta que `esParaMi` de la Pizarra (Mensajes.kt). */
+export function esParaAparato(m, uid, tel) {
+  const para = m.para || "";
+  return para === "" || para === `${uid}|${tel}` || (para.startsWith(`${uid}|`) && m.de !== uid);
+}
+
+const ms = (iso) => { const t = Date.parse(iso || ""); return Number.isFinite(t) ? t : null; };
+const DIA = 24 * 3600_000;
+
+/**
+ * La auditoría, sin red: `mensajes`, `audios` y `archivos` (ids que existen), `llamadas` y `partes` (los
+ * documentos de `salud/`). Devuelve `problemas` [{tipo, texto}] y, por aparato, sus `contadores` y `eventos`.
+ */
+export function auditarSalud({ mensajes = [], audios = new Set(), archivos = new Set(), llamadas = [], partes = [], ahora = Date.now(), dias = 7 } = {}) {
+  const problemas = [];
+  const desde = ahora - dias * DIA;
+  const nombre = (uid, tel) => `${(mensajes.find((m) => m.de === uid && m.nombre) || {}).nombre || uid.slice(0, 6)} · ${tel}`;
+  // 1. Lo que la base dice que se mandó y no está entero.
+  for (const m of mensajes) {
+    const t = ms(m.creadoEn); if (t == null || t < desde) continue;
+    const quien = nombre(m.de, m.dispositivo || "?");
+    if (m.audio && !audios.has(m.audio) && ahora - t < 30 * DIA)
+      problemas.push({ tipo: "falta-audio", texto: `${String(m.creadoEn).slice(0, 16)} ${quien}: un mensaje de ${m.handy ? "handy" : "voz"} sin su audio [${m.id}]` });
+    if (m.archivo && ahora - t < 7 * DIA) {
+      const faltan = Array.from({ length: m.partes || 1 }, (_, n) => `${m.archivo}-${n}`).filter((id) => !archivos.has(id));
+      if (faltan.length) problemas.push({ tipo: "archivo-incompleto", texto: `${String(m.creadoEn).slice(0, 16)} ${quien}: «${m.nombreArchivo || "archivo"}» sin ${faltan.length} de ${m.partes || 1} parte(s) [${m.id}]` });
+    }
+  }
+  for (const l of llamadas) {
+    const t = ms(l.creadoEn);
+    if (l.estado === "llamando" && t != null && ahora - t > 5 * 60_000)
+      problemas.push({ tipo: "llamada-colgada", texto: `${String(l.creadoEn).slice(0, 16)} ${l.nombre || "?"} · ${l.dispositivo || "?"} → ${l.para || "?"}: quedó «llamando» (nadie atendió ni cortó)` });
+  }
+  // 2. Lo que se mandó a un aparato y su Pizarra no tiene.
+  const aparatos = [];
+  for (const p of partes) {
+    const act = ms(p.actualizado);
+    const yo = nombre(p.de, p.dispositivo);
+    if (act != null && ahora - act > 3 * 3600_000)
+      problemas.push({ tipo: "parte-viejo", texto: `${yo}: su parte es de hace ${Math.round((ahora - act) / 3600_000)} h (¿apagado, sin red o sin pizarra-78?)` });
+    const recibidos = new Set(p.recibidos || []);
+    const hasta = ms(p.charlaHasta);
+    // La Pizarra manda los 80 más nuevos: con 80, lo anterior al más viejo de ellos no se puede juzgar.
+    const creadoDe = new Map(mensajes.map((m) => [m.id, ms(m.creadoEn)]));
+    const piso = (p.recibidos || []).length >= 80 ? Math.min(...[...recibidos].map((id) => creadoDe.get(id) ?? Infinity)) : -Infinity;
+    for (const m of mensajes) {
+      const t = ms(m.creadoEn);
+      if (t == null || t < Math.max(desde, piso)) continue;
+      if (m.de === p.de && m.dispositivo === p.dispositivo) continue;
+      if (!esParaAparato(m, p.de, p.dispositivo)) continue;
+      // Sólo lo que esa Pizarra ya tendría que haber visto: anterior a lo último que trajo, y 10 min antes del parte.
+      if (hasta == null || t > hasta || act == null || t > act - 10 * 60_000) continue;
+      if (!recibidos.has(m.id))
+        problemas.push({ tipo: "no-llego", texto: `${String(m.creadoEn).slice(0, 16)} de ${nombre(m.de, m.dispositivo || "?")} a ${yo}: no está en su lista${m.handy ? " (handy)" : m.audio ? " (voz)" : ""} [${m.id}]` });
+    }
+    // 3. El handy cerca y lo que sonó (contadores desde que se instaló pizarra-78).
+    const c = p.contadores || {};
+    const n = (k) => Number(c[k] || 0);
+    if (n("voz.trozosPerdidos")) problemas.push({ tipo: "handy-cerca", texto: `${yo}: ${n("voz.trozosPerdidos")} trozo(s) de voz cerca no llegaron (en ${n("voz.rondasOidas")} ronda(s) oídas)` });
+    if (n("voz.acuse.noSono")) problemas.push({ tipo: "handy-cerca", texto: `${yo}: ${n("voz.acuse.noSono")} vez/veces el otro contestó «no sonó»` });
+    const sinAcuse = n("voz.rondasMandadas") - n("voz.acuse.escucho") - n("voz.acuse.noSono");
+    if (sinAcuse > 0) problemas.push({ tipo: "handy-cerca", texto: `${yo}: ${sinAcuse} de ${n("voz.rondasMandadas")} ronda(s) que habló no tuvieron acuse (sin nadie cerca, o se perdieron)` });
+    if (n("enlace.otroCodigo")) problemas.push({ tipo: "enlace", texto: `${yo}: ${n("enlace.otroCodigo")} conexión(es) con OTRO código` });
+    if (n("enlace.cortesSinLatido")) problemas.push({ tipo: "enlace", texto: `${yo}: ${n("enlace.cortesSinLatido")} corte(s) sin latido en ${n("enlace.conexiones")} conexión(es)` });
+    if (n("audio.noSalieron")) problemas.push({ tipo: "audio", texto: `${yo}: ${n("audio.noSalieron")} audio(s) que no salieron` });
+    if (n("audio.faltaElAudio")) problemas.push({ tipo: "audio", texto: `${yo}: ${n("audio.faltaElAudio")} audio(s) que llegaron sin su sonido en la base` });
+    const noSono = n("audio.noSonoLlamada") + n("audio.noSonoSilencio");
+    if (noSono) problemas.push({ tipo: "audio", texto: `${yo}: ${noSono} handy que no sonó al llegar (${n("audio.noSonoLlamada")} en llamada, ${n("audio.noSonoSilencio")} en silencio)` });
+    aparatos.push({ aparato: yo, sello: p.sello || "?", enlace: p.enlace || "", actualizado: p.actualizado || "", contadores: c,
+      eventos: (p.eventos || []).filter((e) => /no |error|cortó|falló|otro código|sin latido|no salió|no está/i.test(e)).slice(-8) });
+  }
+  return { problemas, aparatos };
+}
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   const [cmd, ...args] = process.argv.slice(2);
   const opt = (n, def) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : def; };
@@ -205,11 +287,36 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.log(`\n  ✓ ${elegidos.length} mensaje(s) y ${piezas} audio(s)/parte(s) borrados. Desaparecen de cada Pizarra al abrir la charla.${bodega ? " Falta: commit y push de la bodega." : ""}\n`);
       return;
     }
+    if (cmd === "salud") {
+      const F = await import("./firestore.mjs");
+      const t = F.PROYECTOS.tiempos;
+      const ses = await F.entrar(t);
+      const [mensajes, audios, archivos, llamadas, partes] = await Promise.all([
+        F.listar(t, ses, "mensajes"), F.listar(t, ses, "audios", false, ["de"]), F.listar(t, ses, "archivos", false, ["de"]),
+        F.listar(t, ses, "llamadas", false, ["de", "nombre", "dispositivo", "para", "estado", "creadoEn"]),
+        F.listar(t, ses, "salud", true).catch(() => null)]);   // sin la regla v24 publicada, la base dice que no
+      const r = auditarSalud({ mensajes, audios: new Set(audios.map((a) => a.id)), archivos: new Set(archivos.map((a) => a.id)),
+        llamadas, partes: partes || [], dias: Number(opt("--dias", 7)) });
+      console.log(`\n  SALUD DE LA CHARLA · ${mensajes.length} mensaje(s), ${(partes || []).length} parte(s) de teléfonos\n`);
+      if (partes === null) console.log("  ⚠ La base no deja leer «salud»: falta publicar las reglas v24 de Tiempos. Sin los partes sólo se ve lo de la base.\n");
+      else if (!partes.length) console.log("  Ningún teléfono mandó su parte todavía: hace falta pizarra-78 en cada uno.\n");
+      for (const a of r.aparatos) {
+        console.log(`  📱 ${a.aparato} · ${a.sello} · parte ${String(a.actualizado).slice(0, 16)} · enlace: ${a.enlace}`);
+        const c = Object.entries(a.contadores).map(([k, v]) => `${k} ${v}`).join(" · ");
+        if (c) console.log(`     ${c}`);
+        for (const e of a.eventos) console.log(`     ⚠ ${e}`);
+      }
+      console.log(r.problemas.length ? `\n  ${r.problemas.length} problema(s):` : "\n  ✓ No se ve nada perdido.");
+      for (const p of r.problemas) console.log(`   · [${p.tipo}] ${p.texto}`);
+      console.log("\n  Lee y no escribe nada. Los contadores son desde que cada teléfono tiene pizarra-78.\n");
+      return;
+    }
     if (cmd !== "leer" && cmd !== "nuevos") {
       console.log("\n  node herramientas/charla.mjs leer [--dias 2] [--sin-audio]\n  node herramientas/charla.mjs nuevos --bodega <copia>\n  node herramientas/charla.mjs revisado --bodega <copia>\n" +
         "  node herramientas/charla.mjs limpiar [--pruebas] [--desde F] [--hasta F] [--dispositivo X] [--de X] [--texto re] [--audios] [--archivos] [--ids a,b]\n" +
         "        [--borrar --autorizado \"<lo que dijo Mauro>\"] [--bodega <copia>]\n" +
-        "  node herramientas/charla.mjs limpiar-llamadas [--antes F] [--borrar --autorizado \"…\"] [--bodega <copia>]\n"); return;
+        "  node herramientas/charla.mjs limpiar-llamadas [--antes F] [--borrar --autorizado \"…\"] [--bodega <copia>]\n" +
+        "  node herramientas/charla.mjs salud [--dias 7]\n"); return;
     }
     const F = await import("./firestore.mjs");
     const t = F.PROYECTOS.tiempos;

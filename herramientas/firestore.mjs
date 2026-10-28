@@ -547,12 +547,14 @@ async function pedir(cfg, sesion, ruta, opciones = {}) {
 
 /* Lista una colección entera, paginando. Sin `orderBy`: se ordena en memoria,
    que es lo que hace el panel y evita pedir un índice por veinte documentos. */
-async function listar(cfg, sesion, coleccion, suave = false) {
+async function listar(cfg, sesion, coleccion, suave = false, campos = null) {
   guardia(cfg, coleccion);
   const salida = [];
   let token = "";
+  // `campos`: sólo esos (una máscara), para saber QUÉ hay sin bajar los bytes de un audio (charla-5).
+  const mascara = campos ? campos.map((c) => "&mask.fieldPaths=" + encodeURIComponent(c)).join("") : "";
   do {
-    const q = "?pageSize=300" + (token ? "&pageToken=" + encodeURIComponent(token) : "");
+    const q = "?pageSize=300" + mascara + (token ? "&pageToken=" + encodeURIComponent(token) : "");
     const j = await pedir(cfg, sesion, "/" + coleccion + q, { suave });
     for (const d of (j && j.documents) || []) {
       salida.push({ id: d.name.split("/").pop(), ...objeto(d.fields || {}) });

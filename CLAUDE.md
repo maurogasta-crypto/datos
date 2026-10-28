@@ -641,8 +641,16 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   limpieza queda en `charla/limpiezas.json` de la bodega (ids, nunca texto) y
   deja `familia/charla.limpiadoEn`, con la que cada Pizarra trae la charla
   entera y lo borrado se le va (pizarra-77). **La ronda no limpia sola**: es
-  un pedido de Mauro en el chat. Banco: `node pruebas/herramientas/charla.mjs`
-  (12 casos).
+  un pedido de Mauro en el chat.
+  **Y desde charla-5 AUDITA si se pierde algo** (28-oct, pizarra-78, reglas
+  v24 de Tiempos, Mauro: «confirmar que no se estén perdiendo datos, mensajes o
+  transmisiones de handy entre uno y otro»). `salud` cruza lo que la base dice
+  que se mandó con el PARTE que cada Pizarra sube a `salud/<uid>|<aparato>`:
+  mensajes que no llegaron a un aparato, audios y archivos incompletos,
+  llamadas colgadas, trozos de handy cerca perdidos, rondas sin acuse, cortes,
+  handy que no sonó y por qué, y teléfonos que dejaron de mandar su parte. Lee
+  y no escribe; los audios se listan sin bajar sus bytes (máscara de `listar`).
+  Banco: `node pruebas/herramientas/charla.mjs` (16 casos).
 - **Las consultas de clientes de CasaYourte se llevan desde el chat**
   (`herramientas/consultas.mjs`, 27-oct-2026, Mauro: «que el chat pueda
   escribir lo que le voy a dar y deje registrado ahí en las consultas todo el

@@ -265,7 +265,10 @@ const PROYECTOS = {
        sitios (`tipo` pedido/falla). Hasta entonces se vigilaban las
        `sesiones`, sólo para saber que la base estaba viva; ahora se cruza
        como cualquier sitio y cada uno entra como pendiente del panel. */
-    selladas: ["agendas"],
+    /* `enlace_llave` (v22, 28-oct-2026, pizarra-75): el código que firma lo que
+       se mandan las Pizarras cerca. Lo leen sólo los teléfonos de la familia;
+       la regla se lo niega al agente y esto da el mensaje claro. */
+    selladas: ["agendas", "enlace_llave"],
     /* v11 de las reglas (8-oct-2026, Mauro: «quiero que la IA pueda
        organizar mi agenda editando los contenidos»). `agendas` SIGUE sellada
        como colección —listarla trae la de los dos, y eso no se hace nunca—,

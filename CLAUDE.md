@@ -629,7 +629,20 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `origen: "charla:<id>"` (TRASPASO § 4, paso 5 bis ⅞ ½). **No contesta en la
   charla, no guarda transcripciones** (la bodega es git): anota sólo hasta
   cuándo revisó (`charla/visto.json`). Las Pizarras dicen a la vista que
-  Claude lee y escucha. Desde charla-3 muestra también las fotos y documentos (pizarra-64), y `bajar` los deja en una carpeta FUERA de los repositorios para mirarlos. Banco: `node pruebas/herramientas/charla.mjs` (7 casos).
+  Claude lee y escucha. Desde charla-3 muestra también las fotos y documentos (pizarra-64), y `bajar` los deja en una carpeta FUERA de los repositorios para mirarlos.
+  **Y desde charla-4 es también el GESTOR de la charla** (28-oct-2026, reglas
+  v23 de Tiempos, Mauro: «limpiar todas las pruebas de comunicación… un gestor
+  de comunicaciones que pase por el chat y que tenga los poderes para ese
+  mantenimiento, una especie de auditoría»). `limpiar` lista numerado, con
+  filtros (`--pruebas`, fechas, aparato, persona, texto, audios, archivos,
+  ids), y borra SÓLO con `--borrar --autorizado "<lo que dijo Mauro>"`: el
+  mensaje deja su copia en `_historial` y se lleva su audio y su archivo (sin
+  copia, `efimeras`); `limpiar-llamadas` hace lo mismo con las llamadas. Cada
+  limpieza queda en `charla/limpiezas.json` de la bodega (ids, nunca texto) y
+  deja `familia/charla.limpiadoEn`, con la que cada Pizarra trae la charla
+  entera y lo borrado se le va (pizarra-77). **La ronda no limpia sola**: es
+  un pedido de Mauro en el chat. Banco: `node pruebas/herramientas/charla.mjs`
+  (12 casos).
 - **Las consultas de clientes de CasaYourte se llevan desde el chat**
   (`herramientas/consultas.mjs`, 27-oct-2026, Mauro: «que el chat pueda
   escribir lo que le voy a dar y deje registrado ahí en las consultas todo el

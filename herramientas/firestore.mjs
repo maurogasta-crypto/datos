@@ -284,6 +284,12 @@ const PROYECTOS = {
       agendas: (partes, id) => (partes.length === 1 ? id : null),
       alertas: (partes, id, antes, pedido) => (antes.uid && antes.uid.stringValue) || pedido.uid || null
     },
+    /* v23 (28-oct-2026, el gestor de la charla, `charla.mjs limpiar`): borrar
+       un audio, un archivo o una llamada NO deja copia en `_historial`. Pesan
+       hasta 1 MiB (no entran en la copia) y son temporales por diseño (la
+       Pizarra los borra a los 7 o 30 días); el MENSAJE que los nombra sí deja
+       la suya. El agente sólo los borra: la regla no le deja crearlos. */
+    efimeras: ["audios", "archivos", "llamadas"],
     historial: true
   },
 

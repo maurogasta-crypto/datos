@@ -22,7 +22,7 @@ import { execFileSync } from "node:child_process";
 import * as Bodega from "../../herramientas/telefono-bodega.mjs";
 import * as W from "../../herramientas/telefono-whatsapp.mjs";
 import * as CAP from "../../herramientas/telefono-capturas.mjs";
-import { normalizarReglaChat, reglasChatValidas, globARegex, delChat } from "../../herramientas/telefono.mjs";
+import { normalizarReglaChat, reglasChatValidas, globARegex, delChat, NO_SE_DEPOSITA, sinLoQueNoSeDeposita } from "../../herramientas/telefono.mjs";
 import { planificar, aplicar, normalizarAjustes, tipoDe, destinoValido, deshacer, lotes, vencidos, motivoBasura, esProtegido,
          tieneMarcaDeCopia, elegirQueQueda, PAPELERA,
          manifiestoDesde, leerManifiesto, hayQueBajar, rotar, actualizarApks, informeHtml
@@ -397,6 +397,16 @@ async function correrApks(dest, remoto, contenido = "APK") {
     bajar: async (u, d) => { bajadas++; fs.writeFileSync(d, contenido); return contenido.length; } });
   return { filas, bajadas };
 }
+
+
+prueba("las consultas de CasaYourte no van a la bodega, ni sus copias en _historial", () => {
+  assert.ok(NO_SE_DEPOSITA.casayourte.includes("consultas"));
+  assert.ok(NO_SE_DEPOSITA.hilux.includes("recorridos"));
+  const h = [{ id: "1", coleccion: "consultas" }, { id: "2", coleccion: "sitio" }, { id: "3", coleccion: "consultas/c-1/adjuntos" }];
+  assert.deepEqual(sinLoQueNoSeDeposita("casayourte", "_historial", h).map((d) => d.id), ["2"]);
+  assert.equal(sinLoQueNoSeDeposita("casaverde", "_historial", h).length, 3);
+  assert.equal(sinLoQueNoSeDeposita("casayourte", "sitio", h).length, 3);
+});
 
 const pruebasAsync = [];
 const pruebaA = (n, f) => pruebasAsync.push([n, f]);

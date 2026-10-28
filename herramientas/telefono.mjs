@@ -871,8 +871,16 @@ function delChat(trabajo = Bodega.TRABAJO) {
    Lo que NO se deposita: lo sellado —las reglas de cada base ya se lo niegan
    al agente— y `recorridos` de la Hilux, que es dónde estuvo la camioneta
    punto por punto. Ya vive en su base y en el respaldo que sube la propia
-   app; un tercer lugar no agrega nada y sí agrega dónde filtrarse. */
-const NO_SE_DEPOSITA = { hilux: ["recorridos"] };
+   app; un tercer lugar no agrega nada y sí agrega dónde filtrarse.
+
+   Tampoco las `consultas` de CasaYourte (28-oct-2026): llevan el contacto de
+   un cliente, y su CLAUDE.md dice «nunca a un repositorio» — esto es git, y
+   git no olvida. Ni las copias que dejó el agente al escribirlas en
+   `_historial` (`coleccion` que empieza con «consultas»): llevan lo mismo. */
+const NO_SE_DEPOSITA = { hilux: ["recorridos"], casayourte: ["consultas"] };
+export const sinLoQueNoSeDeposita = (id, coleccion, docs) =>
+  coleccion !== "_historial" ? docs
+    : docs.filter((d) => !(NO_SE_DEPOSITA[id] || []).some((c) => String(d.coleccion || "").split("/")[0] === c));
 
 async function depositar(dirBodega) {
   const { PROYECTOS, entrarSuave } = await import("./firestore.mjs");
@@ -891,7 +899,7 @@ async function depositar(dirBodega) {
     const cols = (cfg.colecciones || []).filter((c) => !(NO_SE_DEPOSITA[id] || []).includes(c));
     for (const c of cols) {
       const r = await listarSuave(cfg, e.sesion, c);
-      todo[c] = r.ok ? r.docs : { error: r.motivo };
+      todo[c] = r.ok ? sinLoQueNoSeDeposita(id, c, r.docs) : { error: r.motivo };
     }
     fs.writeFileSync(path.join(salida, `${id}.json`), JSON.stringify(todo, null, 2) + "\n");
     filas.push(`✓ ${id}: ` + cols.map((c) => `${Array.isArray(todo[c]) ? todo[c].length : "✖"} ${c}`).join(", "));

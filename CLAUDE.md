@@ -253,7 +253,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sin que nadie lo note; `node pruebas/herramientas/reservas.mjs` (50 casos, sin npm ni red) para
   el completado de reservas, que sobre todo prueba lo que NO completa, y lo
   que se PROPONE para confirmar en Reservas (`proponer`, reservas-8); `node
-  pruebas/herramientas/telefono.mjs` (101 casos, sin
+  pruebas/herramientas/telefono.mjs` (102 casos, sin
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (44 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO

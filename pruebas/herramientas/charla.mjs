@@ -135,14 +135,16 @@ await prueba("salud: dice qué no llegó (y no lo recién mandado, lo de otro, n
   assert.ok(!r.problemas.some((p) => /\[m4\]|\[m5\]|\[m6\]/.test(p.texto)));
 });
 await prueba("salud: el handy cerca (trozos perdidos, rondas sin acuse), el parte viejo y la llamada colgada", () => {
-  const viejo = { ...parte, actualizado: "2026-10-28T10:00:00Z" };
+  const viejo = { ...parte, actualizado: "2026-10-28T04:00:00Z" };
+  // De noche un parte de 9 h es lo normal (las Pizarras no suben de 23 a 8): no se marca.
+  assert.ok(!auditarSalud({ mensajes: [], partes: [{ ...parte, actualizado: "2026-10-28T09:00:00Z" }], ahora: AHORA }).problemas.some((p) => p.tipo === "parte-viejo"));
   const r = auditarSalud({ mensajes: M, audios: new Set(["au2"]), archivos: new Set(["ar3-0", "ar3-1"]), partes: [viejo], ahora: AHORA,
     llamadas: [{ estado: "llamando", creadoEn: "2026-10-28T17:00:00Z", nombre: "Florencia", dispositivo: "A15", para: "mauro|Redmi" },
                { estado: "cortada", creadoEn: "2026-10-28T17:00:00Z" }] });
   const t = r.problemas.map((p) => p.texto).join("\n");
   assert.match(t, /2 trozo\(s\) de voz cerca no llegaron/);
   assert.match(t, /2 de 5 ronda\(s\) que habló no tuvieron acuse/);
-  assert.match(t, /hace 8 h/);
+  assert.match(t, /hace 14 h/);
   assert.equal(r.problemas.filter((p) => p.tipo === "llamada-colgada").length, 1);
   assert.deepEqual(r.aparatos[0].eventos, ["enlace: se cortó con A15 (wifi, sin latido)"]);
 });

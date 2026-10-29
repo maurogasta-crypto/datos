@@ -30,8 +30,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const VERSION = "charla-5";   // 28-oct: «salud», la auditoría de lo que se pierde (pizarra-78, reglas v24)
-export const VERSION_ANTERIOR = "charla-4";   // 28-oct: «limpiar», el gestor de la charla (reglas v23 de Tiempos)
+export const VERSION = "charla-6";   // 29-oct: «parte viejo» es más de 12 h (de noche las Pizarras no suben)
+export const VERSION_ANTERIOR = "charla-5";   // 28-oct: «salud», la auditoría de lo que se pierde (pizarra-78, reglas v24)
+export const VERSION_VIEJISIMA = "charla-4";   // 28-oct: «limpiar», el gestor de la charla (reglas v23 de Tiempos)
 export const VERSION_VIEJA = "charla-3";   // 24-oct: muestra los archivos (pizarra-64) y «bajar» para mirarlos   // 24-oct: flash-lite y tope por corrida (PROTOCOLO-DESARROLLO § 13, los cupos gratis)
 export const PROXY = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
 /** Cuántos audios se transcriben por corrida, como mucho: el resto queda «sin transcribir» y se lee en la próxima. */
@@ -182,7 +183,9 @@ export function auditarSalud({ mensajes = [], audios = new Set(), archivos = new
   for (const p of partes) {
     const act = ms(p.actualizado);
     const yo = nombre(p.de, p.dispositivo);
-    if (act != null && ahora - act > 3 * 3600_000)
+    // De 23 a 8 las Pizarras no se despiertan solas (`Despertar` de pizarra): de noche un parte de 9 o 10 h es lo
+    // normal. Viejo es más de 12 h (charla-6, 29-oct: la primera auditoría marcó los cuatro de madrugada).
+    if (act != null && ahora - act > 12 * 3600_000)
       problemas.push({ tipo: "parte-viejo", texto: `${yo}: su parte es de hace ${Math.round((ahora - act) / 3600_000)} h (¿apagado, sin red o sin pizarra-78?)` });
     const recibidos = new Set(p.recibidos || []);
     const hasta = ms(p.charlaHasta);

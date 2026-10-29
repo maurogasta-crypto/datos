@@ -333,8 +333,51 @@ Rioplatense, voseo, en la interfaz y en la documentación. Los tres.
 está viendo**. Si otro de los tres necesitara un segundo idioma, ese es el
 patrón: la dirección lleva el idioma, y el editor edita lo que muestra.
 
+## 13. El orden de un formulario (desde el 2026-10-29, `general:C8`)
+
+Lo propuso Gemini en el «Hub» del 29-oct («un cajón único de entrada») y Claude
+lo acotó: un formulario COMPARTIDO entre sitios no sirve —cada base guarda una
+forma distinta, con sus reglas—, pero el ORDEN sí se puede unificar, y es lo
+que hace que alguien que usa dos sitios no tenga que buscar el campo.
+
+**Todo formulario pide, de arriba abajo:**
+
+| | Qué | Ejemplos |
+|---|---|---|
+| 1 | **Qué** es | el título, lo que se hizo, el monto de un gasto |
+| 2 | **Cuándo** | día, desde, hasta |
+| 3 | **De qué** proyecto | adentro de qué tarea, la cuenta, la cabaña |
+| 4 | **Quién** | «Me ocupo yo», para quién, encargados |
+| 5 | **Detalles** | nota, lugar, color: si se usan poco, plegados en «Más detalles» |
+
+Y el botón de guardar va abajo, pegado (`.cv-pegado-abajo`, § 1.3), nunca
+arriba ni al medio.
+
+**Tres excepciones, que no son descuidos:**
+
+- **Cuando la entrada es una FOTO, la foto va primero.** El ＋ Gasto de Tiempos
+  abre con la factura porque la IA llena el qué y el cuánto: pedir el monto
+  antes de la foto sería hacerlo tipear dos veces.
+- **Lo que ya viene dado no se vuelve a preguntar.** Una tarea creada desde la
+  pantalla de un proyecto ya sabe de qué proyecto es; una pieza abierta desde
+  la agenda ya sabe su día. El campo se puede mostrar, pero no se pide.
+- **La puerta (login, alta, recuperar) tiene su propio orden** (§ 9): mail,
+  contraseña con su ojo 👁, entrar.
+
+**Cómo se aplica: al tocar cada pantalla, no en una tanda de reescritura.**
+Reordenar formularios que andan, sin un pedido detrás, es cambiarle la mano a
+quien ya los usa. El que toca una pantalla por otro motivo la deja en este
+orden en la misma tanda, y corrige la tabla de abajo.
+
+| Formulario | ¿Cumple? | Lo que falta |
+|---|---|---|
+| Tiempos · ＋ Gasto (`plata.js`) | sí, con la excepción de la foto | — |
+| Tiempos · editor de una pieza de la agenda (`editorPieza`) | sí: qué, día y horas, «Es…», dónde y nota | — |
+| Tiempos · ＋ Tarea (`index.html`) | **no** | pide «Adentro de» y «Ámbito» antes del día; el día va después de la meta |
+| Casa Verde, CasaYourte, remate, el panel | sin revisar | se revisan al tocarlos |
+
 ---
 
 *Creado el 2026-09-07, a partir de la lectura directa de los tres sitios.
-El § 11 se agregó el 2026-09-08.
+El § 11 se agregó el 2026-09-08; el § 13, el 2026-10-29.
 Qué le falta a cada uno: `ESTADO-DE-LOS-TRES.md`.*

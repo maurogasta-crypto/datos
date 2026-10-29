@@ -178,11 +178,16 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   entre los nueve del cascarón. La regla pasa a ser: **si el navegador lo pide,
   va plano; si lo lee una persona o una sesión, va en su carpeta.**
 - **Toda contraseña tiene su ojo 👁 para verla mientras se tipea** (`nucleo-7`,
-  11-oct-2026, pedido de Mauro «en todos los sitios»). Lo pone
-  `ojosEnClaves()` de `nucleo.js`, solo al cargar y también en los campos que
-  aparecen después. **Es el mismo código en los cinco sitios** —Tiempos, Casa
-  Verde, CasaYourte, remate y este panel— y en la Pizarra va en Kotlin: si
-  cambia en uno, cambia en todos en la misma tanda.
+  11-oct-2026, pedido de Mauro «en todos los sitios»), solo al cargar y
+  también en los campos que aparecen después. **Desde el 29-oct-2026
+  (`general:C7`, el primer paso del módulo común) vive en `ojos.js` de ESTE
+  repositorio, y es la ÚNICA copia de los cinco sitios**: Tiempos, Casa Verde,
+  CasaYourte y remate lo piden con `import("https://maurogasta-crypto.github.io/datos/ojos.js").catch(…)`,
+  y el panel con `import("./ojos.js")`. Diferido y con catch, nunca estático
+  (si no baja, la contraseña anda igual, sin ojo). **Tocarlo es tocar los
+  cinco sitios a la vez, sin que ninguno suba su sello**: antes de subir,
+  `node pruebas/ojos.mjs` (6 casos, en un DOM de verdad, y que ningún sitio de
+  al lado tenga su copia). En la Pizarra va en Kotlin.
 - **El núcleo es `nucleo.js` y no se duplica.** Si algo hace falta en dos
   pantallas, sube ahí en la misma tanda.
 - **El único contacto con el SDK de Firebase es `firebase-init.js`**, y desde
@@ -241,7 +246,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay catorce bancos de pruebas, y se corren antes de subir.** `node
+- **Hay quince bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (71 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
@@ -271,7 +276,8 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   le pide a la IA); `node pruebas/herramientas/notificaciones.mjs` (12 casos) para las
   notificaciones del 13C, que prueba sobre todo que descartar no deje copia;
   `node pruebas/exportar.mjs` (7 casos) para lo que se le pasa a Gemini, que
-  prueba sobre todo lo que NO sale;
+  prueba sobre todo lo que NO sale; `node pruebas/ojos.mjs` (6 casos) para el
+  ojo de las contraseñas que usan los cinco sitios;
   y `pruebas/panel/banco.mjs` (con `npm install`
   una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.

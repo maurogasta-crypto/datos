@@ -487,6 +487,7 @@ vuelve.
 |---|---|
 | `index.html` | el panel entero: tablero, sitios, las reglas, fichas, la puerta |
 | `nucleo.js` | el núcleo: la puerta, avisos, errores con causa, fechas locales |
+| `ojos.js` | el ojo 👁 de las contraseñas, la ÚNICA copia del ecosistema: los otros cuatro sitios lo piden de acá (`general:C7`) |
 | `firebase-init.js` | **el único contacto con el SDK de Firebase**, que baja diferido: ver «El SDK no viene puesto» |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
 | `reglas.txt` | **la plantilla de las reglas de Firestore**, con marcadores en vez de UID. La lee el panel |
@@ -624,7 +625,8 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-9` |
+| `nucleo.js` | `P.VERSION` | `nucleo-10` |
+| `ojos.js` | `VERSION` | `ojos-1` |
 | `index.html` | `P.PANEL` | `panel-44` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
 | `obra.html` | `P.PANEL` | `obra-10` |
@@ -633,13 +635,13 @@ teléfono.
 | `album.html` | `SELLO` | `album-1` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v42` |
+| `sw.js` | `VERSION` | `panel-shell-v43` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-9`. Sin ese número, el
+pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-10`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

@@ -143,15 +143,9 @@ await prueba("la respuesta de CallMeBot repite el número: se tapa antes de most
   assert.ok(!/\d{5,}/.test(r.detalle), r.detalle);
   assert.match(r.detalle, /…000/);
 });
-await prueba("busca las mismas señales que CV2._leerRespuestaWa de Casa Verde", () => {
-  const f = path.join(AQUI, "..", "..", "..", "casaverdecanas", "interno", "nucleo.js");
-  if (!fs.existsSync(f)) { console.log("      (sin la copia de casaverdecanas al lado: no se compara)"); return; }
-  const cv = fs.readFileSync(f, "utf8");
-  const bloque = cv.slice(cv.indexOf("CV2._leerRespuestaWa = function"), cv.indexOf("CV2.enviarWhatsApp = function"));
-  const señales = (s) => [...s.matchAll(/indexOf\('([^']+)'\)|includes\("([^"]+)"\)/g)].map((m) => m[1] || m[2]).sort();
-  const nuestro = fs.readFileSync(path.join(AQUI, "..", "..", "herramientas", "avisos.mjs"), "utf8");
-  const b2 = nuestro.slice(nuestro.indexOf("export function leerRespuesta"), nuestro.indexOf("/* ── Quién"));
-  assert.deepEqual([...new Set(señales(b2))], [...new Set(señales(bloque))]);
+await prueba("es la MISMA lectura que callmebot.js, la única copia del ecosistema (general:C7)", async () => {
+  const cm = await import(path.join(AQUI, "..", "..", "callmebot.js"));
+  assert.equal(leerRespuesta, cm.leerRespuestaWa);
 });
 
 titulo("A quién");

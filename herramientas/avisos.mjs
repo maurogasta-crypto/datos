@@ -148,34 +148,12 @@ export function armarMensaje(base, tema, texto, sobre) {
   return `${ICONO[tema] || "🤖"} Claude · ${tituloDe(base, sobre)}\n${String(texto).trim()}\n— aviso automático; se apaga en ${b.pantalla}`;
 }
 
-/* Lee la respuesta de CallMeBot DE VERDAD. Es la misma lectura que
-   `CV2._leerRespuestaWa` de casaverdecanas/interno/nucleo.js —que vive en el
-   navegador y no se puede importar desde acá—: CallMeBot contesta 200 aunque
-   rechace el pedido, y mete el error como HTML rojo en el cuerpo. Si cambia
-   una, cambia la otra: el banco compara las palabras que busca cada una. */
-/* CallMeBot repite en su respuesta el número al que mandó («Message to:
-   +55…»). Eso no puede llegar ni a la pantalla ni al registro: se tapa todo
-   número largo, dejando los tres últimos dígitos para poder reconocerlo.
-   Lo encontró la primera prueba real, el 30-sep-2026. */
-export const taparNumeros = (t) => String(t || "").replace(/\+?\d[\d\s().-]{6,}\d/g,
-  (m) => "…" + m.replace(/\D/g, "").slice(-3));
-
-export function leerRespuesta(txt) {
-  const crudo = String(txt || "");
-  const plano = taparNumeros(crudo.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
-  const b = plano.toLowerCase();
-  if (b.includes("paused") || b.includes("pausada"))
-    return { ok: false, motivo: "pausada", detalle: "la cuenta de CallMeBot de esa persona está EN PAUSA: tiene que mandarle «resume» al bot desde su teléfono" };
-  if (b.includes("apikey") && (b.includes("not valid") || b.includes("invalid") || b.includes("missing") || b.includes("wrong")))
-    return { ok: false, motivo: "clave", detalle: "CallMeBot no acepta esa clave: tiene que pedirle «Recover APIKey» al bot y volver a cargarla" };
-  if (b.includes("not found") || b.includes("no registrado") || b.includes("not registered"))
-    return { ok: false, motivo: "sin_alta", detalle: "ese número no está dado de alta en CallMeBot" };
-  if (b.includes("limit") || b.includes("too many"))
-    return { ok: false, motivo: "limite", detalle: "CallMeBot frenó por límite de uso" };
-  if (crudo.toLowerCase().includes("color:red"))
-    return { ok: false, motivo: "rechazado", detalle: plano.slice(0, 240) };
-  return { ok: true, motivo: "", detalle: plano.slice(0, 240) };
-}
+/* Leer la respuesta de CallMeBot (y tapar los números que repite) vive desde el
+   29-oct-2026 en `callmebot.js` de la raíz de este repositorio, la ÚNICA copia
+   del ecosistema (`general:C7`): la usan también Casa Verde, CasaYourte y
+   remate. Acá se reexporta con el nombre de siempre. */
+import { taparNumeros, leerRespuestaWa as leerRespuesta } from "../callmebot.js";
+export { taparNumeros, leerRespuesta };
 
 /* ── Quién ───────────────────────────────────────────────────────────────── */
 const plano = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();

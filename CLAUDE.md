@@ -188,6 +188,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   cinco sitios a la vez, sin que ninguno suba su sello**: antes de subir,
   `node pruebas/ojos.mjs` (6 casos, en un DOM de verdad, y que ningún sitio de
   al lado tenga su copia). En la Pizarra va en Kotlin.
+  **La segunda pieza es `callmebot.js`** (`callmebot-1`, el mismo día): leer si
+  CallMeBot aceptó un WhatsApp —contesta 200 aunque rechace—. Eran cuatro
+  copias que ya decían cosas distintas (Casa Verde, CasaYourte, remate y
+  `herramientas/avisos.mjs`); ahora los sitios la piden diferida al usarla, y
+  si no baja dicen que no pudieron leer (`sin_leer`), nunca «salió bien».
 - **El núcleo es `nucleo.js` y no se duplica.** Si algo hace falta en dos
   pantallas, sube ahí en la misma tanda.
 - **El único contacto con el SDK de Firebase es `firebase-init.js`**, y desde
@@ -246,7 +251,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay quince bancos de pruebas, y se corren antes de subir.** `node
+- **Hay dieciséis bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (71 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
@@ -277,7 +282,9 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   notificaciones del 13C, que prueba sobre todo que descartar no deje copia;
   `node pruebas/exportar.mjs` (7 casos) para lo que se le pasa a Gemini, que
   prueba sobre todo lo que NO sale; `node pruebas/ojos.mjs` (6 casos) para el
-  ojo de las contraseñas que usan los cinco sitios;
+  ojo de las contraseñas que usan los cinco sitios; `node pruebas/callmebot.mjs`
+  (7 casos) para la lectura de la respuesta de CallMeBot, que usan tres sitios y
+  `avisos.mjs`;
   y `pruebas/panel/banco.mjs` (con `npm install`
   una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.

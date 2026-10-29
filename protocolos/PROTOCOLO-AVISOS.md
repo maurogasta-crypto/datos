@@ -135,8 +135,10 @@ el chat:
 - **Un minuto entre dos al mismo número**, que es lo que deja el plan gratis de
   CallMeBot. La herramienta espera sola.
 - **Un 200 no quiere decir que salió.** CallMeBot contesta 200 con la cuenta en
-  pausa o la clave mala; la respuesta se lee con la misma lectura que
-  `CV2._leerRespuestaWa`, y el banco compara las dos.
+  pausa o la clave mala; la respuesta se lee con `callmebot.js` de `datos`, la
+  ÚNICA copia del ecosistema desde el 29-oct-2026 (`general:C7`): la usan esta
+  herramienta y los tres sitios, y tapa los números que CallMeBot repite.
+  Banco: `node pruebas/callmebot.mjs`.
 - **Cada intento queda anotado** en `avisos/AAAA-MM.json` de la bodega privada:
   a quién (nombre y base), de qué, el texto, qué contestó CallMeBot y una
   huella del número —nunca el número—.

@@ -488,6 +488,7 @@ vuelve.
 | `index.html` | el panel entero: tablero, sitios, las reglas, fichas, la puerta |
 | `nucleo.js` | el núcleo: la puerta, avisos, errores con causa, fechas locales |
 | `ojos.js` | el ojo 👁 de las contraseñas, la ÚNICA copia del ecosistema: los otros cuatro sitios lo piden de acá (`general:C7`) |
+| `callmebot.js` | leer si CallMeBot aceptó un WhatsApp, la ÚNICA copia: la piden Casa Verde, CasaYourte, remate y `herramientas/avisos.mjs` (`general:C7`) |
 | `firebase-init.js` | **el único contacto con el SDK de Firebase**, que baja diferido: ver «El SDK no viene puesto» |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
 | `reglas.txt` | **la plantilla de las reglas de Firestore**, con marcadores en vez de UID. La lee el panel |
@@ -627,6 +628,7 @@ teléfono.
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-10` |
 | `ojos.js` | `VERSION` | `ojos-1` |
+| `callmebot.js` | `VERSION` | `callmebot-1` |
 | `index.html` | `P.PANEL` | `panel-44` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
 | `obra.html` | `P.PANEL` | `obra-10` |

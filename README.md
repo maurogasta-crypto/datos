@@ -488,6 +488,7 @@ vuelve.
 | `index.html` | el panel entero: tablero, sitios, las reglas, fichas, la puerta |
 | `nucleo.js` | el núcleo: la puerta, avisos, errores con causa, fechas locales |
 | `ojos.js` | el ojo 👁 de las contraseñas, la ÚNICA copia del ecosistema: los otros cuatro sitios lo piden de acá (`general:C7`) |
+| `errores.js` | las causas de los errores en castellano, la ÚNICA tabla: la piden los cinco sitios, que le suman sólo las suyas (`general:C7`) |
 | `callmebot.js` | leer si CallMeBot aceptó un WhatsApp, la ÚNICA copia: la piden Casa Verde, CasaYourte, remate y `herramientas/avisos.mjs` (`general:C7`) |
 | `firebase-init.js` | **el único contacto con el SDK de Firebase**, que baja diferido: ver «El SDK no viene puesto» |
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
@@ -626,9 +627,10 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-10` |
+| `nucleo.js` | `P.VERSION` | `nucleo-11` |
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
+| `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-44` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
 | `obra.html` | `P.PANEL` | `obra-10` |
@@ -637,13 +639,13 @@ teléfono.
 | `album.html` | `SELLO` | `album-1` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v43` |
+| `sw.js` | `VERSION` | `panel-shell-v44` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-10`. Sin ese número, el
+pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-11`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

@@ -18,7 +18,7 @@ import {
 } from "./firebase-init.js?v=init-5";
 
 export const P = {};
-P.VERSION = "nucleo-10";
+P.VERSION = "nucleo-11";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */
@@ -50,20 +50,12 @@ P.aviso = function (texto, tipo) {
 /* Un error muestra la CAUSA, no el código (PROTOCOLO-INTERFAZ §7.2).
    «Error 400» no se puede diagnosticar; «permission-denied» se resuelve
    sabiendo dónde mirar. */
-const CAUSAS = {
+/* Desde nucleo-11 (29-oct-2026, `general:C7`) la tabla común vive en
+   `errores.js` —la ÚNICA del ecosistema— y acá quedan sólo las causas que
+   nombran ESTE panel («La puerta», datos-830f8). Ganan sobre las comunes. */
+const PROPIAS = {
   "permission-denied": "Las reglas de Firestore no dejan hacer eso. Si es la primera vez "
     + "que entrás, todavía no publicaste las reglas con tu UID: mirá «La puerta» en el README.",
-  "unavailable": "No hay conexión con Firestore. Es la red, no un permiso.",
-  "failed-precondition": "Firestore pide algo que no está: casi siempre, un índice.",
-  "auth/invalid-credential": "El mail o la contraseña no coinciden. (Firebase ya no dice cuál de los dos.)",
-  "auth/invalid-email": "Ese mail está mal escrito.",
-  "auth/user-not-found": "No existe ninguna cuenta con ese mail.",
-  "auth/too-many-requests": "Demasiados intentos seguidos. Esperá un rato y probá de nuevo.",
-  "auth/network-request-failed": "No se pudo llegar a Firebase. Es la red.",
-  /* Los dos errores del primer día. No son un problema del panel: son un paso
-     de configuración que todavía no se dio, y cada uno pide una cosa distinta
-     en la consola. Sin esta explicación, el panel devuelve el código pelado y
-     no hay forma de saber que la respuesta está en Firebase y no acá. */
   "auth/configuration-not-found": "El proyecto todavía no tiene Authentication. Consola de "
     + "Firebase → datos-830f8 → Authentication → Comenzar, y habilitá «Correo electrónico/contraseña».",
   "auth/operation-not-allowed": "Authentication existe, pero el acceso con mail y contraseña está "
@@ -71,9 +63,14 @@ const CAUSAS = {
   "auth/invalid-api-key": "La configuración de firebase-init.js no corresponde a ningún proyecto. "
     + "No es un permiso: es el projectId o la apiKey mal copiados."
 };
+// Se pide al cargar: los errores se muestran en el acto. Si no bajó, se ve
+// lo de antes —la causa propia o el mensaje—: nunca peor.
+let _errores = null;
+import("./errores.js").then((m) => { _errores = m; }).catch(() => {});
 P.explicar = (e) => {
+  if (_errores) return _errores.explicar(e, PROPIAS);
   const c = (e && e.code) || "";
-  return (CAUSAS[c] || (e && e.message) || String(e)) + (c ? " · " + c : "");
+  return (PROPIAS[c] || (e && e.message) || String(e)) + (c ? " · " + c : "");
 };
 
 /* ---------- fechas ---------- */

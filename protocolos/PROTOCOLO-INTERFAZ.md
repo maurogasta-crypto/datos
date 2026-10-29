@@ -200,6 +200,12 @@ un minuto. **Un mensaje de error sin código es un problema de dos minutos
 convertido en tres días** (`casaverdecanas`). Y **un `catch` que traga un error
 de permisos es un error invisible**.
 
+**Desde el 29-oct-2026 las palabras son las mismas en los cinco sitios**
+(`general:C7`): la tabla de causas es `errores.js` de `datos`, la única, y
+cada sitio le suma sólo lo que nombra su propia consola o pantalla. Se pide al
+cargar, diferida y con catch; si no bajó, se ve el código como antes. Banco:
+`node pruebas/errores.mjs`.
+
 ### 7.3 · Una acción destructiva se confirma diciendo qué se pierde
 No "¿Estás seguro?", sino qué desaparece exactamente y qué no. El caso modelo es
 "Reparar la app", que se anima a decir que **no** se pierde nada — y por eso se

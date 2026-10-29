@@ -500,6 +500,36 @@ vuelve.
 | `.github/workflows/pages.yml` | publica el sitio; el único workflow, sin secretos |
 | `guias/` | procedimientos en PDF para leer en el teléfono, enlazados desde los avisos de la Pizarra. Desde el 19-oct-2026: `instagram-casayourte.pdf` e `instagram-casaverde.pdf`. Desde el 20-oct, `pedidos-de-facebook.md`: cómo funciona y cómo se usa la lectura de los grupos de Facebook en el 13C. **Sin datos ni claves**: el repositorio es público |
 
+## Exportar para Gemini (`gemini.html`, desde el 29-oct-2026)
+
+Mauro: «poder tener un diálogo con otra IA para auditar el desarrollo… a
+partir de esas intervenciones se escribirían solicitudes para que el
+desarrollo siga siendo centralizado en Claude». El 🤖 de la barra abre
+`gemini.html`, que arma en el navegador un `.txt` para subir al chat de
+Gemini:
+
+- **🗺 Mapa del ecosistema** (~700 KB, ~200 mil tokens): los `CLAUDE.md` de
+  cada repositorio de `proyectos/` (`sitio.repo`), `protocolos/` y
+  `TRASPASO.md` de este repo, y el estado del panel —proyectos, líneas,
+  pendientes abiertos y las 20 tandas más nuevas—. Va siempre.
+- **📦 Un repo en bruto**: todo el texto de un repositorio, sin binarios,
+  dependencias ni `respaldos/`. El ecosistema entero (~8,7 MB, ~2,5 M de
+  tokens) no entra en la ventana de Gemini, y un archivo cortado es peor que
+  uno chico: la IA opina sobre lo que no vio.
+
+El código se baja de GitHub (repos públicos, último commit; la API sin cuenta
+deja 60 pedidos por hora y el mapa usa unos 10); el estado del panel, con la
+sesión de Mauro. **Nunca se leen `claves/` ni `fichas/`**, la bodega no está
+en `proyectos/`, y del estado se tapan mails, teléfonos y UIDs; de lo que
+habla de reservas o clientes sale sólo el título (`DE_PERSONAS`), porque
+nombra huéspedes. Un invitado no entra. La lógica pura vive en `exportar.js`
+y la prueba `node pruebas/exportar.mjs`.
+
+**La vuelta**: lo que propone Gemini se carga en «Pedido» con la casilla «🤖
+Es una propuesta de Gemini» (`origen: "gemini"`). La ronda lo marca en
+ORGANIZAR y lo EVALÚA contra las reglas y el código antes de planearlo: es
+una propuesta, no una orden.
+
 ## Los proyectos (`obra.html`, desde el 15-oct-2026)
 
 Mauro: «la interfaz en panel para ver todos los detalles de lo que se va
@@ -595,13 +625,15 @@ teléfono.
 | Archivo | Constante | Valor |
 |---|---|---|
 | `nucleo.js` | `P.VERSION` | `nucleo-9` |
-| `index.html` | `P.PANEL` | `panel-43` |
+| `index.html` | `P.PANEL` | `panel-44` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
 | `obra.html` | `P.PANEL` | `obra-10` |
+| `gemini.html` | `P.PANEL` | `gemini-1` |
+| `exportar.js` | `VERSION` | `exportar-1` |
 | `album.html` | `SELLO` | `album-1` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v41` |
+| `sw.js` | `VERSION` | `panel-shell-v42` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

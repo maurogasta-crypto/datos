@@ -628,6 +628,11 @@ const esperaPlan = (x) => abiertoP(x) && (
   (String(x.respuesta || "").trim() && String(x.planEn || "") < String(x.respondidoEn || "~"))
   || (x.tipo === "pedido" && !String(x.plan || "").trim()));
 const paraOrganizar = (p) => (p || []).filter(esperaPlan);
+/* panel-44 (29-oct-2026): lo que propuso Gemini entra por «Pedido» con
+   `origen: "gemini"`. Es una propuesta de otra IA que Mauro trajo, no una
+   orden: se evalúa contra las reglas y el código del momento, y si choca con
+   algo se dice con qué ANTES de planear (TRASPASO § 4, paso 6 bis). */
+const deGemini = (p) => !!p && p.origen === "gemini";
 
 /* ── COHERENCIA: LO QUE QUEDÓ EN EL TIEMPO ─────────────────────────────────
    3-oct-2026, Mauro: «se pierden los hilos al leer cosas que quedaron en el
@@ -671,7 +676,7 @@ function porProyecto(pendientes, fichas) {
     );
 }
 
-export { CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
+export { deGemini, CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA, origenDe, cruzar, letrasEnUso, ordenarAbiertos,
          tocados, sinResponder, esperaPlan, paraOrganizar, quedaronViejos, ultimoMovimiento, porProyecto, pesoDe, reglasSinPublicar,
          vivaL, diasTomada, lineasVivas, tieneCircuito, esPedido,
          MINUTOS_RESERVA, reservaViva, reservasDe, minutosQueQuedan,
@@ -1088,6 +1093,7 @@ function imprimir(d) {
   if (!org.length) L.push(`      (nada: todo lo contestado ya tiene plan)`);
   for (const p of org) {
     L.push(`      ${p.id}  [${p.prioridad || "media"}/${p.quien || "?"}]  ${corto(p.titulo)}`);
+    if (deGemini(p)) L.push(`          🤖 PROPUESTA DE GEMINI: evaluarla contra las reglas y el código de hoy; si choca, decir con qué antes del plan`);
     if (p.respuesta) L.push(`          dijo: ${corto(p.respuesta, 140)}`);
   }
   if (org.length) {

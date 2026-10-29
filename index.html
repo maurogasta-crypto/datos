@@ -27,6 +27,10 @@
        que vengan—, en su propia página (obra.html). panel-39: UN solo botón
        (Mauro: «quedó duplicado»); con un solo proyecto abre directo en él. -->
   <a class="btn" href="./obra.html" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;text-decoration:none">📁 Proyectos</a>
+  <!-- panel-44 (29-oct-2026): exportar el ecosistema para auditarlo con
+       Gemini (gemini.html). Gemini propone; lo propuesto vuelve como pedido
+       con la casilla de abajo, y Claude lo evalúa antes de tocar nada. -->
+  <a class="btn" href="./gemini.html" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;text-decoration:none" aria-label="Exportar para Gemini">🤖</a>
   <button class="btn" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
 </div>
 
@@ -87,6 +91,11 @@
         <textarea id="pr-texto" class="libre" rows="2"
           placeholder="Qué querés que se haga. La primera línea es el título."></textarea>
         <p class="gris" id="pr-donde" style="margin:.3rem 0 0;font-size:.78rem"></p>
+        <!-- panel-44: lo que propuso Gemini entra marcado. La ronda lo trata
+             como una PROPUESTA que se evalúa contra las reglas y el código,
+             no como una orden (TRASPASO § 4, paso 6 bis). -->
+        <label style="display:flex;gap:.4rem;align-items:center;font-size:.85rem;margin:.4rem 0 0">
+          <input type="checkbox" id="pr-gemini" style="width:auto;min-height:0"> 🤖 Es una propuesta de Gemini</label>
         <div class="fila-btn">
           <button class="btn" id="btnPedido">Más opciones</button>
           <button class="btn p" id="btnPedidoRapido">Mandar el pedido</button>
@@ -554,7 +563,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-43";
+P.PANEL = "panel-44";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -929,12 +938,13 @@ function pintarDondePedido() {
    arriba y prioridad media. Lo que el formulario completo decide con
    casillas, acá lo decide el selector. */
 $("btnPedidoRapido").addEventListener("click", async () => {
-  const r = armarPedido($("pr-texto").value, APP ? [APP] : [], "media", PENDIENTES, P.hoy());
+  const r = armarPedido($("pr-texto").value, APP ? [APP] : [], "media", PENDIENTES, P.hoy(),
+    $("pr-gemini").checked ? "gemini" : "panel");
   if (!r.ok) return P.aviso(r.motivo, "error");
   const b = $("btnPedidoRapido"); b.disabled = true; b.textContent = "…";
   try {
     await setDoc(doc(db, "pendientes", r.id), { ...r.datos, actualizadoEn: serverTimestamp() });
-    $("pr-texto").value = "";
+    $("pr-texto").value = ""; $("pr-gemini").checked = false;
     await leer();
     P.aviso("Cargado como " + r.id + ". Lo levanta la próxima ronda.");
   } catch (e) { P.aviso(P.explicar(e), "error"); }
@@ -1733,7 +1743,8 @@ async function leerLineas() {
    no la usaba nadie. La letra es temática (ronda.mjs, `letrasEnUso`) y ésta
    la elige la pantalla porque el tema ya se sabe: es un pedido de Mauro. */
 const LARGO_TITULO = 90;
-function armarPedido(texto, sitios, prioridad, pendientes, hoy) {
+function armarPedido(texto, sitios, prioridad, pendientes, hoy, origen = "panel") {
+  const deGemini = origen === "gemini";
   const limpio = String(texto || "").trim();
   if (!limpio) return { ok: false, motivo: "Escribí qué pedís." };
   const primera = limpio.split("\n")[0].trim();
@@ -1758,7 +1769,7 @@ function armarPedido(texto, sitios, prioridad, pendientes, hoy) {
     porQue: limpio,
     tipo: "pedido",
     sitios: lista,
-    origen: "panel",
+    origen: deGemini ? "gemini" : "panel",
     quien: "claude",
     estado: "abierto",
     prioridad: ["alta", "media", "baja"].includes(prioridad) ? prioridad : "media",
@@ -1767,7 +1778,9 @@ function armarPedido(texto, sitios, prioridad, pendientes, hoy) {
        mira la próxima ronda. */
     tocado: true,
     creadoEn: hoy,
-    historia: [{ fecha: hoy, por: "mauro", texto: "Mauro: pedido cargado desde el panel" }]
+    historia: [{ fecha: hoy, por: "mauro", texto: deGemini
+      ? "Mauro: propuesta de Gemini cargada desde el panel (se evalúa, no se obedece)"
+      : "Mauro: pedido cargado desde el panel" }]
   } };
 }
 

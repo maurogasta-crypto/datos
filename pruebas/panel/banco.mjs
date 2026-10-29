@@ -1615,6 +1615,12 @@ pe = api.armarPedido("Unificar los avisos", ["casaverde", "remate"], "nada", PEN
 ok(pe.id === "general:P5" && pe.datos.sitios.join() === "casaverde,remate",
    "varios sitios: es general, nombra los dos, y no pisa general:P4 aunque su clave sea otra");
 ok(pe.datos.prioridad === "media", "una urgencia desconocida cae en «después»");
+/* panel-44: lo que propuso Gemini entra marcado, para que la ronda lo evalúe y no lo obedezca. */
+pe = api.armarPedido("Unificar el ojo de las claves\nSitio: datos", ["datos"], "media", PEND, "2026-10-29", "gemini");
+ok(pe.ok && pe.datos.origen === "gemini" && /Gemini/.test(pe.datos.historia[0].texto) && pe.datos.quien === "claude",
+   "una propuesta de Gemini: origen «gemini», de Claude, y la historia dice que se evalúa");
+ok(api.armarPedido("Algo", ["datos"], "media", PEND, "2026-10-29").datos.origen === "panel", "sin decir nada, sigue siendo del panel");
+ok(/id="pr-gemini"/.test(fs.readFileSync(new URL("../../index.html", import.meta.url), "utf8")), "el pedido rápido tiene la casilla de Gemini");
 pe = api.armarPedido("x".repeat(200), [], "baja", [], "2026-10-02");
 ok(pe.id === "general:P1" && pe.datos.titulo.length === 90 && pe.datos.titulo.endsWith("…"),
    "ninguno: general, y un título largo se corta con puntos suspensivos");

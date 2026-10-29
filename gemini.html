@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel · exportar para Gemini</title>
+<link rel="stylesheet" href="estilos.css?v=estilos-14">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" href="./icono-192.png">
+<link rel="manifest" href="./manifest.json">
+<style>
+  .ge-btns { display: grid; gap: .6rem; margin: .6rem 0; }
+  .ge-repo { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+  .ge-repo select { flex: 1 1 12rem; }
+  #ge-estado { white-space: pre-wrap; font-size: .82rem; }
+  .ge-ok { color: var(--verde, #7fd18b); }
+</style>
+</head>
+<body>
+
+<!--
+  ════════════════════════════════════════════════════════════════
+  gemini.html — EXPORTAR PARA GEMINI (panel-44, 29-oct-2026)
+
+  Mauro: «poder tener un diálogo con otra IA para auditar el desarrollo y
+  que me ayude a hacer comprensiones en otros planos… a partir de esas
+  intervenciones se escribirían solicitudes para que el desarrollo siga
+  siendo centralizado en Claude». Gemini AUDITA y PROPONE; Claude evalúa y
+  escribe; lo propuesto vuelve por «Pedido» del panel con la casilla «Es una
+  propuesta de Gemini» (`origen: "gemini"`), y la ronda lo trata como una
+  propuesta, no como una orden.
+
+  Todo se arma EN ESTE NAVEGADOR: el código se baja de GitHub (repos
+  públicos, el último commit de la rama por defecto) y el estado del panel
+  se lee con la sesión de Mauro. Sin servidor, sin workflow, sin credencial
+  nueva. Nunca se leen `claves/` ni `fichas/`; la lógica de qué entra y qué
+  se tapa está en `exportar.js`, con su banco.
+
+  Sólo para Mauro: un invitado vuelve a su página.
+  ════════════════════════════════════════════════════════════════
+-->
+
+<div id="barra">
+  <div class="marca"><a href="./" class="volver" style="text-decoration:none">← Panel</a> · Gemini<small id="sello"></small></div>
+  <button class="btn hide" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
+</div>
+
+<div id="sin-sdk" class="contenedor hide">
+  <h1>Falta Firebase</h1>
+  <div class="tarj"><p id="sin-sdk-que" class="gris"></p>
+    <div class="fila-btn"><button class="btn p" id="btnReintentar">Reintentar</button></div></div>
+</div>
+
+<div id="puerta" class="contenedor hide">
+  <h1>Entrar</h1>
+  <div class="tarj">
+    <label for="mail">Mail</label>
+    <input type="email" id="mail" inputmode="email" autocomplete="username">
+    <label for="clave">Contraseña</label>
+    <input type="password" id="clave" autocomplete="current-password">
+    <div class="fila-btn"><button class="btn p" id="btnEntrar">Entrar</button></div>
+  </div>
+</div>
+
+<div id="app" class="contenedor hide">
+  <h1>Exportar para Gemini</h1>
+  <div class="tarj">
+    <p class="gris" style="margin-top:0">Un archivo de texto para subir al chat de Gemini. Gemini audita y propone;
+      lo que proponga lo traés en <b>Pedido</b> del panel, con la casilla «Es una propuesta de Gemini», y Claude
+      lo evalúa antes de tocar nada.</p>
+    <p class="gris">No sale ningún dato de personas, ni la bóveda ni las fichas. Del estado del panel se tapan
+      mails, teléfonos y UIDs.</p>
+    <div class="ge-btns">
+      <button class="btn p" id="btnMapa">🗺 Mapa del ecosistema</button>
+      <div class="ge-repo">
+        <select id="cualRepo" aria-label="Qué repositorio"></select>
+        <button class="btn" id="btnRepo">📦 Un repo en bruto</button>
+      </div>
+    </div>
+    <p class="gris" style="font-size:.8rem;margin-bottom:0">Primero el mapa, siempre. Un repo en bruto, cuando
+      quieras auditar ése a fondo (todo el ecosistema junto no entra en la ventana de Gemini).</p>
+  </div>
+  <div class="tarj"><div id="ge-estado" class="gris">Listo.</div></div>
+</div>
+
+<script type="module">
+import { P, $, db } from "./nucleo.js?v=nucleo-9";
+import { doc, getDoc, getDocs, collection } from "./firebase-init.js?v=init-5";
+import { reposDe, entra, vaAlMapa, archivo, cabecera, estadoPanel, tokens, VERSION as LOGICA } from "./exportar.js?v=exportar-1";
+P.PANEL = "gemini-1";
+P.pintarSello();
+
+let PROYECTOS = [];
+const API = "https://api.github.com/repos/";
+const RAW = "https://raw.githubusercontent.com/";
+
+async function arrancar() {
+  for (const id of ["sin-sdk", "puerta", "app"]) $(id).classList.add("hide");
+  if (!(await P.arrancarFirebase())) {
+    $("sin-sdk-que").textContent = P.fallaFirebase ? P.fallaFirebase.message : "No bajó el SDK.";
+    $("sin-sdk").classList.remove("hide"); return;
+  }
+  const yo = await P.quienEntra();
+  if (!yo) { $("puerta").classList.remove("hide"); return; }
+  $("btnSalir").classList.remove("hide");
+  // Un invitado no exporta el ecosistema: vuelve a su página.
+  const f = await getDoc(doc(db, "personas", yo.uid)).catch(() => null);
+  if (f && f.exists()) { location.replace("invitado.html"); return; }
+  $("app").classList.remove("hide");
+  try {
+    PROYECTOS = (await getDocs(collection(db, "proyectos"))).docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) { return decir("No pude leer los proyectos: " + P.explicar(e)); }
+  $("cualRepo").innerHTML = reposDe(PROYECTOS).map((r) =>
+    `<option value="${P.esc(r.repo)}">${P.esc(r.repo)} (${P.esc(r.proyectos.join(", "))})</option>`).join("");
+}
+$("btnReintentar").onclick = arrancar;
+$("btnEntrar").onclick = async () => {
+  try { await P.entrar($("mail").value, $("clave").value); location.reload(); }
+  catch (e) { P.aviso(P.explicar(e), "error"); }
+};
+$("btnSalir").onclick = async () => { await P.salir(); location.reload(); };
+
+const decir = (t) => { $("ge-estado").textContent = t; };
+
+/* GitHub sin cuenta deja 60 pedidos por hora a la API: el mapa usa uno por
+   repositorio (el último commit) más el árbol de datos, y un repo en bruto
+   dos. Los archivos van por raw.githubusercontent.com, que no cuenta ahí. */
+async function api(ruta) {
+  const r = await fetch(API + ruta, { headers: { Accept: "application/vnd.github+json" } });
+  if (r.status === 403) throw new Error("GitHub dice que se pasó el límite de la hora (60 sin cuenta). Probá en un rato.");
+  if (!r.ok) throw new Error(`GitHub contestó ${r.status} (¿repositorio privado o inexistente?)`);
+  return r.json();
+}
+async function ultimoCommit(repo) {
+  const [c] = await api(repo + "/commits?per_page=1");
+  if (!c) throw new Error("sin commits");
+  return { repo, sha: c.sha, fecha: String(c.commit && c.commit.committer && c.commit.committer.date || "").slice(0, 10) };
+}
+async function crudo(repo, sha, ruta) {
+  const r = await fetch(RAW + repo + "/" + sha + "/" + ruta.split("/").map(encodeURIComponent).join("/"));
+  if (!r.ok) throw new Error(`${ruta}: ${r.status}`);
+  return r.text();
+}
+/* De a seis a la vez: un teléfono con cien pedidos abiertos se cuelga. */
+async function enTandas(cosas, n, f) {
+  const out = new Array(cosas.length); let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, cosas.length) }, async () => {
+    while (i < cosas.length) { const k = i++; out[k] = await f(cosas[k], k); }
+  }));
+  return out;
+}
+function bajar(nombre, texto) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([texto], { type: "text/plain;charset=utf-8" }));
+  a.download = nombre; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
+const hoy = () => P.hoy ? P.hoy() : new Date().toISOString().slice(0, 10);
+const resumen = (texto, n) => `${Math.round(texto.length / 1024)} KB · unos ${Math.round(tokens(texto) / 1000)} mil tokens · ${n} archivos`;
+
+function ocupado(si) { for (const b of ["btnMapa", "btnRepo", "cualRepo"]) $(b).disabled = si; }
+
+$("btnMapa").onclick = async () => {
+  ocupado(true);
+  try {
+    const repos = reposDe(PROYECTOS);
+    decir(`Leyendo ${repos.length} repositorios…`);
+    const fotos = [], faltan = [], partes = [];
+    for (const r of repos) {
+      try { fotos.push(await ultimoCommit(r.repo)); } catch (e) { faltan.push(`${r.repo}: ${e.message}`); }
+    }
+    for (const c of fotos) {
+      let rutas = ["CLAUDE.md"];
+      if (/\/datos$/.test(c.repo)) {
+        const arbol = await api(c.repo + "/git/trees/" + c.sha + "?recursive=1");
+        rutas = (arbol.tree || []).filter((t) => t.type === "blob" && vaAlMapa(c.repo, t.path)).map((t) => t.path).sort();
+      }
+      decir(`Bajando ${c.repo}…`);
+      for (const ruta of rutas) {
+        try { partes.push(archivo(c.repo, ruta, await crudo(c.repo, c.sha, ruta))); }
+        catch (e) { faltan.push(`${c.repo}/${ruta}: ${e.message}`); }
+      }
+    }
+    decir("Leyendo el estado del panel…");
+    const leerCol = async (c) => (await getDocs(collection(db, c))).docs.map((d) => ({ id: d.id, ...d.data() }));
+    const [lineas, pendientes, tandas] = await Promise.all(["lineas", "pendientes", "tandas"].map(leerCol));
+    partes.push(archivo("panel", "estado.txt", estadoPanel({ lineas, pendientes, tandas, proyectos: PROYECTOS })));
+    const texto = cabecera({ nivel: "mapa", repos: fotos, faltan }) + partes.join("");
+    bajar(`ecosistema-mapa-${hoy()}.txt`, texto);
+    decir(`✔ Mapa listo: ${resumen(texto, partes.length)}.${faltan.length ? "\nNo se pudo leer: " + faltan.join(" · ") : ""}\nSubilo al chat de Gemini.`);
+  } catch (e) { decir("✖ " + (e.message || e)); }
+  finally { ocupado(false); }
+};
+
+$("btnRepo").onclick = async () => {
+  const repo = $("cualRepo").value; if (!repo) return;
+  ocupado(true);
+  try {
+    decir(`Leyendo ${repo}…`);
+    const c = await ultimoCommit(repo);
+    const arbol = await api(repo + "/git/trees/" + c.sha + "?recursive=1");
+    const rutas = (arbol.tree || []).filter((t) => t.type === "blob" && entra(t.path, t.size)).map((t) => t.path).sort();
+    const faltan = arbol.truncated ? ["el árbol vino cortado por GitHub: faltan archivos"] : [];
+    let hechos = 0;
+    const partes = await enTandas(rutas, 6, async (ruta) => {
+      try { const t = await crudo(repo, c.sha, ruta); decir(`Bajando ${repo}: ${++hechos} de ${rutas.length}…`); return archivo(repo, ruta, t); }
+      catch (e) { faltan.push(`${ruta}: ${e.message}`); return ""; }
+    });
+    const texto = cabecera({ nivel: "repo", repos: [c], faltan }) + partes.join("");
+    bajar(`${repo.split("/")[1]}-${c.sha.slice(0, 7)}.txt`, texto);
+    const grande = tokens(texto) > 700000 ? "\n⚠ Es grande para una sola conversación: pasale el mapa en otra." : "";
+    decir(`✔ ${repo} listo: ${resumen(texto, rutas.length)}.${faltan.length ? "\nNo se pudo leer: " + faltan.slice(0, 8).join(" · ") : ""}${grande}\nSubilo al chat de Gemini.`);
+  } catch (e) { decir("✖ " + (e.message || e)); }
+  finally { ocupado(false); }
+};
+
+console.log("gemini.html", P.PANEL, LOGICA);
+arrancar();
+</script>
+</body>
+</html>

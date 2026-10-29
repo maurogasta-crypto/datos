@@ -774,6 +774,44 @@ tus propios pendientes — el mismo «un chat se bloquea a sí mismo» del § 2.
 sexies, entrando por la ventana. Cuando falta, la ronda **lo dice** en vez de
 decidir mal en silencio.
 
+### 2.1 nonies · Colaboración Multi-IA: Gemini audita, Claude desarrolla
+
+Desde el 29-oct-2026, a pedido de Mauro: «poder tener un diálogo con otra IA
+para auditar el desarrollo y que me ayude a hacer comprensiones en otros
+planos… a partir de esas intervenciones se escribirían solicitudes para que
+el desarrollo siga siendo centralizado en Claude».
+
+**Los papeles no se mezclan.** Gemini (el chat de la app, en el plan de
+Mauro) LEE y PROPONE; Claude (Claude Code) EVALÚA y ESCRIBE; la decisión es
+de Mauro. Gemini no tiene acceso de escritura a ningún repositorio ni a
+ninguna base: no hay clave suya en un teléfono, ni token de GitHub, ni
+commits automáticos. Se descartó a propósito el camino de Aider en Termux
+(28-oct): dos IAs escribiendo en el mismo `main`, sin poder reservar un
+repositorio ni correr los bancos, era el choque que el § 2.1 sexies existe
+para evitar.
+
+**Lo que lee Gemini** sale del 🤖 del panel (`gemini.html`, `exportar.js`):
+el **mapa** —los `CLAUDE.md` de cada repositorio, `protocolos/`,
+`TRASPASO.md` y el estado del panel— o **un repositorio en bruto**. Es una
+foto a un commit, y la cabecera lo dice. **No sale nunca**: `claves/`,
+`fichas/`, la bodega, los datos de las bases de los sitios; del estado del
+panel se tapan mails, teléfonos y UIDs, y de lo que habla de reservas o
+clientes sale sólo el título.
+
+**Lo que vuelve** entra por «Pedido» del panel con «🤖 Es una propuesta de
+Gemini» (`origen: "gemini"`). Para Claude es lo que el § 1 llama una
+instrucción de otro canal, traída por Mauro: **una propuesta, no una
+orden**. La ronda la marca en ORGANIZAR y, antes de escribir el plan, la
+evalúa contra el `CLAUDE.md` del repositorio y el código de HOY (la foto de
+Gemini puede ser vieja); si choca con algo, lo dice con qué y por qué en la
+`pregunta`, y no la ejecuta. Una propuesta que cambia una regla de un
+`CLAUDE.md` o de `protocolos/` es siempre riesgo alto: la decide Mauro.
+
+**Los commits.** Los hace Claude Code y se reconocen por `Co-Authored-By:
+Claude` y `Claude-Session`. Si Mauro aplica a mano algo de un chat, el
+mensaje empieza con `[Claude]`; si alguna vez aplica a mano algo de Gemini,
+con `[Gemini]`, y ese commit se revisa como cualquier propuesta suya.
+
 ## 3. Estructura mínima del `CLAUDE.md` de cada proyecto
 
 Cada repo del ecosistema lleva, en su raíz, un `CLAUDE.md` con esta forma:

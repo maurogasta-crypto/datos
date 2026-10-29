@@ -15,7 +15,7 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { esperaPlan, paraOrganizar, quedaronViejos, ultimoMovimiento, origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
+import { deGemini, esperaPlan, paraOrganizar, quedaronViejos, ultimoMovimiento, origenDe, cruzar, letrasEnUso, ordenarAbiertos, pesoDe,
          tocados, sinResponder, porProyecto, reglasSinPublicar,
          CON_REPORTES, BASES_CON_REPORTES, QUE_GUARDA, COLECCION_VIGILADA,
          vivaL, diasTomada, lineasVivas,
@@ -1023,6 +1023,12 @@ prueba("un pedido sin plan espera plan aunque no tenga respuesta; uno cerrado, n
   assert.ok(!esperaPlan({ estado: "abierto", tipo: "pedido", plan: "ya" }));
   assert.ok(!esperaPlan({ estado: "hecho", respuesta: "x" }));
   assert.ok(!esperaPlan({ estado: "retirado", tipo: "pedido" }));
+});
+prueba("una propuesta de Gemini es un pedido más que espera plan, y se reconoce por su origen (panel-44)", () => {
+  const g = { estado: "abierto", tipo: "pedido", origen: "gemini", titulo: "x" };
+  assert.ok(deGemini(g) && esperaPlan(g));
+  assert.ok(!deGemini({ origen: "panel" }) && !deGemini(null));
+  assert.match(readFileSync(new URL("../../herramientas/ronda.mjs", import.meta.url), "utf8"), /PROPUESTA DE GEMINI: evaluarla/);
 });
 prueba("sin respuesta ni pedido no hay nada que organizar", () => {
   assert.deepEqual(paraOrganizar([{ estado: "abierto", pregunta: "¿?" }, null]), []);

@@ -671,7 +671,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   llamadas colgadas, trozos de handy cerca perdidos, rondas sin acuse, cortes,
   handy que no sonó y por qué, y teléfonos que dejaron de mandar su parte. Lee
   y no escribe; los audios se listan sin bajar sus bytes (máscara de `listar`).
-  Banco: `node pruebas/herramientas/charla.mjs` (16 casos).
+  Banco: `node pruebas/herramientas/charla.mjs` (17 casos).
 - **Las consultas de clientes de CasaYourte se llevan desde el chat**
   (`herramientas/consultas.mjs`, 27-oct-2026, Mauro: «que el chat pueda
   escribir lo que le voy a dar y deje registrado ahí en las consultas todo el

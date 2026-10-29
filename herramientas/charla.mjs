@@ -30,7 +30,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export const VERSION = "charla-6";   // 29-oct: «parte viejo» es más de 12 h (de noche las Pizarras no suben)
+export const VERSION = "charla-7";   // 29-oct: los cambios de nombre de los teléfonos (pizarra-80, familia/telefonos)
 export const VERSION_ANTERIOR = "charla-5";   // 28-oct: «salud», la auditoría de lo que se pierde (pizarra-78, reglas v24)
 export const VERSION_VIEJISIMA = "charla-4";   // 28-oct: «limpiar», el gestor de la charla (reglas v23 de Tiempos)
 export const VERSION_VIEJA = "charla-3";   // 24-oct: muestra los archivos (pizarra-64) y «bajar» para mirarlos   // 24-oct: flash-lite y tope por corrida (PROTOCOLO-DESARROLLO § 13, los cupos gratis)
@@ -158,6 +158,24 @@ const DIA = 24 * 3600_000;
  * La auditoría, sin red: `mensajes`, `audios` y `archivos` (ids que existen), `llamadas` y `partes` (los
  * documentos de `salud/`). Devuelve `problemas` [{tipo, texto}] y, por aparato, sus `contadores` y `eventos`.
  */
+/* charla-7 (pizarra-80, 29-oct, Mauro: «los nombres no se actualizan»): un teléfono que cambió de nombre lo
+   publica en `familia/telefonos.nombres` («uid|viejo» → «nuevo»). Lo guardado dice el nombre de cuando se
+   mandó, así que antes de auditar se pasa todo al nombre de hoy, igual que `nombreAlDia` de la Pizarra; y el
+   parte de un nombre viejo se deja de lado: ese teléfono ya manda el suyo con el nombre nuevo. */
+export function alDia(clave, renombres = {}) {
+  if (!clave || !clave.includes("|") || clave.endsWith("|*")) return clave;
+  const uid = clave.split("|")[0];
+  let k = clave;
+  for (let i = 0; i < 10; i++) { const n = renombres[k]; if (!n) return k; const sig = `${uid}|${n}`; if (sig === k) return k; k = sig; }
+  return k;
+}
+export function conNombresDeHoy({ mensajes = [], llamadas = [], partes = [] }, renombres = {}) {
+  const disp = (de, d) => (d ? alDia(`${de}|${d}`, renombres).split("|").slice(1).join("|") : d);
+  const fix = (x) => ({ ...x, dispositivo: disp(x.de, x.dispositivo), para: x.para ? alDia(x.para, renombres) : x.para });
+  return { mensajes: mensajes.map(fix), llamadas: llamadas.map(fix),
+    partes: partes.filter((p) => !renombres[`${p.de}|${p.dispositivo}`]) };
+}
+
 export function auditarSalud({ mensajes = [], audios = new Set(), archivos = new Set(), llamadas = [], partes = [], ahora = Date.now(), dias = 7 } = {}) {
   const problemas = [];
   const desde = ahora - dias * DIA;
@@ -298,8 +316,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         F.listar(t, ses, "mensajes"), F.listar(t, ses, "audios", false, ["de"]), F.listar(t, ses, "archivos", false, ["de"]),
         F.listar(t, ses, "llamadas", false, ["de", "nombre", "dispositivo", "para", "estado", "creadoEn"]),
         F.listar(t, ses, "salud", true).catch(() => null)]);   // sin la regla v24 publicada, la base dice que no
-      const r = auditarSalud({ mensajes, audios: new Set(audios.map((a) => a.id)), archivos: new Set(archivos.map((a) => a.id)),
-        llamadas, partes: partes || [], dias: Number(opt("--dias", 7)) });
+      const tel = await F.leerUno(t, ses, "familia", "telefonos").catch(() => null);
+      const hoy = conNombresDeHoy({ mensajes, llamadas, partes: partes || [] }, (tel && tel.nombres) || {});
+      const r = auditarSalud({ mensajes: hoy.mensajes, audios: new Set(audios.map((a) => a.id)), archivos: new Set(archivos.map((a) => a.id)),
+        llamadas: hoy.llamadas, partes: hoy.partes, dias: Number(opt("--dias", 7)) });
       console.log(`\n  SALUD DE LA CHARLA · ${mensajes.length} mensaje(s), ${(partes || []).length} parte(s) de teléfonos\n`);
       if (partes === null) console.log("  ⚠ La base no deja leer «salud»: falta publicar las reglas v24 de Tiempos. Sin los partes sólo se ve lo de la base.\n");
       else if (!partes.length) console.log("  Ningún teléfono mandó su parte todavía: hace falta pizarra-78 en cada uno.\n");

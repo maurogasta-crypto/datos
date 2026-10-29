@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { auditarSalud, esParaAparato, destinoDe, renglonMensaje, filtrar, pedidoTranscripcion, transcribir, leerVisto, anotarVisto, PROXY, TOPE_TRANSCRIPCIONES,
+import { auditarSalud, alDia, conNombresDeHoy, esParaAparato, destinoDe, renglonMensaje, filtrar, pedidoTranscripcion, transcribir, leerVisto, anotarVisto, PROXY, TOPE_TRANSCRIPCIONES,
          pareceDePrueba, paraLimpiar, piezasDe, anotarLimpieza } from "../../herramientas/charla.mjs";
 
 let pasadas = 0, fallidas = 0;
@@ -147,6 +147,17 @@ await prueba("salud: el handy cerca (trozos perdidos, rondas sin acuse), el part
   assert.match(t, /hace 14 h/);
   assert.equal(r.problemas.filter((p) => p.tipo === "llamada-colgada").length, 1);
   assert.deepEqual(r.aparatos[0].eventos, ["enlace: se cortó con A15 (wifi, sin latido)"]);
+});
+await prueba("salud: los teléfonos que cambiaron de nombre (pizarra-80) se auditan con el nombre de hoy", () => {
+  const ren = { "U1|Redmi 13C": "13C", "U1|A": "B", "U1|B": "C" };
+  assert.equal(alDia("U1|Redmi 13C", ren), "U1|13C");
+  assert.equal(alDia("U1|A", ren), "U1|C");
+  assert.equal(alDia("U2|Redmi 13C", ren), "U2|Redmi 13C");
+  assert.equal(alDia("U1|*", ren), "U1|*");
+  const h = conNombresDeHoy({ mensajes: [{ id: "m", de: "U1", dispositivo: "Redmi Note 9", para: "U1|Redmi 13C" }],
+    partes: [{ de: "U1", dispositivo: "Redmi 13C" }, { de: "U1", dispositivo: "13C" }] }, ren);
+  assert.equal(h.mensajes[0].para, "U1|13C");
+  assert.deepEqual(h.partes.map((p) => p.dispositivo), ["13C"]);
 });
 await prueba("salud: lee y no escribe", () => {
   const src = fs.readFileSync(new URL("../../herramientas/charla.mjs", import.meta.url), "utf8");

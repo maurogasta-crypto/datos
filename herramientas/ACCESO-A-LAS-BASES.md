@@ -29,6 +29,7 @@ publicadas y verificadas. La ronda diaria trae las cinco fuentes con ✓.
 | `casayourte` | `casayourte-mauro` | `sitio/publicado` vs. `contenido.json` y los textos de `index.html`. **Acá además ESCRIBE `sitio/taller`**, y nada más: el sitio piloto donde se ejecutan los pedidos de diseño |
 | `casaverde` | `casaverde-20` | cabañas, espacios y actividades vs. lo que muestra el sitio |
 | `hilux` | `hilux-1b6f1` | los reportes que sube la app de la camioneta. **Acá además ESCRIBE**: sus conclusiones van a `analisis` |
+| `paseo` | `pruebas-db555` | los álbumes de los locales del Paseo Primero de Mayo (`albumes/`). Entró el 2026-10-31 con la contraseña compartida; por ahora sólo lee, hasta que sus reglas tengan `esAgente()` (paseo:A1) |
 
 **Los cuatro UID**, que es lo que va en cada regla. No son secretos: un UID sin
 contraseña no abre nada, y de hecho tienen que estar escritos en las reglas

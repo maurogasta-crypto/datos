@@ -339,6 +339,25 @@ const PROYECTOS = {
        copia en `_historial` al marcarlas o borrarlas, y fuera de `colecciones`
        a propósito: no se respaldan en la bodega, que es git y no olvida. */
     efimeras: ["notificaciones"]
+  },
+
+  /* paseo (31-oct-2026, Mauro: «un nuevo repositorio para gestionar lo del
+     paseo primero de mayo… la parte pública de los locales para alquiler»).
+     La base es el proyecto «Pruebas» de Firebase: el sitio lee y el admin
+     escribe `albumes/general-flores`. El usuario del agente entró el mismo
+     día, con la contraseña compartida. Por ahora sólo LEE: no hay regla
+     `esAgente()` todavía (paseo:A1), y ni `historial` ni escritura hasta
+     que la haya. No guarda fallas: lo que se vigila son sus álbumes, que
+     no se cruzan con los pendientes. */
+  paseo: {
+    projectId: "pruebas-db555",
+    apiKey: "AIzaSyAyrHTkm8k2iv_14eQKKCrFyOrgD9mwgHo",
+    mail: "FB_PASEO_MAIL",
+    clave: "FB_PASEO_CLAVE",
+    colecciones: ["albumes"],
+    coleccionVigilada: "albumes",
+    reportesSon: "álbumes",
+    selladas: []
   }
 };
 

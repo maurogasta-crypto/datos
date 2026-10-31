@@ -1828,8 +1828,12 @@ console.log("\n· La foto de la factura");
     await new Promise((r) => setTimeout(r, 20));
     return { d: dom.window.document, pedidos };
   };
-  let { d, pedidos } = await correr("?a=general-flores", { ok: true, status: 200, json: async () => docAlbum });
-  ok(pedidos.length === 1 && /documents\/albumes\/general-flores\?key=/.test(pedidos[0]), "lee UN documento por REST, por su id");
+  /* album-2: el de General Flores se mudó al sitio del paseo (paseo:A2): un
+     enlace viejo no lee nada acá, se va allá. */
+  const afuera = await correr("?a=general-flores", { ok: true, status: 200, json: async () => docAlbum });
+  ok(afuera.pedidos.length === 0 && /ALBUM_AFUERA\[id\]\) \{ location\.replace/.test(fuente), "el álbum de General Flores no se lee acá: el enlace viejo va al paseo");
+  let { d, pedidos } = await correr("?a=casa-ejemplo", { ok: true, status: 200, json: async () => docAlbum });
+  ok(pedidos.length === 1 && /documents\/albumes\/casa-ejemplo\?key=/.test(pedidos[0]), "lee UN documento por REST, por su id");
   ok(d.getElementById("titulo").textContent === "General Flores <b>" && !d.getElementById("titulo").querySelector("b"), "el título es texto, nunca HTML");
   const tabs = [...d.querySelectorAll("[data-tab]")].map((b) => b.dataset.tab);
   ok(tabs.join() === "todo,s1,s2", "pestañas: Todo y las secciones que tienen algo, en su orden (la vacía no)");

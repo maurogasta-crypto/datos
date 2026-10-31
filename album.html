@@ -8,7 +8,9 @@
 <meta name="theme-color" content="#f4f1ea">
 <link rel="icon" href="./icono-192.png">
 <!--
-  album.html — El ÁLBUM PÚBLICO de un proyecto de inmueble. Sello: album-1
+  album.html — El ÁLBUM PÚBLICO de un proyecto de inmueble. Sello: album-2
+  (album-2, 31-oct-2026: el de General Flores se mudó al sitio del paseo,
+  paseo:A2; un enlace viejo lleva allá con `ALBUM_AFUERA`.)
   (25-oct-2026, Mauro: «un álbum web simple que se divida en todo el
   edificio, primer piso showroom y depósito, segundo piso oficinas y
   depósito, tercer piso oficina y depósito… cargar las imágenes igual que en
@@ -91,7 +93,8 @@
 </div>
 
 <script type="module">
-const SELLO = "album-1";
+const SELLO = "album-2";
+const ALBUM_AFUERA = { "general-flores": "https://maurogasta-crypto.github.io/paseo/" };
 /* Identifica el proyecto de Firebase del panel; NO da permisos (los da la
    regla de `albumes/`). Es el mismo valor de firebase-init.js. */
 const CLAVE = "AIzaSyAxWOM9ZEHt6CXh8Nf1qU6FvL2uh1wFbug", PROYECTO = "datos-830f8";
@@ -124,6 +127,7 @@ let A = null, SECC = [], MEDIOS = [], tab = "todo", lista = [], pos = 0;
 
 async function cargar() {
   const id = new URLSearchParams(location.search).get("a") || "";
+  if (ALBUM_AFUERA[id]) { location.replace(ALBUM_AFUERA[id]); return; }
   if (!/^[a-z0-9][a-z0-9-]{0,59}$/.test(id)) { $("contenido").innerHTML = `<p class="falla">Este enlace no lleva a ningún álbum.</p>`; return; }
   try {
     const r = await fetch(`https://firestore.googleapis.com/v1/projects/${PROYECTO}/databases/(default)/documents/albumes/${id}?key=${CLAVE}`);

@@ -601,6 +601,14 @@ panel de acceso».
   privada, `obras/<id>/`: la ficha entera y cada archivo, y el respaldo queda
   anotado en cada cosa (`respaldo`). Los documentos de claude.ai los exporta la
   sesión que los escribe.
+- **El álbum de General Flores se MUDÓ al sitio del paseo** (`obra-11`,
+  `album-2`, 31-oct-2026, Mauro: «sí, queda como el único», paseo:A2):
+  `maurogasta-crypto/paseo`, con su base (`pruebas-db555`) y su cuenta de
+  Cloudinary. En la vista del local, «🖼 Álbum web» lleva allá
+  (`ALBUM_AFUERA` de `obra.html`), y un enlace viejo `album.html?a=general-flores`
+  redirige. Las cuatro secciones de acá pasaron como partes del paseo (sin
+  fotos: no había). Lo de abajo sigue valiendo para un proyecto que no esté en
+  esa lista.
 - **El ÁLBUM WEB del local** (`obra-9`, `album.html`, reglas v8, 25-oct-2026,
   Mauro: «un álbum web simple que se divida en todo el edificio, primer piso
   showroom y depósito, segundo piso oficinas y depósito, tercer piso oficina y
@@ -633,13 +641,13 @@ teléfono.
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-44` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
-| `obra.html` | `P.PANEL` | `obra-10` |
+| `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
 | `exportar.js` | `VERSION` | `exportar-1` |
-| `album.html` | `SELLO` | `album-1` |
+| `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v44` |
+| `sw.js` | `VERSION` | `panel-shell-v45` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

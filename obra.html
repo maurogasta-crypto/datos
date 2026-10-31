@@ -60,7 +60,14 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-10
+  obra.html — Los PROYECTOS: un lugar por inmueble. Sello: obra-11
+
+  Desde obra-11 (31-oct-2026, Mauro: «sí, queda como el único», paseo:A2) el
+  álbum público de General Flores vive en el sitio del PASEO
+  (maurogasta-crypto/paseo, base pruebas-db555): acá queda sólo el enlace
+  (`ALBUM_AFUERA`), para que no haya dos álbumes del mismo local que se
+  separen en silencio. Un proyecto que no está en esa lista sigue teniendo su
+  álbum acá, como hasta ahora.
 
   Desde obra-9 (25-oct-2026) el local tiene su ÁLBUM WEB: fotos y videos por
   sección, en `albumes/<id>`, que album.html muestra a quien tenga el enlace,
@@ -180,7 +187,7 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-11";
 import { doc, getDoc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-5";
-P.PANEL = "obra-10";
+P.PANEL = "obra-11";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;
@@ -418,9 +425,13 @@ const miniAlbum = (m) => m.tipo === "video"
   ? m.url.replace("/video/upload/", "/video/upload/so_1,w_240,h_180,c_fill,q_auto/").replace(/\.[a-z0-9]+$/i, ".jpg")
   : m.url.replace("/image/upload/", "/image/upload/w_240,h_180,c_fill,q_auto,f_auto/");
 
+/* obra-11: los proyectos cuyo álbum público vive en otro sitio. */
+const ALBUM_AFUERA = {
+  "general-flores": { sitio: "https://maurogasta-crypto.github.io/paseo/", editor: "https://maurogasta-crypto.github.io/paseo/admin.html", nombre: "el sitio del Paseo Primero de Mayo" }
+};
 async function leerAlbum() {
   ALBUM = undefined;
-  if (invitado || !abierta) return;
+  if (invitado || !abierta || ALBUM_AFUERA[abierta]) return;
   try { const d = await getDoc(doc(db, "albumes", abierta)); ALBUM = d.exists() ? d.data() : null; }
   catch (e) { ALBUM = { error: P.explicar(e) }; }
 }
@@ -445,6 +456,11 @@ async function subirMedio(file) {
 }
 
 function albumHTML(o) {
+  const afuera = ALBUM_AFUERA[o.id];
+  if (afuera) return `<div class="tarj"><div class="k">🖼 Álbum web · vive en ${P.esc(afuera.nombre)}</div>
+    <p class="gris" style="margin:.2rem 0">Las partes del local, sus fotos y videos se cargan allá: es el único álbum público de este local.</p>
+    <div class="fila-btn"><a class="mini" href="${P.esc(afuera.sitio)}" target="_blank" rel="noopener">Ver el sitio ↗</a>
+      <a class="mini" href="${P.esc(afuera.editor)}" target="_blank" rel="noopener">✎ Cargar y ordenar ↗</a></div></div>`;
   if (ALBUM && ALBUM.error) return `<div class="tarj"><div class="k">🖼 Álbum web</div><p class="gris">${P.esc(ALBUM.error)}</p></div>`;
   const secs = seccionesAlbum(ALBUM), todos = Object.values((ALBUM && ALBUM.medios) || {});
   const nf = todos.filter((m) => m && m.tipo === "foto").length, nv = todos.filter((m) => m && m.tipo === "video").length;

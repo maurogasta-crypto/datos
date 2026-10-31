@@ -345,10 +345,11 @@ const PROYECTOS = {
      paseo primero de mayo… la parte pública de los locales para alquiler»).
      La base es el proyecto «Pruebas» de Firebase: el sitio lee y el admin
      escribe `albumes/general-flores`. El usuario del agente entró el mismo
-     día, con la contraseña compartida. Por ahora sólo LEE: no hay regla
-     `esAgente()` todavía (paseo:A1), y ni `historial` ni escritura hasta
-     que la haya. No guarda fallas: lo que se vigila son sus álbumes, que
-     no se cruzan con los pendientes. */
+     día, con la contraseña compartida. Desde las reglas v1 (publicadas el
+     mismo día) escriben Mauro y el agente, y cada cambio del agente deja
+     antes su copia en `_historial` (crear, nunca editar ni borrar). Listar
+     `albumes` lo deja la v2. No guarda fallas: lo que se vigila son sus
+     álbumes, que no se cruzan con los pendientes. */
   paseo: {
     projectId: "pruebas-db555",
     apiKey: "AIzaSyAyrHTkm8k2iv_14eQKKCrFyOrgD9mwgHo",
@@ -357,7 +358,8 @@ const PROYECTOS = {
     colecciones: ["albumes"],
     coleccionVigilada: "albumes",
     reportesSon: "álbumes",
-    selladas: []
+    selladas: [],
+    historial: true
   }
 };
 

@@ -1,5 +1,5 @@
 {
-  "generado": "2026-10-02",
+  "generado": "2026-10-31",
   "proyectos": [
     {
       "id": "casaverde",
@@ -26,7 +26,7 @@
       "respaldar": true,
       "url": null,
       "apk": null,
-      "resumen": "Los cinco protocolos del ecosistema, públicos desde el 2026-09-12. Comparten repositorio con el panel: `protocolos/` es una carpeta adentro del repo que Pages publica."
+      "resumen": "Los protocolos del ecosistema (general, secretos, desarrollo, interfaz, avisos, plata, el estado de los tres y el estado actual) y las herramientas del agente. Públicos desde el 12-sep. Comparten repo"
     },
     {
       "id": "gestos",
@@ -53,7 +53,7 @@
       "respaldar": true,
       "url": null,
       "apk": "https://github.com/maurogasta-crypto/sitd-hilux/releases/download/ultimo/sitd-hilux.apk",
-      "resumen": "Telemetría, odometría y diagnóstico mecánico de una Toyota Hilux 3.0 (1KD-FTV, 2008-2011). Aplicación Android hecha en Flutter, todo local y sin conexión. Es el primero del ecosistema con paso de comp"
+      "resumen": "Telemetría, odometría y diagnóstico mecánico de una Toyota Hilux 3.0 (1KD-FTV, 2008-2011). Aplicación Android en Flutter: MIDE siempre sin conexión, y sube a la nube el reporte de cada viaje (sin coor"
     },
     {
       "id": "panel",
@@ -71,7 +71,16 @@
       "respaldar": true,
       "url": null,
       "apk": null,
-      "resumen": "Repositorio recién creado y VACÍO: al 2026-09-20 tiene un solo archivo, `Texto.txt`, de un byte. Todavía no hay código, ni sitio, ni documentación, ni se sabe qué va a ser. Está dado de alta acá para "
+      "resumen": "Una app (APK) que recibe un archivo de audio, separa los instrumentos y escribe la partitura de cada uno (Mauro, respuesta a partitura:Q1). El repositorio sigue sin código: un Texto.txt de un byte."
+    },
+    {
+      "id": "paseo",
+      "nombre": "paseo",
+      "repo": "maurogasta-crypto/paseo",
+      "respaldar": true,
+      "url": "https://maurogasta-crypto.github.io/paseo/",
+      "apk": null,
+      "resumen": "Paseo Primero de Mayo: la parte pública de los locales para alquiler, con un admin para cargar fotos y textos. Estático (index, admin, cargar), Firebase compat 10.8 y Cloudinary."
     },
     {
       "id": "pizarra",
@@ -80,7 +89,7 @@
       "respaldar": true,
       "url": null,
       "apk": "https://github.com/maurogasta-crypto/pizarra/releases/download/ultimo/pizarra.apk",
-      "resumen": "Widget de Android con las tareas de Tiempos que cada uno elige, para verlas en la pantalla de inicio y tacharlas con un toque. Tachar ahí es lo mismo que «✔ Hecha» en Tiempos: lo ve el otro. App nativ"
+      "resumen": "La app de Android del ecosistema (Kotlin, sin bibliotecas). Tres widgets —la pizarra con las luces de remate, «Mi agenda» de la semana y «Mensajes y novedades»—, Tiempos entero adentro, las alarmas y "
     },
     {
       "id": "remate",
@@ -89,7 +98,7 @@
       "respaldar": true,
       "url": "https://rematetaller.github.io/remate/",
       "apk": null,
-      "resumen": "Catálogo por invitación y panel interno del remate. Estático, más una función en Vercel que prende las luces del depósito."
+      "resumen": "Catálogo por invitación y panel interno del remate. Estático, más una función que prende las luces del depósito: vive en el Netlify de Casa Verde desde el 1-oct (Vercel no se llegó a crear)."
     },
     {
       "id": "tiempos",
@@ -98,7 +107,7 @@
       "respaldar": true,
       "url": "https://maurogasta-crypto.github.io/tiempos/",
       "apk": null,
-      "resumen": "Un solo cronómetro para Mauro y Florencia: lo de la familia (base propia) y lo de Casa Verde (por su propio código). Horas por tipo y la carga de cada uno; el reparto de la plata, cuando lo acuerden."
+      "resumen": "La app de la familia de Mauro y Florencia: agenda de cada uno, tareas y pizarra, el calendario de los chicos, Plata (día a día, fijos, año, extractos, reparto) y el reloj para lo que se cobra, con Cas"
     }
   ]
 }

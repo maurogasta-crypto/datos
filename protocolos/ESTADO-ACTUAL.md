@@ -148,8 +148,10 @@ respaldo de las 4:17.
 **La ronda corre tres veces por día en temporada** (7:47, 13:47, 19:47 de
 Montevideo; la de la mañana es la completa, las otras dos son extra). En cada
 una, sin preguntar: prueba que el 13C escucha (`latido.mjs`), lee el mail de
-Casa Verde de la casilla de Florencia (Airbnb, Facebook de alquiler —que trae el
-enlace exacto de la publicación—, Parairnos y lo directo; sólo leer), completa
+Casa Verde (Airbnb, Facebook de alquiler —que trae el enlace exacto de la
+publicación—, Parairnos y lo directo; sólo leer) de la casilla de Mauro,
+maurogasta@gmail.com, desde el 1-nov-2026 —hasta el 31-oct era la de Florencia,
+que ahora le reenvía lo de Casa Verde con un filtro—, completa
 lo que FALTA en las reservas y prepara las respuestas de los pedidos de
 Facebook y los borradores de los huéspedes. **Lo que CAMBIA un dato que ya
 estaba** (fechas, cabaña, cancelación, cuántos son) lo propone en

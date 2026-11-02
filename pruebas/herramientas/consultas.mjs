@@ -3,7 +3,7 @@
 // Sin red: se prueban las funciones puras que arman lo que se escribe.
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { estadoTras, mensajeNuevo, agregar, editar, quitar, ficha, tapar, idNuevo, opciones, ESTADOS } from "../../herramientas/consultas.mjs";
+import { estadoTras, mensajeNuevo, agregar, editar, quitar, ficha, tapar, idNuevo, opciones, ESTADOS, esperaRespuesta, lecciones } from "../../herramientas/consultas.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); } catch (e) { fallidas++; console.log("  ✗ " + n + "\n      " + e.message); } };
@@ -69,5 +69,34 @@ prueba("--texto @archivo lee el archivo", () => {
   assert.deepEqual(resto, ["c-1"]); assert.equal(o.texto, "línea 1\nlínea 2"); assert.equal(o.borrador, true);
   fs.unlinkSync(f);
 });
+prueba("espera respuesta: lo último real es del cliente y no hay borrador después", () => {
+  const m = (quien, en, extra = {}) => ({ quien, en, texto: quien + en, ...extra });
+  assert.equal(esperaRespuesta({ mensajes: [m("cliente", "1")] }), true);
+  assert.equal(esperaRespuesta({ mensajes: [m("cliente", "1"), m("nosotros", "2")] }), false);
+  assert.equal(esperaRespuesta({ mensajes: [m("cliente", "1"), m("nosotros", "2", { estado: "borrador", por: "Claude" })] }), false);
+  assert.equal(esperaRespuesta({ mensajes: [m("cliente", "1"), m("nota", "2")] }), true);
+  // un borrador VIEJO, de antes de que el cliente volviera a escribir, no cuenta
+  assert.equal(esperaRespuesta({ mensajes: [m("cliente", "1"), m("nosotros", "2", { estado: "borrador" }), m("cliente", "3")] }), true);
+  assert.equal(esperaRespuesta({ estado: "cerrada", mensajes: [m("cliente", "1")] }), false);
+  assert.equal(esperaRespuesta({ mensajes: [] }), false);
+});
+prueba("aprender: el borrador de Claude contra lo que se mandó de verdad", () => {
+  const c = { id: "c-1", mensajes: [
+    { en: "1", quien: "cliente", texto: "¿precio?" },
+    { en: "2", quien: "nosotros", texto: "Hola! Depende del diámetro.", por: "Claude", estado: "mandado" },
+    { en: "3", quien: "nosotros", texto: "Hola Claire! Depende del diámetro, ¿qué medida pensás?", fuente: "captura" },
+    { en: "4", quien: "cliente", texto: "7 m" },
+    { en: "5", quien: "nosotros", texto: "Perfecto", por: "Claude", estado: "borrador" },
+    { en: "6", quien: "nosotros", texto: "perfecto ", fuente: "captura" },
+    { en: "7", quien: "cliente", texto: "ok" },
+    { en: "8", quien: "nosotros", texto: "Te mando el presupuesto", por: "Claude", estado: "borrador" },
+  ] };
+  const l = lecciones(c);
+  assert.equal(l.length, 3);
+  assert.equal(l[0].igual, false); assert.match(l[0].mandado, /qué medida/);
+  assert.equal(l[1].igual, true);
+  assert.equal(l[2].mandado, null); assert.equal(l[2].marcado, false);
+});
+
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);
 process.exit(fallidas ? 1 : 0);

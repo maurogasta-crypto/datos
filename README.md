@@ -639,7 +639,7 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-44` |
+| `index.html` | `P.PANEL` | `panel-45` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
@@ -647,7 +647,7 @@ teléfono.
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v45` |
+| `sw.js` | `VERSION` | `panel-shell-v46` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

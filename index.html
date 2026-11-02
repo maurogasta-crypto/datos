@@ -563,7 +563,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-44";
+P.PANEL = "panel-45";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -3646,7 +3646,10 @@ function pintarUnSitio(pr) {
   }
 
   h += '<div class="sit-enlaces">';
-  if (s.url) h += fuera(s.url, s.descarga ? "Todas las versiones" : "Ver el sitio",
+  /* `urlTexto` (2-nov-2026, gestos): un proyecto puede tener las DOS cosas,
+     la APK y una página que se usa en el navegador. Ahí `url` no son «todas
+     las versiones» sino el sitio, y el rótulo lo dice el dato. */
+  if (s.url) h += fuera(s.url, s.urlTexto || (s.descarga ? "Todas las versiones" : "Ver el sitio"),
     s.descarga ? "sit-link" : "sit-link p");
   if (s.repo) h += fuera(urlRepo(s.repo), "Repositorio");
   if (s.readme) h += fuera(s.readme, "Qué es y cómo funciona");

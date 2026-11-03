@@ -32,6 +32,10 @@ entero para que la siguiente se arme igual y no haya que volver a razonarlo.
 > **10 bis**: los avisos por WhatsApp al equipo, con los criterios de
 > `protocolos/PROTOCOLO-AVISOS.md`; las llegadas pasan de borrador a envío.
 >
+> **3-nov-2026: mudada al chat del mail.** La vigente es `trig_01NJ1QCPjBK8gEbKe3m1vRqf`,
+> en `session_01N27WXmQZaqAkGHVwPKkokq`, el chat con el conector de Gmail de Mauro;
+> `trig_016okPxZMQR4ndoG9XUCKhce` quedó pausada. Detalle en `TRASPASO.md` § 3.
+>
 > **Y desde esa misma noche el disparador ya no copia los pasos.** Su texto
 > tiene el arranque (dónde van los repos, cómo clonarlos si faltan), las
 > prohibiciones —que mandan aunque el archivo dijera otra cosa— y un puntero:

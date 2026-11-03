@@ -118,6 +118,16 @@ borrador, como antes.
 
 > **Hecho el 30-sep:** la nueva es `trig_016okPxZMQR4ndoG9XUCKhce`, en el chat
 > `session_01EziAxJdqEDKFcQGws5uW49`; la vieja quedó pausada.
+>
+> **Y otra vez el 3-nov-2026** (Mauro: «hay que migrar la ronda a esta sesión para
+> que se pueda acceder [al mail]»): la vigente es `trig_01NJ1QCPjBK8gEbKe3m1vRqf`, en
+> el chat del mail de Mauro, `session_01N27WXmQZaqAkGHVwPKkokq`, que es el que tiene el
+> conector de Gmail. `trig_016okPxZMQR4ndoG9XUCKhce` quedó pausada. En ese chat
+> `/home/user/datos2` y `/home/user/CasaYourte` son ENLACES a los clones adjuntos
+> (`datos`, `casayourte`); el texto de la rutina dice cómo recrearlos. El Gmail de la
+> ronda sigue siendo sólo buscar y leer, aunque ese chat pueda mandar. «Consulta en
+> vivo» (`trig_01Ep6kQCNo2JFwXVvZv8cuDE`) sigue en el chat de antes: no lee mail, y
+> mudarla cambia el token que tiene cargado Netlify.
 
 La rutina `trig_01D3yEySzYLa4gGp67FqaFdC` está **atada al chat viejo** (se
 dispara adentro de esa conversación), y una rutina no se puede re-atar a otra

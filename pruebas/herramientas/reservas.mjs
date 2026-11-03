@@ -14,7 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { revisarDerivados, planPropuesta, PROPONIBLES, limpiar, digitos, telefonoEn, mismoTelefono, paisDeTelefono, codigoAirbnb, nombreDeAirbnb,
          faltantes, vincular, planCompletar, PERMITIDOS, DE_MAURO, fechasEn, cabanaDeAnuncio, esConfirmacion, ultimos4, capturasSinLeer,
-         llegadasPorAvisar, avisoDeLlegada, cuandoLlega } from "../../herramientas/reservas.mjs";
+         llegadasPorAvisar, avisoDeLlegada, cuandoLlega, pasajerosSimultaneos } from "../../herramientas/reservas.mjs";
 
 let pasadas = 0, fallidas = 0;
 const prueba = (n, f) => { try { f(); pasadas++; console.log("  ✓ " + n); }
@@ -387,6 +387,16 @@ prueba("revisar: el espejo dice de dónde vino la reserva, para que Airbnb no re
   const l = revisarDerivados({ reservas: [r], disponibilidad: [{ id: "A1", cabanaId: "c2", desde: "2026-12-01", hasta: "2026-12-03" }],
     actividades: [{ id: "limp-A1", titulo: "Limpieza c2 · entrada 2026-12-01", cabanaId: "c2", reservaId: "A1", fechaInicio: "2026-11-30", fechaVencimiento: "2026-12-01" }] }, "2026-10-18");
   assert.deepEqual(l.map((x) => x.datos && x.datos.origen), ["airbnb"]);
+});
+
+prueba("los huéspedes de un acuerdo son el máximo a la vez, no la suma (Darío: 8 + 2, no 14 + 4)", () => {
+  const rs = [{ checkIn: "2026-12-20", checkOut: "2026-12-28", adultos: 4 },
+    { checkIn: "2026-12-20", checkOut: "2026-12-28", adultos: 4, ninos: 2 },
+    { checkIn: "2026-12-28", checkOut: "2026-12-30", adultos: 6, ninos: 2 }];
+  assert.deepEqual(pasajerosSimultaneos(rs), { adultos: 8, ninos: 2, bebes: 0 });
+  assert.deepEqual(pasajerosSimultaneos([{ checkIn: "2027-01-03", checkOut: "2027-01-09", adultos: 5 },
+    { checkIn: "2027-01-09", checkOut: "2027-01-12", adultos: 6, estado: "anulada" }]), { adultos: 5, ninos: 0, bebes: 0 });
+  assert.match(avisoDeLlegada(rs, { hoy: "2026-12-19" }), /8 adultos \+ 2 niños/);
 });
 
 console.log(`\n  ${pasadas} pasadas, ${fallidas} fallidas\n`);

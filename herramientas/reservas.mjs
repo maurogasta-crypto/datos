@@ -291,13 +291,37 @@ export function cuandoLlega(checkIn, hoy) {
   const d = new Date(checkIn + "T12:00:00Z");
   return `el ${DIAS_SEM[d.getUTCDay()]} ${checkIn.slice(8, 10)}/${checkIn.slice(5, 7)}`;
 }
+/* Cuántos huéspedes tiene un acuerdo: el MÁXIMO a la vez, no la suma de las
+   cabañas (3-nov-2026, Mauro: «se debe contemplar como cantidad de pasajeros el
+   máximo en un mismo periodo de tiempo»). La MISMA cuenta que
+   CV2.pasajerosSimultaneos de casaverdecanas/interno/nucleo.js: si cambia una,
+   cambia la otra. */
+export function pasajerosSimultaneos(rs) {
+  const n = (v) => Number(v || 0) || 0;
+  const todas = (rs || []).filter(Boolean);
+  const vivas = todas.filter((r) => r.estado !== "anulada");
+  const lista = vivas.length ? vivas : todas;
+  const conFechas = lista.filter((r) => r.checkIn && r.checkOut && r.checkOut > r.checkIn);
+  const sumar = (xs) => xs.reduce((t, r) => ({ adultos: t.adultos + n(r.adultos),
+    ninos: t.ninos + n(r.ninos), bebes: t.bebes + n(r.bebes) }), { adultos: 0, ninos: 0, bebes: 0 });
+  if (!conFechas.length) return sumar(lista);
+  let mejor = null;
+  for (const d of [...new Set(conFechas.map((r) => r.checkIn))].sort()) {
+    const t = sumar(conFechas.filter((r) => r.checkIn <= d && d < r.checkOut));
+    const tot = t.adultos + t.ninos + t.bebes;
+    if (!mejor || tot > mejor.tot) mejor = { ...t, tot };
+  }
+  const { tot, ...res } = mejor;
+  return res;
+}
 export function avisoDeLlegada(rs, { cabanas = [], clientes = [], hoy, base = SITIO_INTERNO } = {}) {
   const r = rs[0];
   const cli = (clientes || []).find((c) => c.id === r.clienteId) || null;
   const nombre = (cli && cli.nombre) || nombreDeAirbnb(r.clienteNombre) || limpiar(r.clienteNombre) || "un huésped";
   const cab = (id) => { const n = ((cabanas || []).find((c) => c.id === id) || {}).nombre; return (n && typeof n === "object" ? n.es : n) || id; };
   const noches = Math.max(0, Math.round((new Date(r.checkOut) - new Date(r.checkIn)) / 86400000));
-  const suma = (k) => rs.reduce((x, y) => x + Number(y[k] || 0), 0);
+  const pax = pasajerosSimultaneos(rs);
+  const suma = (k) => pax[k] || 0;
   const gente = [`${suma("adultos")} adulto${suma("adultos") === 1 ? "" : "s"}`,
     suma("ninos") ? `${suma("ninos")} niño${suma("ninos") === 1 ? "" : "s"}` : "",
     suma("bebes") ? `${suma("bebes")} bebé${suma("bebes") === 1 ? "" : "s"}` : "",

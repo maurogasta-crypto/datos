@@ -587,6 +587,7 @@ await prueba("los bytes viajan como bytesValue y vuelven en base64", () => {
   assert.deepEqual(v, { bytesValue: "AQL/" });
   assert.equal(deFirestore(v), "AQL/");
   assert.ok(PROYECTOS.casayourte.adjuntos.includes("consultas"));
+  assert.ok(PROYECTOS.casayourte.adjuntos.includes("presupuesto_pedidos"));
 });
 
 console.log(`\n${pasadas} pasadas, ${fallidas} fallidas\n`);

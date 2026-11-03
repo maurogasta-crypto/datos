@@ -165,8 +165,11 @@ const PROYECTOS = {
     /* Las capturas y los audios de una consulta (consultas-2, 27-oct-2026,
        Mauro: «sacar fotos de las conversaciones de WhatsApp… copiar también
        los audios»): `adjuntar consultas <id> <archivo>` los guarda como bytes
-       en `consultas/<id>/adjuntos/`. La regla deja al agente sólo crearlos. */
-    adjuntos: ["consultas"]
+       en `consultas/<id>/adjuntos/`. La regla deja al agente sólo crearlos.
+       Desde presupuestos-2 (3-nov-2026) también los catálogos y capturas de
+       cada pedido a un proveedor: `adjuntar presupuesto_pedidos <id> <imagen>`
+       (la regla de ahí acepta sólo imágenes). */
+    adjuntos: ["consultas", "presupuesto_pedidos"]
   },
 
   hilux: {

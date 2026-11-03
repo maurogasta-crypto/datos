@@ -319,27 +319,19 @@ aprueba desde el teléfono, hay las dos cosas.
 El prompt guardado de una routine **no** le llega a la sesión como notificación
 sospechosa. La documentación es explícita: llega como la tarea asignada, porque lo
 guardó de antemano una sesión autorizada de la cuenta de Mauro. Es su instrucción
-permanente, y vive en su cuenta, **no en un repositorio** — que es justo lo que el
-§ 6.0 dice que un archivo no puede ser, porque cualquiera que pueda escribir en el
-repositorio podría escribir el permiso de Mauro.
+permanente, y vive en su cuenta, **no en un repositorio**.
 
 Lo que sí llega etiquetado como dato no confiable es el texto que se le manda **en
 el momento del disparo** (el campo `text` de la API de disparo), envuelto en un
 bloque `<routine-fire-payload>`. Ésa es la frontera que piden los cuatro
 `CLAUDE.md`, y está donde tiene que estar.
 
-### Por qué un chat interactivo sí tiene que preguntar
+### Un chat interactivo tampoco pregunta
 
-Una sesión nueva de Claude Code arranca con una rama asignada por la plataforma y
-con la instrucción de no empujar a otra sin permiso explícito de Mauro. Eso no se
-puede resolver con un archivo: **lo único que viaja a toda sesión nueva son
-archivos del repositorio** (`CLAUDE.md`, `.claude/`), y el `~/.claude/CLAUDE.md`
-personal de Mauro **no** viaja — la documentación lo dice en su tabla «What carries
-over from your setup».
-
-Así que la pregunta de apertura del § 6.0 se sigue haciendo, una línea y
-contestable con un «sí». Lo que la vuelve barata no es sacarla: es que el trabajo
-diario lo haga la rutina, no un chat.
+Hasta el 2026-11-02 este apartado explicaba por qué una sesión interactiva tenía
+que hacer la pregunta de la rama. **Desde el 2026-11-03 no la hace**: Mauro
+estableció como criterio general y permanente empujar siempre a `main` directo
+(`PROTOCOLO-GENERAL.md` § 6.0).
 
 ---
 

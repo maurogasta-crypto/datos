@@ -10,8 +10,8 @@ privada, las variables del entorno).
 
 ## 0 · Lo primero en el chat nuevo, en este orden
 
-1. **La pregunta de la rama** (`CLAUDE.md` de cada repo, § 6.0): «¿Empujo a
-   `main` directo en todos los repos, sin rama ni merge, como dice el § 2.1 ter?».
+1. **Se empuja a `main` directo, sin preguntar** (§ 6.0 de
+   `PROTOCOLO-GENERAL.md`, criterio permanente de Mauro desde el 3-nov-2026).
 2. **Los repositorios.** La rutina y las herramientas usan ESTAS rutas; si la
    sesión clonó con otro nombre, se clona de nuevo acá (`git clone` por el proxy
    de la sesión, o `add_repo` si no está en el alcance):

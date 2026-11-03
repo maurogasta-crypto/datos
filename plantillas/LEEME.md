@@ -119,5 +119,5 @@ Que quede corto, porque Mauro lo escribe desde el teléfono:
 > `plantillas/LEEME.md`, sección «gestos». Empujá a `main` directo en todos los
 > repos, sin rama ni merge (§ 2.1 ter).
 
-La segunda frase es la respuesta anticipada a la pregunta de apertura del § 6.0,
-para que el chat no tenga que preguntarla.
+La segunda frase repite el criterio del § 6.0 (empujar a `main` directo, sin
+preguntar), por si el chat nuevo todavía no leyó los protocolos.

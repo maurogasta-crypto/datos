@@ -139,7 +139,11 @@ const PROYECTOS = {
        El agente las lee y las crea o completa (con copia en `_historial`) para
        preparar las respuestas; llevan el contacto de una persona: no se
        copian enteras a un chat. */
-    colecciones: ["sitio", "albums", "usuarios", "reportes", "consultas", "_historial"],
+    /* `presupuestos`, `proveedores` y `presupuesto_pedidos` (3-nov-2026): pedir
+       precio de materiales y comparar (presupuestos.html). El agente los lee y
+       los crea o completa, con copia en `_historial`; borrar es de una persona. */
+    colecciones: ["sitio", "albums", "usuarios", "reportes", "consultas",
+                  "presupuestos", "proveedores", "presupuesto_pedidos", "_historial"],
     /* `calculos`: datos de clientes y medidas de obra, y detrás costos,
        márgenes y tarifas — lo que el CLAUDE.md del proyecto prohíbe publicar.
        `invitaciones`: mails de gente que todavía no entró.

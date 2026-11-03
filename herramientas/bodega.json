@@ -1,5 +1,5 @@
 {
-  "generado": "2026-10-31",
+  "generado": "2026-11-03",
   "proyectos": [
     {
       "id": "casaverde",
@@ -30,21 +30,21 @@
     },
     {
       "id": "gestos",
-      "nombre": "gestos",
+      "nombre": "Theremin",
       "repo": "maurogasta-crypto/gestos",
       "respaldar": true,
       "url": "https://maurogasta-crypto.github.io/gestos/",
-      "apk": null,
-      "resumen": "Instrumento que se toca con las manos frente a la cámara del teléfono. Estático puro, sin build y sin una sola credencial. Es la copia publicada de lo que vive en `public/gestos/` de Harmonía."
+      "apk": "https://github.com/maurogasta-crypto/gestos/releases/download/ultimo/gestos.apk",
+      "resumen": "Instrumento que se toca con las manos frente a la cámara del teléfono. Estático puro, sin build y sin una sola credencial. Es la copia publicada de lo que vive en public/gestos/ de BandoMaps (masotrom"
     },
     {
       "id": "harmonia",
-      "nombre": "Harmonía",
-      "repo": "toromboto/harmonia",
+      "nombre": "BandoMaps",
+      "repo": "masotromauro-ai/tocatoca",
       "respaldar": true,
-      "url": null,
+      "url": "https://tocatoca-il7f.vercel.app/",
       "apk": null,
-      "resumen": "Diccionario armónico, entrenador de improvisación y colores tonales. El único con build (React + Vite) y el único sin terceros."
+      "resumen": "BandoMaps, el proyecto de Mariano: práctica del bandoneón, diccionario armónico y colores tonales. React + Vite. Antes se llamaba Harmonía y vivía en toromboto/harmonia; desde el 3-nov-2026 vive en ma"
     },
     {
       "id": "hilux",

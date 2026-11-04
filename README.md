@@ -638,7 +638,7 @@ después proceso de fabricación, accesible desde el panel».
 - **El contenido vive en `placa.js`**, no en la página: los pasos, las piezas
   con su precio de referencia, qué sección espera a cuál (`ESPERA`), lo que
   sigue (`siguiente`), el costo y la relación VPA/VPA2 que se calcula con las
-  medidas. La página sólo dibuja. Banco: `node pruebas/placa.mjs` (13 casos).
+  medidas. La página sólo dibuja. Banco: `node pruebas/placa.mjs` (14 casos).
 - **Lo marcado va a `proyectos/hilux.placa`** (`marcas`, `notas`, `medidas`,
   `compras`), campo por campo con `updateDoc`: sin colección ni regla nueva, y
   la ronda lo lee para saber en qué paso está. La guía se lee sin cuenta.
@@ -673,8 +673,8 @@ teléfono.
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `placa.html` | `P.PANEL` | `placa-3` |
-| `placa.js` | `VERSION` | `placa-js-3` |
+| `placa.html` | `P.PANEL` | `placa-4` |
+| `placa.js` | `VERSION` | `placa-js-4` |
 | `sw.js` | `VERSION` | `panel-shell-v47` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el

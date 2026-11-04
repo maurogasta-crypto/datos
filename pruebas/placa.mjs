@@ -46,7 +46,7 @@ prueba("la etapa B no se abre con la A armada si faltan las medidas", () => {
 prueba("los pasos de seguridad van antes de que la placa toque la ECU, y hay un solo cerebro", () => {
   assert.ok(!G.PIEZAS.some((p) => p.id === "c-nano"), "volvió el segundo cerebro");
   const orden = G.PASOS.map((p) => p.id);
-  for (const s of ["b-nucleo", "b-reposo", "b-wdt", "b-autocontrol", "b-toma", "b-cortes"]) {
+  for (const s of ["b-nucleo", "b-reposo", "b-wdt", "b-autocontrol", "b-toma", "b-cortes", "b-cadena"]) {
     assert.ok(orden.includes(s), "falta " + s);
     assert.ok(orden.indexOf(s) < orden.indexOf("p-directo"), s + " después del paso directo");
     assert.ok(G.PASOS.find((p) => p.id === s).seguridad, s + " sin marca de seguridad");
@@ -87,6 +87,18 @@ prueba("la relación VPA/VPA2: corrida, proporcional, y nada si falta una", () =
   assert.equal(G.relacionVPA({ vpa0: "3", vpa1: "2", vpa2: "1", vpb0: "4", vpb1: "3", vpb2: "2" }).sube, false);
 });
 
+prueba("la cadena: lista cerrada de emergencias, casi todas por cable, y frenar no es una", () => {
+  const porCable = G.EMERGENCIAS.filter((e) => e.por === "cable").map((e) => e.id);
+  for (const id of ["interruptor", "colgada", "no-obedece", "sin-energia"]) assert.ok(porCable.includes(id), id + " no va por cable");
+  assert.ok(G.EMERGENCIAS.every((e) => e.por === "cable" || /sólo puede soltar/.test(e.por)), "el programa no puede tener otro papel que soltar");
+  const uso = G.USO_ESPERADO.join(" | ");
+  for (const t of ["frenar", "arranque", "cancelar", "Bluetooth"]) assert.ok(uso.includes(t), "falta en el uso esperado: " + t);
+  const cadena = G.PASOS.find((p) => p.id === "b-cadena");
+  assert.ok(/no hacen clic ni una vez/.test(cadena.prueba), "la cadena no prueba lo que NO la abre");
+  const fuente = G.PIEZAS.find((p) => p.id === "c-fuente");
+  assert.ok(/arranque/.test(fuente.n + fuente.para), "la fuente no dice que aguanta el arranque");
+});
+
 prueba("los dos archivos parsean como módulo (también el script del .html)", () => {
   execFileSync(process.execPath, ["--input-type=module", "--check"], { input: fs.readFileSync(path.join(raiz, "placa.js")) });
   const html = fs.readFileSync(path.join(raiz, "placa.html"), "utf8");
@@ -98,7 +110,7 @@ prueba("los dos archivos parsean como módulo (también el script del .html)", (
 prueba("la página pide los sellos que dicen los archivos", () => {
   const html = fs.readFileSync(path.join(raiz, "placa.html"), "utf8");
   assert.ok(html.includes("./placa.js?v=" + G.VERSION), "el ?v= de placa.js no es " + G.VERSION);
-  assert.ok(html.includes('P.PANEL = "placa-3"') && html.includes("Sello: placa-3"));
+  assert.ok(html.includes('P.PANEL = "placa-4"') && html.includes("Sello: placa-4"));
 });
 
 prueba("la página escribe sólo adentro de placa., campo por campo", () => {

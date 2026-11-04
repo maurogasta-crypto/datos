@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-3
+   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-4
 
    Pedido de Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de
    construcción en Arduino del componente que se va a fabricar, con diseño y
@@ -45,13 +45,26 @@
    corte en cada frenada: es la DETECCIÓN de que la placa falló en
    obedecerlos (`b-cortes`, un comparador), y sólo ahí sueltan los relés.
 
+   LA CADENA DE SEGURIDAD (placa-js-4, 4-nov-2026). Mauro: «el diseño debe
+   ponderar sobre todas las cosas la simpleza y robustez de la propuesta, y un
+   sistema de seguridad debe correr por encima de todas las herramientas
+   programables para reconectar el sistema original en caso de emergencia.
+   Pero debe ser verdaderamente un caso de emergencia que salga del uso
+   esperado». Así: la corriente de las bobinas de los relés pasa por UNA
+   cadena de contactos en serie, toda por cable —interruptor general,
+   watchdog, comparador del freno y la orden de la placa—. Cualquiera que se
+   abra suelta los relés; el programa puede abrirla y nunca cerrarla solo. Lo
+   que la abre es una lista CERRADA de emergencias (EMERGENCIAS), y lo que es
+   uso esperado no la abre nunca (USO_ESPERADO): el banco comprueba las dos
+   listas.
+
    Y lo que no se negocia, para quien edite esto: los pasos que hacen segura a
    la placa —el watchdog, el corte por freno y embrague cableado y el paso
    directo con los relés sueltos— van ANTES de que la placa mande una señal a
    la ECU, y `siguiente()` no deja saltarlos. El banco lo comprueba.
    ═══════════════════════════════════════════════════════════════════ */
 
-export const VERSION = "placa-js-3";
+export const VERSION = "placa-js-4";
 
 /* Las dos etapas, en el orden en que se hacen. La A no toca el pedal —sólo
    lee— y sirve sola (CRUCERO.md § 9.1); la B es el crucero. */
@@ -89,7 +102,7 @@ export const SECCIONES = [
       { id: "c-esp32", n: "2 × ESP32 DevKit (uno de repuesto)", para: "el cerebro de toda la placa —sensores y, en la etapa B, el pedal—, con Bluetooth adentro; se programa con el mismo Arduino IDE", usd: [8, 14] },
       { id: "c-adxl", n: "2 × acelerómetro ADXL345 (módulo SPI)", para: "vibración a 1.600 por segundo; el del teléfono llega a 200", usd: [4, 8] },
       { id: "c-opto", n: "6 × optoacoplador PC817 y resistencias", para: "contacto, freno, embrague, velocidad y RPM, aislados de la camioneta", usd: [2, 4] },
-      { id: "c-fuente", n: "Fuente automotriz 12→5 V (p. ej. Pololu) + diodo TVS + diodo + portafusible", para: "la camioneta tiene picos que queman un regulador común", usd: [12, 18] },
+      { id: "c-fuente", n: "Fuente automotriz 12→5 V que aguante el arranque (reductora-elevadora, p. ej. Pololu S9V11F5) + diodo TVS + diodo + portafusible + un capacitor grande", para: "la camioneta tiene picos que queman un regulador común, y al dar arranque la batería baja a 8–9 V: la placa no se puede reiniciar por eso", usd: [12, 20] },
       { id: "c-tap", n: "Derivador de fusible (add-a-fuse) del tamaño de los fusibles de la camioneta", para: "tomar los 12 V con contacto sin cortar un cable", usd: [3, 5] },
       { id: "c-fichas", n: "Par de fichas del pedal (macho y hembra) con cables", para: "el arnés en Y: se saca y la camioneta queda como de fábrica", usd: [15, 30] },
       { id: "c-perfo", n: "Placa perforada y tira de pines", para: "armar la etapa A sin mandar a hacer una placa", usd: [2, 4] },
@@ -170,23 +183,27 @@ export const SECCIONES = [
     pasos: [
       { id: "b-programa", t: "El programa del pedal, en el mismo ESP32", quien: "claude",
         d: "Espejo permanente: sin crucero copia el pie, con crucero entrega el mayor entre el pie y el crucero. El freno, el embrague o el botón de cancelar apagan el crucero EN EL PROGRAMA, en la misma vuelta, y la salida vuelve a ser el pie sin tocar los relés. Con su banco de pruebas, y los límites viven en el programa, no en un mensaje." },
-      { id: "b-toma", t: "La placa toma el pedal una sola vez, con el pie suelto", quien: "mauro", seguridad: true,
-        d: "Al poner contacto la placa arranca con los relés sueltos (pedal original). Cuando ya está fabricando exactamente lo que da el pie, y el pie está suelto, cierra los relés. Desde ahí no los vuelve a mover salvo una falla. Es la única conmutación de un viaje normal.",
-        prueba: "Diez veces seguidas: contacto, esperar que la placa tome el pedal (LED), arrancar. Ninguna vez se prende la luz del motor ni la camioneta entra en modo de emergencia." },
+      { id: "b-toma", t: "La placa toma el pedal una sola vez: motor en marcha, pie suelto", quien: "mauro", seguridad: true,
+        d: "Con el contacto la placa arranca con los relés sueltos (pedal original) y la camioneta arranca como siempre. Recién con el motor en marcha, el ralentí estable y el pie suelto, y cuando ya fabrica exactamente lo que da el pie, cierra los relés. Así el arranque —que es cuando más baja la batería— nunca pasa por la placa. Desde ahí no los vuelve a mover salvo una emergencia. Es la única conmutación de un viaje normal.",
+        prueba: "Diez veces seguidas: contacto, arrancar, esperar que la placa tome el pedal (LED). Ninguna vez se prende la luz del motor ni la camioneta entra en modo de emergencia." },
       { id: "b-nucleo", t: "El pedal tiene su núcleo y nadie lo frena", quien: "claude", seguridad: true,
         d: "El ESP32 tiene dos núcleos: el lazo del pedal corre solo en uno, con prioridad, y el Bluetooth y los sensores en el otro. Un Bluetooth trabado no le roba tiempo al pedal." },
       { id: "b-reposo", t: "Relés sin corriente: el pedal va directo", quien: "mauro", seguridad: true,
         prueba: "Placa SIN alimentar, tester en continuidad: pedal↔ECU en VPA y en VPA2 a través de los dos relés." },
       { id: "b-wdt", t: "El watchdog suelta los relés", quien: "mauro", seguridad: true,
+        d: "Con un tiempo holgado (alrededor de 1,5 s): sólo un programa colgado de verdad lo dispara, nunca una vuelta lenta.",
         prueba: "Placa alimentada y relés encendidos: se le corta la alimentación al ESP32 (o se lo frena con el botón de reset apretado) y los dos relés caen, con su clic." },
       { id: "b-autocontrol", t: "Si lo que sale no es lo que tiene que salir, suelta", quien: "mauro", seguridad: true,
-        d: "El watchdog cubre al programa colgado; esto cubre al programa vivo pero equivocado. Cada vuelta, la placa LEE DE VUELTA las dos señales que fabrica y las compara con lo que mandó y con la relación VPA/VPA2 medida; sólo si todo cierra alimenta al watchdog. Si algo no cierra, deja de alimentarlo y los relés caen.",
+        d: "El watchdog cubre al programa colgado; esto cubre al programa vivo pero equivocado. Cada vuelta, la placa LEE DE VUELTA las dos señales que fabrica y las compara con lo que mandó y con la relación VPA/VPA2 medida; sólo si todo cierra alimenta al watchdog. Con margen y con paciencia: tiene que fallar varias vueltas seguidas (unos 50 ms), no una lectura suelta con ruido. Si de verdad no cierra, deja de alimentarlo y los relés caen.",
         prueba: "Con la salida conectada a una resistencia (como en «salida al vacío»): se desconecta un cable de la lectura de vuelta, y los relés caen en menos de medio segundo." },
       { id: "b-cortes", t: "Si la placa no obedece al freno o al embrague, se suelta por cable", quien: "mauro", seguridad: true,
         d: "En una frenada normal NO se toca ningún relé: el programa ya volvió a copiar el pie. Lo que va por cable es el control de que eso pasó: un comparador mira, mientras el freno o el embrague están pisados, si la salida de la placa sigue más alta que el pie. Si sigue más de 0,3 s, eso es una placa que no obedece —una falla— y corta la bobina de los relés sin pasar por el programa.",
         prueba: "Frenar y embragar con el crucero puesto: el crucero se apaga, la camioneta sigue andando con el pie y los relés NO hacen clic. Y con un programa de prueba que a propósito ignora el freno: al pisarlo, los relés caen solos en menos de medio segundo." },
       { id: "b-tablero", t: "El LED, el zumbador y el interruptor general", quien: "mauro",
         prueba: "Con el interruptor apagado no hay forma de que los relés se enciendan." },
+      { id: "b-cadena", t: "La cadena de seguridad: cada eslabón abre solo, y nada más la abre", quien: "mauro", seguridad: true,
+        d: "Interruptor general → watchdog → comparador del freno → orden de la placa → bobinas de los relés, todo en serie y por cable. Se prueba de las dos maneras: que cada emergencia la abre por sí sola, y que el uso de todos los días no la abre nunca.",
+        prueba: "Cada emergencia de la lista, de a una: los relés caen. Y después un rato de uso normal con el motor andando —arrancar, frenar, embragar, cancelar, pisar a fondo, poner y sacar las luces y el aire—: los relés no hacen clic ni una vez." },
     ],
   },
   {
@@ -202,12 +219,34 @@ export const SECCIONES = [
       { id: "p-espejo", t: "Espejo, parada", quien: "mauro", seguridad: true,
         d: "La placa toma el pedal y lo copia: primero contacto sin motor, después motor en punto muerto y freno de mano. Las RPM siguen al pie sin demora y sin luz del motor. Ahí se prueban las fallas: se DESENCHUFA la placa con el motor andando y el pedal real vuelve solo." },
       { id: "p-andando", t: "Espejo andando", quien: "mauro",
-        d: "Viajes enteros con la placa copiando el pie, sin crucero: frenadas, embragues, arranques. Se mira que no aparezca ninguna falla en la ECU y que el pedal se sienta igual que siempre." },
+        d: "Viajes enteros con la placa copiando el pie, sin crucero: frenadas, embragues, arranques. Se mira que no aparezca ninguna falla en la ECU, que el pedal se sienta igual que siempre y que los relés no hayan soltado NI UNA VEZ: si soltaron sin una emergencia, eso es un error a corregir antes de seguir, no una seguridad que anduvo." },
       { id: "p-lento", t: "Crucero a baja velocidad, en un lugar vacío", quien: "mauro",
         d: "Con otra persona mirando la pantalla." },
       { id: "p-ruta", t: "Ruta", quien: "mauro" },
     ],
   },
+];
+
+/* Lo ÚNICO que abre la cadena de seguridad y devuelve el pedal original. Es
+   una lista cerrada: algo que no está acá no suelta los relés. */
+export const EMERGENCIAS = [
+  { id: "interruptor", n: "El conductor apaga el interruptor general", por: "cable" },
+  { id: "colgada", n: "La placa deja de dar señales de vida por más de 1,5 s (watchdog)", por: "cable" },
+  { id: "no-obedece", n: "Con el freno o el embrague pisados, la placa sigue dando más que el pie por más de 0,3 s", por: "cable" },
+  { id: "sin-energia", n: "La placa se queda sin corriente o se desenchufa", por: "cable" },
+  { id: "no-cierra", n: "La placa lee de vuelta lo que fabrica y no es lo que tiene que salir, varias vueltas seguidas", por: "programa (sólo puede soltar)" },
+];
+
+/* Lo que es uso de todos los días y NO puede soltar los relés: si alguna de
+   estas cosas los suelta, el error es del diseño, no una seguridad que anduvo. */
+export const USO_ESPERADO = [
+  "frenar y embragar, con crucero o sin él",
+  "cancelar el crucero o volver a ponerlo",
+  "pisar el acelerador por encima del crucero",
+  "dar arranque (la batería baja a 8–9 V)",
+  "prender las luces, el aire o la radio",
+  "una lectura suelta con ruido",
+  "cargar el teléfono o perder el Bluetooth",
 ];
 
 /* Todos los pasos y todas las piezas, en orden, con su sección. */

@@ -75,7 +75,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  placa.html — la guía para armar la placa de la Hilux. Sello: placa-3
+  placa.html — la guía para armar la placa de la Hilux. Sello: placa-4
 
   Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de construcción
   en Arduino del componente que se va a fabricar, con diseño y guía paso a
@@ -182,12 +182,17 @@
   <div id="secciones"></div>
 
   <div class="tarj">
-    <h2 style="margin-top:.2rem">🛡️ Lo que no se negocia</h2>
+    <h2 style="margin-top:.2rem">🛡️ La seguridad</h2>
+    <p class="pl-sub">Simple y robusta primero. Una cadena por cable manda sobre todo lo programable: la corriente de los relés pasa por ella, y si se abre, el pedal original vuelve directo a la ECU. Sólo la abre una emergencia de verdad.</p>
+    <b>Lo único que la abre</b>
+    <ul class="pl-reglas" id="emergencias"></ul>
+    <b>Lo que NO la abre nunca</b>
+    <p class="gris" id="uso-esperado" style="margin-top:.2rem"></p>
+    <b>Y además</b>
     <ul class="pl-reglas">
       <li><b>La ECU lee siempre a la placa</b>, que copia el pie o hace el crucero: los relés no se mueven en una frenada, para que la ECU nunca vea un corte en sus señales.</li>
-      <li><b>Sólo ante una falla</b> los relés sueltan y el pedal original vuelve a ir directo a la ECU. Sin corriente, ése es su estado.</li>
-      <li><b>El freno y el embrague apagan el crucero en el programa</b>, y un control por cable suelta los relés si la placa no les obedece; el watchdog, si se cuelga.</li>
-      <li><b>El programa sólo puede SOLTAR, nunca sostener solo:</b> si lo que fabrica no es lo que tiene que salir, deja de alimentar al watchdog y los relés caen.</li>
+      <li><b>El freno y el embrague apagan el crucero en el programa</b>; la cadena sólo entra si la placa no les obedece.</li>
+      <li><b>El programa puede abrir la cadena, nunca cerrarla solo.</b></li>
       <li><b>Programa nuevo, pruebas de seguridad de nuevo</b>, aunque el cambio sea de un sensor.</li>
       <li><b>El pie siempre gana:</b> la placa nunca entrega menos de lo que pide el pedal.</li>
       <li><b>El teléfono no está en el lazo:</b> le puede ajustar la suavidad al crucero, nunca los límites.</li>
@@ -201,8 +206,8 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-11";
 import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-5";
-import { SECCIONES, PASOS, PIEZAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-3";
-P.PANEL = "placa-3";
+import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-4";
+P.PANEL = "placa-4";
 P.pintarSello();
 
 let ESTADO = { marcas: {}, notas: {}, medidas: {}, compras: {} };
@@ -226,6 +231,8 @@ async function arrancar() {
   $("btnSalir").classList.remove("hide");
   await leer();
 }
+$("emergencias").innerHTML = EMERGENCIAS.map((e) => "<li>" + P.esc(e.n) + ' <span class="pl-quien">' + P.esc(e.por) + "</span></li>").join("");
+$("uso-esperado").textContent = USO_ESPERADO.join(" · ") + ".";
 $("btnReintentar").onclick = arrancar;
 $("btnEntrar").onclick = async () => {
   try { await P.entrar($("mail").value, $("clave").value); location.reload(); }

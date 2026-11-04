@@ -563,7 +563,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-45";
+P.PANEL = "panel-46";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -3653,6 +3653,14 @@ function pintarUnSitio(pr) {
     s.descarga ? "sit-link" : "sit-link p");
   if (s.repo) h += fuera(urlRepo(s.repo), "Repositorio");
   if (s.readme) h += fuera(s.readme, "Qué es y cómo funciona");
+  /* `guias` (panel-46, 4-nov-2026, placa.html): las páginas del PROPIO panel
+     que son de este proyecto —la guía para armar la placa de la Hilux—,
+     `[{ url, texto }]`. Van en la misma pestaña, porque son del panel; y un
+     enlace que no sea relativo a este sitio no se dibuja acá. */
+  for (const g of Array.isArray(s.guias) ? s.guias : []) {
+    if (!g || !/^\.\/[a-z0-9-]+\.html(\?[^"<>]*)?$/i.test(String(g.url || ""))) continue;
+    h += '<a class="sit-link p" href="' + P.esc(g.url) + '">' + P.esc(g.texto || g.url) + "</a>";
+  }
   h += "</div>";
   if (!s.url && !s.repo) {
     h += '<p class="gris" style="margin:.4rem 0 0;font-size:.78rem">Todavía no cargué '

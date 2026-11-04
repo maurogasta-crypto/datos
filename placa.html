@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Panel · la placa de la Hilux</title>
+<link rel="stylesheet" href="estilos.css?v=estilos-14">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" href="./icono-192.png">
+<link rel="manifest" href="./manifest.json">
+<style>
+  .pl-sub { color: var(--gris); margin: 0 0 .6rem; font-size: .9rem; }
+  .pl-diag { width: 100%; height: auto; display: block; margin: .4rem 0 .2rem; }
+  .pl-diag text { fill: var(--texto); font: 11px system-ui, sans-serif; }
+  .pl-diag .chico { fill: var(--gris); font-size: 9.5px; }
+  .pl-diag .caja { fill: var(--tinta3); stroke: var(--linea); }
+  .pl-diag .caja-a { fill: var(--tinta3); stroke: var(--ok); }
+  .pl-diag .caja-b { fill: var(--tinta3); stroke: var(--acento); }
+  .pl-diag .lin { stroke: var(--gris); fill: none; stroke-width: 1.4; }
+  .pl-diag .lin-a { stroke: var(--ok); fill: none; stroke-width: 1.2; stroke-dasharray: 4 3; }
+  .pl-diag .lin-b { stroke: var(--acento); fill: none; stroke-width: 1.4; }
+  .pl-diag .corte { stroke: var(--mal); fill: none; stroke-width: 1.4; stroke-dasharray: 2 2; }
+  .pl-ley { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-size: .78rem; color: var(--gris); }
+  .pl-ley i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: .3rem; }
+  .pl-sigue { border-color: var(--acento); }
+  .pl-sigue .que { font-weight: 600; margin: .2rem 0; }
+  .pl-sigue .donde { font-size: .8rem; color: var(--gris); }
+  .pl-sigue .uno { padding: .45rem 0; border-bottom: 1px solid var(--linea); }
+  .pl-sigue .uno:last-child { border-bottom: 0; }
+  .pl-plata { display: grid; grid-template-columns: 1fr auto; gap: .15rem .8rem; font-size: .9rem; }
+  .pl-plata .n { font-family: var(--mono); text-align: right; white-space: nowrap; }
+  details.pl-sec { background: var(--tinta2); border: 1px solid var(--linea); border-radius: var(--r); margin: .6rem 0; }
+  details.pl-sec > summary { list-style: none; cursor: pointer; padding: .75rem .8rem; display: flex; gap: .6rem; align-items: center; }
+  details.pl-sec > summary::-webkit-details-marker { display: none; }
+  .pl-sec summary .ic { font-size: 1.25rem; }
+  .pl-sec summary .n { flex: 1; font-weight: 600; }
+  .pl-sec summary .cuenta { font-family: var(--mono); font-size: .8rem; color: var(--gris); }
+  .pl-sec summary .cuenta.ok { color: var(--ok); }
+  .pl-sec .cuerpo { padding: 0 .8rem .6rem; }
+  .pl-sec .intro { color: var(--gris); font-size: .86rem; margin: 0 0 .4rem; }
+  .pl-sec .traba { font-size: .84rem; color: var(--ojo); margin: 0 0 .5rem; }
+  .pl-paso { padding: .6rem 0; border-top: 1px solid var(--linea); }
+  .pl-paso .cab { display: flex; gap: .55rem; align-items: flex-start; }
+  .pl-paso .cab input[type=checkbox] { width: 24px; height: 24px; margin: .1rem 0 0; flex: none; accent-color: var(--ok); }
+  .pl-paso .cab .t { flex: 1; }
+  .pl-paso.hecho .cab .t b { color: var(--gris); text-decoration: line-through; }
+  .pl-quien { font-size: .7rem; padding: .05rem .4rem; border-radius: 999px; border: 1px solid var(--linea); color: var(--gris); white-space: nowrap; }
+  .pl-quien.claude { color: var(--acento); border-color: var(--acento); }
+  .pl-seg { font-size: .7rem; padding: .05rem .4rem; border-radius: 999px; border: 1px solid var(--mal); color: var(--mal); white-space: nowrap; }
+  .pl-paso p { margin: .25rem 0 0 2.1rem; font-size: .88rem; }
+  .pl-paso .prueba { color: var(--ok); }
+  .pl-paso .cuando { margin-left: 2.1rem; font-size: .75rem; color: var(--gris); }
+  .pl-campos { display: flex; flex-wrap: wrap; gap: .4rem; margin: .4rem 0 0 2.1rem; }
+  .pl-campos label { display: flex; flex-direction: column; font-size: .75rem; color: var(--gris); margin: 0; }
+  .pl-campos input { width: 6.5rem; font-family: var(--mono); }
+  .pl-nota { font-family: inherit; margin: .4rem 0 0 2.1rem; width: calc(100% - 2.1rem); min-height: 2.4rem; font-size: .86rem; }
+  .pl-pieza { padding: .55rem 0; border-top: 1px solid var(--linea); }
+  .pl-pieza .t { display: flex; gap: .5rem; align-items: baseline; }
+  .pl-pieza .t b { flex: 1; font-weight: 500; }
+  .pl-pieza .usd { font-family: var(--mono); font-size: .8rem; color: var(--gris); white-space: nowrap; }
+  .pl-pieza .para { font-size: .8rem; color: var(--gris); margin: .1rem 0 .3rem; }
+  .pl-tres { display: flex; gap: .3rem; }
+  .pl-tres button { flex: 1; min-height: 36px; padding: .3rem; font-size: .8rem; border-radius: var(--r-s);
+    background: var(--tinta3); color: var(--gris); border: 1px solid var(--linea); font-family: inherit; }
+  .pl-tres button.on.falta { color: var(--texto); border-color: var(--gris); }
+  .pl-tres button.on.pedido { color: var(--ojo); border-color: var(--ojo); }
+  .pl-tres button.on.llego { color: var(--ok); border-color: var(--ok); }
+  .pl-reglas li { margin: .25rem 0; font-size: .9rem; }
+  .pl-rel { font-family: var(--mono); font-size: .85rem; margin-left: 2.1rem; color: var(--acento); }
+  .pl-barra-prog { height: 6px; background: var(--tinta3); border-radius: 3px; overflow: hidden; margin: .3rem 0 .1rem; }
+  .pl-barra-prog > div { height: 100%; background: var(--ok); }
+</style>
+</head>
+<body>
+<!--
+  ════════════════════════════════════════════════════════════════
+  placa.html — la guía para armar la placa de la Hilux. Sello: placa-1
+
+  Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de construcción
+  en Arduino del componente que se va a fabricar, con diseño y guía paso a
+  paso en lo que tenemos que ir realizando: primero conseguir materiales y
+  después proceso de fabricación, accesible desde el panel».
+
+  Esta página sólo DIBUJA: el contenido de la guía (pasos, piezas, precios,
+  qué espera a qué) y sus cuentas viven en `placa.js`, que se prueba sin
+  navegador (`node pruebas/placa.mjs`). El porqué de cada decisión está en
+  CRUCERO.md de sitd-hilux.
+
+  LO QUE SE MARCA va a `proyectos/hilux.placa` (marcas, notas, medidas y
+  compras), escrito campo por campo con `updateDoc` para que dos teléfonos
+  no se pisen. Sin colección ni regla nueva: `proyectos/` ya lo escriben
+  Mauro y el agente, y la ronda lo lee para saber en qué paso está.
+
+  Se llega desde la ficha de SITD-Hilux en el panel («🔧 Armar la placa»,
+  `sitio.guias` de `proyectos/hilux`). No está en el SHELL de sw.js: se pide
+  por red, como pizarra.html y gemini.html.
+  ════════════════════════════════════════════════════════════════
+-->
+
+<div id="barra">
+  <div class="marca"><a href="./" class="volver" style="text-decoration:none">← Panel</a> · La placa<small id="sello"></small></div>
+  <button class="btn hide" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
+</div>
+
+<div class="contenedor">
+  <h1>🔧 La placa de la Hilux</h1>
+  <p class="pl-sub">Una caja con sensores propios que le habla al teléfono, y después, en una placa aparte, el crucero. Se arma en dos etapas, y la primera sirve sola.</p>
+
+  <div class="tarj">
+    <svg class="pl-diag" viewBox="0 0 360 300" role="img" aria-label="Diagrama de la placa: el pedal va a la ECU por un arnés en Y; la caja de sensores lee y manda por Bluetooth al teléfono; en la etapa B el interceptor queda en el medio, con relés que sin corriente dejan pasar el pedal real.">
+      <!-- el camino de siempre: pedal → ECU -->
+      <rect class="caja" x="8" y="20" width="82" height="40" rx="6"/>
+      <text x="49" y="38" text-anchor="middle">Pedal</text>
+      <text x="49" y="52" text-anchor="middle" class="chico">VPA · VPA2</text>
+      <rect class="caja" x="270" y="20" width="82" height="40" rx="6"/>
+      <text x="311" y="38" text-anchor="middle">ECU</text>
+      <text x="311" y="52" text-anchor="middle" class="chico">1KD-FTV</text>
+      <rect class="caja-b" x="116" y="14" width="128" height="52" rx="6"/>
+      <text x="180" y="32" text-anchor="middle">Interceptor (B)</text>
+      <text x="180" y="45" text-anchor="middle" class="chico">Nano · DAC · 2 relés</text>
+      <text x="180" y="57" text-anchor="middle" class="chico">sin corriente: pedal directo</text>
+      <path class="lin" d="M90 40 H116"/>
+      <path class="lin" d="M244 40 H270"/>
+      <!-- los cortes por cable -->
+      <rect class="caja" x="128" y="92" width="104" height="30" rx="6"/>
+      <text x="180" y="105" text-anchor="middle">Freno · embrague</text>
+      <text x="180" y="117" text-anchor="middle" class="chico">+ watchdog</text>
+      <path class="corte" d="M180 92 V66"/>
+      <text x="186" y="82" class="chico">corta los relés</text>
+      <!-- la caja de sensores -->
+      <rect class="caja-a" x="120" y="170" width="120" height="52" rx="6"/>
+      <text x="180" y="188" text-anchor="middle">Caja de sensores (A)</text>
+      <text x="180" y="201" text-anchor="middle" class="chico">ESP32 · Bluetooth</text>
+      <text x="180" y="213" text-anchor="middle" class="chico">sólo lee</text>
+      <path class="lin-a" d="M49 60 V196 H120"/>
+      <text x="54" y="150" class="chico">lee el pedal</text>
+      <text x="54" y="161" class="chico">(100 kΩ)</text>
+      <rect class="caja" x="8" y="236" width="98" height="52" rx="6"/>
+      <text x="57" y="252" text-anchor="middle">Tablero</text>
+      <text x="57" y="265" text-anchor="middle" class="chico">velocidad · RPM</text>
+      <text x="57" y="277" text-anchor="middle" class="chico">freno · contacto</text>
+      <path class="lin-a" d="M106 262 H150 V222"/>
+      <rect class="caja" x="128" y="246" width="104" height="42" rx="6"/>
+      <text x="180" y="263" text-anchor="middle">Acelerómetro</text>
+      <text x="180" y="277" text-anchor="middle" class="chico">soporte rígido · 1.600/s</text>
+      <path class="lin-a" d="M180 246 V222"/>
+      <rect class="caja" x="270" y="176" width="82" height="40" rx="6"/>
+      <text x="311" y="194" text-anchor="middle">Teléfono</text>
+      <text x="311" y="207" text-anchor="middle" class="chico">la app</text>
+      <path class="lin-a" d="M240 196 H270"/>
+      <text x="241" y="188" class="chico">BT</text>
+      <path class="lin-b" d="M200 170 V66"/>
+      <text x="206" y="140" class="chico">ajustes de</text>
+      <text x="206" y="151" class="chico">confort (B)</text>
+    </svg>
+    <div class="pl-ley">
+      <span><i style="border-color:var(--ok);border-top-style:dashed"></i>etapa A: sólo lee</span>
+      <span><i style="border-color:var(--acento)"></i>etapa B: el crucero</span>
+      <span><i style="border-color:var(--mal);border-top-style:dotted"></i>corte por cable</span>
+    </div>
+  </div>
+
+  <div id="sin-sdk" class="tarj hide">
+    <b>No bajó Firebase.</b> <span id="sin-sdk-que" class="gris"></span>
+    <p class="gris">La guía se lee igual; marcar pasos necesita la base.</p>
+    <div class="fila-btn"><button class="btn p" id="btnReintentar">Reintentar</button></div>
+  </div>
+
+  <div id="puerta" class="tarj hide">
+    <b>Entrá para ir marcando</b>
+    <p class="gris">La guía se lee sin cuenta; lo que marcás queda en el panel, para que yo sepa en qué paso estás.</p>
+    <label for="mail">Mail</label>
+    <input type="email" id="mail" inputmode="email" autocomplete="username">
+    <label for="clave">Contraseña</label>
+    <input type="password" id="clave" autocomplete="current-password">
+    <div class="fila-btn"><button class="btn p" id="btnEntrar">Entrar</button></div>
+  </div>
+
+  <div id="sigue"></div>
+  <div id="plata"></div>
+  <div id="secciones"></div>
+
+  <div class="tarj">
+    <h2 style="margin-top:.2rem">🛡️ Lo que no se negocia</h2>
+    <ul class="pl-reglas">
+      <li><b>Sin corriente, el pedal va directo a la ECU.</b> Los relés en reposo son el camino de fábrica.</li>
+      <li><b>Freno, embrague y watchdog cortan por cable</b>, no porque el programa lo decida.</li>
+      <li><b>El pie siempre gana:</b> la placa nunca entrega menos de lo que pide el pedal.</li>
+      <li><b>El teléfono no está en el lazo:</b> le puede ajustar la suavidad al crucero, nunca los límites.</li>
+      <li><b>Se arma sin cortar un cable</b> de la camioneta: se saca y queda como de fábrica.</li>
+      <li><b>No se saltea una etapa de prueba</b>, aunque la anterior haya dado bien a la primera.</li>
+    </ul>
+    <p class="gris" style="margin-bottom:0">El porqué de cada una, en <a href="https://github.com/maurogasta-crypto/sitd-hilux/blob/main/CRUCERO.md" target="_blank" rel="noopener noreferrer">CRUCERO.md</a>.</p>
+  </div>
+</div>
+
+<script type="module">
+import { P, $, db } from "./nucleo.js?v=nucleo-11";
+import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-5";
+import { SECCIONES, PASOS, PIEZAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-1";
+P.PANEL = "placa-1";
+P.pintarSello();
+
+let ESTADO = { marcas: {}, notas: {}, medidas: {}, compras: {} };
+let yo = null;          // quien entró; sin sesión, la guía se lee y no se marca
+const abiertas = new Set();
+
+const usd = ([a, b]) => a === b ? "US$ " + a : "US$ " + a + "–" + b;
+const nombreSec = (id) => (SECCIONES.find((s) => s.id === id) || {}).n || id;
+
+async function arrancar() {
+  pintar();
+  for (const id of ["sin-sdk", "puerta"]) $(id).classList.add("hide");
+  if (!(await P.arrancarFirebase())) {
+    $("sin-sdk-que").textContent = P.fallaFirebase ? P.fallaFirebase.message : "";
+    $("sin-sdk").classList.remove("hide"); return;
+  }
+  yo = await P.quienEntra();
+  if (!yo) { $("puerta").classList.remove("hide"); return; }
+  const f = await getDoc(doc(db, "personas", yo.uid)).catch(() => null);
+  if (f && f.exists()) { location.replace("invitado.html"); return; }
+  $("btnSalir").classList.remove("hide");
+  await leer();
+}
+$("btnReintentar").onclick = arrancar;
+$("btnEntrar").onclick = async () => {
+  try { await P.entrar($("mail").value, $("clave").value); location.reload(); }
+  catch (e) { P.aviso(P.explicar(e), "error"); }
+};
+$("btnSalir").onclick = async () => { await P.salir(); location.reload(); };
+
+async function leer() {
+  try {
+    const d = await getDoc(doc(db, "proyectos", "hilux"));
+    const p = (d.exists() && d.data().placa) || {};
+    ESTADO = { marcas: p.marcas || {}, notas: p.notas || {}, medidas: p.medidas || {}, compras: p.compras || {} };
+  } catch (e) { P.aviso(P.explicar(e), "error"); }
+  pintar();
+}
+
+/* Una escritura: SÓLO los campos que cambian, con su ruta, para que lo que
+   otro teléfono marcó mientras tanto no se pierda. */
+async function guardar(cambios) {
+  if (!yo) { P.aviso("Entrá para marcar: la guía se lee sin cuenta, pero lo marcado va al panel.", "error"); return false; }
+  try {
+    await updateDoc(doc(db, "proyectos", "hilux"), { ...cambios, "placa.actualizadoEn": new Date().toISOString() });
+    return true;
+  } catch (e) { P.aviso(P.explicar(e), "error"); return false; }
+}
+
+function pintar() {
+  pintarSigue();
+  pintarPlata();
+  pintarSecciones();
+}
+
+function pintarSigue() {
+  const s = siguiente(ESTADO);
+  const total = PASOS.length + PIEZAS.filter((p) => !p.opcional).length;
+  const hechos = SECCIONES.reduce((n, x) => n + progreso(x, ESTADO).hechos, 0);
+  let h = '<div class="tarj pl-sigue"><b>👉 Lo que sigue</b>';
+  h += '<div class="pl-barra-prog"><div style="width:' + Math.round(100 * hechos / total) + '%"></div></div>';
+  h += '<div class="gris" style="margin:0 0 .3rem">' + hechos + " de " + total + " hechos</div>";
+  if (!s.length) h += '<p class="que">Está todo hecho. 🎉</p>';
+  for (const x of s.slice(0, 3)) {
+    h += '<div class="uno"><div class="donde">' + P.esc(nombreSec(x.seccion)) + "</div>"
+      + '<div class="que">' + (x.tipo === "pieza" ? "Conseguir: " : "") + P.esc(x.t || x.n) + "</div>"
+      + (x.quien === "claude" ? '<div class="donde">Esto lo hago yo: avisame en el chat cuando quieras que lo haga.</div>' : "")
+      + "</div>";
+  }
+  h += "</div>";
+  $("sigue").innerHTML = h;
+}
+
+function pintarPlata() {
+  const a = costo(ESTADO, ["comprar-a", "herramientas"]);
+  const b = costo(ESTADO, ["comprar-b"]);
+  const fila = (n, r) => "<span>" + n + '</span><span class="n">' + usd(r) + "</span>";
+  $("plata").innerHTML = '<div class="tarj"><b>💵 Lo que cuesta</b>'
+    + '<p class="gris" style="margin:.2rem 0 .5rem">Precios de referencia de tienda internacional; en Uruguay, comprado en el país, suele ser 1,5 a 2 veces más. Sin las opcionales.</p>'
+    + '<div class="pl-plata">'
+    + fila("Etapa A y herramientas: falta", a.falta) + fila("… ya pedido o llegado", [a.pedido[0] + a.llego[0], a.pedido[1] + a.llego[1]])
+    + fila("Etapa B (crucero): falta", b.falta) + fila("… ya pedido o llegado", [b.pedido[0] + b.llego[0], b.pedido[1] + b.llego[1]])
+    + "</div></div>";
+}
+
+function pintarSecciones() {
+  const sig = new Set(siguiente(ESTADO).map((x) => x.seccion));
+  let h = "";
+  for (const s of SECCIONES) {
+    const pr = progreso(s, ESTADO);
+    const traba = bloqueos(s.id, ESTADO);
+    const abierta = abiertas.has(s.id) || (abiertas.size === 0 && sig.has(s.id));
+    h += '<details class="pl-sec" data-sec="' + s.id + '"' + (abierta ? " open" : "") + ">"
+      + '<summary><span class="ic">' + s.ic + '</span><span class="n">' + P.esc(s.n) + "</span>"
+      + '<span class="cuenta' + (pr.completa ? " ok" : "") + '">' + (pr.completa ? "✓ " : "") + pr.hechos + "/" + pr.total + "</span></summary>"
+      + '<div class="cuerpo"><p class="intro">' + P.esc(s.d) + "</p>";
+    if (traba.length) h += '<p class="traba">⏳ Se empieza cuando esté completo: ' + traba.map((t) => P.esc(nombreSec(t))).join(" y ") + ".</p>";
+    for (const p of s.pasos || []) h += pasoHTML(p);
+    for (const p of s.piezas || []) h += piezaHTML(p);
+    h += "</div></details>";
+  }
+  $("secciones").innerHTML = h;
+}
+
+function pasoHTML(p) {
+  const m = ESTADO.marcas[p.id];
+  let h = '<div class="pl-paso' + (m ? " hecho" : "") + '">'
+    + '<div class="cab"><input type="checkbox" data-paso="' + p.id + '"' + (m ? " checked" : "") + ' aria-label="Hecho">'
+    + '<div class="t"><b>' + P.esc(p.t) + "</b> "
+    + '<span class="pl-quien ' + p.quien + '">' + (p.quien === "claude" ? "Claude" : "vos") + "</span>"
+    + (p.seguridad ? ' <span class="pl-seg">seguridad</span>' : "") + "</div></div>";
+  if (p.d) h += "<p>" + P.esc(p.d) + "</p>";
+  if (p.prueba) h += '<p class="prueba">✔ Cómo se prueba: ' + P.esc(p.prueba) + "</p>";
+  if (p.campos) {
+    h += '<div class="pl-campos">' + p.campos.map((c) =>
+      "<label>" + P.esc(c.n) + (c.u ? " (" + P.esc(c.u) + ")" : "")
+      + '<input inputmode="decimal" data-medida="' + c.k + '" value="' + P.esc(ESTADO.medidas[c.k] || "") + '"></label>').join("") + "</div>";
+  }
+  if (p.id === "m-vpa2") h += '<p class="pl-rel" id="rel-vpa">' + relacionTexto() + "</p>";
+  h += '<textarea class="pl-nota" data-nota="' + p.id + '" placeholder="Anotar lo que dio, lo que costó, una duda…">'
+    + P.esc(ESTADO.notas[p.id] || "") + "</textarea>";
+  if (m && m.en) h += '<div class="cuando">Hecho el ' + P.esc(P.fecha(m.en)) + "</div>";
+  return h + "</div>";
+}
+
+/* La relación VPA/VPA2 que el interceptor tiene que copiar (relacionVPA de
+   placa.js), en una línea. Se repinta sola al escribir una medida: redibujar
+   la lista entera le sacaría el foco al campo siguiente. */
+function relacionTexto() {
+  const r = relacionVPA(ESTADO.medidas);
+  if (!r) return "";
+  return (r.forma === "corrida" ? "VPA2 ≈ VPA + " + r.corrimiento + " V" : "VPA2 ≈ " + r.razon + " × VPA")
+    + " · se aparta " + r.error + " V"
+    + (r.sube ? "" : " · ⚠ alguna no sube al apretar: volvé a medir");
+}
+
+function piezaHTML(p) {
+  const e = ESTADO.compras[p.id] || "falta";
+  const b = (v, n) => '<button class="' + v + (e === v ? " on" : "") + '" data-pieza="' + p.id + '" data-v="' + v + '">' + n + "</button>";
+  return '<div class="pl-pieza"><div class="t"><b>' + P.esc(p.n) + (p.opcional ? ' <span class="pl-quien">opcional</span>' : "") + "</b>"
+    + '<span class="usd">' + usd(p.usd) + "</span></div>"
+    + (p.para ? '<div class="para">' + P.esc(p.para) + "</div>" : "")
+    + '<div class="pl-tres">' + b("falta", "Falta") + b("pedido", "Pedido") + b("llego", "Llegó ✓") + "</div></div>";
+}
+
+/* Los toques. Se escucha en el contenedor: la lista se redibuja entera. */
+$("secciones").addEventListener("toggle", (ev) => {
+  const d = ev.target.closest && ev.target.closest("details[data-sec]");
+  if (!d) return;
+  if (d.open) abiertas.add(d.dataset.sec); else abiertas.delete(d.dataset.sec);
+}, true);
+
+$("secciones").addEventListener("change", async (ev) => {
+  const t = ev.target;
+  if (t.dataset.paso) {
+    const id = t.dataset.paso;
+    const marca = { en: new Date().toISOString(), por: yo ? yo.uid : "" };
+    const ok = await guardar({ ["placa.marcas." + id]: t.checked ? marca : deleteField() });
+    if (!ok) { t.checked = !t.checked; return; }
+    if (t.checked) ESTADO.marcas[id] = marca; else delete ESTADO.marcas[id];
+    pintar();
+  } else if (t.dataset.medida) {
+    const k = t.dataset.medida, v = t.value.trim();
+    if (await guardar({ ["placa.medidas." + k]: v || deleteField() })) {
+      if (v) ESTADO.medidas[k] = v; else delete ESTADO.medidas[k];
+      const rel = $("rel-vpa");
+      if (rel) rel.textContent = relacionTexto();
+    }
+  } else if (t.dataset.nota) {
+    const id = t.dataset.nota, v = t.value.trim();
+    if (await guardar({ ["placa.notas." + id]: v || deleteField() })) {
+      if (v) ESTADO.notas[id] = v; else delete ESTADO.notas[id];
+      P.aviso("Anotado.");
+    }
+  }
+});
+
+$("secciones").addEventListener("click", async (ev) => {
+  const t = ev.target.closest("button[data-pieza]");
+  if (!t) return;
+  const id = t.dataset.pieza, v = t.dataset.v;
+  if (await guardar({ ["placa.compras." + id]: v === "falta" ? deleteField() : v })) {
+    if (v === "falta") delete ESTADO.compras[id]; else ESTADO.compras[id] = v;
+    pintar();
+  }
+});
+
+arrancar();
+</script>
+</body>
+</html>

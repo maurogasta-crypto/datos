@@ -627,6 +627,32 @@ panel de acceso».
   `api_secret`). **Hay que publicar las reglas v8**; hasta entonces el editor
   dice que la base no deja.
 
+## La placa de la Hilux (`placa.html`, desde el 4-nov-2026)
+
+La guía para armar la placa de la Hilux, paso a paso: medir, comprar, armar y
+probar. Se llega desde la ficha de SITD-Hilux en «Sitios» («🔧 Armar la
+placa»). Lo pidió Mauro: «una pantalla dedicada para el proceso de
+construcción… con diseño y guía paso a paso… primero conseguir materiales y
+después proceso de fabricación, accesible desde el panel».
+
+- **El contenido vive en `placa.js`**, no en la página: los pasos, las piezas
+  con su precio de referencia, qué sección espera a cuál (`ESPERA`), lo que
+  sigue (`siguiente`), el costo y la relación VPA/VPA2 que se calcula con las
+  medidas. La página sólo dibuja. Banco: `node pruebas/placa.mjs` (13 casos).
+- **Lo marcado va a `proyectos/hilux.placa`** (`marcas`, `notas`, `medidas`,
+  `compras`), campo por campo con `updateDoc`: sin colección ni regla nueva, y
+  la ronda lo lee para saber en qué paso está. La guía se lee sin cuenta.
+- **El orden no se negocia, y lo garantiza el código:** el crucero (etapa B)
+  no se abre sin la caja de sensores armada (etapa A) y las medidas; y las
+  pruebas en la camioneta no se abren sin los pasos de seguridad (relés en
+  reposo, watchdog, cortes por cable). El banco lo comprueba.
+- **El enlace sale de `sitio.guias`** de `proyectos/<id>` (`panel-46`):
+  `[{url, texto}]`, sólo direcciones de este mismo sitio (`./algo.html`).
+  Genérico: otra guía de otro proyecto es un dato, no código.
+- El porqué de cada decisión de diseño está en `CRUCERO.md` de
+  `maurogasta-crypto/sitd-hilux`; **si cambia allá, cambia `placa.js`** en la
+  misma tanda.
+
 ## Los sellos de versión
 
 Cada archivo con lógica lleva su número, **visible arriba del panel**. Ante
@@ -639,7 +665,7 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-45` |
+| `index.html` | `P.PANEL` | `panel-46` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
@@ -647,7 +673,9 @@ teléfono.
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `sw.js` | `VERSION` | `panel-shell-v46` |
+| `placa.html` | `P.PANEL` | `placa-1` |
+| `placa.js` | `VERSION` | `placa-js-1` |
+| `sw.js` | `VERSION` | `panel-shell-v47` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

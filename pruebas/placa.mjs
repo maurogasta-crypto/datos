@@ -92,7 +92,10 @@ prueba("la cadena: lista cerrada de emergencias, casi todas por cable, y frenar 
   for (const id of ["interruptor", "colgada", "no-obedece", "sin-energia"]) assert.ok(porCable.includes(id), id + " no va por cable");
   assert.ok(G.EMERGENCIAS.every((e) => e.por === "cable" || /sólo puede soltar/.test(e.por)), "el programa no puede tener otro papel que soltar");
   const uso = G.USO_ESPERADO.join(" | ");
-  for (const t of ["frenar", "arranque", "cancelar", "Bluetooth"]) assert.ok(uso.includes(t), "falta en el uso esperado: " + t);
+  for (const t of ["frenar", "arranque", "cancelar", "Bluetooth", "teléfono no esté", "GPS"]) assert.ok(uso.includes(t), "falta en el uso esperado: " + t);
+  const acc = Object.fromEntries(G.ACCESORIAS.map((a) => [a.id, a.entra]));
+  assert.deepEqual(acc, { gps: true, rpm: true, "sin-telefono": false, rastreador: false }, "cambió una decisión de las ideas accesorias sin cambiar el banco");
+  assert.ok(/caja/.test(G.PASOS.find((p) => p.id === "b-programa").d) && G.PIEZAS.some((p) => p.id === "c-gps"), "el crucero tiene que ir con la velocidad de la caja, y el GPS sólo controlarla");
   const cadena = G.PASOS.find((p) => p.id === "b-cadena");
   assert.ok(/no hacen clic ni una vez/.test(cadena.prueba), "la cadena no prueba lo que NO la abre");
   const fuente = G.PIEZAS.find((p) => p.id === "c-fuente");
@@ -110,7 +113,7 @@ prueba("los dos archivos parsean como módulo (también el script del .html)", (
 prueba("la página pide los sellos que dicen los archivos", () => {
   const html = fs.readFileSync(path.join(raiz, "placa.html"), "utf8");
   assert.ok(html.includes("./placa.js?v=" + G.VERSION), "el ?v= de placa.js no es " + G.VERSION);
-  assert.ok(html.includes('P.PANEL = "placa-4"') && html.includes("Sello: placa-4"));
+  assert.ok(html.includes('P.PANEL = "placa-5"') && html.includes("Sello: placa-5"));
 });
 
 prueba("la página escribe sólo adentro de placa., campo por campo", () => {

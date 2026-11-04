@@ -75,7 +75,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  placa.html — la guía para armar la placa de la Hilux. Sello: placa-4
+  placa.html — la guía para armar la placa de la Hilux. Sello: placa-5
 
   Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de construcción
   en Arduino del componente que se va a fabricar, con diseño y guía paso a
@@ -137,7 +137,7 @@
       <text x="54" y="150" class="chico">lee el pedal</text>
       <text x="54" y="161" class="chico">(100 kΩ)</text>
       <rect class="caja" x="8" y="236" width="98" height="52" rx="6"/>
-      <text x="57" y="252" text-anchor="middle">Tablero</text>
+      <text x="57" y="252" text-anchor="middle">Tablero · GPS</text>
       <text x="57" y="265" text-anchor="middle" class="chico">velocidad · RPM</text>
       <text x="57" y="277" text-anchor="middle" class="chico">freno · contacto</text>
       <path class="lin-a" d="M106 262 H150 V222"/>
@@ -199,6 +199,9 @@
       <li><b>Se arma sin cortar un cable</b> de la camioneta: se saca y queda como de fábrica.</li>
       <li><b>No se saltea una etapa de prueba</b>, aunque la anterior haya dado bien a la primera.</li>
     </ul>
+    <h2>💡 Ideas que se evaluaron</h2>
+    <p class="gris" style="margin-top:.2rem">Entran sólo si no complican de más el diseño ni la seguridad.</p>
+    <ul class="pl-reglas" id="accesorias"></ul>
     <p class="gris" style="margin-bottom:0">El porqué de cada una, en <a href="https://github.com/maurogasta-crypto/sitd-hilux/blob/main/CRUCERO.md" target="_blank" rel="noopener noreferrer">CRUCERO.md</a>.</p>
   </div>
 </div>
@@ -206,8 +209,8 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-11";
 import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-5";
-import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-4";
-P.PANEL = "placa-4";
+import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-5";
+P.PANEL = "placa-5";
 P.pintarSello();
 
 let ESTADO = { marcas: {}, notas: {}, medidas: {}, compras: {} };
@@ -233,6 +236,7 @@ async function arrancar() {
 }
 $("emergencias").innerHTML = EMERGENCIAS.map((e) => "<li>" + P.esc(e.n) + ' <span class="pl-quien">' + P.esc(e.por) + "</span></li>").join("");
 $("uso-esperado").textContent = USO_ESPERADO.join(" · ") + ".";
+$("accesorias").innerHTML = ACCESORIAS.map((a) => "<li><b>" + (a.entra ? "✅ " : "✖ ") + P.esc(a.n) + ":</b> " + P.esc(a.porque) + "</li>").join("");
 $("btnReintentar").onclick = arrancar;
 $("btnEntrar").onclick = async () => {
   try { await P.entrar($("mail").value, $("clave").value); location.reload(); }

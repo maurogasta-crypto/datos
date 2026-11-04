@@ -683,7 +683,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   aparece solo. Lo que Gemini propone vuelve como pedido con `origen:
   "gemini"`, y la ronda lo marca en ORGANIZAR para evaluarlo, no obedecerlo.
 - **La guía para armar la placa de la Hilux es `placa.html` + `placa.js`**
-  (placa-4, 4-nov-2026, Mauro: «una pantalla dedicada para el proceso de
+  (placa-5, 4-nov-2026, Mauro: «una pantalla dedicada para el proceso de
   construcción… primero conseguir materiales y después proceso de
   fabricación, accesible desde el panel»). El contenido y las cuentas en
   `placa.js` (banco `node pruebas/placa.mjs`, 14 casos); lo marcado en

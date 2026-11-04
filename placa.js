@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-4
+   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-5
 
    Pedido de Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de
    construcción en Arduino del componente que se va a fabricar, con diseño y
@@ -58,13 +58,23 @@
    uso esperado no la abre nunca (USO_ESPERADO): el banco comprueba las dos
    listas.
 
+   LAS IDEAS ACCESORIAS (placa-js-5, 4-nov-2026). Mauro propuso sumarle a la
+   placa GPS, micrófono, cortar el acelerador si falta el teléfono y un
+   rastreador, «sólo si no amplían o complejizan de forma exagerada el diseño
+   y la funcionalidad segura». Entra el GPS (c-gps, a-gps): barato, un cable,
+   y sirve de CONTROL de la velocidad de la caja y de registro propio; nunca es
+   la velocidad del crucero. Lo demás queda afuera, con su porqué en
+   ACCESORIAS: las RPM exactas ya salen del cable del tacómetro; la falta del
+   teléfono es uso esperado y no puede mover los relés; y un rastreador que
+   avise necesita una línea móvil, que cuesta todos los meses.
+
    Y lo que no se negocia, para quien edite esto: los pasos que hacen segura a
    la placa —el watchdog, el corte por freno y embrague cableado y el paso
    directo con los relés sueltos— van ANTES de que la placa mande una señal a
    la ECU, y `siguiente()` no deja saltarlos. El banco lo comprueba.
    ═══════════════════════════════════════════════════════════════════ */
 
-export const VERSION = "placa-js-4";
+export const VERSION = "placa-js-5";
 
 /* Las dos etapas, en el orden en que se hacen. La A no toca el pedal —sólo
    lee— y sirve sola (CRUCERO.md § 9.1); la B es el crucero. */
@@ -101,6 +111,7 @@ export const SECCIONES = [
     piezas: [
       { id: "c-esp32", n: "2 × ESP32 DevKit (uno de repuesto)", para: "el cerebro de toda la placa —sensores y, en la etapa B, el pedal—, con Bluetooth adentro; se programa con el mismo Arduino IDE", usd: [8, 14] },
       { id: "c-adxl", n: "2 × acelerómetro ADXL345 (módulo SPI)", para: "vibración a 1.600 por segundo; el del teléfono llega a 200", usd: [4, 8] },
+      { id: "c-gps", n: "Módulo GPS (NEO-6M o ATGM336H) con su antena", para: "posición y velocidad propias de la placa, sin depender del teléfono: control de la velocidad de la caja y registro de los viajes", usd: [5, 10] },
       { id: "c-opto", n: "6 × optoacoplador PC817 y resistencias", para: "contacto, freno, embrague, velocidad y RPM, aislados de la camioneta", usd: [2, 4] },
       { id: "c-fuente", n: "Fuente automotriz 12→5 V que aguante el arranque (reductora-elevadora, p. ej. Pololu S9V11F5) + diodo TVS + diodo + portafusible + un capacitor grande", para: "la camioneta tiene picos que queman un regulador común, y al dar arranque la batería baja a 8–9 V: la placa no se puede reiniciar por eso", usd: [12, 20] },
       { id: "c-tap", n: "Derivador de fusible (add-a-fuse) del tamaño de los fusibles de la camioneta", para: "tomar los 12 V con contacto sin cortar un cable", usd: [3, 5] },
@@ -140,6 +151,9 @@ export const SECCIONES = [
       { id: "a-acel", t: "El acelerómetro en un soporte rígido", quien: "mauro",
         d: "Con el cable blindado corto, atornillado o pegado con epoxi a un punto firme (el túnel de la caja o el piso), nunca colgando.",
         prueba: "Quieto marca 1 g; un golpecito con el dedo se ve." },
+      { id: "a-gps", t: "El GPS de la placa, con la antena viendo el cielo", quien: "mauro",
+        d: "Un solo cable de datos al ESP32. La antena, chica, pegada arriba del tablero contra el parabrisas (lejos de la parte metalizada, si la hay).",
+        prueba: "Afuera, motor en marcha: en unos minutos fija y da la hora; andando, su velocidad y la de la caja dicen casi lo mismo." },
       { id: "a-pedal", t: "El arnés en Y del pedal", quien: "mauro",
         d: "Las dos fichas unidas cable a cable (la señal pasa DERECHO a la ECU) y, en paralelo, la placa lee VPA y VPA2 a través de resistencias de 100 kΩ: no le saca corriente al sensor.",
         prueba: "Con el tester: el pedal mide lo mismo con la placa enchufada y sin ella (comparar con lo del paso «VPA»)." },
@@ -182,7 +196,7 @@ export const SECCIONES = [
     d: "En funcionamiento normal la ECU lee SIEMPRE lo que fabrica la placa: el pie copiado o el crucero. Los relés sólo vuelven al pedal original ante una falla de la placa. Primero lo que lo hace seguro, después lo que lo hace andar. Y cada vez que se carga un programa nuevo en la placa —también uno que sólo cambia los sensores— se repiten los pasos marcados «seguridad» de esta sección y el paso directo: diez minutos, con la camioneta parada.",
     pasos: [
       { id: "b-programa", t: "El programa del pedal, en el mismo ESP32", quien: "claude",
-        d: "Espejo permanente: sin crucero copia el pie, con crucero entrega el mayor entre el pie y el crucero. El freno, el embrague o el botón de cancelar apagan el crucero EN EL PROGRAMA, en la misma vuelta, y la salida vuelve a ser el pie sin tocar los relés. Con su banco de pruebas, y los límites viven en el programa, no en un mensaje." },
+        d: "Espejo permanente: sin crucero copia el pie, con crucero entrega el mayor entre el pie y el crucero. El freno, el embrague o el botón de cancelar apagan el crucero EN EL PROGRAMA, en la misma vuelta, y la salida vuelve a ser el pie sin tocar los relés. La velocidad del crucero es la de la caja (pulsos, sin cortes); el GPS de la placa sólo la CONTROLA: si la caja deja de mandar pulsos, o andando no coincide con el GPS, el crucero se apaga igual que con el botón de cancelar —suave, sin tocar los relés—, y sin GPS (un túnel) sigue andando con la caja. Todo lo que la placa mide es SUYO: va marcado como de la placa y no se mezcla con lo del teléfono ni se presenta como dato de la ECU. Con su banco de pruebas, y los límites viven en el programa, no en un mensaje." },
       { id: "b-toma", t: "La placa toma el pedal una sola vez: motor en marcha, pie suelto", quien: "mauro", seguridad: true,
         d: "Con el contacto la placa arranca con los relés sueltos (pedal original) y la camioneta arranca como siempre. Recién con el motor en marcha, el ralentí estable y el pie suelto, y cuando ya fabrica exactamente lo que da el pie, cierra los relés. Así el arranque —que es cuando más baja la batería— nunca pasa por la placa. Desde ahí no los vuelve a mover salvo una emergencia. Es la única conmutación de un viaje normal.",
         prueba: "Diez veces seguidas: contacto, arrancar, esperar que la placa tome el pedal (LED). Ninguna vez se prende la luz del motor ni la camioneta entra en modo de emergencia." },
@@ -247,6 +261,23 @@ export const USO_ESPERADO = [
   "prender las luces, el aire o la radio",
   "una lectura suelta con ruido",
   "cargar el teléfono o perder el Bluetooth",
+  "que el teléfono no esté, o que la app se cierre",
+  "perder el GPS (un túnel, un garaje)",
+];
+
+/* Las ideas que se evaluaron para sumarle a la placa (4-nov-2026), con el
+   criterio de Mauro: entran sólo si no complican de más el diseño ni la
+   seguridad. Se muestran en la guía para que no se vuelvan a evaluar desde
+   cero. */
+export const ACCESORIAS = [
+  { id: "gps", n: "GPS propio de la placa", entra: true,
+    porque: "Cuesta US$ 5–10 y es un cable. Le da a la placa velocidad y posición propias, sin depender del teléfono, y CONTROLA la velocidad de la caja: si dejan de coincidir, el crucero se apaga solo. No es la velocidad del crucero: da 1 a 10 lecturas por segundo y se corta en un túnel; la caja da pulsos todo el tiempo." },
+  { id: "rpm", n: "RPM exactas", entra: true,
+    porque: "Salen del cable del tacómetro del tablero, con un optoacoplador que ya está en la lista: es la medida exacta, sin interpretar. Un micrófono en el vano del motor no: ahí hay más de 100 °C, agua y un cable que atraviesa el parallamas, y oír las RPM es justo lo que hoy confunde la 2.ª con la 4.ª. El acelerómetro de la placa queda como segunda opinión: a 1.600 lecturas por segundo ve el encendido hasta unas 4.000 RPM." },
+  { id: "sin-telefono", n: "Cortar el acelerador si falta el teléfono", entra: false,
+    porque: "Que el teléfono no esté, se descargue o pierda el Bluetooth es uso de todos los días: si eso moviera los relés, cada corte de Bluetooth sería un corte en las señales que lee la ECU, y la seguridad dependería del teléfono, que es lo que no tiene que pasar. La placa anda sola y muestra en su LED que está sin teléfono. Si se quiere, se puede elegir que sin teléfono el crucero no se pueda PONER (suave, sin relés); eso se decide después." },
+  { id: "rastreador", n: "Rastreador GPS", entra: false,
+    porque: "Avisar dónde está la camioneta necesita una línea móvil en la placa: un módulo de US$ 10–20 y un abono que se paga todos los meses, que es lo que el ecosistema no hace. Lo que sí sale gratis: la placa guarda sus últimas posiciones y el teléfono las lee al conectarse. Un rastreador contra robo, además, tiene que tener batería propia y estar escondido: es otro aparato, no éste." },
 ];
 
 /* Todos los pasos y todas las piezas, en orden, con su sección. */

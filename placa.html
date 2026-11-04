@@ -81,7 +81,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  placa.html — la guía para armar la placa de la Hilux. Sello: placa-6
+  placa.html — la guía para armar la placa de la Hilux. Sello: placa-7
 
   Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de construcción
   en Arduino del componente que se va a fabricar, con diseño y guía paso a
@@ -114,7 +114,7 @@
   <p class="pl-sub">Primero, lo más básico: una caja que sólo MIDE —freno, RPM y velocidad del tablero, más su propio GPS y acelerómetro— sin tocar el pedal ni cortar un cable. Con lo que aprenda se diseña después el crucero, en la misma placa.</p>
 
   <div class="tarj">
-    <svg class="pl-diag" viewBox="0 0 360 300" role="img" aria-label="Diagrama de la placa: el pedal va a la ECU por un arnés en Y; la caja de sensores lee y manda por Bluetooth al teléfono; en la etapa B el interceptor queda en el medio, con relés que sin corriente dejan pasar el pedal real.">
+    <svg class="pl-diag" viewBox="0 0 360 300" role="img" aria-label="Diagrama de la placa: el pedal va a la ECU por la placa; la caja de sensores lee y manda por Bluetooth al teléfono; en la etapa B el interceptor queda en el medio, con relés que sin corriente dejan pasar el pedal real.">
       <!-- el camino de siempre: pedal → ECU -->
       <rect class="caja" x="8" y="20" width="82" height="40" rx="6"/>
       <text x="49" y="38" text-anchor="middle">Pedal</text>
@@ -202,7 +202,7 @@
       <li><b>Programa nuevo, pruebas de seguridad de nuevo</b>, aunque el cambio sea de un sensor.</li>
       <li><b>El pie siempre gana:</b> la placa nunca entrega menos de lo que pide el pedal.</li>
       <li><b>El teléfono no está en el lazo:</b> le puede ajustar la suavidad al crucero, nunca los límites.</li>
-      <li><b>Se arma sin cortar un cable</b> de la camioneta: se saca y queda como de fábrica.</li>
+      <li><b>Todo queda identificado y se puede volver al original:</b> las señales se toman en paralelo y se vuelven a aislar; los cables del pedal, cortados, quedan rotulados y en conectores que unidos entre sí son el original.</li>
       <li><b>No se saltea una etapa de prueba</b>, aunque la anterior haya dado bien a la primera.</li>
     </ul>
     <h2>💡 Ideas que se evaluaron</h2>
@@ -215,8 +215,8 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-11";
 import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-5";
-import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-6";
-P.PANEL = "placa-6";
+import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-7";
+P.PANEL = "placa-7";
 P.pintarSello();
 
 let ESTADO = { marcas: {}, notas: {}, medidas: {}, compras: {} };

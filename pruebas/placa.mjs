@@ -51,6 +51,8 @@ prueba("la caja básica no interviene: ni pedal, ni relés, ni cortar cables", (
   }
   for (const pz of G.SECCIONES.find((x) => x.id === "comprar-a").piezas) assert.ok(pz.para !== undefined && pz.usd, pz.id);
   assert.ok(/igual/.test(G.PASOS.find((x) => x.id === "i-senales").prueba), "falta la prueba de que la camioneta marca igual");
+  assert.ok(!G.PIEZAS.some((x) => x.id === "c-posi"), "las señales se sueldan (decisión de Mauro, 4-nov), sin Posi-Tap");
+  assert.ok(G.PIEZAS.some((x) => x.id === "c-aislar") && G.PIEZAS.some((x) => x.id === "c-conectores" && x.seccion === "comprar-b"), "faltan la cinta o los conectores para volver al original");
 });
 
 prueba("la etapa B no se abre con la A armada si faltan las medidas", () => {
@@ -129,7 +131,7 @@ prueba("los dos archivos parsean como módulo (también el script del .html)", (
 prueba("la página pide los sellos que dicen los archivos", () => {
   const html = fs.readFileSync(path.join(raiz, "placa.html"), "utf8");
   assert.ok(html.includes("./placa.js?v=" + G.VERSION), "el ?v= de placa.js no es " + G.VERSION);
-  assert.ok(html.includes('P.PANEL = "placa-6"') && html.includes("Sello: placa-6"));
+  assert.ok(html.includes('P.PANEL = "placa-7"') && html.includes("Sello: placa-7"));
 });
 
 prueba("la página escribe sólo adentro de placa., campo por campo", () => {

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-6
+   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-7
 
    Pedido de Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de
    construcción en Arduino del componente que se va a fabricar, con diseño y
@@ -81,13 +81,22 @@
    qué `buscar` y en qué fijarse (`ojo`); cada cable se encuentra con
    `buscar` y se confirma con el tester (`prueba`) antes de conectarlo.
 
+   CÓMO SE TOMAN LAS SEÑALES (placa-js-7, 4-nov-2026). Decisión de Mauro:
+   «los cables que hay que conectar lo haré directamente pelando un poco el
+   forro y engrosando un cable para tomar su señal, y lo aislaré bien… Los
+   interrumpidos, como los del acelerador, serán cortados y debidamente
+   identificados en caso de volver a conectar. Es mi decisión». Así: las
+   señales en paralelo, con una ventanita pelada y soldada (sin Posi-Tap), y
+   los cables del pedal cortados, rotulados y terminados en conectores, que
+   unidos entre sí devuelven el original.
+
    Y lo que no se negocia, para quien edite esto: los pasos que hacen segura a
    la placa —el watchdog, el corte por freno y embrague cableado y el paso
    directo con los relés sueltos— van ANTES de que la placa mande una señal a
    la ECU, y `siguiente()` no deja saltarlos. El banco lo comprueba.
    ═══════════════════════════════════════════════════════════════════ */
 
-export const VERSION = "placa-js-6";
+export const VERSION = "placa-js-7";
 
 /* Las dos etapas, en el orden en que se hacen. La A no toca el pedal —sólo
    lee— y sirve sola (CRUCERO.md § 9.1); la B es el crucero. */
@@ -130,7 +139,7 @@ export const SECCIONES = [
   },
   {
     id: "comprar-a", ic: "🛒", n: "2 · Comprar la caja básica",
-    d: "La caja que sólo MIDE: no toca el pedal, no corta un cable y se saca dejando la camioneta como estaba. Cada pieza dice qué buscar en la tienda y en qué fijarse. Anotá dónde la compraste y a cuánto.",
+    d: "La caja que sólo MIDE: no toca el pedal y no corta ningún cable; las señales se toman soldando sobre una ventanita pelada, y al terminar las pruebas se vuelve a aislar. Cada pieza dice qué buscar en la tienda y en qué fijarse. Anotá dónde la compraste y a cuánto.",
     piezas: [
       { id: "c-esp32", n: "2 × placa ESP32 DevKit V1 (ESP32-WROOM-32, 30 pines)", para: "el cerebro de toda la placa —sensores ahora y, más adelante, el pedal—, con Bluetooth adentro; se programa con el mismo Arduino IDE. Una es de repuesto.", usd: [10, 16],
         buscar: "ESP32 DevKit V1 WROOM-32 30 pin", ojo: "Que diga WROOM-32 (no S2, C3 ni S3: son otros chips). Con los pines ya soldados y conector USB (micro o C, el que tengas)." },
@@ -146,14 +155,14 @@ export const SECCIONES = [
         buscar: "Pololu D24V10F5 · 1.5KE24A TVS · 1N5819", ojo: "No sirven los módulos «mini-360» ni los LM2596 baratos: aguantan poco más de lo que da la batería y un pico los quema." },
       { id: "c-tap", n: "Derivador de fusible (add-a-fuse) del tamaño de los fusibles de la camioneta", para: "tomar los 12 V con contacto sin cortar un cable", usd: [3, 5],
         buscar: "add a fuse tap mini / standard", ojo: "Del tamaño que viste en el paso del fusible (mini o común). Con su fusible de 1 A para la caja." },
-      { id: "c-posi", n: "Conectores Posi-Tap para cable fino (20–24 AWG), 6 unidades", para: "tomar las señales de freno, tacómetro y velocidad sin cortar el cable: se enroscan y se sacan dejando el cable entero", usd: [8, 12],
-        buscar: "Posi-Tap 20-24 AWG", ojo: "No usar los «scotch-lock» (los azules o rojos que se aprietan con pinza): cortan hilos del cable y con la vibración fallan." },
+      { id: "c-aislar", n: "Cinta aisladora de buena calidad (3M Super 33+ o similar), 1 rollo, y cinta de tela para mazos (Tesa 51036 o similar), 1 rollo", para: "aislar cada toma soldada: la Super 33+ aguanta el calor y no se despega con los meses; la de tela encima la protege del roce", usd: [8, 14],
+        buscar: "3M Super 33+ · Tesa 51036 harness tape", ojo: "La cinta aisladora común barata se despega con el calor del tablero y deja pegote." },
       { id: "c-perfo", n: "Placa perforada doble faz 7 × 9 cm, tiras de pines hembra y 4 borneras de tornillo de 5 mm (2 polos)", para: "armar sin mandar a hacer una placa; el ESP32 va enchufado en los pines hembra (se saca para programarlo o cambiarlo) y los cables de la camioneta entran por las borneras", usd: [4, 7],
         buscar: "perfboard 7x9 double sided · female header 2.54 · screw terminal 5mm" },
       { id: "c-caja", n: "Caja plástica de unos 100 × 70 × 30 mm con tapa", para: "", usd: [4, 8] },
       { id: "c-cable", n: "Cable automotriz 0,5 mm² en 3 colores (2 m de cada uno) y 1,5 m de cable blindado de 4 hilos", para: "el blindado lleva el acelerómetro hasta su soporte sin levantar ruido; el automotriz, la alimentación y las señales", usd: [6, 10],
         buscar: "automotive wire 20 AWG · shielded cable 4 core" },
-      { id: "c-fijar", n: "Precintos, termocontraíble surtido, cinta de tela para mazos y cinta doble faz", para: "que nada cuelgue ni roce: es lo que hace que una instalación dure", usd: [4, 8] },
+      { id: "c-fijar", n: "Precintos, termocontraíble surtido y cinta doble faz", para: "que nada cuelgue ni roce: es lo que hace que una instalación dure", usd: [4, 8] },
     ],
   },
   {
@@ -162,7 +171,7 @@ export const SECCIONES = [
     piezas: [
       { id: "h-soldador", n: "Soldador de 40–60 W con temperatura regulable, punta fina y su soporte", para: "", usd: [10, 25] },
       { id: "h-estano", n: "Estaño de 0,8 mm con resina y malla desoldadora", para: "", usd: [4, 8] },
-      { id: "h-pela", n: "Pelacables automático", para: "pela parejo sin cortar hilos", usd: [8, 15] },
+      { id: "h-pela", n: "Pelacables automático y un cúter fino", para: "el pelacables para las puntas; el cúter para abrir la ventanita en el medio de un cable sin cortar hilos", usd: [8, 15] },
       { id: "h-usb", n: "Cable USB de DATOS para el ESP32 y adaptador OTG", para: "programar desde el teléfono o una computadora", usd: [2, 5],
         ojo: "Muchos cables USB sólo cargan y no pasan datos: si la computadora no ve la placa, es lo primero que se cambia." },
       { id: "h-hz", n: "Tester que mida frecuencia (Hz)", para: "encontrar el tacómetro y la velocidad sin osciloscopio. Si el tuyo no mide Hz, se puede seguir igual: lo mide la propia placa", usd: [15, 30], opcional: true },
@@ -197,12 +206,12 @@ export const SECCIONES = [
   },
   {
     id: "instalar-a", ic: "🚙", n: "5 · Instalar sin alterar nada",
-    d: "La regla: todo se saca dejando la camioneta como estaba, y la camioneta tiene que andar y marcar EXACTAMENTE igual con la caja puesta. Se instala con el contacto sacado.",
+    d: "La regla: la camioneta tiene que andar y marcar EXACTAMENTE igual con la caja puesta, y al terminar las pruebas cada toma se puede sacar y volver a aislar. Se instala con el contacto sacado.",
     pasos: [
       { id: "i-alim", t: "Alimentación: derivador en el fusible con contacto, y masa", quien: "mauro",
         prueba: "Contacto puesto: la caja prende. Contacto sacado: se apaga. Lo que alimentaba ese fusible (el encendedor) sigue andando." },
-      { id: "i-senales", t: "Freno, tacómetro y velocidad con Posi-Tap", quien: "mauro",
-        d: "En los cables que confirmaste con el tester, sin cortarlos, y lo más cerca posible de la ficha donde los encontraste.",
+      { id: "i-senales", t: "Freno, tacómetro y velocidad: una ventanita pelada y soldada", quien: "mauro",
+        d: "En los cables que confirmaste con el tester, cerca de la ficha donde los encontraste: con el cúter se abre una ventanita de 1 cm en el forro sin cortar hilos, se enrolla la punta pelada del cable nuevo, se suelda y se aísla con la Super 33+ y encima la de tela. Cada cable nuevo, rotulado en la punta que va a la caja.",
         prueba: "Lo que no se negocia: con la caja conectada la aguja de RPM y la de velocidad marcan lo mismo que sin ella, y la luz de freno prende igual. Si algo cambia, se desconecta y lo miramos." },
       { id: "i-fijar", t: "Fijar la caja, el acelerómetro y la antena", quien: "mauro",
         prueba: "Los pedales y el volante, de punta a punta, sin tocar un cable. Ningún cable colgando." },
@@ -243,8 +252,8 @@ export const SECCIONES = [
         d: "Si tiene 4 patas, una de las dos parejas se ABRE al pisar (en Toyota se llama ST1−) y existe justo para cortar un crucero. Si tiene 2, el corte sale de la luz de freno con un relé. Anotá cuántas y qué cable da 12 V pisando." },
       { id: "m-embrague", t: "¿Hay interruptor de embrague que se abra al pisarlo?", quien: "mauro",
         d: "El de arranque (el que pide el embrague a fondo para dar arranque) no sirve: tiene que cambiar apenas se toca el pedal. Si no hay, va un microinterruptor (está en la lista de compras)." },
-      { id: "a-pedal", t: "Leer el pedal con la caja: el arnés en Y", quien: "mauro",
-        d: "Las dos fichas del pedal unidas cable a cable (la señal pasa DERECHO a la ECU) y, en paralelo, la caja lee VPA y VPA2 a través de un divisor de alta resistencia (100 kΩ): no le saca corriente al sensor.",
+      { id: "a-pedal", t: "Leer el pedal con la caja: los cables cortados y en conectores", quien: "mauro",
+        d: "Se cortan SÓLO las dos señales (VPA y VPA2), no la alimentación ni las masas del sensor. Cada punta queda rotulada y en su conector: del lado del pedal uno, del lado de la ECU el otro. Unidos entre sí, es el original; con la caja en el medio, la señal pasa directo y la caja la lee a través de un divisor de alta resistencia (100 kΩ), sin sacarle corriente al sensor.",
         prueba: "Con el tester: el pedal mide lo mismo con la caja enchufada y sin ella (comparar con lo del paso «VPA»)." },
     ],
   },
@@ -262,8 +271,8 @@ export const SECCIONES = [
     id: "comprar-b", etapa: "b", ic: "🛒", n: "9 · Comprar lo del crucero",
     d: "Etapa B: lo que se le agrega a la MISMA placa para manejar el pedal. El cerebro es el ESP32 de la etapa A; lo que se suma son las salidas y lo que las hace seguras.",
     piezas: [
-      { id: "c-fichas", n: "Par de fichas del pedal (macho y hembra) con cables", para: "el arnés en Y: se saca y la camioneta queda como de fábrica", usd: [15, 30],
-        buscar: "Toyota accelerator pedal connector pigtail 6 pin", ojo: "Que sea la ficha de 6 contactos del pedal de esta camioneta: se compara con la de verdad antes de comprar." },
+      { id: "c-conectores", n: "2 juegos de conectores estancos de 4 vías (tipo Superseal 1.5), macho y hembra, con sus terminales y sellos, y etiquetas para cables", para: "los cables del pedal se cortan y cada punta queda en un conector: unidos entre sí devuelven el original en un minuto, y con la placa en el medio pasan por ella", usd: [8, 15],
+        buscar: "Superseal 1.5 4 pin connector kit", ojo: "Los terminales se crimpan: con la pinza de crimpar para ese conector, o soldados con cuidado. Un juego de repuesto." },
       { id: "c-dac", n: "DAC doble MCP4822 + amplificador MCP6002", para: "fabricar VPA y VPA2 limpias, escaladas a los 5 V de la ECU", usd: [6, 8] },
       { id: "c-reles", n: "2 × relé de señal DPDT (Omron G5V-2 o similar) + transistores y diodos", para: "SIN corriente conectan el pedal real directo a la ECU", usd: [6, 10] },
       { id: "c-wdt", n: "Supervisor con watchdog (TPS3823) o monoestable 74HC123", para: "si el programa se cuelga, o se da cuenta de que algo no cierra, los relés caen solos", usd: [2, 4] },

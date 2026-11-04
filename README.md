@@ -680,8 +680,8 @@ teléfono.
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `placa.html` | `P.PANEL` | `placa-6` |
-| `placa.js` | `VERSION` | `placa-js-6` |
+| `placa.html` | `P.PANEL` | `placa-7` |
+| `placa.js` | `VERSION` | `placa-js-7` |
 | `sw.js` | `VERSION` | `panel-shell-v47` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el

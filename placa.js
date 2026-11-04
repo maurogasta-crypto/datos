@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-5
+   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-6
 
    Pedido de Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de
    construcción en Arduino del componente que se va a fabricar, con diseño y
@@ -68,20 +68,164 @@
    teléfono es uso esperado y no puede mover los relés; y un rastreador que
    avise necesita una línea móvil, que cuesta todos los meses.
 
+   LO BÁSICO PRIMERO (placa-js-6, 4-nov-2026). Mauro: «el proyecto más
+   básico posible para tener las herramientas que comiencen el aprendizaje de
+   los instrumentos. Sin intervención… una lista de compras precisa… un
+   proceso descriptivo de ensamblado… y la modalidad de instalación para
+   buscar información y tutoriales en blogs y foros que permita identificar
+   con precisión cada una de las conexiones… sin alterar el funcionamiento
+   normal del vehículo». La guía arranca por la CAJA BÁSICA (secciones sin
+   `etapa`): sólo lee la luz de freno, el tacómetro y la velocidad del
+   tablero, más su GPS y su acelerómetro; no toca el pedal. Todo el crucero
+   lleva `etapa: "b"` y espera a que la caja haya aprendido. Cada pieza dice
+   qué `buscar` y en qué fijarse (`ojo`); cada cable se encuentra con
+   `buscar` y se confirma con el tester (`prueba`) antes de conectarlo.
+
    Y lo que no se negocia, para quien edite esto: los pasos que hacen segura a
    la placa —el watchdog, el corte por freno y embrague cableado y el paso
    directo con los relés sueltos— van ANTES de que la placa mande una señal a
    la ECU, y `siguiente()` no deja saltarlos. El banco lo comprueba.
    ═══════════════════════════════════════════════════════════════════ */
 
-export const VERSION = "placa-js-5";
+export const VERSION = "placa-js-6";
 
 /* Las dos etapas, en el orden en que se hacen. La A no toca el pedal —sólo
    lee— y sirve sola (CRUCERO.md § 9.1); la B es el crucero. */
 export const SECCIONES = [
   {
-    id: "medir", ic: "📏", n: "1 · Medir antes de comprar",
-    d: "Con el tester, contacto puesto y motor apagado. Sin estas medidas no se puede diseñar la salida hacia la ECU: si la relación entre VPA y VPA2 se emula mal, la ECU entra en modo de emergencia.",
+    id: "cables", ic: "🔎", n: "1 · Encontrar los cables, sin cortar nada",
+    d: "Antes de conectar, se encuentra cada cable en el diagrama y se CONFIRMA con el tester. Los colores cambian según el año y el mercado: nunca alcanza con el color. Para buscar: en Asia esta Hilux se llama «Vigo»; el código es KUN26 (está en la chapa del vano o en el marco de la puerta del conductor). El documento que manda es el diagrama eléctrico de Toyota, el EWD («Electrical Wiring Diagram»), y en los foros suele estar en PDF. Para preguntar en un foro: código, año, mercado y si es manual. Cada cosa que encuentres, anotala en la nota del paso: pin, color y dónde está.",
+    pasos: [
+      { id: "k-codigo", t: "El código exacto de la camioneta", quien: "mauro",
+        d: "En la chapa del vano motor o en el marco de la puerta: modelo (KUN26…), año y el código completo de la versión. Con eso se buscan los diagramas correctos.",
+        buscar: ["Toyota Hilux KUN26 EWD pdf", "Hilux Vigo electrical wiring diagram 2008"],
+        prueba: "Anotado en la nota de este paso." },
+      { id: "k-fusible", t: "Un fusible que tenga corriente SÓLO con el contacto puesto", quien: "mauro",
+        d: "La caja se alimenta de ahí con un derivador de fusible: así se apaga sola con el contacto y no descarga la batería. El candidato es el del encendedor (suele decir CIG o ACC). El manual del dueño trae el plano de la caja de fusibles. Mirá también qué TAMAÑO de fusible usa (mini o común): el derivador se compra de esa medida.",
+        buscar: ["Hilux Vigo fuse box diagram", "Hilux KUN26 interior fuse box CIG ACC"],
+        prueba: "Con el fusible sacado, tester entre cada uno de los dos contactos de su lugar en la caja y masa: uno de los dos da 12 V con contacto y 0 V sin contacto (ése es el lado que alimenta). Anotá los dos números.",
+        campos: [{ k: "fus_con", n: "con contacto", u: "V" }, { k: "fus_sin", n: "sin contacto", u: "V" }] },
+      { id: "k-masa", t: "Un tornillo de masa firme cerca de donde va la caja", quien: "mauro",
+        d: "Un tornillo del chasis o de la estructura del tablero, sin pintura debajo del terminal.",
+        prueba: "Tester en continuidad entre el tornillo y el negativo de la batería: pita (o menos de 1 Ω)." },
+      { id: "k-freno", t: "El cable de la luz de freno (STP)", quien: "mauro",
+        d: "En el interruptor que está arriba del pedal de freno. En el EWD la señal se llama STP. Es el más fácil de los tres: da 12 V sólo con el pedal pisado.",
+        buscar: ["Hilux Vigo stop light switch wiring", "Hilux KUN26 brake light switch STP wire colour"],
+        prueba: "Pinchando de atrás la ficha del interruptor con la punta fina del tester: 12 V pisando, 0 V suelto. Anotá el color y cuántas patas tiene el interruptor.",
+        campos: [{ k: "stp_pisado", n: "pisado", u: "V" }, { k: "stp_suelto", n: "suelto", u: "V" }] },
+      { id: "k-tac", t: "La señal del tacómetro (TACH) en la ficha del tablero", quien: "mauro",
+        d: "Es la que mueve la aguja de las RPM: la ECU se la manda al tablero. Se busca en el EWD como TACH (o TAC), en la ficha del tablero de instrumentos («combination meter»). Para llegar a la ficha se saca el marco del tablero; hay videos de cómo hacerlo.",
+        buscar: ["Hilux Vigo combination meter pinout TACH", "Hilux Vigo instrument cluster removal", "1KD-FTV ECU TACH pin"],
+        prueba: "Motor en ralentí, tester en Hz pinchando ese cable: un número estable que sube al acelerar. Si el tester no mide Hz, en continua da una tensión intermedia que cambia con las RPM. Anotá los Hz en ralentí y a 2.000 por la aguja: con eso se sabe cuántos pulsos da por vuelta.",
+        campos: [{ k: "tac_v", n: "tensión", u: "V" }, { k: "tac_ral", n: "Hz en ralentí", u: "Hz" }, { k: "tac_2000", n: "Hz a 2.000", u: "Hz" }] },
+      { id: "k-vss", t: "La señal de velocidad (SPD) en la misma ficha", quien: "mauro",
+        d: "Sale del sensor de la caja de cambios y va al tablero y a la ECU. En el EWD se llama SPD. Está en la misma ficha del tablero que el tacómetro.",
+        buscar: ["Hilux Vigo speed signal wire SPD", "Hilux KUN26 vehicle speed sensor wiring"],
+        prueba: "Con alguien manejando despacio y el tester en Hz: sube con la velocidad y en cero quieto. Anotá los Hz a 20 km/h según el GPS del teléfono. Los pulsos por kilómetro exactos los saca después la placa sola, contra su GPS.",
+        campos: [{ k: "spd_v", n: "tensión", u: "V" }, { k: "spd_20", n: "Hz a 20 km/h", u: "Hz" }] },
+      { id: "k-lugar", t: "Dónde va la caja y por dónde pasan los cables", quien: "mauro",
+        d: "Abajo del tablero o detrás de la guantera, firme. NINGÚN cable cerca de los pedales ni de la columna de dirección: todo con precintos, lejos de lo que se mueve. El acelerómetro, atornillado a un punto rígido del piso o del túnel (adentro de la cabina, no en el motor). La antena del GPS, arriba del tablero contra el parabrisas.",
+        prueba: "Con todo presentado (sin conectar): los pedales y el volante se mueven entero sin tocar un cable." },
+    ],
+  },
+  {
+    id: "comprar-a", ic: "🛒", n: "2 · Comprar la caja básica",
+    d: "La caja que sólo MIDE: no toca el pedal, no corta un cable y se saca dejando la camioneta como estaba. Cada pieza dice qué buscar en la tienda y en qué fijarse. Anotá dónde la compraste y a cuánto.",
+    piezas: [
+      { id: "c-esp32", n: "2 × placa ESP32 DevKit V1 (ESP32-WROOM-32, 30 pines)", para: "el cerebro de toda la placa —sensores ahora y, más adelante, el pedal—, con Bluetooth adentro; se programa con el mismo Arduino IDE. Una es de repuesto.", usd: [10, 16],
+        buscar: "ESP32 DevKit V1 WROOM-32 30 pin", ojo: "Que diga WROOM-32 (no S2, C3 ni S3: son otros chips). Con los pines ya soldados y conector USB (micro o C, el que tengas)." },
+      { id: "c-adxl", n: "2 × acelerómetro ADXL345, módulo GY-291", para: "vibración a 1.600 lecturas por segundo; el del teléfono llega a 200. Uno de repuesto.", usd: [4, 8],
+        buscar: "GY-291 ADXL345 module", ojo: "Que el módulo sea de 3,3 V o traiga regulador (casi todos los GY-291 lo traen)." },
+      { id: "c-gps", n: "Módulo GPS GY-NEO6MV2 (u-blox NEO-6M) con su antena cerámica", para: "velocidad y posición propias de la placa, sin depender del teléfono: control de la velocidad de la caja y registro de los viajes", usd: [5, 10],
+        buscar: "GY-NEO6MV2 NEO-6M GPS module antenna", ojo: "Que venga con la antena cuadrada (25 × 25 mm) y su cable. Si conseguís uno con conector para antena externa, mejor." },
+      { id: "c-opto", n: "10 × optoacoplador PC817 (DIP-4) y 10 × diodo 1N4148", para: "las tres entradas de la camioneta (freno, tacómetro, velocidad), aisladas: lo que pase del lado de la camioneta no llega al ESP32. Sobran para repuesto.", usd: [2, 4],
+        buscar: "PC817 DIP-4 optocoupler · 1N4148 diode", ojo: "Formato DIP (con patitas para la placa perforada), no SMD." },
+      { id: "c-resist", n: "Surtido de resistencias de 1/4 W (600 piezas, de 10 Ω a 1 MΩ)", para: "las de cada entrada (se eligen con la tensión que mediste: 4,7 kΩ si es 12 V, 1,5 kΩ si es 5 V) y las de 10 kΩ de salida", usd: [3, 5],
+        buscar: "resistor kit 1/4W 600 pcs" },
+      { id: "c-fuente", n: "Fuente reductora Pololu D24V10F5 (5 V, 1 A) + diodo TVS 1.5KE24A + diodo 1N5819 + capacitor 1000 µF 35 V + portafusible en línea con fusible de 1 A", para: "la camioneta tiene picos que queman un regulador común (el TVS los recorta) y al dar arranque la batería baja: esta fuente sigue dando 5 V hasta unos 6 V de entrada, y el capacitor cubre el resto. El 1N5819 protege si se conecta al revés.", usd: [14, 20],
+        buscar: "Pololu D24V10F5 · 1.5KE24A TVS · 1N5819", ojo: "No sirven los módulos «mini-360» ni los LM2596 baratos: aguantan poco más de lo que da la batería y un pico los quema." },
+      { id: "c-tap", n: "Derivador de fusible (add-a-fuse) del tamaño de los fusibles de la camioneta", para: "tomar los 12 V con contacto sin cortar un cable", usd: [3, 5],
+        buscar: "add a fuse tap mini / standard", ojo: "Del tamaño que viste en el paso del fusible (mini o común). Con su fusible de 1 A para la caja." },
+      { id: "c-posi", n: "Conectores Posi-Tap para cable fino (20–24 AWG), 6 unidades", para: "tomar las señales de freno, tacómetro y velocidad sin cortar el cable: se enroscan y se sacan dejando el cable entero", usd: [8, 12],
+        buscar: "Posi-Tap 20-24 AWG", ojo: "No usar los «scotch-lock» (los azules o rojos que se aprietan con pinza): cortan hilos del cable y con la vibración fallan." },
+      { id: "c-perfo", n: "Placa perforada doble faz 7 × 9 cm, tiras de pines hembra y 4 borneras de tornillo de 5 mm (2 polos)", para: "armar sin mandar a hacer una placa; el ESP32 va enchufado en los pines hembra (se saca para programarlo o cambiarlo) y los cables de la camioneta entran por las borneras", usd: [4, 7],
+        buscar: "perfboard 7x9 double sided · female header 2.54 · screw terminal 5mm" },
+      { id: "c-caja", n: "Caja plástica de unos 100 × 70 × 30 mm con tapa", para: "", usd: [4, 8] },
+      { id: "c-cable", n: "Cable automotriz 0,5 mm² en 3 colores (2 m de cada uno) y 1,5 m de cable blindado de 4 hilos", para: "el blindado lleva el acelerómetro hasta su soporte sin levantar ruido; el automotriz, la alimentación y las señales", usd: [6, 10],
+        buscar: "automotive wire 20 AWG · shielded cable 4 core" },
+      { id: "c-fijar", n: "Precintos, termocontraíble surtido, cinta de tela para mazos y cinta doble faz", para: "que nada cuelgue ni roce: es lo que hace que una instalación dure", usd: [4, 8] },
+    ],
+  },
+  {
+    id: "herramientas", ic: "🧰", n: "3 · Herramientas",
+    d: "Lo que queda después. Si ya tenés alguna, marcala como «Llegó».",
+    piezas: [
+      { id: "h-soldador", n: "Soldador de 40–60 W con temperatura regulable, punta fina y su soporte", para: "", usd: [10, 25] },
+      { id: "h-estano", n: "Estaño de 0,8 mm con resina y malla desoldadora", para: "", usd: [4, 8] },
+      { id: "h-pela", n: "Pelacables automático", para: "pela parejo sin cortar hilos", usd: [8, 15] },
+      { id: "h-usb", n: "Cable USB de DATOS para el ESP32 y adaptador OTG", para: "programar desde el teléfono o una computadora", usd: [2, 5],
+        ojo: "Muchos cables USB sólo cargan y no pasan datos: si la computadora no ve la placa, es lo primero que se cambia." },
+      { id: "h-hz", n: "Tester que mida frecuencia (Hz)", para: "encontrar el tacómetro y la velocidad sin osciloscopio. Si el tuyo no mide Hz, se puede seguir igual: lo mide la propia placa", usd: [15, 30], opcional: true },
+      { id: "h-logico", n: "Analizador lógico USB (opcional)", para: "ver los pulsos de velocidad y RPM si algo no cierra", usd: [8, 12], opcional: true },
+    ],
+  },
+  {
+    id: "armar-a", ic: "🔧", n: "4 · Armar la caja en la mesa",
+    d: "Todo se arma y se prueba en la mesa, con una fuente o la batería de la camioneta con cables largos. Cada paso se prueba antes de seguir: si una prueba no da, se anota lo que dio y lo miramos.",
+    pasos: [
+      { id: "a-programa", t: "El programa de la caja básica", quien: "claude",
+        d: "Lo escribo yo en el repositorio de la Hilux (carpeta placa/), con su banco de pruebas: lee las tres entradas, el GPS y el acelerómetro, y lo manda por Bluetooth y por USB. Te digo cómo cargarlo." },
+      { id: "a-fuente", t: "La fuente, y probarla SOLA", quien: "mauro",
+        d: "Portafusible → 1N5819 → TVS a masa → capacitor → fuente Pololu, en un costado de la placa perforada, con su bornera de entrada.",
+        prueba: "Con 12 V en la entrada: 5,0 V (±0,1) en la salida, con el tester, ANTES de enchufar el ESP32.",
+        campos: [{ k: "fuente5", n: "salida", u: "V" }] },
+      { id: "a-esp", t: "Los pines hembra y el ESP32 con el programa de prueba", quien: "mauro",
+        prueba: "El LED de la placa parpadea y el teléfono ve la caja por Bluetooth." },
+      { id: "a-entradas", t: "Las tres entradas con optoacoplador", quien: "mauro",
+        d: "Freno, tacómetro y velocidad: cada una con su bornera, su resistencia (según la tensión que mediste), su 1N4148 al revés en paralelo con el LED del PC817, y del otro lado una resistencia de 10 kΩ a 3,3 V.",
+        prueba: "Tocando cada entrada con 12 V (o 5 V, según su señal): cambia en la pantalla de prueba, y sólo ésa." },
+      { id: "a-gps", t: "El GPS", quien: "mauro",
+        d: "Cuatro cables al ESP32 (alimentación, masa y los dos de datos). La antena hacia arriba.",
+        prueba: "Cerca de una ventana o afuera: en unos minutos fija y da la hora." },
+      { id: "a-acel", t: "El acelerómetro con su cable blindado", quien: "mauro",
+        d: "En su propia plaquita o pegado a un soporte metálico chico, con el cable blindado (la malla a masa sólo del lado de la caja).",
+        prueba: "Quieto marca 1 g; un golpecito con el dedo se ve." },
+      { id: "a-cerrar", t: "Todo a la caja", quien: "mauro",
+        d: "Cada cable con un precinto que lo agarre antes de la bornera, rotulado (FRENO, TAC, VEL, +12, MASA). La caja lejos del sol directo.",
+        prueba: "Se sacude la caja cerrada y la pantalla de prueba sigue igual." },
+    ],
+  },
+  {
+    id: "instalar-a", ic: "🚙", n: "5 · Instalar sin alterar nada",
+    d: "La regla: todo se saca dejando la camioneta como estaba, y la camioneta tiene que andar y marcar EXACTAMENTE igual con la caja puesta. Se instala con el contacto sacado.",
+    pasos: [
+      { id: "i-alim", t: "Alimentación: derivador en el fusible con contacto, y masa", quien: "mauro",
+        prueba: "Contacto puesto: la caja prende. Contacto sacado: se apaga. Lo que alimentaba ese fusible (el encendedor) sigue andando." },
+      { id: "i-senales", t: "Freno, tacómetro y velocidad con Posi-Tap", quien: "mauro",
+        d: "En los cables que confirmaste con el tester, sin cortarlos, y lo más cerca posible de la ficha donde los encontraste.",
+        prueba: "Lo que no se negocia: con la caja conectada la aguja de RPM y la de velocidad marcan lo mismo que sin ella, y la luz de freno prende igual. Si algo cambia, se desconecta y lo miramos." },
+      { id: "i-fijar", t: "Fijar la caja, el acelerómetro y la antena", quien: "mauro",
+        prueba: "Los pedales y el volante, de punta a punta, sin tocar un cable. Ningún cable colgando." },
+    ],
+  },
+  {
+    id: "aprender", ic: "📈", n: "6 · Empezar a aprender",
+    d: "Con la caja andando empieza lo que se buscaba: medidas propias, exactas, para que el programa del crucero se escriba sobre datos y no sobre suposiciones.",
+    pasos: [
+      { id: "a-app", t: "La app lee la caja", quien: "claude",
+        d: "Tanda de la app: la caja entra como fuente nueva (por las interfaces que ya existen) y lo suyo se guarda marcado como de la placa, aparte de lo del teléfono." },
+      { id: "l-ralenti", t: "Motor parado: las RPM de la caja contra la aguja", quien: "mauro",
+        d: "Ralentí, 1.000, 1.500 y 2.000 por la aguja: lo que dice la caja en cada uno.",
+        campos: [{ k: "rpm_ral", n: "ralentí", u: "rpm" }, { k: "rpm_1500", n: "a 1.500", u: "rpm" }, { k: "rpm_2000", n: "a 2.000", u: "rpm" }] },
+      { id: "l-velocidad", t: "Velocidad de la caja contra su GPS", quien: "claude",
+        d: "Con los primeros viajes saco los pulsos por kilómetro exactos y la relación de cada marcha (velocidad contra RPM)." },
+      { id: "a-viajes", t: "Dos semanas de viajes sin una diferencia", quien: "mauro",
+        prueba: "Velocidad de la caja contra el GPS, RPM de la caja contra la aguja: lo comparo yo con los reportes. Con eso la caja básica está lista, y recién ahí se piensa el crucero." },
+    ],
+  },
+  {
+    id: "medir", etapa: "b", ic: "📏", n: "7 · Medir el pedal (para el crucero)",
+    d: "Más adelante. Con el tester, contacto puesto y motor apagado. Sin estas medidas no se puede diseñar la salida hacia la ECU: si la relación entre VPA y VPA2 se emula mal, la ECU entra en modo de emergencia.",
     pasos: [
       { id: "m-ccs", t: "Ver si la ECU tiene crucero (E5-21 contra masa)", quien: "mauro",
         d: "Con 10–14 V la ECU trae el crucero y alcanza con cablearlo; con 0 V no lo trae.",
@@ -99,77 +243,13 @@ export const SECCIONES = [
         d: "Si tiene 4 patas, una de las dos parejas se ABRE al pisar (en Toyota se llama ST1−) y existe justo para cortar un crucero. Si tiene 2, el corte sale de la luz de freno con un relé. Anotá cuántas y qué cable da 12 V pisando." },
       { id: "m-embrague", t: "¿Hay interruptor de embrague que se abra al pisarlo?", quien: "mauro",
         d: "El de arranque (el que pide el embrague a fondo para dar arranque) no sirve: tiene que cambiar apenas se toca el pedal. Si no hay, va un microinterruptor (está en la lista de compras)." },
-      { id: "m-vss", t: "La señal de velocidad (en la ficha del tablero)", quien: "mauro",
-        d: "Andando despacio, con el tester en continua, un cable que oscila entre 0 y 5 o 12 V. Anotá cuál es. Los pulsos por kilómetro no hace falta medirlos: se calibran solos contra el GPS." },
-      { id: "m-tac", t: "La señal del tacómetro (en la ficha del tablero)", quien: "mauro",
-        d: "Lo mismo, con el motor en marcha: el cable que mueve la aguja. Es la forma más limpia de tener las RPM sin tocar un sensor del motor." },
+      { id: "a-pedal", t: "Leer el pedal con la caja: el arnés en Y", quien: "mauro",
+        d: "Las dos fichas del pedal unidas cable a cable (la señal pasa DERECHO a la ECU) y, en paralelo, la caja lee VPA y VPA2 a través de un divisor de alta resistencia (100 kΩ): no le saca corriente al sensor.",
+        prueba: "Con el tester: el pedal mide lo mismo con la caja enchufada y sin ella (comparar con lo del paso «VPA»)." },
     ],
   },
   {
-    id: "comprar-a", ic: "🛒", n: "2 · Comprar lo de la caja de sensores",
-    d: "Etapa A: la placa que sólo LEE. No toca el pedal, sirve sola y deja el hardware probado antes de que nada mande sobre el acelerador.",
-    piezas: [
-      { id: "c-esp32", n: "2 × ESP32 DevKit (uno de repuesto)", para: "el cerebro de toda la placa —sensores y, en la etapa B, el pedal—, con Bluetooth adentro; se programa con el mismo Arduino IDE", usd: [8, 14] },
-      { id: "c-adxl", n: "2 × acelerómetro ADXL345 (módulo SPI)", para: "vibración a 1.600 por segundo; el del teléfono llega a 200", usd: [4, 8] },
-      { id: "c-gps", n: "Módulo GPS (NEO-6M o ATGM336H) con su antena", para: "posición y velocidad propias de la placa, sin depender del teléfono: control de la velocidad de la caja y registro de los viajes", usd: [5, 10] },
-      { id: "c-opto", n: "6 × optoacoplador PC817 y resistencias", para: "contacto, freno, embrague, velocidad y RPM, aislados de la camioneta", usd: [2, 4] },
-      { id: "c-fuente", n: "Fuente automotriz 12→5 V que aguante el arranque (reductora-elevadora, p. ej. Pololu S9V11F5) + diodo TVS + diodo + portafusible + un capacitor grande", para: "la camioneta tiene picos que queman un regulador común, y al dar arranque la batería baja a 8–9 V: la placa no se puede reiniciar por eso", usd: [12, 20] },
-      { id: "c-tap", n: "Derivador de fusible (add-a-fuse) del tamaño de los fusibles de la camioneta", para: "tomar los 12 V con contacto sin cortar un cable", usd: [3, 5] },
-      { id: "c-fichas", n: "Par de fichas del pedal (macho y hembra) con cables", para: "el arnés en Y: se saca y la camioneta queda como de fábrica", usd: [15, 30] },
-      { id: "c-perfo", n: "Placa perforada y tira de pines", para: "armar la etapa A sin mandar a hacer una placa", usd: [2, 4] },
-      { id: "c-caja", n: "Caja, cable automotriz, terminales, termocontraíble y fusible", para: "", usd: [15, 25] },
-      { id: "c-blindado", n: "1 m de cable blindado fino (4 hilos)", para: "llevar el acelerómetro hasta su soporte sin que levante ruido", usd: [2, 4] },
-    ],
-  },
-  {
-    id: "herramientas", ic: "🧰", n: "3 · Herramientas",
-    d: "Lo que queda después. Si ya tenés alguna, marcala como llegó.",
-    piezas: [
-      { id: "h-soldador", n: "Soldador de 40–60 W con punta fina, y su soporte", para: "", usd: [10, 25] },
-      { id: "h-estano", n: "Estaño con resina de 0,8 mm y malla desoldadora", para: "", usd: [4, 8] },
-      { id: "h-pela", n: "Pelacables y crimpeadora de terminales", para: "un terminal apretado con pinza común se suelta con la vibración", usd: [8, 20] },
-      { id: "h-calor", n: "Termocontraíble surtido (y un encendedor o pistola de calor)", para: "", usd: [3, 6] },
-      { id: "h-usb", n: "Cable USB de la placa y adaptador OTG", para: "programar desde el teléfono o una computadora", usd: [2, 5] },
-      { id: "h-logico", n: "Analizador lógico USB (opcional)", para: "ver los pulsos de velocidad y RPM si algo no cierra", usd: [8, 12], opcional: true },
-    ],
-  },
-  {
-    id: "armar-a", ic: "🔧", n: "4 · Armar la caja de sensores",
-    d: "Cada paso se prueba antes de seguir. Si una prueba no da, no se avanza: se anota lo que dio y lo miramos.",
-    pasos: [
-      { id: "a-programa", t: "El programa de la caja de sensores", quien: "claude",
-        d: "Lo escribo yo en el repositorio de la Hilux (carpeta placa/), con su banco de pruebas, y te digo cómo cargarlo." },
-      { id: "a-fuente", t: "Armar la fuente y probarla SOLA", quien: "mauro",
-        d: "Portafusible → diodo → TVS → regulador, en la placa perforada.",
-        prueba: "Con la batería de la camioneta o una fuente: 5,0 V (±0,1) en la salida, con el tester, ANTES de conectar el ESP32.",
-        campos: [{ k: "fuente5", n: "salida", u: "V" }] },
-      { id: "a-esp", t: "Montar el ESP32 y cargar el programa de prueba", quien: "mauro",
-        prueba: "El LED parpadea y el teléfono ve la placa por Bluetooth." },
-      { id: "a-entradas", t: "Las cinco entradas con optoacoplador", quien: "mauro",
-        d: "Contacto, freno, embrague, velocidad y RPM: cada una con su resistencia y su PC817.",
-        prueba: "En la mesa, tocando cada entrada con 12 V: cambia en la pantalla de prueba, y sólo ésa." },
-      { id: "a-acel", t: "El acelerómetro en un soporte rígido", quien: "mauro",
-        d: "Con el cable blindado corto, atornillado o pegado con epoxi a un punto firme (el túnel de la caja o el piso), nunca colgando.",
-        prueba: "Quieto marca 1 g; un golpecito con el dedo se ve." },
-      { id: "a-gps", t: "El GPS de la placa, con la antena viendo el cielo", quien: "mauro",
-        d: "Un solo cable de datos al ESP32. La antena, chica, pegada arriba del tablero contra el parabrisas (lejos de la parte metalizada, si la hay).",
-        prueba: "Afuera, motor en marcha: en unos minutos fija y da la hora; andando, su velocidad y la de la caja dicen casi lo mismo." },
-      { id: "a-pedal", t: "El arnés en Y del pedal", quien: "mauro",
-        d: "Las dos fichas unidas cable a cable (la señal pasa DERECHO a la ECU) y, en paralelo, la placa lee VPA y VPA2 a través de resistencias de 100 kΩ: no le saca corriente al sensor.",
-        prueba: "Con el tester: el pedal mide lo mismo con la placa enchufada y sin ella (comparar con lo del paso «VPA»)." },
-      { id: "a-caja", t: "Todo a la caja", quien: "mauro",
-        d: "Cada cable con alivio de tensión (un precinto que lo agarre antes del terminal), rotulado, y la caja lejos del sol directo." },
-      { id: "a-instalar", t: "Instalar en la camioneta", quien: "mauro",
-        d: "12 V del derivador en un fusible que sólo tenga corriente con contacto; masa a un tornillo del chasis; el arnés en Y en el pedal; el acelerómetro firme.",
-        prueba: "Motor apagado: cada señal de la pantalla de prueba coincide con el tester. Motor en marcha: las RPM de la placa, cerca de lo que marca la aguja." },
-      { id: "a-app", t: "La app lee la placa", quien: "claude",
-        d: "Tanda de la app: la placa entra como fuente nueva (por las interfaces que ya existen) y lo suyo se guarda aparte de lo del teléfono." },
-      { id: "a-viajes", t: "Dos semanas de viajes sin una diferencia", quien: "mauro",
-        prueba: "Velocidad de la placa contra el GPS, RPM de la placa contra las oídas: lo comparo yo con los reportes. Con eso la etapa A está lista." },
-    ],
-  },
-  {
-    id: "decidir-b", ic: "⚖️", n: "5 · Antes del crucero",
+    id: "decidir-b", etapa: "b", ic: "⚖️", n: "8 · Antes del crucero",
     d: "Lo que se decide antes de que la placa mande sobre el pedal.",
     pasos: [
       { id: "d-seguro", t: "Preguntar al seguro y a la habilitación", quien: "mauro",
@@ -179,9 +259,11 @@ export const SECCIONES = [
     ],
   },
   {
-    id: "comprar-b", ic: "🛒", n: "6 · Comprar lo del crucero",
+    id: "comprar-b", etapa: "b", ic: "🛒", n: "9 · Comprar lo del crucero",
     d: "Etapa B: lo que se le agrega a la MISMA placa para manejar el pedal. El cerebro es el ESP32 de la etapa A; lo que se suma son las salidas y lo que las hace seguras.",
     piezas: [
+      { id: "c-fichas", n: "Par de fichas del pedal (macho y hembra) con cables", para: "el arnés en Y: se saca y la camioneta queda como de fábrica", usd: [15, 30],
+        buscar: "Toyota accelerator pedal connector pigtail 6 pin", ojo: "Que sea la ficha de 6 contactos del pedal de esta camioneta: se compara con la de verdad antes de comprar." },
       { id: "c-dac", n: "DAC doble MCP4822 + amplificador MCP6002", para: "fabricar VPA y VPA2 limpias, escaladas a los 5 V de la ECU", usd: [6, 8] },
       { id: "c-reles", n: "2 × relé de señal DPDT (Omron G5V-2 o similar) + transistores y diodos", para: "SIN corriente conectan el pedal real directo a la ECU", usd: [6, 10] },
       { id: "c-wdt", n: "Supervisor con watchdog (TPS3823) o monoestable 74HC123", para: "si el programa se cuelga, o se da cuenta de que algo no cierra, los relés caen solos", usd: [2, 4] },
@@ -192,7 +274,7 @@ export const SECCIONES = [
     ],
   },
   {
-    id: "armar-b", ic: "🛡️", n: "7 · Armar el interceptor",
+    id: "armar-b", etapa: "b", ic: "🛡️", n: "10 · Armar el interceptor",
     d: "En funcionamiento normal la ECU lee SIEMPRE lo que fabrica la placa: el pie copiado o el crucero. Los relés sólo vuelven al pedal original ante una falla de la placa. Primero lo que lo hace seguro, después lo que lo hace andar. Y cada vez que se carga un programa nuevo en la placa —también uno que sólo cambia los sensores— se repiten los pasos marcados «seguridad» de esta sección y el paso directo: diez minutos, con la camioneta parada.",
     pasos: [
       { id: "b-programa", t: "El programa del pedal, en el mismo ESP32", quien: "claude",
@@ -221,7 +303,7 @@ export const SECCIONES = [
     ],
   },
   {
-    id: "probar", ic: "🚦", n: "8 · Probar en la camioneta, por etapas",
+    id: "probar", etapa: "b", ic: "🚦", n: "11 · Probar en la camioneta, por etapas",
     d: "Las de CRUCERO.md § 7, sin saltear ninguna. Cada una pasa sólo si el tester y la pantalla dicen lo mismo.",
     pasos: [
       { id: "p-escuchar", t: "Escuchar, motor apagado", quien: "mauro",
@@ -288,9 +370,13 @@ export const PIEZAS = SECCIONES.flatMap((s) => (s.piezas || []).map((p) => ({ ..
    medidas: es la regla del § 9.1 («se llega a la Fase 3 con el hardware ya
    probado»). Y probar espera a que el interceptor esté armado. */
 export const ESPERA = {
+  "cables": [],
   "comprar-a": [],
   "armar-a": ["comprar-a"],
-  "decidir-b": ["medir", "armar-a"],
+  "instalar-a": ["armar-a", "cables"],
+  "aprender": ["instalar-a"],
+  "medir": ["aprender"],
+  "decidir-b": ["medir"],
   "comprar-b": ["decidir-b"],
   "armar-b": ["comprar-b"],
   "probar": ["armar-b"],

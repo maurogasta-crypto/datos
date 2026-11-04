@@ -638,10 +638,17 @@ después proceso de fabricación, accesible desde el panel».
 - **El contenido vive en `placa.js`**, no en la página: los pasos, las piezas
   con su precio de referencia, qué sección espera a cuál (`ESPERA`), lo que
   sigue (`siguiente`), el costo y la relación VPA/VPA2 que se calcula con las
-  medidas. La página sólo dibuja. Banco: `node pruebas/placa.mjs` (14 casos).
+  medidas. La página sólo dibuja. Banco: `node pruebas/placa.mjs` (15 casos).
 - **Lo marcado va a `proyectos/hilux.placa`** (`marcas`, `notas`, `medidas`,
   `compras`), campo por campo con `updateDoc`: sin colección ni regla nueva, y
   la ronda lo lee para saber en qué paso está. La guía se lee sin cuenta.
+- **Primero la caja BÁSICA** (`placa-6`, Mauro: «el proyecto más básico
+  posible… sin intervención»): encontrar los cables con el tester (cada uno con
+  qué buscar en foros y en el diagrama de Toyota), la lista de compras precisa
+  (qué buscar en la tienda y en qué fijarse, y dónde se compró y a cuánto),
+  armar en la mesa, instalar sin alterar nada y empezar a aprender. Sólo lee
+  freno, tacómetro y velocidad del tablero, con su GPS y su acelerómetro; el
+  pedal y el crucero quedan abajo, «más adelante» (`etapa: "b"`).
 - **El orden no se negocia, y lo garantiza el código:** el crucero (etapa B)
   no se abre sin la caja de sensores armada (etapa A) y las medidas; y las
   pruebas en la camioneta no se abren sin los pasos de seguridad (relés en
@@ -673,8 +680,8 @@ teléfono.
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `placa.html` | `P.PANEL` | `placa-5` |
-| `placa.js` | `VERSION` | `placa-js-5` |
+| `placa.html` | `P.PANEL` | `placa-6` |
+| `placa.js` | `VERSION` | `placa-js-6` |
 | `sw.js` | `VERSION` | `panel-shell-v47` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el

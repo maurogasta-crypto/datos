@@ -30,15 +30,31 @@ prueba("cada paso y cada pieza tiene un id único y estable", () => {
   for (const id of ids) assert.match(id, /^[a-z]-[a-z0-9-]+$/, id + " no sirve como ruta de un campo");
 });
 
-prueba("con todo vacío, lo que sigue es medir y comprar la etapa A, y nada del crucero", () => {
+prueba("con todo vacío, lo que sigue es encontrar los cables y comprar la caja básica, y nada del crucero", () => {
   const s = G.siguiente({});
   const secs = s.map((x) => x.seccion);
-  assert.ok(secs.includes("medir") && secs.includes("comprar-a"), secs.join(","));
-  for (const b of ["decidir-b", "comprar-b", "armar-b", "probar"]) assert.ok(!secs.includes(b), b + " no puede estar abierta");
+  assert.ok(secs.includes("cables") && secs.includes("comprar-a"), secs.join(","));
+  for (const b of ["medir", "decidir-b", "comprar-b", "armar-b", "probar"]) assert.ok(!secs.includes(b), b + " no puede estar abierta");
+  for (const s2 of G.SECCIONES.filter((x) => x.etapa === "b")) assert.ok(G.bloqueos(s2.id, {}).length, s2.id + " del crucero sin traba");
+});
+
+prueba("la caja básica no interviene: ni pedal, ni relés, ni cortar cables", () => {
+  const basicas = G.SECCIONES.filter((x) => !x.etapa);
+  assert.deepEqual(basicas.map((x) => x.id), ["cables", "comprar-a", "herramientas", "armar-a", "instalar-a", "aprender"]);
+  const ids = basicas.flatMap((x) => [...(x.pasos || []), ...(x.piezas || [])].map((y) => y.id));
+  for (const no of ["c-fichas", "a-pedal", "c-reles", "c-dac"]) assert.ok(!ids.includes(no), no + " está en la caja básica");
+  const texto = JSON.stringify(basicas);
+  assert.ok(!/relé/i.test(texto), "la caja básica nombra un relé");
+  for (const p of G.SECCIONES.find((x) => x.id === "cables").pasos.filter((x) => /^k-(fusible|freno|tac|vss)$/.test(x.id))) {
+    assert.ok(p.buscar && p.buscar.length, p.id + " sin qué buscar");
+    assert.ok(/tester/i.test(p.prueba), p.id + " no se confirma con el tester");
+  }
+  for (const pz of G.SECCIONES.find((x) => x.id === "comprar-a").piezas) assert.ok(pz.para !== undefined && pz.usd, pz.id);
+  assert.ok(/igual/.test(G.PASOS.find((x) => x.id === "i-senales").prueba), "falta la prueba de que la camioneta marca igual");
 });
 
 prueba("la etapa B no se abre con la A armada si faltan las medidas", () => {
-  const e = todoHecho(["comprar-a", "herramientas", "armar-a"]);
+  const e = todoHecho(["cables", "comprar-a", "herramientas", "armar-a", "instalar-a", "aprender"]);
   assert.deepEqual(G.bloqueos("decidir-b", e), ["medir"]);
   assert.ok(!G.siguiente(e).some((x) => x.seccion === "comprar-b"));
 });
@@ -113,7 +129,7 @@ prueba("los dos archivos parsean como módulo (también el script del .html)", (
 prueba("la página pide los sellos que dicen los archivos", () => {
   const html = fs.readFileSync(path.join(raiz, "placa.html"), "utf8");
   assert.ok(html.includes("./placa.js?v=" + G.VERSION), "el ?v= de placa.js no es " + G.VERSION);
-  assert.ok(html.includes('P.PANEL = "placa-5"') && html.includes("Sello: placa-5"));
+  assert.ok(html.includes('P.PANEL = "placa-6"') && html.includes("Sello: placa-6"));
 });
 
 prueba("la página escribe sólo adentro de placa., campo por campo", () => {

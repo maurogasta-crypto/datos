@@ -281,7 +281,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   (7 casos) para la lectura de la respuesta de CallMeBot, que usan tres sitios y
   `avisos.mjs`; `node pruebas/errores.mjs` (7 casos) para las causas de los
   errores, que usan los cinco;
-  `node pruebas/placa.mjs` (14 casos) para la guía de la placa de la Hilux, que prueba sobre todo que no se pueda saltear un paso de seguridad;
+  `node pruebas/placa.mjs` (15 casos) para la guía de la placa de la Hilux, que prueba sobre todo que no se pueda saltear un paso de seguridad;
   y `pruebas/panel/banco.mjs` (con `npm install`
   una vez, 389 comprobaciones al `panel-32`) para el panel entero. En `pruebas/casayourte/` hay dos más
   que comparan los cuatro proyectos entre sí.
@@ -683,12 +683,14 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   aparece solo. Lo que Gemini propone vuelve como pedido con `origen:
   "gemini"`, y la ronda lo marca en ORGANIZAR para evaluarlo, no obedecerlo.
 - **La guía para armar la placa de la Hilux es `placa.html` + `placa.js`**
-  (placa-5, 4-nov-2026, Mauro: «una pantalla dedicada para el proceso de
+  (placa-6, 4-nov-2026, Mauro: «una pantalla dedicada para el proceso de
   construcción… primero conseguir materiales y después proceso de
   fabricación, accesible desde el panel»). El contenido y las cuentas en
-  `placa.js` (banco `node pruebas/placa.mjs`, 14 casos); lo marcado en
+  `placa.js` (banco `node pruebas/placa.mjs`, 15 casos); lo marcado en
   `proyectos/hilux.placa`, sin regla nueva; el enlace, de `sitio.guias`
-  (`panel-46`). `siguiente()` no deja abrir el crucero sin la etapa A ni las
+  (`panel-46`). Arranca por la caja BÁSICA, que sólo mide y no interviene
+  (placa-6); el crucero queda abajo, con `etapa: "b"`.
+  `siguiente()` no deja abrir el crucero sin la etapa A ni las
   pruebas sin los pasos de seguridad. Y la seguridad es UNA cadena por cable
   que manda sobre lo programable, con una lista cerrada de emergencias
   (`EMERGENCIAS`) y otra de lo que no la abre nunca (`USO_ESPERADO`): Mauro,

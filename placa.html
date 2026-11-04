@@ -60,6 +60,12 @@
   .pl-pieza .t b { flex: 1; font-weight: 500; }
   .pl-pieza .usd { font-family: var(--mono); font-size: .8rem; color: var(--gris); white-space: nowrap; }
   .pl-pieza .para { font-size: .8rem; color: var(--gris); margin: .1rem 0 .3rem; }
+  .pl-busca { font-size: .8rem; margin: .2rem 0 .2rem 2.1rem; color: var(--gris); }
+  .pl-pieza .pl-busca { margin-left: 0; }
+  .pl-busca code { font-family: var(--mono); color: var(--texto); background: var(--tinta3); padding: 0 .3rem; border-radius: 4px; }
+  .pl-ojo { font-size: .8rem; color: var(--ojo); margin: .1rem 0 .3rem; }
+  .pl-donde { width: 100%; margin-top: .35rem; font-size: .84rem; }
+  .pl-etapa { margin: 1.4rem 0 .2rem; }
   .pl-tres { display: flex; gap: .3rem; }
   .pl-tres button { flex: 1; min-height: 36px; padding: .3rem; font-size: .8rem; border-radius: var(--r-s);
     background: var(--tinta3); color: var(--gris); border: 1px solid var(--linea); font-family: inherit; }
@@ -75,7 +81,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  placa.html — la guía para armar la placa de la Hilux. Sello: placa-5
+  placa.html — la guía para armar la placa de la Hilux. Sello: placa-6
 
   Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de construcción
   en Arduino del componente que se va a fabricar, con diseño y guía paso a
@@ -105,7 +111,7 @@
 
 <div class="contenedor">
   <h1>🔧 La placa de la Hilux</h1>
-  <p class="pl-sub">Una placa con sensores propios que le habla al teléfono, y después, en la misma placa, el crucero. Se arma en dos etapas, y la primera sirve sola.</p>
+  <p class="pl-sub">Primero, lo más básico: una caja que sólo MIDE —freno, RPM y velocidad del tablero, más su propio GPS y acelerómetro— sin tocar el pedal ni cortar un cable. Con lo que aprenda se diseña después el crucero, en la misma placa.</p>
 
   <div class="tarj">
     <svg class="pl-diag" viewBox="0 0 360 300" role="img" aria-label="Diagrama de la placa: el pedal va a la ECU por un arnés en Y; la caja de sensores lee y manda por Bluetooth al teléfono; en la etapa B el interceptor queda en el medio, con relés que sin corriente dejan pasar el pedal real.">
@@ -209,8 +215,8 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-11";
 import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-5";
-import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-5";
-P.PANEL = "placa-5";
+import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-6";
+P.PANEL = "placa-6";
 P.pintarSello();
 
 let ESTADO = { marcas: {}, notas: {}, medidas: {}, compras: {} };
@@ -294,15 +300,20 @@ function pintarPlata() {
   $("plata").innerHTML = '<div class="tarj"><b>💵 Lo que cuesta</b>'
     + '<p class="gris" style="margin:.2rem 0 .5rem">Precios de referencia de tienda internacional; en Uruguay, comprado en el país, suele ser 1,5 a 2 veces más. Sin las opcionales.</p>'
     + '<div class="pl-plata">'
-    + fila("Etapa A y herramientas: falta", a.falta) + fila("… ya pedido o llegado", [a.pedido[0] + a.llego[0], a.pedido[1] + a.llego[1]])
-    + fila("Etapa B (crucero): falta", b.falta) + fila("… ya pedido o llegado", [b.pedido[0] + b.llego[0], b.pedido[1] + b.llego[1]])
+    + fila("Lo básico y herramientas: falta", a.falta) + fila("… ya pedido o llegado", [a.pedido[0] + a.llego[0], a.pedido[1] + a.llego[1]])
+    + fila("Crucero, más adelante: falta", b.falta) + fila("… ya pedido o llegado", [b.pedido[0] + b.llego[0], b.pedido[1] + b.llego[1]])
     + "</div></div>";
 }
 
 function pintarSecciones() {
   const sig = new Set(siguiente(ESTADO).map((x) => x.seccion));
-  let h = "";
+  let h = '<h2 class="pl-etapa">Lo básico: la caja que sólo mide</h2>';
+  let enB = false;
   for (const s of SECCIONES) {
+    if (s.etapa === "b" && !enB) {
+      enB = true;
+      h += '<h2 class="pl-etapa">Más adelante: el crucero</h2><p class="gris">Recién cuando la caja básica lleve semanas midiendo bien.</p>';
+    }
     const pr = progreso(s, ESTADO);
     const traba = bloqueos(s.id, ESTADO);
     const abierta = abiertas.has(s.id) || (abiertas.size === 0 && sig.has(s.id));
@@ -326,6 +337,7 @@ function pasoHTML(p) {
     + '<span class="pl-quien ' + p.quien + '">' + (p.quien === "claude" ? "Claude" : "vos") + "</span>"
     + (p.seguridad ? ' <span class="pl-seg">seguridad</span>' : "") + "</div></div>";
   if (p.d) h += "<p>" + P.esc(p.d) + "</p>";
+  if (p.buscar) h += '<p class="pl-busca">🔍 Buscar: ' + p.buscar.map((b) => "<code>" + P.esc(b) + "</code>").join(" · ") + "</p>";
   if (p.prueba) h += '<p class="prueba">✔ Cómo se prueba: ' + P.esc(p.prueba) + "</p>";
   if (p.campos) {
     h += '<div class="pl-campos">' + p.campos.map((c) =>
@@ -356,7 +368,11 @@ function piezaHTML(p) {
   return '<div class="pl-pieza"><div class="t"><b>' + P.esc(p.n) + (p.opcional ? ' <span class="pl-quien">opcional</span>' : "") + "</b>"
     + '<span class="usd">' + usd(p.usd) + "</span></div>"
     + (p.para ? '<div class="para">' + P.esc(p.para) + "</div>" : "")
-    + '<div class="pl-tres">' + b("falta", "Falta") + b("pedido", "Pedido") + b("llego", "Llegó ✓") + "</div></div>";
+    + (p.buscar ? '<p class="pl-busca">🔍 Buscar: <code>' + P.esc(p.buscar) + "</code></p>" : "")
+    + (p.ojo ? '<p class="pl-ojo">⚠ ' + P.esc(p.ojo) + "</p>" : "")
+    + '<div class="pl-tres">' + b("falta", "Falta") + b("pedido", "Pedido") + b("llego", "Llegó ✓") + "</div>"
+    + '<input class="pl-donde" data-nota="' + p.id + '" placeholder="Dónde lo compré y a cuánto" value="' + P.esc(ESTADO.notas[p.id] || "") + '">'
+    + "</div>";
 }
 
 /* Los toques. Se escucha en el contenedor: la lista se redibuja entera. */

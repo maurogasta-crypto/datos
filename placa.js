@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-2
+   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-3
 
    Pedido de Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de
    construcción en Arduino del componente que se va a fabricar, con diseño y
@@ -30,13 +30,28 @@
    relés solo. Lo que hace falta para eso son los pasos `b-autocontrol` y
    `b-nucleo`, y repetir las pruebas de seguridad con cada programa nuevo.
 
+   ESPEJO PERMANENTE (placa-js-3, 4-nov-2026). Mauro: «el sistema sólo debe
+   entrar en seguridad y desactivar los relés en caso de una falla… en su
+   funcionamiento normal debemos mantener siempre la comunicación estable de
+   la ECU por los pulsos emulados por la placa… cuando se presiona el freno o
+   el embrague es la misma placa ESP que envía esa información… sólo ante una
+   falla de funcionamiento de la placa ESP se deberían desactivar los relés».
+   Así queda: con el contacto puesto la placa toma el pedal UNA vez, con el pie
+   suelto, y desde ahí la ECU lee siempre lo que fabrica la placa —el pie
+   copiado, o el crucero—. Cada conmutación de un relé es un corte de
+   milisegundos en las dos señales, y eso es lo que la ECU puede leer como
+   falla; ahora pasa una vez por viaje y no con cada frenada. El freno y el
+   embrague apagan el crucero en el programa. Lo que queda por cable no es un
+   corte en cada frenada: es la DETECCIÓN de que la placa falló en
+   obedecerlos (`b-cortes`, un comparador), y sólo ahí sueltan los relés.
+
    Y lo que no se negocia, para quien edite esto: los pasos que hacen segura a
    la placa —el watchdog, el corte por freno y embrague cableado y el paso
    directo con los relés sueltos— van ANTES de que la placa mande una señal a
    la ECU, y `siguiente()` no deja saltarlos. El banco lo comprueba.
    ═══════════════════════════════════════════════════════════════════ */
 
-export const VERSION = "placa-js-2";
+export const VERSION = "placa-js-3";
 
 /* Las dos etapas, en el orden en que se hacen. La A no toca el pedal —sólo
    lee— y sirve sola (CRUCERO.md § 9.1); la B es el crucero. */
@@ -143,6 +158,7 @@ export const SECCIONES = [
       { id: "c-dac", n: "DAC doble MCP4822 + amplificador MCP6002", para: "fabricar VPA y VPA2 limpias, escaladas a los 5 V de la ECU", usd: [6, 8] },
       { id: "c-reles", n: "2 × relé de señal DPDT (Omron G5V-2 o similar) + transistores y diodos", para: "SIN corriente conectan el pedal real directo a la ECU", usd: [6, 10] },
       { id: "c-wdt", n: "Supervisor con watchdog (TPS3823) o monoestable 74HC123", para: "si el programa se cuelga, o se da cuenta de que algo no cierra, los relés caen solos", usd: [2, 4] },
+      { id: "c-comparador", n: "Comparador doble LM393, resistencias y capacitor", para: "el control por cable: detecta si con el freno o el embrague pisados la placa sigue dando más que el pie", usd: [1, 3] },
       { id: "c-micro", n: "Microinterruptor para el embrague (si no hay uno que sirva)", para: "", usd: [3, 5], opcional: true },
       { id: "c-pcb", n: "Placa impresa, 5 unidades, con envío", para: "con el diseño del paso anterior", usd: [15, 30] },
       { id: "c-tablero", n: "LED, zumbador e interruptor general en el tablero", para: "ver y oír cuándo está activo y cuándo cortó; y apagarlo todo con un dedo", usd: [5, 8] },
@@ -150,10 +166,13 @@ export const SECCIONES = [
   },
   {
     id: "armar-b", ic: "🛡️", n: "7 · Armar el interceptor",
-    d: "Primero lo que lo hace seguro, después lo que lo hace andar. Y cada vez que se carga un programa nuevo en la placa —también uno que sólo cambia los sensores— se repiten los pasos marcados «seguridad» de esta sección y el paso directo: diez minutos, con la camioneta parada.",
+    d: "En funcionamiento normal la ECU lee SIEMPRE lo que fabrica la placa: el pie copiado o el crucero. Los relés sólo vuelven al pedal original ante una falla de la placa. Primero lo que lo hace seguro, después lo que lo hace andar. Y cada vez que se carga un programa nuevo en la placa —también uno que sólo cambia los sensores— se repiten los pasos marcados «seguridad» de esta sección y el paso directo: diez minutos, con la camioneta parada.",
     pasos: [
       { id: "b-programa", t: "El programa del pedal, en el mismo ESP32", quien: "claude",
-        d: "Con su banco de pruebas: el pie siempre gana, nunca entrega menos de lo que pide el pedal, y los límites viven en el programa, no en un mensaje." },
+        d: "Espejo permanente: sin crucero copia el pie, con crucero entrega el mayor entre el pie y el crucero. El freno, el embrague o el botón de cancelar apagan el crucero EN EL PROGRAMA, en la misma vuelta, y la salida vuelve a ser el pie sin tocar los relés. Con su banco de pruebas, y los límites viven en el programa, no en un mensaje." },
+      { id: "b-toma", t: "La placa toma el pedal una sola vez, con el pie suelto", quien: "mauro", seguridad: true,
+        d: "Al poner contacto la placa arranca con los relés sueltos (pedal original). Cuando ya está fabricando exactamente lo que da el pie, y el pie está suelto, cierra los relés. Desde ahí no los vuelve a mover salvo una falla. Es la única conmutación de un viaje normal.",
+        prueba: "Diez veces seguidas: contacto, esperar que la placa tome el pedal (LED), arrancar. Ninguna vez se prende la luz del motor ni la camioneta entra en modo de emergencia." },
       { id: "b-nucleo", t: "El pedal tiene su núcleo y nadie lo frena", quien: "claude", seguridad: true,
         d: "El ESP32 tiene dos núcleos: el lazo del pedal corre solo en uno, con prioridad, y el Bluetooth y los sensores en el otro. Un Bluetooth trabado no le roba tiempo al pedal." },
       { id: "b-reposo", t: "Relés sin corriente: el pedal va directo", quien: "mauro", seguridad: true,
@@ -163,9 +182,9 @@ export const SECCIONES = [
       { id: "b-autocontrol", t: "Si lo que sale no es lo que tiene que salir, suelta", quien: "mauro", seguridad: true,
         d: "El watchdog cubre al programa colgado; esto cubre al programa vivo pero equivocado. Cada vuelta, la placa LEE DE VUELTA las dos señales que fabrica y las compara con lo que mandó y con la relación VPA/VPA2 medida; sólo si todo cierra alimenta al watchdog. Si algo no cierra, deja de alimentarlo y los relés caen.",
         prueba: "Con la salida conectada a una resistencia (como en «salida al vacío»): se desconecta un cable de la lectura de vuelta, y los relés caen en menos de medio segundo." },
-      { id: "b-cortes", t: "Freno y embrague cortan por cable, no por programa", quien: "mauro", seguridad: true,
-        d: "La bobina de los relés pasa por el contacto del freno (ST1− o el relé de la luz de freno) y por el del embrague.",
-        prueba: "Relés encendidos: pisar el freno → caen; tocar el embrague → caen; con el programa diciendo lo contrario." },
+      { id: "b-cortes", t: "Si la placa no obedece al freno o al embrague, se suelta por cable", quien: "mauro", seguridad: true,
+        d: "En una frenada normal NO se toca ningún relé: el programa ya volvió a copiar el pie. Lo que va por cable es el control de que eso pasó: un comparador mira, mientras el freno o el embrague están pisados, si la salida de la placa sigue más alta que el pie. Si sigue más de 0,3 s, eso es una placa que no obedece —una falla— y corta la bobina de los relés sin pasar por el programa.",
+        prueba: "Frenar y embragar con el crucero puesto: el crucero se apaga, la camioneta sigue andando con el pie y los relés NO hacen clic. Y con un programa de prueba que a propósito ignora el freno: al pisarlo, los relés caen solos en menos de medio segundo." },
       { id: "b-tablero", t: "El LED, el zumbador y el interruptor general", quien: "mauro",
         prueba: "Con el interruptor apagado no hay forma de que los relés se enciendan." },
     ],
@@ -179,11 +198,11 @@ export const SECCIONES = [
       { id: "p-vacio", t: "Salida al vacío", quien: "mauro",
         d: "Fabrica sus dos señales hacia una resistencia, no hacia la ECU, copiando el pedal. Tester en la salida." },
       { id: "p-directo", t: "Paso directo", quien: "mauro", seguridad: true,
-        d: "Conectada a la ECU con los relés apagados: la camioneta tiene que andar EXACTAMENTE igual." },
+        d: "Conectada a la ECU con los relés apagados: la camioneta tiene que andar EXACTAMENTE igual. Es como queda cuando la placa falla." },
       { id: "p-espejo", t: "Espejo, parada", quien: "mauro", seguridad: true,
-        d: "Relés encendidos copiando el pie: primero contacto sin motor, después motor en punto muerto y freno de mano. Ahí se prueban los cortes y se DESENCHUFA la placa con el motor andando: el pedal real vuelve solo." },
+        d: "La placa toma el pedal y lo copia: primero contacto sin motor, después motor en punto muerto y freno de mano. Las RPM siguen al pie sin demora y sin luz del motor. Ahí se prueban las fallas: se DESENCHUFA la placa con el motor andando y el pedal real vuelve solo." },
       { id: "p-andando", t: "Espejo andando", quien: "mauro",
-        d: "Viajes cortos con la placa sólo copiando el pie." },
+        d: "Viajes enteros con la placa copiando el pie, sin crucero: frenadas, embragues, arranques. Se mira que no aparezca ninguna falla en la ECU y que el pedal se sienta igual que siempre." },
       { id: "p-lento", t: "Crucero a baja velocidad, en un lugar vacío", quien: "mauro",
         d: "Con otra persona mirando la pantalla." },
       { id: "p-ruta", t: "Ruta", quien: "mauro" },

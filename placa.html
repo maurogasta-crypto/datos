@@ -75,7 +75,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  placa.html — la guía para armar la placa de la Hilux. Sello: placa-2
+  placa.html — la guía para armar la placa de la Hilux. Sello: placa-3
 
   Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de construcción
   en Arduino del componente que se va a fabricar, con diseño y guía paso a
@@ -119,15 +119,15 @@
       <rect class="caja-b" x="116" y="14" width="128" height="52" rx="6"/>
       <text x="180" y="32" text-anchor="middle">Salida al pedal (B)</text>
       <text x="180" y="45" text-anchor="middle" class="chico">DAC · 2 relés · watchdog</text>
-      <text x="180" y="57" text-anchor="middle" class="chico">sin corriente: pedal directo</text>
+      <text x="180" y="57" text-anchor="middle" class="chico">sólo ante falla: pedal directo</text>
       <path class="lin" d="M90 40 H116"/>
       <path class="lin" d="M244 40 H270"/>
       <!-- los cortes por cable -->
       <rect class="caja" x="128" y="92" width="104" height="30" rx="6"/>
       <text x="180" y="105" text-anchor="middle">Freno · embrague</text>
-      <text x="180" y="117" text-anchor="middle" class="chico">+ watchdog</text>
+      <text x="180" y="117" text-anchor="middle" class="chico">comparador · watchdog</text>
       <path class="corte" d="M180 92 V66"/>
-      <text x="186" y="82" class="chico">cortan los relés</text>
+      <text x="186" y="82" class="chico">si la placa no obedece</text>
       <!-- la caja de sensores -->
       <rect class="caja-a" x="120" y="170" width="120" height="52" rx="6"/>
       <text x="180" y="188" text-anchor="middle">Cerebro: ESP32</text>
@@ -184,8 +184,9 @@
   <div class="tarj">
     <h2 style="margin-top:.2rem">🛡️ Lo que no se negocia</h2>
     <ul class="pl-reglas">
-      <li><b>Sin corriente, el pedal va directo a la ECU.</b> Los relés en reposo son el camino de fábrica.</li>
-      <li><b>Freno, embrague y watchdog cortan por cable</b>, no porque el programa lo decida.</li>
+      <li><b>La ECU lee siempre a la placa</b>, que copia el pie o hace el crucero: los relés no se mueven en una frenada, para que la ECU nunca vea un corte en sus señales.</li>
+      <li><b>Sólo ante una falla</b> los relés sueltan y el pedal original vuelve a ir directo a la ECU. Sin corriente, ése es su estado.</li>
+      <li><b>El freno y el embrague apagan el crucero en el programa</b>, y un control por cable suelta los relés si la placa no les obedece; el watchdog, si se cuelga.</li>
       <li><b>El programa sólo puede SOLTAR, nunca sostener solo:</b> si lo que fabrica no es lo que tiene que salir, deja de alimentar al watchdog y los relés caen.</li>
       <li><b>Programa nuevo, pruebas de seguridad de nuevo</b>, aunque el cambio sea de un sensor.</li>
       <li><b>El pie siempre gana:</b> la placa nunca entrega menos de lo que pide el pedal.</li>
@@ -200,8 +201,8 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-11";
 import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-5";
-import { SECCIONES, PASOS, PIEZAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-2";
-P.PANEL = "placa-2";
+import { SECCIONES, PASOS, PIEZAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-3";
+P.PANEL = "placa-3";
 P.pintarSello();
 
 let ESTADO = { marcas: {}, notas: {}, medidas: {}, compras: {} };

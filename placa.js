@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-7
+   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-8
 
    Pedido de Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de
    construcción en Arduino del componente que se va a fabricar, con diseño y
@@ -90,13 +90,21 @@
    los cables del pedal cortados, rotulados y terminados en conectores, que
    unidos entre sí devuelven el original.
 
+   LA MENOR COMPLEJIDAD (placa-js-8, 4-nov-2026, Mauro: «menor complejidad
+   posible»). La caja básica no tiene nada soldado adentro: el ESP32 va en una
+   placa de borneras, las entradas son un módulo de optoacopladores armado y
+   se alimenta con un cargador USB en el encendedor. El GPS y el acelerómetro
+   son opcionales (`opcional`, que tampoco cuenta en `progreso` ni en
+   `siguiente`). La fuente armada para la camioneta pasa a la etapa del
+   crucero, que es cuando hace falta.
+
    Y lo que no se negocia, para quien edite esto: los pasos que hacen segura a
    la placa —el watchdog, el corte por freno y embrague cableado y el paso
    directo con los relés sueltos— van ANTES de que la placa mande una señal a
    la ECU, y `siguiente()` no deja saltarlos. El banco lo comprueba.
    ═══════════════════════════════════════════════════════════════════ */
 
-export const VERSION = "placa-js-7";
+export const VERSION = "placa-js-8";
 
 /* Las dos etapas, en el orden en que se hacen. La A no toca el pedal —sólo
    lee— y sirve sola (CRUCERO.md § 9.1); la B es el crucero. */
@@ -109,13 +117,12 @@ export const SECCIONES = [
         d: "En la chapa del vano motor o en el marco de la puerta: modelo (KUN26…), año y el código completo de la versión. Con eso se buscan los diagramas correctos.",
         buscar: ["Toyota Hilux KUN26 EWD pdf", "Hilux Vigo electrical wiring diagram 2008"],
         prueba: "Anotado en la nota de este paso." },
-      { id: "k-fusible", t: "Un fusible que tenga corriente SÓLO con el contacto puesto", quien: "mauro",
-        d: "La caja se alimenta de ahí con un derivador de fusible: así se apaga sola con el contacto y no descarga la batería. El candidato es el del encendedor (suele decir CIG o ACC). El manual del dueño trae el plano de la caja de fusibles. Mirá también qué TAMAÑO de fusible usa (mini o común): el derivador se compra de esa medida.",
-        buscar: ["Hilux Vigo fuse box diagram", "Hilux KUN26 interior fuse box CIG ACC"],
-        prueba: "Con el fusible sacado, tester entre cada uno de los dos contactos de su lugar en la caja y masa: uno de los dos da 12 V con contacto y 0 V sin contacto (ése es el lado que alimenta). Anotá los dos números.",
-        campos: [{ k: "fus_con", n: "con contacto", u: "V" }, { k: "fus_sin", n: "sin contacto", u: "V" }] },
+      { id: "k-encendedor", t: "El encendedor: corriente SÓLO con el contacto puesto", quien: "mauro",
+        d: "La caja se alimenta con un cargador USB enchufado ahí: así se apaga sola con el contacto y no descarga la batería. Si el encendedor tuviera corriente siempre, se usa otro enchufe o se avisa.",
+        prueba: "Tester en el encendedor (el centro es positivo, el costado masa): 12 V con contacto, 0 V sin contacto.",
+        campos: [{ k: "enc_con", n: "con contacto", u: "V" }, { k: "enc_sin", n: "sin contacto", u: "V" }] },
       { id: "k-masa", t: "Un tornillo de masa firme cerca de donde va la caja", quien: "mauro",
-        d: "Un tornillo del chasis o de la estructura del tablero, sin pintura debajo del terminal.",
+        d: "Para la masa del lado de entrada del módulo (la de la camioneta): un tornillo del chasis o de la estructura del tablero, sin pintura debajo del terminal.",
         prueba: "Tester en continuidad entre el tornillo y el negativo de la batería: pita (o menos de 1 Ω)." },
       { id: "k-freno", t: "El cable de la luz de freno (STP)", quien: "mauro",
         d: "En el interruptor que está arriba del pedal de freno. En el EWD la señal se llama STP. Es el más fácil de los tres: da 12 V sólo con el pedal pisado.",
@@ -139,30 +146,27 @@ export const SECCIONES = [
   },
   {
     id: "comprar-a", ic: "🛒", n: "2 · Comprar la caja básica",
-    d: "La caja que sólo MIDE: no toca el pedal y no corta ningún cable; las señales se toman soldando sobre una ventanita pelada, y al terminar las pruebas se vuelve a aislar. Cada pieza dice qué buscar en la tienda y en qué fijarse. Anotá dónde la compraste y a cuánto.",
+    d: "La caja que sólo MIDE: no toca el pedal y no corta ningún cable; las señales se toman soldando sobre una ventanita pelada, y al terminar las pruebas se vuelve a aislar. Lo mínimo: nada se suelda dentro de la caja, todo se atornilla o se enchufa; el GPS y el acelerómetro son opcionales. Cada pieza dice qué buscar en la tienda y en qué fijarse. Anotá dónde la compraste y a cuánto.",
     piezas: [
       { id: "c-esp32", n: "2 × placa ESP32 DevKit V1 (ESP32-WROOM-32, 30 pines)", para: "el cerebro de toda la placa —sensores ahora y, más adelante, el pedal—, con Bluetooth adentro; se programa con el mismo Arduino IDE. Una es de repuesto.", usd: [10, 16],
-        buscar: "ESP32 DevKit V1 WROOM-32 30 pin", ojo: "Que diga WROOM-32 (no S2, C3 ni S3: son otros chips). Con los pines ya soldados y conector USB (micro o C, el que tengas)." },
-      { id: "c-adxl", n: "2 × acelerómetro ADXL345, módulo GY-291", para: "vibración a 1.600 lecturas por segundo; el del teléfono llega a 200. Uno de repuesto.", usd: [4, 8],
-        buscar: "GY-291 ADXL345 module", ojo: "Que el módulo sea de 3,3 V o traiga regulador (casi todos los GY-291 lo traen)." },
-      { id: "c-gps", n: "Módulo GPS GY-NEO6MV2 (u-blox NEO-6M) con su antena cerámica", para: "velocidad y posición propias de la placa, sin depender del teléfono: control de la velocidad de la caja y registro de los viajes", usd: [5, 10],
-        buscar: "GY-NEO6MV2 NEO-6M GPS module antenna", ojo: "Que venga con la antena cuadrada (25 × 25 mm) y su cable. Si conseguís uno con conector para antena externa, mejor." },
-      { id: "c-opto", n: "10 × optoacoplador PC817 (DIP-4) y 10 × diodo 1N4148", para: "las tres entradas de la camioneta (freno, tacómetro, velocidad), aisladas: lo que pase del lado de la camioneta no llega al ESP32. Sobran para repuesto.", usd: [2, 4],
-        buscar: "PC817 DIP-4 optocoupler · 1N4148 diode", ojo: "Formato DIP (con patitas para la placa perforada), no SMD." },
-      { id: "c-resist", n: "Surtido de resistencias de 1/4 W (600 piezas, de 10 Ω a 1 MΩ)", para: "las de cada entrada (se eligen con la tensión que mediste: 4,7 kΩ si es 12 V, 1,5 kΩ si es 5 V) y las de 10 kΩ de salida", usd: [3, 5],
-        buscar: "resistor kit 1/4W 600 pcs" },
-      { id: "c-fuente", n: "Fuente reductora Pololu D24V10F5 (5 V, 1 A) + diodo TVS 1.5KE24A + diodo 1N5819 + capacitor 1000 µF 35 V + portafusible en línea con fusible de 1 A", para: "la camioneta tiene picos que queman un regulador común (el TVS los recorta) y al dar arranque la batería baja: esta fuente sigue dando 5 V hasta unos 6 V de entrada, y el capacitor cubre el resto. El 1N5819 protege si se conecta al revés.", usd: [14, 20],
-        buscar: "Pololu D24V10F5 · 1.5KE24A TVS · 1N5819", ojo: "No sirven los módulos «mini-360» ni los LM2596 baratos: aguantan poco más de lo que da la batería y un pico los quema." },
-      { id: "c-tap", n: "Derivador de fusible (add-a-fuse) del tamaño de los fusibles de la camioneta", para: "tomar los 12 V con contacto sin cortar un cable", usd: [3, 5],
-        buscar: "add a fuse tap mini / standard", ojo: "Del tamaño que viste en el paso del fusible (mini o común). Con su fusible de 1 A para la caja." },
+        buscar: "ESP32 DevKit V1 WROOM-32 30 pin", ojo: "Que diga WROOM-32 (no S2, C3 ni S3: son otros chips), con los pines ya soldados. Fijate si es micro-USB o USB-C: el cable tiene que ser de esa punta." },
+      { id: "c-borneras", n: "Placa de borneras para ESP32 de 30 pines (expansion board con tornillos)", para: "el ESP32 se enchufa encima y cada pata queda en un tornillo: todo se conecta con destornillador, sin soldar nada dentro de la caja", usd: [4, 8],
+        buscar: "ESP32 30 pin expansion board screw terminal", ojo: "Que sea para la de 30 pines (hay de 38, que no calza)." },
+      { id: "c-opto", n: "Módulo de 4 optoacopladores PC817 (placa armada), con la entrada para la tensión que mediste", para: "las tres señales de la camioneta (freno, tacómetro, velocidad) entran aisladas: lo que pase del lado de la camioneta no llega al ESP32. Viene armado: sin resistencias ni diodos que soldar.", usd: [3, 6],
+        buscar: "PC817 4 channel optocoupler isolation module 12V", ojo: "Viene en versiones de 3,3 V, 5 V, 12 V y 24 V de entrada: elegila con lo que mediste en «Encontrar los cables». Si el tacómetro o la velocidad dieron 5 V y el freno 12 V, hacen falta dos módulos (uno de cada uno). Que la salida diga 3,3 V o 3,3–5 V." },
+      { id: "c-usb", n: "Cargador USB de auto de buena marca, con dos salidas, y un cable USB de DATOS de 1 m", para: "alimenta la caja desde el encendedor, que sólo tiene corriente con el contacto puesto: no hay fuente que armar ni fusible que tocar. La otra salida sigue cargando el teléfono.", usd: [6, 12],
+        buscar: "car charger dual USB 12V + USB data cable", ojo: "Un cargador de marca, no el más barato: es lo que protege a la placa de los picos de la camioneta. El cable tiene que pasar datos (muchos sólo cargan) y tener la punta de tu ESP32." },
+      { id: "c-dupont", n: "Cables Dupont hembra-hembra (un paquete de 40)", para: "unir el módulo de optoacopladores con la placa de borneras sin soldar", usd: [2, 4] },
+      { id: "c-caja", n: "Caja plástica de unos 120 × 80 × 40 mm con tapa", para: "que entren el ESP32 con su placa de borneras y el módulo", usd: [4, 8] },
+      { id: "c-cable", n: "Cable automotriz 0,5 mm² en 4 colores (2 m de cada uno)", para: "de cada toma (freno, tacómetro, velocidad) y de la masa hasta la caja", usd: [4, 8],
+        buscar: "automotive wire 20 AWG" },
       { id: "c-aislar", n: "Cinta aisladora de buena calidad (3M Super 33+ o similar), 1 rollo, y cinta de tela para mazos (Tesa 51036 o similar), 1 rollo", para: "aislar cada toma soldada: la Super 33+ aguanta el calor y no se despega con los meses; la de tela encima la protege del roce", usd: [8, 14],
         buscar: "3M Super 33+ · Tesa 51036 harness tape", ojo: "La cinta aisladora común barata se despega con el calor del tablero y deja pegote." },
-      { id: "c-perfo", n: "Placa perforada doble faz 7 × 9 cm, tiras de pines hembra y 4 borneras de tornillo de 5 mm (2 polos)", para: "armar sin mandar a hacer una placa; el ESP32 va enchufado en los pines hembra (se saca para programarlo o cambiarlo) y los cables de la camioneta entran por las borneras", usd: [4, 7],
-        buscar: "perfboard 7x9 double sided · female header 2.54 · screw terminal 5mm" },
-      { id: "c-caja", n: "Caja plástica de unos 100 × 70 × 30 mm con tapa", para: "", usd: [4, 8] },
-      { id: "c-cable", n: "Cable automotriz 0,5 mm² en 3 colores (2 m de cada uno) y 1,5 m de cable blindado de 4 hilos", para: "el blindado lleva el acelerómetro hasta su soporte sin levantar ruido; el automotriz, la alimentación y las señales", usd: [6, 10],
-        buscar: "automotive wire 20 AWG · shielded cable 4 core" },
-      { id: "c-fijar", n: "Precintos, termocontraíble surtido y cinta doble faz", para: "que nada cuelgue ni roce: es lo que hace que una instalación dure", usd: [4, 8] },
+      { id: "c-fijar", n: "Precintos y cinta doble faz", para: "que nada cuelgue ni roce: es lo que hace que una instalación dure", usd: [3, 6] },
+      { id: "c-gps", n: "Módulo GPS GY-NEO6MV2 (u-blox NEO-6M) con su antena cerámica", opcional: true, para: "velocidad y posición propias de la placa, sin depender del teléfono, para controlar la velocidad de la caja. Opcional: el teléfono ya tiene GPS; son cuatro cables Dupont más.", usd: [5, 10],
+        buscar: "GY-NEO6MV2 NEO-6M GPS module antenna", ojo: "Que venga con la antena cuadrada (25 × 25 mm) y su cable." },
+      { id: "c-adxl", n: "Acelerómetro ADXL345 (módulo GY-291) y 1,5 m de cable blindado de 4 hilos", opcional: true, para: "vibración a 1.600 lecturas por segundo (el teléfono llega a 200). Opcional: el teléfono ya mide la vibración; esto la mide más fina.", usd: [5, 10],
+        buscar: "GY-291 ADXL345 module · shielded cable 4 core" },
     ],
   },
   {
@@ -172,35 +176,30 @@ export const SECCIONES = [
       { id: "h-soldador", n: "Soldador de 40–60 W con temperatura regulable, punta fina y su soporte", para: "", usd: [10, 25] },
       { id: "h-estano", n: "Estaño de 0,8 mm con resina y malla desoldadora", para: "", usd: [4, 8] },
       { id: "h-pela", n: "Pelacables automático y un cúter fino", para: "el pelacables para las puntas; el cúter para abrir la ventanita en el medio de un cable sin cortar hilos", usd: [8, 15] },
-      { id: "h-usb", n: "Cable USB de DATOS para el ESP32 y adaptador OTG", para: "programar desde el teléfono o una computadora", usd: [2, 5],
-        ojo: "Muchos cables USB sólo cargan y no pasan datos: si la computadora no ve la placa, es lo primero que se cambia." },
       { id: "h-hz", n: "Tester que mida frecuencia (Hz)", para: "encontrar el tacómetro y la velocidad sin osciloscopio. Si el tuyo no mide Hz, se puede seguir igual: lo mide la propia placa", usd: [15, 30], opcional: true },
       { id: "h-logico", n: "Analizador lógico USB (opcional)", para: "ver los pulsos de velocidad y RPM si algo no cierra", usd: [8, 12], opcional: true },
     ],
   },
   {
     id: "armar-a", ic: "🔧", n: "4 · Armar la caja en la mesa",
-    d: "Todo se arma y se prueba en la mesa, con una fuente o la batería de la camioneta con cables largos. Cada paso se prueba antes de seguir: si una prueba no da, se anota lo que dio y lo miramos.",
+    d: "Todo se arma y se prueba en la mesa, alimentado por USB. No se suelda nada: se enchufa y se atornilla. Cada paso se prueba antes de seguir: si una prueba no da, se anota lo que dio y lo miramos.",
     pasos: [
       { id: "a-programa", t: "El programa de la caja básica", quien: "claude",
-        d: "Lo escribo yo en el repositorio de la Hilux (carpeta placa/), con su banco de pruebas: lee las tres entradas, el GPS y el acelerómetro, y lo manda por Bluetooth y por USB. Te digo cómo cargarlo." },
-      { id: "a-fuente", t: "La fuente, y probarla SOLA", quien: "mauro",
-        d: "Portafusible → 1N5819 → TVS a masa → capacitor → fuente Pololu, en un costado de la placa perforada, con su bornera de entrada.",
-        prueba: "Con 12 V en la entrada: 5,0 V (±0,1) en la salida, con el tester, ANTES de enchufar el ESP32.",
-        campos: [{ k: "fuente5", n: "salida", u: "V" }] },
-      { id: "a-esp", t: "Los pines hembra y el ESP32 con el programa de prueba", quien: "mauro",
+        d: "Lo escribo yo en el repositorio de la Hilux (carpeta placa/), con su banco de pruebas: lee las tres entradas (y el GPS y el acelerómetro, si los pusiste) y lo manda por Bluetooth y por USB. Te digo cómo cargarlo." },
+      { id: "a-esp", t: "El ESP32 en su placa de borneras, con el programa de prueba", quien: "mauro",
+        d: "Se enchufa, se conecta por USB al cargador o a la computadora y se le carga el programa.",
         prueba: "El LED de la placa parpadea y el teléfono ve la caja por Bluetooth." },
-      { id: "a-entradas", t: "Las tres entradas con optoacoplador", quien: "mauro",
-        d: "Freno, tacómetro y velocidad: cada una con su bornera, su resistencia (según la tensión que mediste), su 1N4148 al revés en paralelo con el LED del PC817, y del otro lado una resistencia de 10 kΩ a 3,3 V.",
-        prueba: "Tocando cada entrada con 12 V (o 5 V, según su señal): cambia en la pantalla de prueba, y sólo ésa." },
-      { id: "a-gps", t: "El GPS", quien: "mauro",
-        d: "Cuatro cables al ESP32 (alimentación, masa y los dos de datos). La antena hacia arriba.",
+      { id: "a-entradas", t: "El módulo de optoacopladores", quien: "mauro",
+        d: "Del lado de salida, tres cables Dupont a la placa de borneras (alimentación, masa y una salida por señal, a los tornillos que diga el programa). Del lado de entrada, los tornillos IN1 (freno), IN2 (tacómetro), IN3 (velocidad) y G (masa de la camioneta).",
+        prueba: "En la mesa, tocando cada entrada con la batería (o 5 V, según su versión): cambia en la pantalla de prueba, y sólo ésa." },
+      { id: "a-gps", t: "El GPS (si lo compraste)", quien: "mauro", opcional: true,
+        d: "Cuatro cables Dupont a la placa de borneras (alimentación, masa y los dos de datos). La antena hacia arriba.",
         prueba: "Cerca de una ventana o afuera: en unos minutos fija y da la hora." },
-      { id: "a-acel", t: "El acelerómetro con su cable blindado", quien: "mauro",
-        d: "En su propia plaquita o pegado a un soporte metálico chico, con el cable blindado (la malla a masa sólo del lado de la caja).",
+      { id: "a-acel", t: "El acelerómetro (si lo compraste)", quien: "mauro", opcional: true,
+        d: "Con el cable blindado, a los tornillos de la placa de borneras (la malla a masa sólo del lado de la caja).",
         prueba: "Quieto marca 1 g; un golpecito con el dedo se ve." },
       { id: "a-cerrar", t: "Todo a la caja", quien: "mauro",
-        d: "Cada cable con un precinto que lo agarre antes de la bornera, rotulado (FRENO, TAC, VEL, +12, MASA). La caja lejos del sol directo.",
+        d: "Cada cable con un precinto que lo agarre antes del tornillo, rotulado (FRENO, TAC, VEL, MASA). La caja lejos del sol directo.",
         prueba: "Se sacude la caja cerrada y la pantalla de prueba sigue igual." },
     ],
   },
@@ -208,12 +207,12 @@ export const SECCIONES = [
     id: "instalar-a", ic: "🚙", n: "5 · Instalar sin alterar nada",
     d: "La regla: la camioneta tiene que andar y marcar EXACTAMENTE igual con la caja puesta, y al terminar las pruebas cada toma se puede sacar y volver a aislar. Se instala con el contacto sacado.",
     pasos: [
-      { id: "i-alim", t: "Alimentación: derivador en el fusible con contacto, y masa", quien: "mauro",
-        prueba: "Contacto puesto: la caja prende. Contacto sacado: se apaga. Lo que alimentaba ese fusible (el encendedor) sigue andando." },
+      { id: "i-alim", t: "Alimentación: el cargador en el encendedor, y la masa", quien: "mauro",
+        prueba: "Contacto puesto: la caja prende. Contacto sacado: se apaga. La otra salida del cargador sigue cargando el teléfono." },
       { id: "i-senales", t: "Freno, tacómetro y velocidad: una ventanita pelada y soldada", quien: "mauro",
         d: "En los cables que confirmaste con el tester, cerca de la ficha donde los encontraste: con el cúter se abre una ventanita de 1 cm en el forro sin cortar hilos, se enrolla la punta pelada del cable nuevo, se suelda y se aísla con la Super 33+ y encima la de tela. Cada cable nuevo, rotulado en la punta que va a la caja.",
         prueba: "Lo que no se negocia: con la caja conectada la aguja de RPM y la de velocidad marcan lo mismo que sin ella, y la luz de freno prende igual. Si algo cambia, se desconecta y lo miramos." },
-      { id: "i-fijar", t: "Fijar la caja, el acelerómetro y la antena", quien: "mauro",
+      { id: "i-fijar", t: "Fijar la caja (y la antena y el acelerómetro, si van)", quien: "mauro",
         prueba: "Los pedales y el volante, de punta a punta, sin tocar un cable. Ningún cable colgando." },
     ],
   },
@@ -271,6 +270,8 @@ export const SECCIONES = [
     id: "comprar-b", etapa: "b", ic: "🛒", n: "9 · Comprar lo del crucero",
     d: "Etapa B: lo que se le agrega a la MISMA placa para manejar el pedal. El cerebro es el ESP32 de la etapa A; lo que se suma son las salidas y lo que las hace seguras.",
     piezas: [
+      { id: "c-fuente", n: "Fuente reductora Pololu D24V10F5 (5 V, 1 A) + diodo TVS 1.5KE24A + diodo 1N5819 + capacitor 1000 µF 35 V + portafusible en línea con fusible de 1 A", para: "para la etapa del crucero la placa pasa a una fuente propia, armada para la camioneta: tiene picos que queman un regulador común (el TVS los recorta) y al dar arranque la batería baja: esta fuente sigue dando 5 V hasta unos 6 V de entrada, y el capacitor cubre el resto. El 1N5819 protege si se conecta al revés.", usd: [14, 20],
+        buscar: "Pololu D24V10F5 · 1.5KE24A TVS · 1N5819", ojo: "No sirven los módulos «mini-360» ni los LM2596 baratos: aguantan poco más de lo que da la batería y un pico los quema." },
       { id: "c-conectores", n: "2 juegos de conectores estancos de 4 vías (tipo Superseal 1.5), macho y hembra, con sus terminales y sellos, y etiquetas para cables", para: "los cables del pedal se cortan y cada punta queda en un conector: unidos entre sí devuelven el original en un minuto, y con la placa en el medio pasan por ella", usd: [8, 15],
         buscar: "Superseal 1.5 4 pin connector kit", ojo: "Los terminales se crimpan: con la pinza de crimpar para ese conector, o soldados con cuidado. Un juego de repuesto." },
       { id: "c-dac", n: "DAC doble MCP4822 + amplificador MCP6002", para: "fabricar VPA y VPA2 limpias, escaladas a los 5 V de la ECU", usd: [6, 8] },
@@ -399,7 +400,7 @@ const compra = (estado, id) => (estado && estado.compras && estado.compras[id]) 
 export function progreso(seccion, estado) {
   const s = typeof seccion === "string" ? SECCIONES.find((x) => x.id === seccion) : seccion;
   if (!s) return { hechos: 0, total: 0, completa: false };
-  const pasos = s.pasos || [], piezas = (s.piezas || []).filter((p) => !p.opcional);
+  const pasos = (s.pasos || []).filter((p) => !p.opcional), piezas = (s.piezas || []).filter((p) => !p.opcional);
   const hechos = pasos.filter((p) => hecho(estado, p.id)).length
     + piezas.filter((p) => compra(estado, p.id) === "llego").length;
   const total = pasos.length + piezas.length;
@@ -419,7 +420,7 @@ export function siguiente(estado) {
   const out = [];
   for (const s of SECCIONES) {
     if (bloqueos(s.id, estado).length) continue;
-    const p = (s.pasos || []).find((x) => !hecho(estado, x.id));
+    const p = (s.pasos || []).find((x) => !x.opcional && !hecho(estado, x.id));
     if (p) { out.push({ seccion: s.id, tipo: "paso", ...p }); continue; }
     const pz = (s.piezas || []).find((x) => !x.opcional && compra(estado, x.id) !== "llego");
     if (pz) out.push({ seccion: s.id, tipo: "pieza", ...pz });

@@ -81,7 +81,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  placa.html — la guía para armar la placa de la Hilux. Sello: placa-7
+  placa.html — la guía para armar la placa de la Hilux. Sello: placa-8
 
   Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de construcción
   en Arduino del componente que se va a fabricar, con diseño y guía paso a
@@ -111,7 +111,7 @@
 
 <div class="contenedor">
   <h1>🔧 La placa de la Hilux</h1>
-  <p class="pl-sub">Primero, lo más básico: una caja que sólo MIDE —freno, RPM y velocidad del tablero, más su propio GPS y acelerómetro— sin tocar el pedal ni cortar un cable. Con lo que aprenda se diseña después el crucero, en la misma placa.</p>
+  <p class="pl-sub">Primero, lo más básico: una caja que sólo MIDE el freno, las RPM y la velocidad del tablero —y, si se quiere, con su propio GPS y acelerómetro—, sin tocar el pedal ni cortar un cable, y sin soldar nada adentro de la caja. Con lo que aprenda se diseña después el crucero, en la misma placa.</p>
 
   <div class="tarj">
     <svg class="pl-diag" viewBox="0 0 360 300" role="img" aria-label="Diagrama de la placa: el pedal va a la ECU por la placa; la caja de sensores lee y manda por Bluetooth al teléfono; en la etapa B el interceptor queda en el medio, con relés que sin corriente dejan pasar el pedal real.">
@@ -215,8 +215,8 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-11";
 import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-5";
-import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-7";
-P.PANEL = "placa-7";
+import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-8";
+P.PANEL = "placa-8";
 P.pintarSello();
 
 let ESTADO = { marcas: {}, notas: {}, medidas: {}, compras: {} };
@@ -335,7 +335,8 @@ function pasoHTML(p) {
     + '<div class="cab"><input type="checkbox" data-paso="' + p.id + '"' + (m ? " checked" : "") + ' aria-label="Hecho">'
     + '<div class="t"><b>' + P.esc(p.t) + "</b> "
     + '<span class="pl-quien ' + p.quien + '">' + (p.quien === "claude" ? "Claude" : "vos") + "</span>"
-    + (p.seguridad ? ' <span class="pl-seg">seguridad</span>' : "") + "</div></div>";
+    + (p.seguridad ? ' <span class="pl-seg">seguridad</span>' : "")
+    + (p.opcional ? ' <span class="pl-quien">opcional</span>' : "") + "</div></div>";
   if (p.d) h += "<p>" + P.esc(p.d) + "</p>";
   if (p.buscar) h += '<p class="pl-busca">🔍 Buscar: ' + p.buscar.map((b) => "<code>" + P.esc(b) + "</code>").join(" · ") + "</p>";
   if (p.prueba) h += '<p class="prueba">✔ Cómo se prueba: ' + P.esc(p.prueba) + "</p>";

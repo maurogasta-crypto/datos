@@ -646,7 +646,10 @@ después proceso de fabricación, accesible desde el panel».
   posible… sin intervención»): encontrar los cables con el tester (cada uno con
   qué buscar en foros y en el diagrama de Toyota), la lista de compras precisa
   (qué buscar en la tienda y en qué fijarse, y dónde se compró y a cuánto),
-  armar en la mesa, instalar sin alterar nada y empezar a aprender. Sólo lee
+  armar en la mesa, instalar sin alterar nada y empezar a aprender. Desde
+  `placa-8` («menor complejidad posible») no se suelda nada adentro de la caja:
+  ESP32 en placa de borneras, módulo de optoacopladores armado y cargador USB
+  en el encendedor; GPS y acelerómetro, opcionales (`opcional`). Sólo lee
   freno, tacómetro y velocidad del tablero, con su GPS y su acelerómetro; el
   pedal y el crucero quedan abajo, «más adelante» (`etapa: "b"`).
 - **El orden no se negocia, y lo garantiza el código:** el crucero (etapa B)
@@ -680,8 +683,8 @@ teléfono.
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `placa.html` | `P.PANEL` | `placa-7` |
-| `placa.js` | `VERSION` | `placa-js-7` |
+| `placa.html` | `P.PANEL` | `placa-8` |
+| `placa.js` | `VERSION` | `placa-js-8` |
 | `sw.js` | `VERSION` | `panel-shell-v47` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el

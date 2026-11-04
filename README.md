@@ -673,8 +673,8 @@ teléfono.
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-5` |
-| `placa.html` | `P.PANEL` | `placa-1` |
-| `placa.js` | `VERSION` | `placa-js-1` |
+| `placa.html` | `P.PANEL` | `placa-2` |
+| `placa.js` | `VERSION` | `placa-js-2` |
 | `sw.js` | `VERSION` | `panel-shell-v47` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el

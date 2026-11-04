@@ -75,7 +75,7 @@
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  placa.html — la guía para armar la placa de la Hilux. Sello: placa-1
+  placa.html — la guía para armar la placa de la Hilux. Sello: placa-2
 
   Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de construcción
   en Arduino del componente que se va a fabricar, con diseño y guía paso a
@@ -105,7 +105,7 @@
 
 <div class="contenedor">
   <h1>🔧 La placa de la Hilux</h1>
-  <p class="pl-sub">Una caja con sensores propios que le habla al teléfono, y después, en una placa aparte, el crucero. Se arma en dos etapas, y la primera sirve sola.</p>
+  <p class="pl-sub">Una placa con sensores propios que le habla al teléfono, y después, en la misma placa, el crucero. Se arma en dos etapas, y la primera sirve sola.</p>
 
   <div class="tarj">
     <svg class="pl-diag" viewBox="0 0 360 300" role="img" aria-label="Diagrama de la placa: el pedal va a la ECU por un arnés en Y; la caja de sensores lee y manda por Bluetooth al teléfono; en la etapa B el interceptor queda en el medio, con relés que sin corriente dejan pasar el pedal real.">
@@ -117,8 +117,8 @@
       <text x="311" y="38" text-anchor="middle">ECU</text>
       <text x="311" y="52" text-anchor="middle" class="chico">1KD-FTV</text>
       <rect class="caja-b" x="116" y="14" width="128" height="52" rx="6"/>
-      <text x="180" y="32" text-anchor="middle">Interceptor (B)</text>
-      <text x="180" y="45" text-anchor="middle" class="chico">Nano · DAC · 2 relés</text>
+      <text x="180" y="32" text-anchor="middle">Salida al pedal (B)</text>
+      <text x="180" y="45" text-anchor="middle" class="chico">DAC · 2 relés · watchdog</text>
       <text x="180" y="57" text-anchor="middle" class="chico">sin corriente: pedal directo</text>
       <path class="lin" d="M90 40 H116"/>
       <path class="lin" d="M244 40 H270"/>
@@ -127,12 +127,12 @@
       <text x="180" y="105" text-anchor="middle">Freno · embrague</text>
       <text x="180" y="117" text-anchor="middle" class="chico">+ watchdog</text>
       <path class="corte" d="M180 92 V66"/>
-      <text x="186" y="82" class="chico">corta los relés</text>
+      <text x="186" y="82" class="chico">cortan los relés</text>
       <!-- la caja de sensores -->
       <rect class="caja-a" x="120" y="170" width="120" height="52" rx="6"/>
-      <text x="180" y="188" text-anchor="middle">Caja de sensores (A)</text>
-      <text x="180" y="201" text-anchor="middle" class="chico">ESP32 · Bluetooth</text>
-      <text x="180" y="213" text-anchor="middle" class="chico">sólo lee</text>
+      <text x="180" y="188" text-anchor="middle">Cerebro: ESP32</text>
+      <text x="180" y="201" text-anchor="middle" class="chico">sensores (A) · pedal (B)</text>
+      <text x="180" y="213" text-anchor="middle" class="chico">Bluetooth al teléfono</text>
       <path class="lin-a" d="M49 60 V196 H120"/>
       <text x="54" y="150" class="chico">lee el pedal</text>
       <text x="54" y="161" class="chico">(100 kΩ)</text>
@@ -151,8 +151,8 @@
       <path class="lin-a" d="M240 196 H270"/>
       <text x="241" y="188" class="chico">BT</text>
       <path class="lin-b" d="M200 170 V66"/>
-      <text x="206" y="140" class="chico">ajustes de</text>
-      <text x="206" y="151" class="chico">confort (B)</text>
+      <text x="206" y="140" class="chico">la misma</text>
+      <text x="206" y="151" class="chico">placa (B)</text>
     </svg>
     <div class="pl-ley">
       <span><i style="border-color:var(--ok);border-top-style:dashed"></i>etapa A: sólo lee</span>
@@ -186,6 +186,8 @@
     <ul class="pl-reglas">
       <li><b>Sin corriente, el pedal va directo a la ECU.</b> Los relés en reposo son el camino de fábrica.</li>
       <li><b>Freno, embrague y watchdog cortan por cable</b>, no porque el programa lo decida.</li>
+      <li><b>El programa sólo puede SOLTAR, nunca sostener solo:</b> si lo que fabrica no es lo que tiene que salir, deja de alimentar al watchdog y los relés caen.</li>
+      <li><b>Programa nuevo, pruebas de seguridad de nuevo</b>, aunque el cambio sea de un sensor.</li>
       <li><b>El pie siempre gana:</b> la placa nunca entrega menos de lo que pide el pedal.</li>
       <li><b>El teléfono no está en el lazo:</b> le puede ajustar la suavidad al crucero, nunca los límites.</li>
       <li><b>Se arma sin cortar un cable</b> de la camioneta: se saca y queda como de fábrica.</li>
@@ -198,8 +200,8 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-11";
 import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-5";
-import { SECCIONES, PASOS, PIEZAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-1";
-P.PANEL = "placa-1";
+import { SECCIONES, PASOS, PIEZAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-2";
+P.PANEL = "placa-2";
 P.pintarSello();
 
 let ESTADO = { marcas: {}, notas: {}, medidas: {}, compras: {} };

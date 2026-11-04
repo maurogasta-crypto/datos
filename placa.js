@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════
-   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-1
+   placa.js — la guía para armar la placa de la Hilux. Sello: placa-js-2
 
    Pedido de Mauro, 4-nov-2026: «una pantalla dedicada para el proceso de
    construcción en Arduino del componente que se va a fabricar, con diseño y
@@ -20,13 +20,23 @@
      placa.medidas.<k>    = "0,82"           una medición, tal como se leyó
      placa.compras.<pieza>= "pedido"|"llego" (sin valor = falta)
 
+   UN SOLO CEREBRO (placa-js-2, 4-nov-2026). La primera versión ponía un
+   ESP32 para los sensores y un Nano aparte para el pedal. Mauro: «¿por qué
+   no puede ser uno solo que gestione todo, que en una primera instancia sirva
+   para registrar las mediciones y en una segunda le demos la activación del
+   acelerador, con un sistema de seguridad que cuando pierde active el
+   funcionamiento normal por el relé?». Puede, y quedó así: la seguridad no
+   depende de cuántos cerebros hay sino de que NINGUNO pueda sostener los
+   relés solo. Lo que hace falta para eso son los pasos `b-autocontrol` y
+   `b-nucleo`, y repetir las pruebas de seguridad con cada programa nuevo.
+
    Y lo que no se negocia, para quien edite esto: los pasos que hacen segura a
    la placa —el watchdog, el corte por freno y embrague cableado y el paso
    directo con los relés sueltos— van ANTES de que la placa mande una señal a
    la ECU, y `siguiente()` no deja saltarlos. El banco lo comprueba.
    ═══════════════════════════════════════════════════════════════════ */
 
-export const VERSION = "placa-js-1";
+export const VERSION = "placa-js-2";
 
 /* Las dos etapas, en el orden en que se hacen. La A no toca el pedal —sólo
    lee— y sirve sola (CRUCERO.md § 9.1); la B es el crucero. */
@@ -61,7 +71,7 @@ export const SECCIONES = [
     id: "comprar-a", ic: "🛒", n: "2 · Comprar lo de la caja de sensores",
     d: "Etapa A: la placa que sólo LEE. No toca el pedal, sirve sola y deja el hardware probado antes de que nada mande sobre el acelerador.",
     piezas: [
-      { id: "c-esp32", n: "2 × ESP32 DevKit (uno de repuesto)", para: "el cerebro de los sensores, con Bluetooth adentro; se programa con el mismo Arduino IDE", usd: [8, 14] },
+      { id: "c-esp32", n: "2 × ESP32 DevKit (uno de repuesto)", para: "el cerebro de toda la placa —sensores y, en la etapa B, el pedal—, con Bluetooth adentro; se programa con el mismo Arduino IDE", usd: [8, 14] },
       { id: "c-adxl", n: "2 × acelerómetro ADXL345 (módulo SPI)", para: "vibración a 1.600 por segundo; el del teléfono llega a 200", usd: [4, 8] },
       { id: "c-opto", n: "6 × optoacoplador PC817 y resistencias", para: "contacto, freno, embrague, velocidad y RPM, aislados de la camioneta", usd: [2, 4] },
       { id: "c-fuente", n: "Fuente automotriz 12→5 V (p. ej. Pololu) + diodo TVS + diodo + portafusible", para: "la camioneta tiene picos que queman un regulador común", usd: [12, 18] },
@@ -128,12 +138,11 @@ export const SECCIONES = [
   },
   {
     id: "comprar-b", ic: "🛒", n: "6 · Comprar lo del crucero",
-    d: "Etapa B: el interceptor. Va en una placa aparte, con su propio Arduino: si el Bluetooth o los sensores se cuelgan, el pedal no se entera.",
+    d: "Etapa B: lo que se le agrega a la MISMA placa para manejar el pedal. El cerebro es el ESP32 de la etapa A; lo que se suma son las salidas y lo que las hace seguras.",
     piezas: [
-      { id: "c-nano", n: "2 × Arduino Nano (uno de repuesto)", para: "el que manda sobre el pedal, sin Bluetooth y sin nada más que eso", usd: [10, 15] },
       { id: "c-dac", n: "DAC doble MCP4822 + amplificador MCP6002", para: "fabricar VPA y VPA2 limpias, escaladas a los 5 V de la ECU", usd: [6, 8] },
       { id: "c-reles", n: "2 × relé de señal DPDT (Omron G5V-2 o similar) + transistores y diodos", para: "SIN corriente conectan el pedal real directo a la ECU", usd: [6, 10] },
-      { id: "c-wdt", n: "Supervisor con watchdog (TPS3823) o monoestable 74HC123", para: "si el programa se cuelga, los relés caen solos", usd: [2, 4] },
+      { id: "c-wdt", n: "Supervisor con watchdog (TPS3823) o monoestable 74HC123", para: "si el programa se cuelga, o se da cuenta de que algo no cierra, los relés caen solos", usd: [2, 4] },
       { id: "c-micro", n: "Microinterruptor para el embrague (si no hay uno que sirva)", para: "", usd: [3, 5], opcional: true },
       { id: "c-pcb", n: "Placa impresa, 5 unidades, con envío", para: "con el diseño del paso anterior", usd: [15, 30] },
       { id: "c-tablero", n: "LED, zumbador e interruptor general en el tablero", para: "ver y oír cuándo está activo y cuándo cortó; y apagarlo todo con un dedo", usd: [5, 8] },
@@ -141,14 +150,19 @@ export const SECCIONES = [
   },
   {
     id: "armar-b", ic: "🛡️", n: "7 · Armar el interceptor",
-    d: "Primero lo que lo hace seguro, después lo que lo hace andar.",
+    d: "Primero lo que lo hace seguro, después lo que lo hace andar. Y cada vez que se carga un programa nuevo en la placa —también uno que sólo cambia los sensores— se repiten los pasos marcados «seguridad» de esta sección y el paso directo: diez minutos, con la camioneta parada.",
     pasos: [
-      { id: "b-programa", t: "El programa del interceptor", quien: "claude",
+      { id: "b-programa", t: "El programa del pedal, en el mismo ESP32", quien: "claude",
         d: "Con su banco de pruebas: el pie siempre gana, nunca entrega menos de lo que pide el pedal, y los límites viven en el programa, no en un mensaje." },
+      { id: "b-nucleo", t: "El pedal tiene su núcleo y nadie lo frena", quien: "claude", seguridad: true,
+        d: "El ESP32 tiene dos núcleos: el lazo del pedal corre solo en uno, con prioridad, y el Bluetooth y los sensores en el otro. Un Bluetooth trabado no le roba tiempo al pedal." },
       { id: "b-reposo", t: "Relés sin corriente: el pedal va directo", quien: "mauro", seguridad: true,
         prueba: "Placa SIN alimentar, tester en continuidad: pedal↔ECU en VPA y en VPA2 a través de los dos relés." },
       { id: "b-wdt", t: "El watchdog suelta los relés", quien: "mauro", seguridad: true,
-        prueba: "Placa alimentada y relés encendidos: se desenchufa el Nano (o se lo frena) y los dos relés caen, con su clic." },
+        prueba: "Placa alimentada y relés encendidos: se le corta la alimentación al ESP32 (o se lo frena con el botón de reset apretado) y los dos relés caen, con su clic." },
+      { id: "b-autocontrol", t: "Si lo que sale no es lo que tiene que salir, suelta", quien: "mauro", seguridad: true,
+        d: "El watchdog cubre al programa colgado; esto cubre al programa vivo pero equivocado. Cada vuelta, la placa LEE DE VUELTA las dos señales que fabrica y las compara con lo que mandó y con la relación VPA/VPA2 medida; sólo si todo cierra alimenta al watchdog. Si algo no cierra, deja de alimentarlo y los relés caen.",
+        prueba: "Con la salida conectada a una resistencia (como en «salida al vacío»): se desconecta un cable de la lectura de vuelta, y los relés caen en menos de medio segundo." },
       { id: "b-cortes", t: "Freno y embrague cortan por cable, no por programa", quien: "mauro", seguridad: true,
         d: "La bobina de los relés pasa por el contacto del freno (ST1− o el relé de la luz de freno) y por el del embrague.",
         prueba: "Relés encendidos: pisar el freno → caen; tocar el embrague → caen; con el programa diciendo lo contrario." },

@@ -43,9 +43,10 @@ prueba("la etapa B no se abre con la A armada si faltan las medidas", () => {
   assert.ok(!G.siguiente(e).some((x) => x.seccion === "comprar-b"));
 });
 
-prueba("los pasos de seguridad van antes de que la placa toque la ECU", () => {
+prueba("los pasos de seguridad van antes de que la placa toque la ECU, y hay un solo cerebro", () => {
+  assert.ok(!G.PIEZAS.some((p) => p.id === "c-nano"), "volvió el segundo cerebro");
   const orden = G.PASOS.map((p) => p.id);
-  for (const s of ["b-reposo", "b-wdt", "b-cortes"]) {
+  for (const s of ["b-nucleo", "b-reposo", "b-wdt", "b-autocontrol", "b-cortes"]) {
     assert.ok(orden.includes(s), "falta " + s);
     assert.ok(orden.indexOf(s) < orden.indexOf("p-directo"), s + " después del paso directo");
     assert.ok(G.PASOS.find((p) => p.id === s).seguridad, s + " sin marca de seguridad");
@@ -97,7 +98,7 @@ prueba("los dos archivos parsean como módulo (también el script del .html)", (
 prueba("la página pide los sellos que dicen los archivos", () => {
   const html = fs.readFileSync(path.join(raiz, "placa.html"), "utf8");
   assert.ok(html.includes("./placa.js?v=" + G.VERSION), "el ?v= de placa.js no es " + G.VERSION);
-  assert.ok(html.includes('P.PANEL = "placa-1"') && html.includes("Sello: placa-1"));
+  assert.ok(html.includes('P.PANEL = "placa-2"') && html.includes("Sello: placa-2"));
 });
 
 prueba("la página escribe sólo adentro de placa., campo por campo", () => {

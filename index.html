@@ -563,7 +563,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-6";
 
-P.PANEL = "panel-48";
+P.PANEL = "panel-49";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -778,9 +778,12 @@ async function pintarPersonas() {
        ofrece, que es de Mauro. */
     /* panel-41 (reglas v7): de un PROYECTO se elige además si lo EDITA. La
        casilla ✎ escribe `edita` de la ficha; sin «ve», no edita. */
+    /* panel-49 (7-nov-2026, Mauro: «darle el permiso de edición por defecto»):
+       sin `edita` en la ficha (alguien nuevo), la casilla viene marcada; y al
+       tildar un proyecto, se tilda su ✎ (abajo, en el enganche). */
     const edicion = (uid, edita) => (pr) =>
       '<label class="mini" style="display:inline-flex;gap:.3rem;align-items:center"><input type="checkbox" data-edita="'
-      + P.esc(uid) + '" value="' + P.esc(pr.id) + '"' + ((edita || []).includes(pr.id) ? " checked" : "") + "> ✎ puede editar</label>";
+      + P.esc(uid) + '" value="' + P.esc(pr.id) + '"' + (!Array.isArray(edita) || edita.includes(pr.id) ? " checked" : "") + "> ✎ puede editar</label>";
     const casillas = (uid, marcados, edita) => {
       const apps = PROYECTOS.filter((pr) => pr.clase !== "obra" && pr.id !== "panel"), obras = PROYECTOS.filter((pr) => pr.clase === "obra");
       return '<p class="gris" style="margin:.4rem 0 .1rem;width:100%">Aplicaciones</p>' + apps.map(casilla(uid, marcados)).join(" ")
@@ -799,12 +802,16 @@ async function pintarPersonas() {
     });
     pe.forEach((d) => {
       const x = d.data();
-      h += '<div class="tarj"><div class="k">' + (x.activo ? "Entra" : "Pausado") + "</div><p><b>" + P.esc(x.nombre || d.id)
-        + "</b> · " + P.esc(x.mail || "") + "</p>"
+      /* panel-49 (Mauro: «agregá la opción para ponerle el nombre»): el nombre
+         es el que ven los demás en «Participan»; se guarda con el botón. */
+      h += '<div class="tarj"><div class="k">' + (x.activo ? "Entra" : "Pausado") + "</div>"
+        + '<label class="gris" style="display:block;margin:.3rem 0 .1rem">Nombre</label><input data-nombre-persona="' + P.esc(d.id)
+        + '" maxlength="80" value="' + P.esc(x.nombre || "") + '" placeholder="Cómo se llama">'
+        + '<p class="gris" style="margin:.2rem 0 .4rem">' + P.esc(x.mail || "") + "</p>"
         + '<div class="fila-btn" style="flex-wrap:wrap">' + casillas(d.id, x.proyectos, x.edita) + "</div>"
         + '<div class="fila-btn"><button class="btn" data-pausar="' + P.esc(d.id) + '" data-activo="' + (x.activo ? "1" : "") + '">'
         + (x.activo ? "Pausar" : "Volver a dejarlo entrar") + '</button><button class="btn p" data-guardar-persona="' + P.esc(d.id)
-        + '">Guardar proyectos</button></div></div>';
+        + '">Guardar</button></div></div>';
     });
     const nombres = []; so.forEach((d) => { const n = String(d.data().nombre || ""); if (n) nombres.push(n); });
     avisarPidenAcceso(nombres.length || so.size || 0, nombres);
@@ -830,9 +837,17 @@ async function pintarPersonas() {
     catch (e) { P.aviso(P.explicar(e), "error"); }
   });
   caja.querySelectorAll("[data-guardar-persona]").forEach((b) => b.onclick = async () => {
-    try { await setDoc(doc(db, "personas", b.dataset.guardarPersona), { proyectos: marcados(b.dataset.guardarPersona), edita: editables(b.dataset.guardarPersona) }, { merge: true });
+    const uid = b.dataset.guardarPersona, cajaNombre = caja.querySelector(`[data-nombre-persona="${uid}"]`);
+    const nombre = cajaNombre ? cajaNombre.value.trim().slice(0, 80) : "";
+    if (cajaNombre && !nombre) return P.aviso("Poné un nombre: es el que ven los demás.", "error");
+    try { await setDoc(doc(db, "personas", uid), { ...(nombre ? { nombre } : {}), proyectos: marcados(uid), edita: editables(uid) }, { merge: true });
       P.aviso("Guardado."); } catch (e) { P.aviso(P.explicar(e), "error"); }
   });
+  // Tildar un proyecto tilda su ✎: la edición viene por defecto (se puede sacar).
+  caja.querySelectorAll("[data-proy]").forEach((i) => i.addEventListener("change", () => {
+    const e = caja.querySelector(`[data-edita="${i.dataset.proy}"][value="${i.value}"]`);
+    if (e && i.checked) e.checked = true;
+  }));
   caja.querySelectorAll("[data-pausar]").forEach((b) => b.onclick = async () => {
     try { await setDoc(doc(db, "personas", b.dataset.pausar), { activo: !b.dataset.activo }, { merge: true }); pintarPersonas(); }
     catch (e) { P.aviso(P.explicar(e), "error"); }

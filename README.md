@@ -606,6 +606,12 @@ panel de acceso».
   regla de pedidos no cambió) y despierta a Claude, que contesta como
   comentario, abajo de la pregunta (TRASPASO § 4 bis, e). Sin sesión no se ve
   nada; con sesión y sin invitación, sólo «pedir acceso».
+- **En Puerta, cada ficha tiene su NOMBRE editable y la edición viene por
+  defecto** (`panel-49`, 7-nov-2026): el nombre es el que ven los demás en
+  «Participan» y se guarda con «Guardar»; «✎ puede editar» viene marcado para
+  alguien nuevo y se tilda solo al tildar un proyecto (se puede sacar). Vale
+  sólo para proyectos de inmuebles: de una aplicación el panel no tiene nada
+  que editar; su edición se da en los usuarios de cada sitio.
 - **Todo lo cargado se corrige** (`obra-7`): «✎ Editar» en cada cosa abre la
   misma ficha con lo que tenía; guardar la reemplaza entera (lo que se vació se
   borra) y conserva cuándo se creó, la foto, el respaldo y si estaba pagada. La
@@ -713,7 +719,7 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-48` |
+| `index.html` | `P.PANEL` | `panel-49` |
 | `invitado.html` | `P.PANEL` | `invitado-7` |
 | `glosario.js` | `VERSION` | `glosario-1` |
 | `obra.html` | `P.PANEL` | `obra-11` |
@@ -724,7 +730,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v51` |
+| `sw.js` | `VERSION` | `panel-shell-v52` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

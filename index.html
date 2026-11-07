@@ -563,7 +563,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-6";
 
-P.PANEL = "panel-47";
+P.PANEL = "panel-48";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -2842,9 +2842,12 @@ function crudoDeGithub(url) {
 }
 
 /* La consola de Firebase, parada en las reglas de esa base. Es la otra mitad
-   del viaje: sin esto hay que acordarse de cuál de los cuatro proyectos era. */
+   del viaje: sin esto hay que acordarse de cuál de los cuatro proyectos era.
+   panel-48 (7-nov-2026, Mauro: «me ahorra algunos clics»): la dirección larga,
+   con la cuenta y la base por defecto, que abre directo el editor de reglas;
+   la corta pasaba por la portada de Firestore. Todos los botones salen de acá. */
 const consolaDeReglas = (base) =>
-  "https://console.firebase.google.com/project/" + encodeURIComponent(base) + "/firestore/rules";
+  "https://console.firebase.google.com/u/0/project/" + encodeURIComponent(base) + "/firestore/databases/-default-/security/rules";
 
 /* ═══ LAS REGLAS DE UN SITIO, DE PUNTA A PUNTA ═══════════════════════════
    Pedido de Mauro, 2026-09-14, con sus palabras: «entro ahí, toco el botón

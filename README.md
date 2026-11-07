@@ -701,7 +701,7 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-47` |
+| `index.html` | `P.PANEL` | `panel-48` |
 | `invitado.html` | `P.PANEL` | `invitado-6` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
@@ -711,7 +711,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v49` |
+| `sw.js` | `VERSION` | `panel-shell-v50` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

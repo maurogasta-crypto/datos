@@ -147,7 +147,14 @@ import { GLOSARIO } from "./glosario.js?v=glosario-1";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-7";
+P.PANEL = "invitado-8";
+let VISTA = false;
+document.addEventListener("click", (e) => {
+  if (!VISTA) return;
+  if (e.target.closest("[data-mandar],[data-mandar-preg],[data-comentar],[data-ver],[data-captura]")) {
+    e.preventDefault(); e.stopPropagation(); P.aviso("Es una vista previa: no se manda ni se abre nada.");
+  }
+}, true);
 P.pintarSello();
 
 // El cupo: 12 pedidos resueltos por día para todos los invitados, entre los
@@ -172,6 +179,27 @@ async function arrancar() {
   yo = await P.quienEntra();
   if (!yo) { $("puerta").classList.remove("hide"); return; }
   $("btnSalir").classList.remove("hide");
+  /* invitado-8 (7-nov-2026, Mauro: «dame el link para ver cómo sería el acceso
+     que tiene como invitado Mariano o Florencia»): ?como=<uid> o
+     ?como=mail:<mail> muestra la página como la ve esa persona. Sólo anda
+     con la sesión de Mauro: nadie más puede leer la ficha ni la invitación
+     de otro (las reglas), así que con otra cuenta el parámetro no hace nada.
+     En la vista no se manda nada ni se abre una clave. */
+  const como = new URLSearchParams(location.search).get("como");
+  if (como && como !== yo.uid) {
+    const vista = como.startsWith("mail:")
+      ? await getDoc(doc(db, "invitaciones", como.slice(5).trim().toLowerCase())).then((d) => d.exists()
+          ? { nombre: d.data().nombre || como.slice(5), proyectos: d.data().proyectos || [], claves: false, activo: true } : null).catch(() => null)
+      : await getDoc(doc(db, "personas", como)).then((d) => d.exists() ? d.data() : null).catch(() => null);
+    if (vista) {
+      VISTA = true; persona = vista;
+      $("app").classList.remove("hide");
+      $("hola").textContent = "👁 Vista previa: así ve el panel " + (vista.nombre || "esta persona")
+        + (vista.activo === false ? " (pausada: hoy no entra)" : "") + ". Nada de lo que toques se manda.";
+      await leer();
+      return;
+    }
+  }
   const f = await getDoc(doc(db, "personas", yo.uid)).catch(() => null);
   persona = f && f.exists() ? f.data() : null;
   if (!persona) {
@@ -419,6 +447,7 @@ function htmlPendiente(x) {
 /* La bóveda de SUS proyectos: sólo ver. El nombre de cada clave sale de la
    ficha con P.idBoveda, la misma función del panel. */
 function htmlBoveda(pid) {
+  if (persona && persona.claves === false) return "";
   const accesos = FICHAS.filter((f) => f.proyecto === pid)
     .flatMap((f) => (Array.isArray(f.accesos) ? f.accesos : []).filter((a) => a && a.nombre && !a.publica).map((a) => ({ f, a })));
   if (!accesos.length) return "";

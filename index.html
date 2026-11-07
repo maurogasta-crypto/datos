@@ -563,7 +563,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-6";
 
-P.PANEL = "panel-49";
+P.PANEL = "panel-50";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -810,7 +810,8 @@ async function pintarPersonas() {
         + '<p class="gris" style="margin:.2rem 0 .4rem">' + P.esc(x.mail || "") + "</p>"
         + '<div class="fila-btn" style="flex-wrap:wrap">' + casillas(d.id, x.proyectos, x.edita) + "</div>"
         + '<div class="fila-btn"><button class="btn" data-pausar="' + P.esc(d.id) + '" data-activo="' + (x.activo ? "1" : "") + '">'
-        + (x.activo ? "Pausar" : "Volver a dejarlo entrar") + '</button><button class="btn p" data-guardar-persona="' + P.esc(d.id)
+        + (x.activo ? "Pausar" : "Volver a dejarlo entrar") + '</button><a class="btn" style="text-decoration:none" target="_blank" rel="noopener" href="./invitado.html?como='
+        + encodeURIComponent(d.id) + '">👁 Ver como</a><button class="btn p" data-guardar-persona="' + P.esc(d.id)
         + '">Guardar</button></div></div>';
     });
     const nombres = []; so.forEach((d) => { const n = String(d.data().nombre || ""); if (n) nombres.push(n); });

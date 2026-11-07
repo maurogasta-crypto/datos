@@ -606,6 +606,12 @@ panel de acceso».
   regla de pedidos no cambió) y despierta a Claude, que contesta como
   comentario, abajo de la pregunta (TRASPASO § 4 bis, e). Sin sesión no se ve
   nada; con sesión y sin invitación, sólo «pedir acceso».
+- **«👁 Ver como» abre la página del invitado tal como la ve esa persona**
+  (`invitado-8`, `panel-50`, 7-nov-2026): `invitado.html?como=<uid>` (desde
+  Puerta) o `?como=mail:<mail>` (alguien invitado que todavía no se registró).
+  Anda SÓLO con la sesión de Mauro, porque nadie más puede leer la ficha o la
+  invitación de otro; con otra cuenta el parámetro no hace nada (probado en el
+  emulador). En la vista no se manda nada ni se abre una clave.
 - **En Puerta, cada ficha tiene su NOMBRE editable y la edición viene por
   defecto** (`panel-49`, 7-nov-2026): el nombre es el que ven los demás en
   «Participan» y se guarda con «Guardar»; «✎ puede editar» viene marcado para
@@ -719,8 +725,8 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-49` |
-| `invitado.html` | `P.PANEL` | `invitado-7` |
+| `index.html` | `P.PANEL` | `panel-50` |
+| `invitado.html` | `P.PANEL` | `invitado-8` |
 | `glosario.js` | `VERSION` | `glosario-1` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
@@ -730,7 +736,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v52` |
+| `sw.js` | `VERSION` | `panel-shell-v53` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

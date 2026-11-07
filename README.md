@@ -620,7 +620,8 @@ panel de acceso».
   (Mauro: «menos resaltado… un poco más pequeño»). `fuentes` dice de qué
   archivos y colecciones sale cada cosa: el mapa se arma leyendo el código del
   sitio, no de memoria. Con `mapa`, reemplaza al esquema de `nodos`. Hoy lo
-  tiene remateTaller (8 áreas, 32 partes); los demás, cuando se arme el suyo.
+  tienen remateTaller (8 áreas, 32 partes) y BandoMaps (8 áreas, 31 partes, de
+  tocatoca); los demás, cuando se arme el suyo.
   Banco: `node pruebas/esquema.mjs` (16 casos).
 - **Una pestaña por proyecto, y el esquema como un dibujo de globos que se
   amplía** (`invitado-9`, `esquema.js`, 7-nov-2026, Mauro: «cuando son varios

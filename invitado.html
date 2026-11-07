@@ -33,6 +33,9 @@
   details.nivel[open] > summary::before { content: "▾ "; }
   details.sub { margin: .45rem 0 .2rem .4rem; }
   details.sub > summary { cursor: pointer; }
+  .explica { line-height: 1.5; margin: .4rem 0; }
+  details.tec { margin: .3rem 0 .4rem; font-size: .92rem; }
+  details.tec > summary { cursor: pointer; color: var(--gris); }
   .parte-que { font-size: .88rem; color: var(--gris); }
   .chip-e { font-family: var(--mono); font-size: .7rem; border: 1px solid var(--linea); border-radius: 999px; padding: 0 .45rem; margin-left: .3rem; color: var(--gris); white-space: nowrap; }
   .spam { border: 1px solid #c9a227; border-radius: var(--r-s); padding: .6rem .7rem; font-size: .9rem; margin: .6rem 0; }
@@ -140,10 +143,11 @@
 
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-12";
+import { GLOSARIO } from "./glosario.js?v=glosario-1";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-6";
+P.PANEL = "invitado-7";
 P.pintarSello();
 
 // El cupo: 12 pedidos resueltos por día para todos los invitados, entre los
@@ -297,17 +301,31 @@ function pintar() {
     const linea = Array.isArray(es.linea) ? es.linea : [];
     const resumen1 = String(e.resumen || (pr.sitio && pr.sitio.resumen) || "").split("\n")[0];
     const enPasos = new Set((e.pasos || []).flatMap((p) => p.ids || []));
-    const sueltos = pend.filter((x) => !enPasos.has(x.id));
+    const esPreg = (x) => String(x.titulo || "").startsWith("❓");
+    const misPreg = pend.filter(esPreg);
+    const sueltos = pend.filter((x) => !enPasos.has(x.id) && !esPreg(x));
     return `<section class="inv-proy">
       <h2>${P.esc(pr.nombre || pr.id)}</h2>
       ${linea.length ? `<div class="flujo">${linea.map((t) => `<span class="paso">${P.esc(t)}</span>`).join('<span class="flecha">→</span>')}</div>` : ""}
       ${resumen1 ? `<p>${P.esc(resumen1)}</p>` : ""}
       ${(pa.gente || []).length ? `<p class="gente">Participan: ${pa.gente.map((g) => P.esc(g.nombre) + " (" + P.esc(g.rol) + ")").join(" · ")}</p>` : ""}
 
-      ${(es.partes || []).length ? `<details class="nivel"><summary>La estructura, por partes</summary>
+      ${es.intro ? `<details class="nivel"><summary>Cómo funciona, para empezar</summary><p class="explica">${P.esc(es.intro)}</p></details>` : ""}
+
+      ${(es.partes || []).length ? `<details class="nivel"><summary>Las partes, una por una</summary>
+        <p class="gris">Tocá una parte para ver qué hace; adentro, «Más técnico» para el detalle.</p>
         ${es.partes.map((t) => `<details class="sub"><summary>${P.esc(t.nombre)} <span class="parte-que">— ${P.esc(t.que || "")}</span></summary>
-          ${(t.detalle || []).length ? "<ul>" + t.detalle.map((d) => `<li>${P.esc(d)}</li>`).join("") + "</ul>" : ""}</details>`).join("")}
+          ${t.explica ? `<p class="explica">${P.esc(t.explica)}</p>` : ""}
+          ${(t.detalle || []).length ? `<details class="tec"><summary>Más técnico</summary><ul>${t.detalle.map((d) => `<li>${P.esc(d)}</li>`).join("")}</ul></details>` : ""}
+          <button class="mini" data-preguntar-sobre="${P.esc(pr.id)}" data-parte="${P.esc(t.nombre)}">❓ Preguntar sobre esto</button></details>`).join("")}
       </details>` : ""}
+
+      <details class="nivel" data-capa-preg="${P.esc(pr.id)}"><summary>❓ Preguntar${misPreg.length ? ` (${misPreg.length})` : ""}</summary>
+        <p class="gris">Cualquier duda, por básica que sea: qué es algo, por qué se hace así, cómo se usa. Contesta Claude acá mismo, abajo de tu pregunta.</p>
+        <textarea data-preg="${P.esc(pr.id)}" rows="3" maxlength="1500" placeholder="¿Qué es la base de datos y qué guarda?"></textarea>
+        <div class="fila-btn"><button class="btn p" data-mandar-preg="${P.esc(pr.id)}">Preguntar</button></div>
+        ${misPreg.map(htmlPregunta).join("")}
+      </details>
 
       <details class="nivel"><summary>Líneas de trabajo (${(e.pasos || []).length || pend.filter(abierto).length})</summary>
         ${(e.pasos || []).map((p) => {
@@ -338,8 +356,48 @@ function pintar() {
 
       ${htmlBoveda(pr.id)}
     </section>`;
-  }).join("");
+  }).join("") + htmlGlosario();
   enganchar();
+}
+
+/* invitado-7: las palabras técnicas, de lo simple a lo técnico (glosario.js). */
+function htmlGlosario() {
+  return `<section class="inv-proy"><details class="nivel"><summary>📖 Palabras técnicas, explicadas</summary>
+    ${GLOSARIO.map((g) => `<details class="sub"><summary>${P.esc(g.palabra)}</summary><p class="explica">${P.esc(g.simple)}</p>
+      <details class="tec"><summary>Un poco más</summary><p>${P.esc(g.mas)}</p></details></details>`).join("")}
+  </details></section>`;
+}
+
+/* Una pregunta y lo que contestaron: la respuesta llega como comentario. */
+function htmlPregunta(x) {
+  const resp = (x.comentarios || []);
+  return `<div class="pend">
+    <p class="cola-de">${P.esc(x.porQue || String(x.titulo || "").replace(/^❓\s*/, ""))}</p>
+    ${resp.length ? resp.map((c) => `<p class="inv-com">${P.esc(c.nombre || "")} (${P.esc(c.fecha || "")}): ${P.esc(c.texto || "")}</p>`).join("")
+      : '<p class="gris">Esperando respuesta.</p>'}
+    <div class="fila-btn"><input data-com="${P.esc(x.id)}" maxlength="600" placeholder="Repreguntar…"><button class="mini" data-comentar="${P.esc(x.id)}">Mandar</button></div>
+  </div>`;
+}
+
+/* invitado-7: una pregunta es un pedido que empieza con «❓» (la regla no cambia). */
+async function preguntar(pid, boton) {
+  const caja = document.querySelector(`[data-preg="${pid}"]`);
+  const t = caja.value.trim();
+  if (!t) return P.aviso("Escribí tu pregunta.", "error");
+  boton.disabled = true;
+  try {
+    const clave = proximaClave(pid), id = pid + ":" + clave, quien = persona.nombre || yo.email || "";
+    await setDoc(doc(db, "pendientes", id), {
+      proyecto: pid, autor: yo.uid, autorNombre: quien, tipo: "pedido", estado: "abierto", quien: "claude",
+      prioridad: "media", titulo: ("❓ " + t.replace(/\s+/g, " ")).slice(0, 120), porQue: t.slice(0, 2000),
+      origen: "panel:invitado/" + yo.uid + "/pregunta", clave, sitios: [pid], creadoEn: P.hoy(),
+      historia: [{ fecha: P.hoy(), por: "invitado", texto: quien + " preguntó desde el panel." }],
+    });
+    avisarClaude(id);
+    P.aviso("Pregunta mandada. La respuesta aparece abajo de ella.");
+    await leer();
+    const capa = document.querySelector(`[data-capa-preg="${pid}"]`); if (capa) capa.open = true;
+  } catch (e) { P.aviso("No se pudo mandar: " + P.explicar(e), "error"); boton.disabled = false; }
 }
 
 function htmlPendiente(x) {
@@ -422,6 +480,13 @@ async function avisarClaude(id) {
 }
 
 function enganchar() {
+  document.querySelectorAll("[data-mandar-preg]").forEach((b) => b.onclick = () => preguntar(b.dataset.mandarPreg, b));
+  document.querySelectorAll("[data-preguntar-sobre]").forEach((b) => b.onclick = () => {
+    const pid = b.dataset.preguntarSobre, capa = document.querySelector(`[data-capa-preg="${pid}"]`);
+    const caja = document.querySelector(`[data-preg="${pid}"]`);
+    if (capa) capa.open = true;
+    if (caja) { caja.value = "Sobre «" + b.dataset.parte + "»: "; caja.focus(); caja.scrollIntoView({ block: "center" }); }
+  });
   document.querySelectorAll("[data-captura]").forEach((i) => i.onchange = () => {
     const pid = i.dataset.captura, f = i.files && i.files[0];
     if (!f) return;

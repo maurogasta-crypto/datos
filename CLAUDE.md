@@ -248,6 +248,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sin mails)— y lo demás va plegado, para ir a lo complejo de a una capa.
   **`estructura` y `participantes` son de cada proyecto y opcionales.** La clase
   CSS de las capas es `nivel`: `capa` ya era el fondo de los avisos del panel.
+  **Desde `invitado-7` cada parte se explica en tres niveles** —qué es, cómo
+  funciona en palabras simples (`partes[].explica`) y más técnico
+  (`partes[].detalle`)—, con `estructura.intro` arriba y `glosario.js` al pie,
+  **pensado para alguien que no programa**; y el invitado PREGUNTA desde la
+  misma página: un pedido con «❓», que Claude contesta como comentario
+  (TRASPASO § 4 bis, e). Si una respuesta muestra que falta algo, se completa
+  `estructura`, no sólo la respuesta.
 - **Hay UNA colección que se lee sin cuenta: `albumes/`** (reglas v8,
   25-oct-2026, `obra-9`, `album.html`). Es el álbum web de un proyecto de
   inmueble —General Flores—, que Mauro pidió «con enlace, sin cuenta»: sólo

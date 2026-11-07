@@ -594,6 +594,18 @@ panel de acceso».
   (`estructura.partes`), las líneas de trabajo —cada paso del esquema se abre en
   sus pendientes—, hacer un pedido, lo último que se subió y las claves. Sin
   `estructura`, la página sirve igual.
+- **Y se explica para quien no programa, y se pregunta desde ahí mismo**
+  (`invitado-7`, 7-nov-2026, Mauro: «pensando que la persona sea una persona
+  sin conocimiento de programación… y si sigue buscando más información puede
+  hacer preguntas sin tener que salir de allí»). Tres niveles por parte: QUÉ
+  ES (`partes[].que`, a la vista al abrir), CÓMO FUNCIONA (`partes[].explica`,
+  en palabras simples) y MÁS TÉCNICO (`partes[].detalle`, plegado); arriba,
+  «Cómo funciona, para empezar» (`estructura.intro`); al pie, las palabras
+  técnicas explicadas (`glosario.js`, igual para todos). «❓ Preguntar» —en el
+  proyecto o en cada parte— guarda un pedido cuyo título empieza con «❓» (la
+  regla de pedidos no cambió) y despierta a Claude, que contesta como
+  comentario, abajo de la pregunta (TRASPASO § 4 bis, e). Sin sesión no se ve
+  nada; con sesión y sin invitación, sólo «pedir acceso».
 - **Todo lo cargado se corrige** (`obra-7`): «✎ Editar» en cada cosa abre la
   misma ficha con lo que tenía; guardar la reemplaza entera (lo que se vació se
   borra) y conserva cuándo se creó, la foto, el respaldo y si estaba pagada. La
@@ -702,7 +714,8 @@ teléfono.
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-48` |
-| `invitado.html` | `P.PANEL` | `invitado-6` |
+| `invitado.html` | `P.PANEL` | `invitado-7` |
+| `glosario.js` | `VERSION` | `glosario-1` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
 | `exportar.js` | `VERSION` | `exportar-1` |
@@ -711,7 +724,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v50` |
+| `sw.js` | `VERSION` | `panel-shell-v51` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

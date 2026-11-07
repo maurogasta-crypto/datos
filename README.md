@@ -606,6 +606,18 @@ panel de acceso».
   regla de pedidos no cambió) y despierta a Claude, que contesta como
   comentario, abajo de la pregunta (TRASPASO § 4 bis, e). Sin sesión no se ve
   nada; con sesión y sin invitación, sólo «pedir acceso».
+- **Una pestaña por proyecto, y el esquema como un dibujo de globos que se
+  amplía** (`invitado-9`, `esquema.js`, 7-nov-2026, Mauro: «cuando son varios
+  tienen que tener una pestaña por proyecto… más como una imagen con globitos…
+  y al hacer clic en cada sección se tiene que hacer como una ampliación»).
+  Con más de un proyecto, arriba van las pestañas (la elegida se recuerda en el
+  teléfono). El esquema sale de `estructura.nodos` —`{id, titulo, sub, forma:
+  caja|base|pregunta, a: [ids], parte}`— o, si no hay, de `estructura.linea`;
+  lo dibuja `esquema.js` en SVG propio (sin Mermaid: ~1 MB de un CDN para cinco
+  cajas), por niveles. Tocar un globo anima la vista hasta él y sus vecinos y
+  abre abajo su explicación (la de su `parte`), con «Preguntar sobre esto» y
+  «Ver el esquema entero». Sin animación si el teléfono pide menos movimiento.
+  Banco: `node pruebas/esquema.mjs` (10 casos).
 - **«👁 Ver como» abre la página del invitado tal como la ve esa persona**
   (`invitado-8`, `panel-50`, 7-nov-2026): `invitado.html?como=<uid>` (desde
   Puerta) o `?como=mail:<mail>` (alguien invitado que todavía no se registró).
@@ -726,7 +738,8 @@ teléfono.
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-50` |
-| `invitado.html` | `P.PANEL` | `invitado-8` |
+| `invitado.html` | `P.PANEL` | `invitado-9` |
+| `esquema.js` | `VERSION` | `esquema-1` |
 | `glosario.js` | `VERSION` | `glosario-1` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
@@ -736,7 +749,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v53` |
+| `sw.js` | `VERSION` | `panel-shell-v54` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

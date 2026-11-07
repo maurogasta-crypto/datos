@@ -34,6 +34,26 @@
   details.sub { margin: .45rem 0 .2rem .4rem; }
   details.sub > summary { cursor: pointer; }
   .explica { line-height: 1.5; margin: .4rem 0; }
+  .pestanas { display: flex; gap: .4rem; overflow-x: auto; padding: .2rem 0 .6rem; position: sticky; top: 0; background: var(--tinta); z-index: 2; }
+  .pestana { flex: none; border: 1px solid var(--linea); background: var(--tinta2); color: var(--texto); border-radius: 999px; padding: .45rem .9rem; font: inherit; cursor: pointer; }
+  .pestana.sel { background: var(--acento); color: var(--tinta); border-color: var(--acento); font-weight: 600; }
+  .esq-caja { background: var(--tinta2); border: 1px solid var(--linea); border-radius: var(--r); padding: .5rem; margin: .5rem 0; }
+  .esq { display: block; max-height: 70vh; }
+  .esq-ayuda { text-align: center; margin: .2rem 0 0; font-size: .8rem; }
+  .esq-flecha { fill: none; stroke: var(--gris2); stroke-width: 1.6; }
+  .esq-punta { fill: var(--gris2); }
+  .esq-globo { fill: var(--tinta3); stroke: var(--acento); stroke-width: 1.4; transition: fill .2s; }
+  .esq-pregunta { stroke-dasharray: 4 3; }
+  .esq-borde { fill: none; stroke: var(--acento); stroke-width: 1.4; }
+  .esq-tit { fill: var(--texto); font-size: 13px; font-weight: 600; text-anchor: middle; pointer-events: none; }
+  .esq-sub { fill: var(--gris); font-size: 11px; text-anchor: middle; pointer-events: none; }
+  .esq-nodo { cursor: pointer; outline: none; }
+  .esq-nodo:hover .esq-globo, .esq-nodo:focus .esq-globo { fill: #2b3039; }
+  .esq-nodo.activo .esq-globo { fill: var(--acento); }
+  .esq-nodo.activo .esq-tit { fill: var(--tinta); }
+  .esq-nodo.activo .esq-sub { fill: var(--tinta); }
+  .esq-detalle { border-left: 3px solid var(--acento); padding: .2rem .8rem; margin: .4rem 0 .8rem; }
+  .esq-detalle h3 { margin: .3rem 0; }
   details.tec { margin: .3rem 0 .4rem; font-size: .92rem; }
   details.tec > summary { cursor: pointer; color: var(--gris); }
   .parte-que { font-size: .88rem; color: var(--gris); }
@@ -144,10 +164,11 @@
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-12";
 import { GLOSARIO } from "./glosario.js?v=glosario-1";
+import { nodosDe, svgEsquema, cajaDeAmpliar } from "./esquema.js?v=esquema-1";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-8";
+P.PANEL = "invitado-9";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -168,6 +189,7 @@ const CUPO_SITIO = Math.max(1, Math.floor(CUPO_DIA / SITIOS_EN_DESARROLLO.length
 const AVISAR = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/avisar-claude";
 
 let yo = null, persona = null, PROY = [], PEND = [], FICHAS = [];
+let pestana = (() => { try { return localStorage.getItem("inv-pestana") || ""; } catch (e) { return ""; } })();
 const capturas = {};       // proyecto → File elegido, se sube recién al mandar
 
 async function arrancar() {
@@ -312,7 +334,12 @@ const pedidosHoy = (pid) => PEND.filter((x) => x.proyecto === pid && String(x.or
   && String(x.creadoEn || "").slice(0, 10) === P.hoy()).length;
 
 function pintar() {
-  $("proyectos").innerHTML = PROY.map((pr) => {
+  /* invitado-9 (Mauro: «cuando son varios tienen que tener una pestaña por
+     proyecto»): una pestaña por proyecto; la elegida se recuerda en ESTE
+     teléfono. Con uno solo, no hay pestañas. */
+  const elegida = PROY.some((p) => p.id === pestana) ? pestana : (PROY[0] || {}).id;
+  const tabs = PROY.length > 1 ? `<div class="pestanas" role="tablist">${PROY.map((p) => `<button role="tab" class="pestana${p.id === elegida ? " sel" : ""}" data-pestana="${P.esc(p.id)}" aria-selected="${p.id === elegida}">${P.esc(p.nombre || p.id)}</button>`).join("")}</div>` : "";
+  $("proyectos").innerHTML = tabs + PROY.map((pr) => `<div data-tab="${P.esc(pr.id)}"${pr.id === elegida ? "" : " hidden"}>` + (() => {
     /* invitado-4: un PROYECTO de inmueble (General Flores…) no tiene
        pendientes ni pedidos: se mira en su página, sólo para ver. */
     if (pr.clase === "obra") return `<section class="inv-proy"><div class="tarj">
@@ -334,7 +361,8 @@ function pintar() {
     const sueltos = pend.filter((x) => !enPasos.has(x.id) && !esPreg(x));
     return `<section class="inv-proy">
       <h2>${P.esc(pr.nombre || pr.id)}</h2>
-      ${linea.length ? `<div class="flujo">${linea.map((t) => `<span class="paso">${P.esc(t)}</span>`).join('<span class="flecha">→</span>')}</div>` : ""}
+      ${(() => { const nd = nodosDe(es); return nd.length ? `<div class="esq-caja" data-esq="${P.esc(pr.id)}">${svgEsquema(nd)}
+        <p class="gris esq-ayuda">Tocá un globo para ampliarlo.</p></div><div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""; })()}
       ${resumen1 ? `<p>${P.esc(resumen1)}</p>` : ""}
       ${(pa.gente || []).length ? `<p class="gente">Participan: ${pa.gente.map((g) => P.esc(g.nombre) + " (" + P.esc(g.rol) + ")").join(" · ")}</p>` : ""}
 
@@ -384,8 +412,60 @@ function pintar() {
 
       ${htmlBoveda(pr.id)}
     </section>`;
-  }).join("") + htmlGlosario();
+  })() + "</div>").join("") + htmlGlosario();
   enganchar();
+  engancharEsquemas();
+}
+
+/* invitado-9: el esquema de globos. Tocar uno ACERCA la vista a ese globo y
+   sus vecinos (se anima el viewBox) y abajo abre su explicación; «Ver el
+   esquema entero» vuelve. Sin animación si el teléfono pide menos movimiento. */
+function engancharEsquemas() {
+  document.querySelectorAll("[data-pestana]").forEach((b) => b.onclick = () => {
+    pestana = b.dataset.pestana;
+    try { localStorage.setItem("inv-pestana", pestana); } catch (e) { /* sin memoria, igual anda */ }
+    document.querySelectorAll("[data-tab]").forEach((t) => t.hidden = t.dataset.tab !== pestana);
+    document.querySelectorAll("[data-pestana]").forEach((x) => { x.classList.toggle("sel", x === b); x.setAttribute("aria-selected", x === b); });
+  });
+  document.querySelectorAll("[data-esq]").forEach((caja) => {
+    const pid = caja.dataset.esq, pr = PROY.find((p) => p.id === pid) || {}, es = pr.estructura || {};
+    const nodos = nodosDe(es), svg = caja.querySelector("svg");
+    const det = document.querySelector(`[data-esq-det="${pid}"]`);
+    const ir = (id) => {
+      const c = id ? cajaDeAmpliar(nodos, id) : null;
+      animarVista(svg, c ? [c.x, c.y, c.w, c.h] : svg.dataset.vista.split(" ").map(Number));
+      svg.querySelectorAll(".esq-nodo").forEach((g) => g.classList.toggle("activo", g.dataset.nodo === id));
+      if (!id) { det.hidden = true; return; }
+      const n = nodos.find((x) => x.id === id), parte = (es.partes || []).find((p) => p.nombre === (n.parte || n.titulo)) || {};
+      det.hidden = false;
+      det.innerHTML = `<h3>${P.esc(n.titulo)}</h3>${n.sub ? `<p class="gris">${P.esc(n.sub)}</p>` : ""}
+        ${parte.explica ? `<p class="explica">${P.esc(parte.explica)}</p>` : parte.que ? `<p class="explica">${P.esc(parte.que)}</p>` : ""}
+        ${(parte.detalle || []).length ? `<details class="tec"><summary>Más técnico</summary><ul>${parte.detalle.map((d) => `<li>${P.esc(d)}</li>`).join("")}</ul></details>` : ""}
+        <div class="fila-btn"><button class="mini" data-preguntar-sobre="${P.esc(pid)}" data-parte="${P.esc(n.titulo)}">❓ Preguntar sobre esto</button>
+        <button class="mini" data-esq-volver>↩ Ver el esquema entero</button></div>`;
+      det.querySelector("[data-esq-volver]").onclick = () => ir(null);
+      const pb = det.querySelector("[data-preguntar-sobre]");
+      pb.onclick = () => { const capa = document.querySelector(`[data-capa-preg="${pid}"]`), c2 = document.querySelector(`[data-preg="${pid}"]`);
+        if (capa) capa.open = true; if (c2) { c2.value = "Sobre «" + n.titulo + "»: "; c2.focus(); c2.scrollIntoView({ block: "center" }); } };
+    };
+    svg.querySelectorAll(".esq-nodo").forEach((g) => {
+      g.onclick = () => ir(g.classList.contains("activo") ? null : g.dataset.nodo);
+      g.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); g.onclick(); } };
+    });
+  });
+}
+
+function animarVista(svg, fin) {
+  const ini = svg.getAttribute("viewBox").split(" ").map(Number);
+  const quieto = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (quieto) { svg.setAttribute("viewBox", fin.join(" ")); return; }
+  const t0 = performance.now(), dur = 380;
+  const paso = (t) => {
+    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    svg.setAttribute("viewBox", ini.map((v, i) => v + (fin[i] - v) * e).join(" "));
+    if (k < 1) requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
 }
 
 /* invitado-7: las palabras técnicas, de lo simple a lo técnico (glosario.js). */

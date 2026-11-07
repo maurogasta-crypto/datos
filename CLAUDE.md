@@ -260,6 +260,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   "…"`, por `invitarEnSitio` de `firestore.mjs`): hoy sólo CasaYourte
   (`invita` en su entrada de `PROYECTOS`), siempre de colaborador y con lo que
   dijo Mauro escrito adentro; `invitaciones` sigue sellada para leer.
+  **Desde `invitado-9` cada proyecto es una PESTAÑA y su esquema es un dibujo
+  de GLOBOS** (`estructura.nodos`, `esquema.js`, SVG propio): tocar un globo lo
+  amplía y abre su explicación. Un proyecto nuevo se explica escribiendo
+  `nodos` y `partes` en su documento, no tocando la página.
 - **Hay UNA colección que se lee sin cuenta: `albumes/`** (reglas v8,
   25-oct-2026, `obra-9`, `album.html`). Es el álbum web de un proyecto de
   inmueble —General Flores—, que Mauro pidió «con enlace, sin cuenta»: sólo
@@ -272,7 +276,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay diecinueve bancos de pruebas, y se corren antes de subir.** `node
+- **Hay veinte bancos de pruebas, y se corren antes de subir.** `node
   pruebas-reglas.mjs` (21 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (71 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
@@ -304,7 +308,8 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   le pide a la IA); `node pruebas/herramientas/notificaciones.mjs` (12 casos) para las
   notificaciones del 13C, que prueba sobre todo que descartar no deje copia;
   `node pruebas/exportar.mjs` (7 casos) para lo que se le pasa a Gemini, que
-  prueba sobre todo lo que NO sale; `node pruebas/ojos.mjs` (6 casos) para el
+  prueba sobre todo lo que NO sale; `node pruebas/esquema.mjs` (10 casos) para el esquema de
+  globos de cada proyecto en la página del invitado; `node pruebas/ojos.mjs` (6 casos) para el
   ojo de las contraseñas que usan los cinco sitios; `node pruebas/callmebot.mjs`
   (7 casos) para la lectura de la respuesta de CallMeBot, que usan tres sitios y
   `avisos.mjs`; `node pruebas/errores.mjs` (7 casos) para las causas de los

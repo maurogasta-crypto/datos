@@ -30,4 +30,10 @@ t("el mensaje lleva el link, el mail y el aviso de Spam", () => {
   const m = mensaje("Mariano@X.com", ["BandoMaps"]);
   assert.ok(m.includes(LINK)); assert.ok(m.includes("mariano@x.com")); assert.match(m, /Spam/); assert.match(m, /BandoMaps/);
 });
+const { validarInvitacionSitio, PROYECTOS } = await import("../../herramientas/firestore.mjs");
+const cy = PROYECTOS.casayourte;
+t("sitio: sin autorización de Mauro no", () => assert.match(validarInvitacionSitio(cy, "f@x.com", { permisos: ["contenido"], autorizado: "" }), /autorizado/));
+t("sitio: un permiso que el sitio no tiene, no", () => assert.match(validarInvitacionSitio(cy, "f@x.com", { permisos: ["usuarios"], autorizado: "sí" }), /no tiene/));
+t("sitio: completa sirve", () => assert.equal(validarInvitacionSitio(cy, "f@x.com", { permisos: ["contenido", "albumes"], autorizado: "Mauro: sí" }), ""));
+t("sitio: un sitio sin puerta de invitar, no", () => assert.match(validarInvitacionSitio(PROYECTOS.remate, "f@x.com", { permisos: [], autorizado: "sí" }), /no deja/));
 console.log(`\n${mal ? mal + " de " + (ok + mal) + " fallaron." : "Todo bien: " + ok + " casos."}`); process.exit(mal ? 1 : 0);

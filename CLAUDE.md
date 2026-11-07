@@ -255,6 +255,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   misma página: un pedido con «❓», que Claude contesta como comentario
   (TRASPASO § 4 bis, e). Si una respuesta muestra que falta algo, se completa
   `estructura`, no sólo la respuesta.
+  **Y desde `invitados-2` (7-nov-2026) también se invita en la base DE UN
+  SITIO** (`invitados.mjs sitio <proyecto> <mail> --permisos … --autorizado
+  "…"`, por `invitarEnSitio` de `firestore.mjs`): hoy sólo CasaYourte
+  (`invita` en su entrada de `PROYECTOS`), siempre de colaborador y con lo que
+  dijo Mauro escrito adentro; `invitaciones` sigue sellada para leer.
 - **Hay UNA colección que se lee sin cuenta: `albumes/`** (reglas v8,
   25-oct-2026, `obra-9`, `album.html`). Es el álbum web de un proyecto de
   inmueble —General Flores—, que Mauro pidió «con enlace, sin cuenta»: sólo
@@ -283,8 +288,8 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (44 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
-  manda; `node pruebas/herramientas/invitados.mjs` (9 casos) para las
-  invitaciones, que prueba sobre todo que sin `--autorizado` no se invita y
+  manda; `node pruebas/herramientas/invitados.mjs` (13 casos) para las
+  invitaciones (las del panel y, desde invitados-2, las de un sitio), que prueba sobre todo que sin `--autorizado` no se invita y
   que `participantes` no lleve mails; `node pruebas/herramientas/novedades.mjs` (22 casos) para las novedades
   que se le mandan a Mauro, que prueba que nada se avise dos veces ni se avise
   lo que el panel ya da por resuelto; `node

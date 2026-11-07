@@ -23,8 +23,10 @@
      node herramientas/invitados.mjs quitar <mail> --autorizado "<lo que dijo Mauro>"
      node herramientas/invitados.mjs participantes
      node herramientas/invitados.mjs mensaje <mail>      (el texto para mandarle; lo manda una persona)
+     node herramientas/invitados.mjs sitio <proyecto> <mail> --permisos a,b [--nombre "X"] --autorizado "<lo que dijo Mauro>"
+       (invitados-2: la invitación en la base DEL SITIO —hoy CasaYourte—, siempre de colaborador)
    ═══════════════════════════════════════════════════════════ */
-export const VERSION = "invitados-1";
+export const VERSION = "invitados-2";
 export const LINK = "https://maurogasta-crypto.github.io/datos/invitado.html";
 
 export const limpiarMail = (m) => String(m || "").trim().toLowerCase();
@@ -69,9 +71,18 @@ export function mensaje(mail, nombresProyectos) {
 
 /* ── la línea de comandos ── */
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { PROYECTOS, entrar, listar, escribir, borrar, fusionarRutas } = await import("./firestore.mjs");
+  const { PROYECTOS, entrar, listar, escribir, borrar, fusionarRutas, invitarEnSitio } = await import("./firestore.mjs");
   const [, , cmd, arg] = process.argv;
   const opt = (n) => { const i = process.argv.indexOf("--" + n); return i > 0 ? process.argv[i + 1] : undefined; };
+  if (cmd === "sitio") {
+    const cfgS = PROYECTOS[arg], mail = process.argv[4];
+    if (!cfgS) { console.error("\n✖ no conozco el proyecto «" + arg + "»\n"); process.exit(1); }
+    const r = await invitarEnSitio(cfgS, await entrar(cfgS), mail, { permisos: String(opt("permisos") || "").split(",").map((x) => x.trim()).filter(Boolean),
+      nombre: opt("nombre") || "", autorizado: opt("autorizado") || "" });
+    if (!r.ok) { console.error("\n✖ " + r.motivo + "\n"); process.exit(1); }
+    console.log(r.nuevo ? `\n  ✓ invitación de colaborador en ${arg} para ${limpiarMail(mail)}\n` : `\n  · ya había una invitación en ${arg} para ese mail (no se tocó)\n`);
+    process.exit(0);
+  }
   const cfg = PROYECTOS.panel;
   const s = await entrar(cfg);
   const [proyectos, personas, invitaciones] = await Promise.all([

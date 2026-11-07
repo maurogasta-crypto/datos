@@ -153,6 +153,10 @@ const PROYECTOS = {
        Se LEE de a una y sólo para mandarle un aviso: ver `contactoAviso`. */
     selladas: ["calculos", "invitaciones", "avisos_contacto"],
     avisos: "avisos_contacto",
+    /* 7-nov-2026: `invitaciones` sigue sellada (ni listar ni leer), pero el
+       agente CREA una de colaborador por `invitarEnSitio`, con la autorización
+       de Mauro escrita adentro. La regla lo deja sólo así (REGLAS.txt). */
+    invita: { coleccion: "invitaciones", permisos: ["albumes", "contenido", "taller", "publicar", "calculo", "consultas", "presupuestos"] },
     /* Desde el 19-oct-2026 el agente escribe también `sitio/publicado`
        (Mauro: «quiero que desde el chat puedas modificar el sitio público»),
        así que cada cambio deja antes su copia en `_historial`, como en Casa
@@ -851,6 +855,40 @@ async function crearNuevo(cfg, sesion, coleccion, id, datos) {
   }
 }
 
+/* ── Invitar a alguien a un SITIO (7-nov-2026) ───────────────────────────────
+   La única puerta a `invitaciones` de un sitio, que sigue en `selladas`.
+   Mauro: «hacé la invitación a todo lo que le falta Florencia directamente
+   tú». Sólo CREA (no pisa una que ya está), siempre de COLABORADOR, con los
+   permisos que el sitio ofrece y con `autorizado`: lo que dijo Mauro en el
+   chat. La regla del sitio exige exactamente esto; acá se valida antes para
+   que un error se lea en castellano y no como un 403. */
+function validarInvitacionSitio(cfg, mail, { permisos, autorizado }) {
+  if (!cfg.invita) return `${cfg.projectId} no deja invitar al agente`;
+  if (!/^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/.test(String(mail || ""))) return "el mail no parece una dirección válida";
+  if (!String(autorizado || "").trim()) return "falta --autorizado \"<lo que dijo Mauro>\": invitar da acceso, y eso lo decide él";
+  const malos = (permisos || []).filter((p) => !cfg.invita.permisos.includes(p));
+  if (malos.length) return "permisos que el sitio no tiene: " + malos.join(", ") + " (son: " + cfg.invita.permisos.join(", ") + ")";
+  return "";
+}
+
+async function invitarEnSitio(cfg, sesion, mail, { permisos = [], nombre = "", autorizado = "" }) {
+  mail = String(mail || "").trim().toLowerCase();
+  const falta = validarInvitacionSitio(cfg, mail, { permisos, autorizado });
+  if (falta) return { ok: false, motivo: falta };
+  const datos = { rol: "colaborador", permisos: Object.fromEntries(permisos.map((p) => [p, true])),
+    creadoPor: "Claude", autorizado: String(autorizado).slice(0, 300) };
+  if (nombre) datos.nombre = String(nombre).slice(0, 80);
+  try {
+    await pedir(cfg, sesion, `/${cfg.invita.coleccion}/${encodeURIComponent(mail)}?currentDocument.exists=false`,
+      { method: "PATCH", body: JSON.stringify({ fields: campos(datos) }), suave: true });
+    return { ok: true, nuevo: true };
+  } catch (e) {
+    if (e.codigo === 409 || /ALREADY_EXISTS|already exists/i.test(e.message)) return { ok: true, nuevo: false };
+    if (e.codigo === 403 || /PERMISSION|insufficient/i.test(e.message)) return { ok: false, motivo: "las reglas dijeron que no (¿se publicaron las del 7-nov-2026?), o ya hay una invitación para ese mail" };
+    return { ok: false, motivo: e.message };
+  }
+}
+
 /* Devuelve un documento a como estaba antes de un cambio del historial. Se
    restaura CRUDO —con los tipos de Firestore— y deja su propia entrada: un
    deshacer también se puede deshacer. */
@@ -871,7 +909,7 @@ async function deshacer(cfg, sesion, hid) {
   return e;
 }
 
-export { HISTORIAL, deshacer, crearAviso, crearNuevo, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
+export { HISTORIAL, deshacer, crearAviso, crearNuevo, invitarEnSitio, validarInvitacionSitio, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
          entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, copiar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/

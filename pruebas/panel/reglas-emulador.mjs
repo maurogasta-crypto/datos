@@ -18,6 +18,9 @@
      rm firebase.json
 
    El 6-oct-2026: 35 bien, 0 mal. El 15-oct-2026, con la v7: 47 bien, 0 mal.
+   El 7-nov-2026, con la v9: 47 bien, 0 mal; lo nuevo de la v9 (invitaciones,
+   la ficha que se crea sola, la bóveda con `claves`) está al lado, en
+   reglas-emulador-v9.mjs: 23 bien, 0 mal.
    ═══════════════════════════════════════════════════════════ */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
 import { readFileSync } from "node:fs";

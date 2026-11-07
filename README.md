@@ -568,6 +568,32 @@ panel de acceso».
 - **La página del invitado se instala como app** (`invitado-5`): trae el
   manifiesto y el service worker del panel, y ofrece «Instalar» (o explica
   cómo, en iPhone y desde el menú del navegador).
+- **Un COLABORADOR entra por invitación, y la invitación la escribe Claude con
+  la autorización de Mauro** (`invitado-6`, **reglas v9**, 7-nov-2026, Mauro:
+  «un registro de usuarios con contraseña que gestionás tú con mi autorización
+  para cada uno de los sitios, guardándose en mi base de datos»). El agente deja
+  `invitaciones/<mail>` con los proyectos que abre
+  (`node herramientas/invitados.mjs invitar <mail> --proyectos a,b
+  --autorizado "<lo que dijo Mauro>"`; sin `--autorizado` no invita, y el panel
+  no se comparte). La persona entra a `invitado.html`, crea su cuenta con ese
+  mail, confirma la dirección (el aviso de Spam está en la pantalla) y su ficha
+  `personas/<uid>` **se crea sola** con esos proyectos y `claves: false`: la
+  regla exige el mail confirmado, la invitación y exactamente sus proyectos.
+  **La bóveda del proyecto la abre sólo Mauro** (`claves: true` en «Puerta»);
+  una ficha de antes, sin el campo, la sigue viendo como siempre.
+  `invitados.mjs participantes` escribe en cada proyecto quiénes participan
+  (`proyectos/<id>.participantes`: nombre y rol, nunca el mail). Probado en el
+  emulador: `pruebas/panel/reglas-emulador.mjs` (47) y
+  `reglas-emulador-v9.mjs` (23); la herramienta, `node
+  pruebas/herramientas/invitados.mjs` (9). **Hay que publicar las reglas v9.**
+- **La página de cada sitio va de lo general a lo particular** (`invitado-6`,
+  Mauro: «comenzar por lo más amplio, breve y conciso… y poder navegar hacia la
+  complejidad»). A la vista: el nombre, la línea del flujo
+  (`proyectos/<id>.estructura.linea`), el primer renglón del esquema y quién
+  participa. Todo lo demás plegado: la estructura por partes
+  (`estructura.partes`), las líneas de trabajo —cada paso del esquema se abre en
+  sus pendientes—, hacer un pedido, lo último que se subió y las claves. Sin
+  `estructura`, la página sirve igual.
 - **Todo lo cargado se corrige** (`obra-7`): «✎ Editar» en cada cosa abre la
   misma ficha con lo que tenía; guardar la reemplaza entera (lo que se vació se
   borra) y conserva cuándo se creó, la foto, el respaldo y si estaba pagada. La
@@ -671,27 +697,27 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-11` |
+| `nucleo.js` | `P.VERSION` | `nucleo-12` |
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-47` |
-| `invitado.html` | `P.PANEL` | `invitado-5` |
+| `invitado.html` | `P.PANEL` | `invitado-6` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
 | `exportar.js` | `VERSION` | `exportar-1` |
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
-| `firebase-init.js` | (en el comentario) | `init-5` |
+| `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v48` |
+| `sw.js` | `VERSION` | `panel-shell-v49` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-11`. Sin ese número, el
+pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-12`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

@@ -22,12 +22,26 @@
   .inv-com { font-size: .82rem; margin: .3rem 0 0; padding-left: .6rem; border-left: 2px solid var(--linea); white-space: pre-wrap; }
   .inv-commit { font-size: .8rem; padding: .25rem 0; border-bottom: 1px solid var(--linea); }
   textarea { width: 100%; }
+  /* invitado-6: la vista por capas. Arriba lo más amplio; el resto, a pedido. */
+  .flujo { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .5rem 0 .6rem; }
+  .flujo .paso { border: 1px solid var(--linea); border-radius: 999px; padding: .2rem .7rem; font-size: .9rem; background: var(--fondo2, transparent); }
+  .flujo .flecha { color: var(--gris); }
+  .gente { font-size: .85rem; color: var(--gris); margin: .2rem 0 .6rem; }
+  details.nivel { border-top: 1px solid var(--linea); padding: .55rem 0; }
+  details.nivel > summary { cursor: pointer; font-weight: 600; list-style: none; }
+  details.nivel > summary::before { content: "▸ "; color: var(--gris); }
+  details.nivel[open] > summary::before { content: "▾ "; }
+  details.sub { margin: .45rem 0 .2rem .4rem; }
+  details.sub > summary { cursor: pointer; }
+  .parte-que { font-size: .88rem; color: var(--gris); }
+  .chip-e { font-family: var(--mono); font-size: .7rem; border: 1px solid var(--linea); border-radius: 999px; padding: 0 .45rem; margin-left: .3rem; color: var(--gris); white-space: nowrap; }
+  .spam { border: 1px solid #c9a227; border-radius: var(--r-s); padding: .6rem .7rem; font-size: .9rem; margin: .6rem 0; }
 </style>
 </head>
 <body>
 <!--
   ════════════════════════════════════════════════════════════════
-  invitado.html — El panel para los INVITADOS. Sello: invitado-3
+  invitado.html — El panel para los INVITADOS. Sello: invitado-6
 
   Pedido de Mauro, 6-oct-2026 (`panel:U2`): «compartirle a Mariano un link a
   mi panel en el que pueda ver lo que se está desarrollando en ese
@@ -43,9 +57,15 @@
   se lee sólo lo de sus proyectos, y quien decide es la regla (reglas v6),
   no esta pantalla: aunque alguien la modifique, la base no le da más.
 
-  QUIÉN ES INVITADO: quien tiene ficha ACTIVA en `personas/{uid}`, que escribe
-  sólo Mauro desde la solapa «Personas» del panel. Quien entra sin ficha deja
-  una `solicitud` y espera.
+  QUIÉN ES INVITADO: quien tiene ficha ACTIVA en `personas/{uid}`. La escribe
+  Mauro desde «Personas», o la crea la persona sola desde una INVITACIÓN a su
+  mail confirmado (invitado-6, reglas v9; las invitaciones las deja el agente
+  con la autorización de Mauro, `herramientas/invitados.mjs`). Quien entra sin
+  ficha ni invitación deja una `solicitud` y espera.
+
+  Y SE LEE POR CAPAS (invitado-6): arriba la línea del flujo, el resumen y
+  quién participa; la estructura por partes, las líneas de trabajo con sus
+  pendientes y comentarios, el pedido, lo último subido y la bóveda, plegados.
   ════════════════════════════════════════════════════════════════
 -->
 
@@ -78,6 +98,21 @@
   </div>
 </div>
 
+<!-- invitado-6: con invitación, confirmar el mail y entrar solo -->
+<div id="confirmar" class="contenedor hide">
+  <h1>Tenés una invitación</h1>
+  <div class="tarj">
+    <p id="c-texto"></p>
+    <div class="spam">⚠️ <b>Revisá el Spam.</b> El mail de confirmación muchas veces llega a Spam o Correo no deseado, de <span class="mono">noreply@datos-830f8.firebaseapp.com</span>. Si está ahí, marcalo como «No es spam» y tocá el enlace.</div>
+    <label for="c-nombre">Tu nombre (como te van a ver los demás)</label>
+    <input id="c-nombre" maxlength="80">
+    <div class="fila-btn">
+      <button class="btn p" id="btnConfirme">Ya lo confirmé</button>
+      <button class="btn" id="btnReenviar">Mandármelo de nuevo</button>
+    </div>
+  </div>
+</div>
+
 <!-- Con cuenta y sin ficha: pedir acceso -->
 <div id="pedir" class="contenedor hide">
   <h1>Pedir acceso</h1>
@@ -104,11 +139,11 @@
 </div>
 
 <script type="module">
-import { P, $, db, auth } from "./nucleo.js?v=nucleo-11";
-import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion }
-  from "./firebase-init.js?v=init-5";
+import { P, $, db, auth } from "./nucleo.js?v=nucleo-12";
+import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
+  from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-5";
+P.PANEL = "invitado-6";
 P.pintarSello();
 
 // El cupo: 12 pedidos resueltos por día para todos los invitados, entre los
@@ -125,7 +160,7 @@ let yo = null, persona = null, PROY = [], PEND = [], FICHAS = [];
 const capturas = {};       // proyecto → File elegido, se sube recién al mandar
 
 async function arrancar() {
-  for (const id of ["sin-sdk", "puerta", "pedir", "app"]) $(id).classList.add("hide");
+  for (const id of ["sin-sdk", "puerta", "confirmar", "pedir", "app"]) $(id).classList.add("hide");
   if (!(await P.arrancarFirebase())) {
     $("sin-sdk-que").textContent = P.fallaFirebase ? P.fallaFirebase.message : "No bajó el SDK.";
     $("sin-sdk").classList.remove("hide"); return;
@@ -135,6 +170,12 @@ async function arrancar() {
   $("btnSalir").classList.remove("hide");
   const f = await getDoc(doc(db, "personas", yo.uid)).catch(() => null);
   persona = f && f.exists() ? f.data() : null;
+  if (!persona) {
+    // invitado-6 (reglas v9): con invitación, la ficha se crea sola.
+    const mail = String(yo.email || "").trim().toLowerCase();
+    const inv = mail ? await getDoc(doc(db, "invitaciones", mail)).catch(() => null) : null;
+    if (inv && inv.exists()) return pantallaConfirmar(inv.data(), mail);
+  }
   if (!persona || persona.activo !== true) return pantallaPedir();
   $("app").classList.remove("hide");
   $("hola").textContent = "Hola, " + (persona.nombre || yo.email) + ".";
@@ -149,7 +190,12 @@ $("btnEntrar").onclick = async () => {
 };
 $("btnCrear").onclick = async () => {
   if (String($("clave").value).length < 8) return P.aviso("La contraseña: 8 caracteres o más.", "error");
-  try { await P.crearCuenta($("mail").value, $("clave").value); location.reload(); }
+  try {
+    const c = await P.crearCuenta($("mail").value, $("clave").value);
+    // invitado-6: el mail de confirmación sale apenas se crea la cuenta.
+    try { await sendEmailVerification(c.user); } catch (e) { }
+    location.reload();
+  }
   catch (e) {
     P.aviso(e && e.code === "auth/email-already-in-use" ? "Ese mail ya tiene cuenta: tocá Entrar." : P.explicar(e), "error");
   }
@@ -160,6 +206,35 @@ $("btnOlvide").onclick = async () => {
   catch (e) { P.aviso(P.explicar(e), "error"); }
 };
 $("btnSalir").onclick = async () => { await P.salir(); location.reload(); };
+
+/* ---------- invitado-6: tiene invitación → confirmar el mail y crear su ficha ---------- */
+async function pantallaConfirmar(inv, mail) {
+  $("confirmar").classList.remove("hide");
+  $("c-nombre").value = inv.nombre || $("c-nombre").value || "";
+  const u = auth.currentUser;
+  const crear = async () => {
+    const nombre = $("c-nombre").value.trim();
+    if (!nombre) { P.aviso("Poné tu nombre.", "error"); return false; }
+    await setDoc(doc(db, "personas", u.uid), { nombre: nombre.slice(0, 80), mail, activo: true,
+      proyectos: inv.proyectos || [], claves: false, creadoEn: P.hoy(), invitadoPor: String(inv.por || "").slice(0, 80) });
+    return true;
+  };
+  $("c-texto").textContent = u.emailVerified
+    ? "Tu mail ya está confirmado. Poné tu nombre y tocá «Ya lo confirmé» para entrar."
+    : "Te mandamos un mail a " + mail + " para confirmar que es tuyo. Abrilo, tocá el enlace y después volvé acá.";
+  $("btnConfirme").onclick = async () => {
+    try {
+      await u.reload();
+      if (!auth.currentUser.emailVerified) return P.aviso("Todavía figura sin confirmar. Tocá el enlace del mail (mirá en Spam) y volvé a probar.", "error");
+      await auth.currentUser.getIdToken(true);     // que el permiso ya diga «confirmado»
+      if (await crear()) location.reload();
+    } catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+  $("btnReenviar").onclick = async () => {
+    try { await sendEmailVerification(auth.currentUser); P.aviso("Listo, te lo mandamos de nuevo. Mirá también en Spam."); }
+    catch (e) { P.aviso(P.explicar(e), "error"); }
+  };
+}
 
 /* ---------- pedir acceso ---------- */
 async function pantallaPedir() {
@@ -212,19 +287,39 @@ function pintar() {
       <h2 style="margin:0">🏗 ${P.esc(pr.nombre || pr.id)}</h2>
       <p class="gris">${P.esc((pr.obra && pr.obra.direccion) || "")}</p>
       <div class="fila-btn"><a class="btn p" style="text-decoration:none" href="./obra.html?o=${encodeURIComponent(pr.id)}">Abrir el proyecto</a></div></div></section>`;
-    const e = pr.esquema || {};
+    /* invitado-6 (7-nov-2026, Mauro: «comenzar por lo más amplio, breve y
+       conciso… y navegar hacia la complejidad que desea abordar»): arriba una
+       línea de flujo y quién participa; todo lo demás, plegado y a pedido. */
+    const e = pr.esquema || {}, es = pr.estructura || {}, pa = pr.participantes || {};
     const pend = PEND.filter((x) => x.proyecto === pr.id)
       .sort((a, b) => Number(abierto(b)) - Number(abierto(a)) || String(b.creadoEn || "").localeCompare(String(a.creadoEn || "")));
     const n = pedidosHoy(pr.id);
+    const linea = Array.isArray(es.linea) ? es.linea : [];
+    const resumen1 = String(e.resumen || (pr.sitio && pr.sitio.resumen) || "").split("\n")[0];
+    const enPasos = new Set((e.pasos || []).flatMap((p) => p.ids || []));
+    const sueltos = pend.filter((x) => !enPasos.has(x.id));
     return `<section class="inv-proy">
       <h2>${P.esc(pr.nombre || pr.id)}</h2>
-      ${pr.sitio && pr.sitio.resumen ? `<p class="gris">${P.esc(pr.sitio.resumen)}</p>` : ""}
-      ${e.resumen ? `<div class="tarj"><div class="k">En qué está</div><p>${P.esc(e.resumen)}</p>
-        ${(e.pasos || []).length ? "<ol>" + e.pasos.map((p) => `<li>${P.esc(p.titulo)} <span class="gris">· ${P.esc(p.quien === "claude" ? "lo hace Claude" : "lo decide Mauro")}</span></li>`).join("") + "</ol>" : ""}
-        ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}</div>` : ""}
+      ${linea.length ? `<div class="flujo">${linea.map((t) => `<span class="paso">${P.esc(t)}</span>`).join('<span class="flecha">→</span>')}</div>` : ""}
+      ${resumen1 ? `<p>${P.esc(resumen1)}</p>` : ""}
+      ${(pa.gente || []).length ? `<p class="gente">Participan: ${pa.gente.map((g) => P.esc(g.nombre) + " (" + P.esc(g.rol) + ")").join(" · ")}</p>` : ""}
 
-      <div class="tarj">
-        <div class="k">Un pedido</div>
+      ${(es.partes || []).length ? `<details class="nivel"><summary>La estructura, por partes</summary>
+        ${es.partes.map((t) => `<details class="sub"><summary>${P.esc(t.nombre)} <span class="parte-que">— ${P.esc(t.que || "")}</span></summary>
+          ${(t.detalle || []).length ? "<ul>" + t.detalle.map((d) => `<li>${P.esc(d)}</li>`).join("") + "</ul>" : ""}</details>`).join("")}
+      </details>` : ""}
+
+      <details class="nivel"><summary>Líneas de trabajo (${(e.pasos || []).length || pend.filter(abierto).length})</summary>
+        ${(e.pasos || []).map((p) => {
+          const suyos = pend.filter((x) => (p.ids || []).includes(x.id));
+          return `<details class="sub"><summary>${P.esc(p.titulo)}<span class="chip-e">${P.esc(p.quien === "claude" ? "Claude" : "Mauro")}</span>${suyos.length ? `<span class="chip-e">${suyos.filter(abierto).length} abierto${suyos.filter(abierto).length === 1 ? "" : "s"}</span>` : ""}</summary>
+            ${suyos.map(htmlPendiente).join("") || '<p class="gris">Sin pendientes a la vista.</p>'}</details>`;
+        }).join("")}
+        ${sueltos.length ? `<details class="sub"><summary>Otros pendientes<span class="chip-e">${sueltos.filter(abierto).length} abierto${sueltos.filter(abierto).length === 1 ? "" : "s"}</span></summary>${sueltos.map(htmlPendiente).join("")}</details>` : ""}
+        ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}
+      </details>
+
+      <details class="nivel"><summary>Hacer un pedido</summary>
         <p class="inv-cupo">Hoy: ${n} de ${CUPO_SITIO} pedidos de este proyecto.${n >= CUPO_SITIO ? " Lo que mandes ahora se resuelve mañana." : ""}</p>
         <label>Qué pasa o qué querés (una línea)</label>
         <input data-titulo="${P.esc(pr.id)}" maxlength="120" placeholder="El botón de la rueda no suena en el iPhone">
@@ -235,14 +330,11 @@ function pintar() {
           <label class="mini">🖼 Elegir captura<input type="file" accept="image/*" data-captura="${P.esc(pr.id)}" hidden></label>
         </div>
         <div data-vista="${P.esc(pr.id)}"></div>
-        <p class="gris">Contesta Claude, una IA. Lo simple lo resuelve en el día; lo que necesita una decisión queda abajo, con el plan, para que lo definan.</p>
+        <p class="gris">Contesta Claude, una IA. Lo simple lo resuelve en el día; lo que necesita una decisión queda en la línea de trabajo, con el plan, para que lo definan.</p>
         <div class="fila-btn"><button class="btn p" data-mandar="${P.esc(pr.id)}">Mandar el pedido</button></div>
-      </div>
+      </details>
 
-      ${pr.sitio && pr.sitio.repo ? `<div class="tarj"><div class="k">Lo último que se subió a ${P.esc(pr.sitio.repo)}</div><div data-commits="${P.esc(pr.id)}"><p class="gris">Leyendo…</p></div></div>` : ""}
-
-      <div class="k" style="margin-top:1rem">Pendientes (${pend.filter(abierto).length} abiertos)</div>
-      ${pend.map(htmlPendiente).join("") || '<p class="gris">Nada todavía.</p>'}
+      ${pr.sitio && pr.sitio.repo ? `<details class="nivel"><summary>Lo último que se subió</summary><div data-commits="${P.esc(pr.id)}"><p class="gris">Leyendo…</p></div></details>` : ""}
 
       ${htmlBoveda(pr.id)}
     </section>`;
@@ -272,10 +364,10 @@ function htmlBoveda(pid) {
   const accesos = FICHAS.filter((f) => f.proyecto === pid)
     .flatMap((f) => (Array.isArray(f.accesos) ? f.accesos : []).filter((a) => a && a.nombre && !a.publica).map((a) => ({ f, a })));
   if (!accesos.length) return "";
-  return `<div class="tarj" style="margin-top:1rem"><div class="k">Claves en uso (sólo ver)</div>
+  return `<details class="nivel"><summary>Claves en uso (sólo ver)</summary>
     ${accesos.map(({ f, a }) => `<div class="acceso"><div class="mono">${P.esc(a.nombre)}</div>
       ${a.ruta ? `<div class="gris">${P.esc(a.ruta)}</div>` : ""}
-      <button class="mini" data-ver="${P.esc(P.idBoveda(f, a))}">Ver la clave</button><div data-valor="${P.esc(P.idBoveda(f, a))}"></div></div>`).join("")}</div>`;
+      <button class="mini" data-ver="${P.esc(P.idBoveda(f, a))}">Ver la clave</button><div data-valor="${P.esc(P.idBoveda(f, a))}"></div></div>`).join("")}</details>`;
 }
 
 /* El repositorio público, leído sin credencial: lo último que se subió. */

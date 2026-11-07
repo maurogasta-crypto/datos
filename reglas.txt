@@ -2,6 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
+//  v9 · 2026-11-07 · COLABORADORES por invitación: `invitaciones/` y la ficha que se crea sola; la bóveda, sólo con `claves: true` que pone Mauro
 //  v8 · 2026-10-25 · los ÁLBUMES públicos de un proyecto de inmueble (General Flores): se leen sin cuenta, de a uno
 //  v7 · 2026-10-15 · un invitado EDITA los proyectos de inmuebles que Mauro le marca (`edita`)
 //  v6 · 2026-10-06 · entran los INVITADOS: `personas/` y `solicitudes/` (panel:U2)
@@ -255,11 +256,42 @@ service cloud.firestore {
         && request.resource.data.comentarios.size() <= 200;
     }
 
-    // La ficha de cada invitado: la escribe SÓLO Mauro. El invitado lee la
+    // La ficha de cada invitado: la escribe Mauro. El invitado lee la
     // suya (así sabe qué proyectos tiene) y el agente las lee para el cupo.
     match /personas/{uid} {
       allow read: if equipo() || (request.auth != null && request.auth.uid == uid);
       allow write: if soyYo();
+      // ── v9 · LA FICHA QUE SE CREA SOLA, DESDE UNA INVITACIÓN ──
+      // Mauro, 7-nov-2026: «un registro de usuarios con contraseña que
+      // gestionás tú con mi autorización para cada uno de los sitios». La
+      // persona se registra con el mail de su invitación, lo CONFIRMA (si no,
+      // quien se registrara primero con un mail ajeno se quedaba con ella), y
+      // crea su ficha con los proyectos de la invitación y nada más:
+      //   · `claves: false` siempre. La bóveda de sus proyectos la abre sólo
+      //     Mauro, poniendo `claves: true` a mano. Si no, el agente —que crea
+      //     invitaciones— podría darle a un tercero lo que él mismo no puede
+      //     leer, y la bóveda se abriría por la puerta de atrás.
+      //   · sin `edita`: editar una obra también lo da sólo Mauro.
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/invitaciones/$(request.auth.token.email.lower()))
+        && request.resource.data.keys().hasOnly(['nombre', 'mail', 'activo', 'proyectos', 'claves', 'creadoEn', 'invitadoPor'])
+        && request.resource.data.activo == true
+        && request.resource.data.claves == false
+        && request.resource.data.mail == request.auth.token.email.lower()
+        && request.resource.data.proyectos == get(/databases/$(database)/documents/invitaciones/$(request.auth.token.email.lower())).data.proyectos
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() > 0
+        && request.resource.data.nombre.size() <= 80;
+    }
+    // ── v9 · LAS INVITACIONES: una por mail, con los proyectos que abre ──
+    // Las crea el equipo: Mauro, o el agente CON SU AUTORIZACIÓN escrita
+    // (`herramientas/invitados.mjs` no invita sin `--autorizado`). La persona
+    // lee sólo la suya, para saber que la tiene.
+    match /invitaciones/{mail} {
+      allow get: if equipo() || (request.auth != null && request.auth.token.email != null
+                                 && request.auth.token.email.lower() == mail);
+      allow list, write: if equipo();
     }
     // Quien entra sin ficha pide acceso. Una por cuenta, con su nombre y un
     // mensaje; Mauro la aprueba creando la ficha y después la borra.
@@ -289,7 +321,11 @@ service cloud.firestore {
     // (`acceso-<proyecto>-…`, `app-<proyecto>`). Lo decidió Mauro el
     // 2026-10-06: «las claves sólo las ve». El AGENTE sigue afuera: no es
     // persona() —no tiene ficha en `personas/`— y esta línea no lo nombra.
-    match /claves/{id}     { allow get: if persona() && id.split('-').size() >= 2
+    // v9: y sólo si su ficha lo permite. Las fichas de antes no tienen el
+    // campo y lo siguen viendo; la que se crea sola trae `claves: false`.
+    match /claves/{id}     { allow get: if persona()
+                               && get(/databases/$(database)/documents/personas/$(request.auth.uid)).data.get('claves', true) == true
+                               && id.split('-').size() >= 2
                                && id.split('-')[0] in ['acceso', 'app']
                                && id.split('-')[1] in susProyectos(); }
 

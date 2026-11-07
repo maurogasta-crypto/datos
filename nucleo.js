@@ -15,10 +15,10 @@
 import {
   auth, db, onAuthStateChanged, signInWithEmailAndPassword, signOut,
   sendPasswordResetEmail, createUserWithEmailAndPassword, cargarFirebase
-} from "./firebase-init.js?v=init-5";
+} from "./firebase-init.js?v=init-6";
 
 export const P = {};
-P.VERSION = "nucleo-11";
+P.VERSION = "nucleo-12";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */

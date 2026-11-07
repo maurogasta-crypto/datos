@@ -87,6 +87,8 @@ const PROYECTOS = {
                   // v6 (panel:U2): los invitados. Las fichas las escribe sólo
                   // Mauro; el agente las LEE para el cupo y para saber quién pide.
                   "personas", "solicitudes",
+                  // v9: las invitaciones de colaboradores (herramientas/invitados.mjs).
+                  "invitaciones",
                   // v8: los álbumes públicos de un proyecto (General Flores).
                   "albumes"],
     /* `claves` es la bóveda, desde el día uno y para siempre: es lo que ABRE

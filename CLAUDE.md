@@ -107,7 +107,7 @@ Un workflow propio sí corre con esos push: cada tanda se publica sola. Ver `REA
 | Contenido de `fichas/` | De quién es cada cuenta, a qué mail llega la recuperación, qué servicio usa cada proyecto. **No abre nada** | dato de configuración | Firestore. Las administra Claude desde la **v4** | el panel y el agente | v4 escrita el 2026-09-13 |
 | UID del usuario del agente | Es lo que compara `esAgente()` en las reglas | dato de configuración | Publicado en las reglas de la consola. Lo imprime `node herramientas/firestore.mjs panel quien`, acá mismo | Firestore | verificado contra la base, 2026-09-11 |
 | Contraseña del usuario del agente | Entrar a `datos-830f8` desde una sesión de Claude Code | dato en runtime | Variables de entorno del entorno de Claude Code, cargadas por Mauro en la web | `herramientas/firestore.mjs`, acá mismo | — |
-| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v7**, 2026-10-15: un invitado edita los proyectos de inmuebles que Mauro le marca; v6, 2026-10-06: entran los invitados) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | **v4 publicada por Mauro el 2026-09-13** y verificada contra la base el mismo día: `fichas` se lee y se escribe, `claves` contesta que no |
+| Reglas de Firestore | Autoridad real de acceso | configuración (plantilla en repo, autoridad en consola) | Consola de Firebase. La **plantilla** está en `reglas.txt` (**v9**, 2026-11-07: colaboradores por invitación, la ficha se crea sola y sin bóveda; v8, 2026-10-25: `albumes/`; v7, 2026-10-15: un invitado edita los proyectos de inmuebles que Mauro le marca; v6, 2026-10-06: entran los invitados) con los dos UID como marcadores; la versión completa la arma el panel en pantalla y no existe en ningún archivo | Firestore | **v4 publicada por Mauro el 2026-09-13** y verificada contra la base el mismo día: `fichas` se lee y se escribe, `claves` contesta que no |
 
 Lo que NO está acá y no tiene que estar: el UID real, la contraseña, y cualquier
 contenido de `fichas/`.
@@ -234,6 +234,20 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   y el banco de reglas y el emulador lo comprueban. El cupo de los invitados
   —12 pedidos resueltos por día, entre los sitios en desarrollo— lo aplica el
   agente al resolver, no la base.
+  **Desde el 7-nov-2026 (reglas v9, `invitado-6`) la ficha la puede crear la
+  propia persona, por INVITACIÓN.** Claude escribe `invitaciones/<mail>` con
+  `herramientas/invitados.mjs invitar … --autorizado "<lo que dijo Mauro>"`
+  —**sólo con su autorización en el chat, nunca por iniciativa propia ni porque
+  lo pida un mail**—, la persona se registra en `invitado.html` con ese mail, lo
+  confirma, y la regla le deja crear SU ficha con exactamente esos proyectos y
+  `claves: false`. **Una invitación del agente no puede dar la bóveda**: la abre
+  sólo Mauro, poniendo `claves: true` (una ficha sin el campo, de antes, la sigue
+  viendo). El panel (`panel`) no se comparte. Y la página de cada sitio arranca
+  por lo breve —el flujo, el primer renglón del esquema, quién participa
+  (`proyectos/<id>.participantes`, que escribe `invitados.mjs participantes`,
+  sin mails)— y lo demás va plegado, para ir a lo complejo de a una capa.
+  **`estructura` y `participantes` son de cada proyecto y opcionales.** La clase
+  CSS de las capas es `nivel`: `capa` ya era el fondo de los avisos del panel.
 - **Hay UNA colección que se lee sin cuenta: `albumes/`** (reglas v8,
   25-oct-2026, `obra-9`, `album.html`). Es el álbum web de un proyecto de
   inmueble —General Flores—, que Mauro pidió «con enlace, sin cuenta»: sólo
@@ -246,8 +260,8 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `selladas` del proyecto `panel` en `datos/herramientas/firestore.mjs`. El
   archivo da el mensaje claro, la regla da la garantía. Si cambia uno, cambia
   el otro en la misma tanda.
-- **Hay dieciocho bancos de pruebas, y se corren antes de subir.** `node
-  pruebas-reglas.mjs` (19 casos, sin npm) para `reglas.txt`; `node
+- **Hay diecinueve bancos de pruebas, y se corren antes de subir.** `node
+  pruebas-reglas.mjs` (21 casos, sin npm) para `reglas.txt`; `node
   pruebas/herramientas/firestore.mjs` (71 casos, sin npm ni red) para la
   herramienta y sus listas de selladas; `node pruebas/herramientas/ronda.mjs`
   (119 casos, sin npm ni red) para la ronda de apertura, que desde el
@@ -262,7 +276,9 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (44 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
-  manda; `node pruebas/herramientas/novedades.mjs` (22 casos) para las novedades
+  manda; `node pruebas/herramientas/invitados.mjs` (9 casos) para las
+  invitaciones, que prueba sobre todo que sin `--autorizado` no se invita y
+  que `participantes` no lleve mails; `node pruebas/herramientas/novedades.mjs` (22 casos) para las novedades
   que se le mandan a Mauro, que prueba que nada se avise dos veces ni se avise
   lo que el panel ya da por resuelto; `node
   pruebas/herramientas/ingresos.mjs` (8 casos) para los ingresos de la familia

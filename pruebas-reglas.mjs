@@ -153,7 +153,8 @@ caso("LA BÓVEDA es `claves` y es de una sola persona", () => {
 
 caso("v6: un invitado es una ficha ACTIVA en `personas/` que escribe sólo Mauro", () => {
   trae(r, "data.activo == true", "persona() sin ficha activa");
-  const pe = r.slice(r.indexOf("match /personas/{uid}"), r.indexOf("match /solicitudes/{uid}"));
+  // Hasta las invitaciones (v9), que sí las crea el equipo: lo que importa es la FICHA.
+  const pe = r.slice(r.indexOf("match /personas/{uid}"), r.indexOf("match /invitaciones/{mail}"));
   trae(pe, "allow write: if soyYo();", "`personas` la escribe alguien más que Mauro");
   noTrae(pe.replace("allow read: if equipo()", ""), "equipo()", "el agente no se puede dar una ficha");
   // Lo que crea un invitado es un pedido de SU proyecto, firmado por él, y nada más.
@@ -167,6 +168,20 @@ caso("v6: un invitado es una ficha ACTIVA en `personas/` que escribe sólo Mauro
     const l = r.split("\n").filter((x) => x.includes("match /" + c + "/")).join(" ");
     noTrae(l, "persona()", "`" + c + "` le llega a un invitado");
   }
+});
+
+caso("v9: la ficha que se crea sola desde una invitación NUNCA trae la bóveda", () => {
+  const pe = r.slice(r.indexOf("match /personas/{uid}"), r.indexOf("match /invitaciones/{mail}"));
+  trae(pe, "allow create: if request.auth != null && request.auth.uid == uid", "la ficha propia no se ata a quien la crea");
+  trae(pe, "request.auth.token.email_verified == true", "una invitación se usa sin mail confirmado");
+  trae(pe, "request.resource.data.claves == false", "la ficha que se crea sola puede traer la bóveda");
+  trae(pe, ".data.proyectos", "los proyectos no salen de la invitación");
+  noTrae(pe, "'edita'", "la ficha que se crea sola puede editar obras");
+  const inv = r.slice(r.indexOf("match /invitaciones/{mail}"), r.indexOf("match /solicitudes/{uid}"));
+  trae(inv, "allow list, write: if equipo();", "las invitaciones las escribe alguien más que el equipo");
+  // La bóveda de un invitado mira `claves` de su ficha.
+  const cl = r.split("\n").filter((x) => x.includes("match /claves/{id}")).join(" ") + r.slice(r.indexOf("allow get: if persona()"), r.indexOf("allow get: if persona()") + 300);
+  trae(cl, "get('claves', true) == true", "la bóveda de un invitado no mira `claves` de su ficha");
 });
 
 caso("`fichas` la administra el equipo, desde la v4", () => {

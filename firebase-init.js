@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    firebase-init.js — EL ÚNICO CONTACTO CON EL SDK DE FIREBASE.
-   Sello: init-5
+   Sello: init-6
 
    Ninguna otra página importa nada de firebase directamente. Si mañana
    cambia la versión del SDK, o el proyecto, o hay que agregar una función,
@@ -58,7 +58,7 @@ export const firebaseConfig = {
 /* Enlaces vivos: `undefined` hasta que `cargarFirebase()` los rellena. */
 export let app, auth, db;
 export let onAuthStateChanged, signInWithEmailAndPassword, signOut,
-           sendPasswordResetEmail, createUserWithEmailAndPassword;
+           sendPasswordResetEmail, createUserWithEmailAndPassword, sendEmailVerification;
 export let doc, getDoc, setDoc, deleteDoc, collection, getDocs,
            query, orderBy, serverTimestamp, writeBatch,
            where, updateDoc, arrayUnion, deleteField;
@@ -99,7 +99,10 @@ export function cargarFirebase() {
     auth = modAuth.getAuth(app);
 
     ({ onAuthStateChanged, signInWithEmailAndPassword, signOut,
-       sendPasswordResetEmail, createUserWithEmailAndPassword } = modAuth);
+       sendPasswordResetEmail, createUserWithEmailAndPassword, sendEmailVerification } = modAuth);
+    // init-6 (invitado-6, reglas v9): confirmar el mail de quien se registra
+    // con una invitación, y los mails de Firebase en castellano.
+    auth.languageCode = "es";
     // init-4 (panel:U2): `where`, `updateDoc`, `arrayUnion` y crear cuenta,
     // para la página de los invitados.
     ({ doc, getDoc, setDoc, deleteDoc, collection, getDocs,

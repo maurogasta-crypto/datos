@@ -563,7 +563,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-5";
 
-P.PANEL = "panel-46";
+P.PANEL = "panel-47";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -3078,7 +3078,12 @@ async function bajarReglasDe(pr) {
     const u = a.uids || {};
     const mio = String(u.mio || "").trim();
     const agente = String(u.agente || "").trim();
-    if (!mio) {
+    /* panel-47 (7-nov-2026): el UID de Mauro se pide SÓLO si la plantilla lo
+       usa. Las reglas de BandoMaps llevan nada más que el del agente, y el
+       panel pedía igual el de Mauro y mandaba a anotarlo en un campo que no
+       tiene pantalla: Mauro quedaba en un bucle. */
+    const pideMio = texto.includes(MARCA_MIA) || texto.includes(MARCA_MIA_VIEJA);
+    if (pideMio && !mio) {
       throw new Error("esa plantilla lleva los UID como marcadores y este proyecto "
         + "todavía no los tiene anotados. Los UID de Firebase son distintos en cada "
         + "proyecto, así que el panel no puede adivinarlos. Creá los usuarios en "

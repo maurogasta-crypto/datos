@@ -675,7 +675,7 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-46` |
+| `index.html` | `P.PANEL` | `panel-47` |
 | `invitado.html` | `P.PANEL` | `invitado-5` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
@@ -685,7 +685,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-5` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v47` |
+| `sw.js` | `VERSION` | `panel-shell-v48` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
@@ -752,6 +752,12 @@ repositorio es público y **un UID real no entra nunca**. El panel baja ese
 mismo archivo, le pone los valores adentro y muestra el resultado en la
 solapa. Esa versión completa existe en pantalla y en ningún otro lado: ni en un
 archivo, ni en un commit, ni en un chat.
+
+**Las plantillas de los otros sitios también llevan marcadores, y cada uno se
+pide sólo si está** (`panel-47`, 7-nov-2026). Las reglas de BandoMaps llevan
+nada más que `UID-DEL-AGENTE`: sus administradores entran por invitación y no
+por su UID. Hasta `panel-46` el botón exigía igual `acceso.uids.mio` y mandaba a
+anotarlo en un campo sin pantalla, y Mauro quedó en un bucle.
 
 Hasta `panel-14` las reglas estaban escritas **dos veces**: en `reglas.txt` y,
 otra vez a mano, adentro de `index.html`. Dos copias del mismo texto que había

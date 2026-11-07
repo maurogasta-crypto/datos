@@ -30,6 +30,7 @@ publicadas y verificadas. La ronda diaria trae las cinco fuentes con ✓.
 | `casaverde` | `casaverde-20` | cabañas, espacios y actividades vs. lo que muestra el sitio |
 | `hilux` | `hilux-1b6f1` | los reportes que sube la app de la camioneta. **Acá además ESCRIBE**: sus conclusiones van a `analisis` |
 | `paseo` | `pruebas-db555` | los álbumes de los locales del Paseo Primero de Mayo (`albumes/`). Entró el 2026-10-31 con la contraseña compartida. Reglas v1 publicadas ese día: escriben Mauro y el agente, con copia en `_historial`; listar lo trae la v2 |
+| `harmonia` | `tocatoca-621a5` | BandoMaps: usuarios, invitaciones, clases, progreso de cada alumno, el histórico de la planilla vieja e ingresos. Entró el 2026-11-07 con la contraseña compartida; reglas v1 en `firestore.rules` de `masotromauro-ai/tocatoca`, probadas en el emulador (41 casos), sin publicar todavía |
 
 **Los cuatro UID**, que es lo que va en cada regla. No son secretos: un UID sin
 contraseña no abre nada, y de hecho tienen que estar escritos en las reglas

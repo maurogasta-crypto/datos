@@ -200,12 +200,12 @@ await prueba("y si están los dos pares, gana el nombre bueno", () => {
 // `tiempos` tampoco sella por colección: lo personal es por CAMPO (una tarea
 // «personal»), y eso sólo lo puede cortar la regla, no una lista.
 // `paseo` (31-oct-2026) guarda sólo álbumes para mostrar: no hay nada que abra algo.
-const SIN_NADA_QUE_SELLAR = new Set(["hilux", "paseo"]);
+const SIN_NADA_QUE_SELLAR = new Set(["hilux", "paseo", "harmonia"]); // harmonia (BandoMaps): ninguna colección abre nada; las fichas sólo dicen rol y nombre
 
-await prueba("las siete bases están, y ninguna comparte projectId con otra", () => {
+await prueba("las ocho bases están, y ninguna comparte projectId con otra", () => {
   const ids = Object.values(PROYECTOS).map((p) => p.projectId);
-  assert.equal(ids.length, 7);
-  assert.equal(new Set(ids).size, 7);
+  assert.equal(ids.length, 8);
+  assert.equal(new Set(ids).size, 8);
   for (const [n, p] of Object.entries(PROYECTOS)) {
     assert.ok(p.apiKey && p.projectId, `${n} sin identificadores`);
     if (!SIN_NADA_QUE_SELLAR.has(n)) {

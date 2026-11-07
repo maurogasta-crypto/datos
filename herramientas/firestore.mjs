@@ -357,6 +357,24 @@ const PROYECTOS = {
      antes su copia en `_historial` (crear, nunca editar ni borrar). Listar
      `albumes` lo deja la v2. No guarda fallas: lo que se vigila son sus
      álbumes, que no se cruzan con los pendientes. */
+  /* harmonia = BandoMaps (7-nov-2026, Mauro: «utilicemos esta base para
+     generar todos los respaldos del sitio… una estructura que tenga mayor
+     solidez y funcionalidades de administración»). La clave del panel sigue
+     siendo `harmonia`; la base es tocatoca-621a5 y el código vive en
+     masotromauro-ai/tocatoca. UNA base para el sitio estable y el de
+     desarrollo (BASE.md de tocatoca). El agente lee todo; escribe sólo lo de
+     la migración (invitaciones, clases, progreso, historico) con copia previa. */
+  harmonia: {
+    projectId: "tocatoca-621a5",
+    apiKey: "AIzaSyDdBEPqcKk9815MS2CdOlaFHmJcEup2UFU",
+    mail: "FB_TOCATOCA_MAIL",
+    clave: "FB_TOCATOCA_CLAVE",
+    colecciones: ["usuarios", "invitaciones", "config", "clases", "progreso", "historico", "ingresos", "reportes"],
+    coleccionVigilada: "reportes",
+    selladas: [],
+    historial: true
+  },
+
   paseo: {
     projectId: "pruebas-db555",
     apiKey: "AIzaSyAyrHTkm8k2iv_14eQKKCrFyOrgD9mwgHo",

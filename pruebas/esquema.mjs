@@ -1,6 +1,6 @@
 // pruebas/esquema.mjs — el esquema de globos (esquema.js), sin navegador.
 import assert from "node:assert/strict";
-import { nodosDe, ubicar, svgEsquema, cajaDeAmpliar, renglones } from "../esquema.js";
+import { nodosDe, ubicar, svgEsquema, cajaDeAmpliar, renglones, mapaDe, ubicarMapa, svgMapa, svgArea } from "../esquema.js";
 let ok = 0, mal = 0;
 const t = (n, f) => { try { f(); ok++; console.log("  ✓ " + n); } catch (e) { mal++; console.log("  ✗ " + n + "\n      " + e.message); } };
 const es = { nodos: [
@@ -33,4 +33,18 @@ t("ampliar encuadra el globo y sus vecinos", () => {
 });
 t("los renglones no parten palabras y tienen techo", () => { const r = renglones("una frase bastante larga para un globo chico de verdad, muy larga", 12);
   assert.ok(r.length <= 4 && r.every((x) => x.length <= 12 || !x.includes(" "))); });
+const ocho = mapaDe({ mapa: { objetivo: "Vender las piezas de un depósito a compradores invitados, con el stock, las ventas y la plata en orden.",
+  areas: ["Inventario", "Compradores y llaves", "Catálogo del comprador", "Pedidos", "Ventas, cobros y entregas", "Documentos", "Luces del depósito", "Equipo y ajustes"]
+    .map((t, i) => ({ id: "a" + i, titulo: t, que: "una explicación corta de dos renglones en el globo", estado: i === 7 ? "idea" : "anda", conecta: i ? ["a0"] : [],
+      hijos: i ? [] : [{ id: "h1", titulo: "Foto", a: ["h2"] }, { id: "h2", titulo: "La IA propone", estado: "idea" }] })) } });
+t("mapa: ocho áreas sin encimarse", () => { const p = [...ubicarMapa(ocho).pos.values()];
+  for (let i = 0; i < p.length; i++) for (let j = i + 1; j < p.length; j++) {
+    const a = p[i], b = p[j]; assert.ok(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y, `se enciman ${i} y ${j}`); } });
+t("mapa: el objetivo entra entero", () => assert.ok(svgMapa(ocho).includes("orden.")));
+t("mapa: lo que se busca va marcado aparte", () => { assert.equal((svgMapa(ocho).match(/esq-idea/g) || []).length, 1); assert.ok(svgArea(ocho, "a0").includes("esq-idea")); });
+t("mapa: lo que se busca y está suelto va al final", () => {
+  const n = mapaDe({ mapa: { areas: [{ id: "x", titulo: "X", hijos: [{ id: "a", titulo: "A", a: ["b"] }, { id: "b", titulo: "B" }, { id: "i", titulo: "Idea", estado: "idea" }] }] } }).areas[0].hijos;
+  const { pos } = ubicar(n); assert.ok(pos.get("i").y > pos.get("b").y); });
+t("mapa: un área sin partes no tiene dibujo propio", () => assert.equal(svgArea(ocho, "a3"), ""));
+t("mapa: sin áreas no hay mapa", () => assert.equal(mapaDe({ mapa: { areas: [] } }), null));
 console.log(`\n${mal ? mal + " de " + (ok + mal) + " fallaron." : "Todo bien: " + ok + " casos."}`); process.exit(mal ? 1 : 0);

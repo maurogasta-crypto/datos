@@ -54,6 +54,18 @@
   .esq-nodo.activo .esq-sub { fill: var(--tinta); }
   .esq-detalle { border-left: 3px solid var(--acento); padding: .2rem .8rem; margin: .4rem 0 .8rem; }
   .esq-detalle h3 { margin: .3rem 0; }
+  .esq-migas { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: .1rem 0 .4rem; font-size: .92rem; }
+  .esq-radio { stroke: var(--linea); stroke-width: 1.2; }
+  .esq-conecta { fill: none; stroke: var(--acento); stroke-width: 1.4; opacity: .55; }
+  .esq-tenue { opacity: .35; stroke-dasharray: 4 3; }
+  .esq-objetivo { fill: #2a2418; stroke: var(--acento); stroke-width: 2; }
+  .esq-obj-txt { fill: var(--texto); font-size: 11.5px; text-anchor: middle; pointer-events: none; }
+  .esq-idea, .esq-desarrollo { opacity: .55; }
+  .esq-idea .esq-globo, .esq-desarrollo .esq-globo { stroke-dasharray: 5 3; stroke: var(--gris2); }
+  .esq-estado { fill: var(--gris); font-size: 9.5px; text-anchor: middle; pointer-events: none; }
+  .esq-entra { animation: esq-entra .35s ease-out; }
+  @keyframes esq-entra { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .esq-entra { animation: none; } }
   details.tec { margin: .3rem 0 .4rem; font-size: .92rem; }
   details.tec > summary { cursor: pointer; color: var(--gris); }
   .parte-que { font-size: .88rem; color: var(--gris); }
@@ -164,11 +176,11 @@
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-12";
 import { GLOSARIO } from "./glosario.js?v=glosario-1";
-import { nodosDe, svgEsquema, cajaDeAmpliar } from "./esquema.js?v=esquema-1";
+import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeArea, ESTADOS } from "./esquema.js?v=esquema-2";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-9";
+P.PANEL = "invitado-10";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -361,7 +373,11 @@ function pintar() {
     const sueltos = pend.filter((x) => !enPasos.has(x.id) && !esPreg(x));
     return `<section class="inv-proy">
       <h2>${P.esc(pr.nombre || pr.id)}</h2>
-      ${(() => { const nd = nodosDe(es); return nd.length ? `<div class="esq-caja" data-esq="${P.esc(pr.id)}">${svgEsquema(nd)}
+      ${mapaDe(es) ? `<div class="esq-caja" data-mapa="${P.esc(pr.id)}"><div class="esq-migas" data-migas="${P.esc(pr.id)}"></div>
+        <div data-mapa-svg="${P.esc(pr.id)}">${svgMapa(mapaDe(es))}</div>
+        <p class="gris esq-ayuda">Tocá un área para entrar. Lo más chico y punteado está en desarrollo o se busca.</p></div>
+        <div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""}
+      ${mapaDe(es) ? "" : (() => { const nd = nodosDe(es); return nd.length ? `<div class="esq-caja" data-esq="${P.esc(pr.id)}">${svgEsquema(nd)}
         <p class="gris esq-ayuda">Tocá un globo para ampliarlo.</p></div><div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""; })()}
       ${resumen1 ? `<p>${P.esc(resumen1)}</p>` : ""}
       ${(pa.gente || []).length ? `<p class="gente">Participan: ${pa.gente.map((g) => P.esc(g.nombre) + " (" + P.esc(g.rol) + ")").join(" · ")}</p>` : ""}
@@ -427,6 +443,7 @@ function engancharEsquemas() {
     document.querySelectorAll("[data-tab]").forEach((t) => t.hidden = t.dataset.tab !== pestana);
     document.querySelectorAll("[data-pestana]").forEach((x) => { x.classList.toggle("sel", x === b); x.setAttribute("aria-selected", x === b); });
   });
+  document.querySelectorAll("[data-mapa]").forEach(montarMapa);
   document.querySelectorAll("[data-esq]").forEach((caja) => {
     const pid = caja.dataset.esq, pr = PROY.find((p) => p.id === pid) || {}, es = pr.estructura || {};
     const nodos = nodosDe(es), svg = caja.querySelector("svg");
@@ -454,6 +471,76 @@ function engancharEsquemas() {
     });
   });
 }
+
+/* invitado-10 (Mauro: «ampliar en el sentido no de hacer zoom solamente
+   visual sino ampliar conceptualmente esa parte»): el MAPA. Tocar un área
+   acerca la vista a ella y, al llegar, el dibujo pasa a ser el de ESA área
+   por dentro (esquema.js, svgArea); arriba queda el camino para volver, y
+   abajo, su explicación y las áreas con las que se toca, que también llevan. */
+function montarMapa(caja) {
+  const pid = caja.dataset.mapa, pr = PROY.find((p) => p.id === pid) || {}, mapa = mapaDe(pr.estructura);
+  const lienzo = caja.querySelector("[data-mapa-svg]"), migas = caja.querySelector("[data-migas]");
+  const det = document.querySelector(`[data-esq-det="${pid}"]`);
+  const chip = (e) => e === "anda" ? "" : `<span class="chip-e">${e === "idea" ? "💡 se busca" : "🛠 en desarrollo"}</span>`;
+  const preguntaSobre = (titulo) => `<button class="mini" data-preg-sobre="${P.esc(titulo)}">❓ Preguntar sobre esto</button>`;
+  const enganchar2 = () => {
+    det.querySelectorAll("[data-preg-sobre]").forEach((b) => b.onclick = () => {
+      const capa = document.querySelector(`[data-capa-preg="${pid}"]`), c2 = document.querySelector(`[data-preg="${pid}"]`);
+      if (capa) capa.open = true; if (c2) { c2.value = "Sobre «" + b.dataset.pregSobre + "»: "; c2.focus(); c2.scrollIntoView({ block: "center" }); }
+    });
+    det.querySelectorAll("[data-ir-area]").forEach((b) => b.onclick = () => entrar(b.dataset.irArea));
+    det.querySelectorAll("[data-volver-area]").forEach((b) => b.onclick = () => entrar(b.dataset.volverArea, true));
+  };
+  const ayuda = caja.querySelector(".esq-ayuda");
+  const general = () => {
+    lienzo.innerHTML = svgMapa(mapa);
+    if (ayuda) ayuda.textContent = "Tocá un área para entrar. Lo más chico y punteado está en desarrollo o se busca.";
+    migas.innerHTML = `<b>${P.esc(pr.nombre || pid)}</b> · el proyecto entero`;
+    det.hidden = false;
+    det.innerHTML = `<p class="explica"><b>Para qué es:</b> ${P.esc(mapa.objetivo)}</p>`
+      + (mapa.quienes.length ? `<p class="explica"><b>Quiénes lo usan:</b> ${mapa.quienes.map((q) => P.esc(q.nombre) + (q.que ? " — " + P.esc(q.que) : "")).join(" · ")}</p>` : "")
+      + `<p class="gris">Tocá un área del dibujo para ver qué hace por dentro.</p>`;
+    lienzo.querySelectorAll("[data-area]").forEach((g) => {
+      g.onclick = () => {
+        const c = cajaDeArea(mapa, g.dataset.area), svg = lienzo.querySelector("svg");
+        g.classList.add("activo");
+        if (c) animarVista(svg, [c.x, c.y, c.w, c.h]);
+        setTimeout(() => entrar(g.dataset.area), quieto() ? 0 : 400);
+      };
+      g.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); g.onclick(); } };
+    });
+  };
+  const entrar = (aid, sinScroll) => {
+    const a = mapa.areas.find((x) => x.id === aid); if (!a) return general();
+    const dib = svgArea(mapa, aid);
+    lienzo.innerHTML = dib ? `<div class="esq-entra">${dib}</div>` : `<p class="gris" style="text-align:center;padding:1rem">Esta área todavía no está dibujada por dentro.</p>`;
+    if (ayuda) ayuda.textContent = dib ? "Tocá una parte para ver qué es. «‹» vuelve al proyecto entero." : "";
+    migas.innerHTML = `<button class="mini" data-migas-todo>‹ ${P.esc(pr.nombre || pid)}</button> <b>› ${P.esc(a.titulo)}</b> ${chip(a.estado)}`;
+    migas.querySelector("[data-migas-todo]").onclick = general;
+    const vecinas = a.conecta.map((id) => mapa.areas.find((x) => x.id === id)).filter(Boolean);
+    const fichaArea = `<h3>${P.esc(a.titulo)} ${chip(a.estado)}</h3>
+      ${a.explica || a.que ? `<p class="explica">${P.esc(a.explica || a.que)}</p>` : ""}
+      ${vecinas.length ? `<p class="gris" style="margin:.5rem 0 .2rem">Se conecta con:</p><div class="fila-btn" style="flex-wrap:wrap">${vecinas.map((v) => `<button class="mini" data-ir-area="${P.esc(v.id)}">${P.esc(v.titulo)} ›</button>`).join("")}</div>` : ""}
+      ${a.detalle.length ? `<details class="tec"><summary>Más técnico</summary><ul>${a.detalle.map((d) => `<li>${P.esc(d)}</li>`).join("")}</ul></details>` : ""}
+      <div class="fila-btn">${preguntaSobre(a.titulo)}</div>`;
+    det.hidden = false; det.innerHTML = fichaArea; enganchar2();
+    lienzo.querySelectorAll("[data-hijo]").forEach((g) => {
+      g.onclick = () => {
+        const h = a.hijos.find((x) => x.id === g.dataset.hijo); if (!h) return;
+        lienzo.querySelectorAll("[data-hijo]").forEach((x) => x.classList.toggle("activo", x === g));
+        det.innerHTML = `<h3>${P.esc(h.titulo)} ${chip(h.estado)}</h3>
+          ${h.explica || h.sub ? `<p class="explica">${P.esc(h.explica || h.sub)}</p>` : ""}
+          <div class="fila-btn">${preguntaSobre(h.titulo)}<button class="mini" data-volver-area="${P.esc(a.id)}">↩ ${P.esc(a.titulo)}</button></div>`;
+        enganchar2();
+      };
+      g.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); g.onclick(); } };
+    });
+    if (!sinScroll) caja.scrollIntoView({ block: "start", behavior: quieto() ? "auto" : "smooth" });
+  };
+  general();
+}
+
+const quieto = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
 function animarVista(svg, fin) {
   const ini = svg.getAttribute("viewBox").split(" ").map(Number);

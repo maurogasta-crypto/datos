@@ -264,6 +264,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   de GLOBOS** (`estructura.nodos`, `esquema.js`, SVG propio): tocar un globo lo
   amplía y abre su explicación. Un proyecto nuevo se explica escribiendo
   `nodos` y `partes` en su documento, no tocando la página.
+  **Y desde `invitado-10` el MAPA** (`estructura.mapa`): el objetivo, quiénes
+  lo usan y las áreas, y al tocar un área su esquema por dentro, con cada cosa
+  marcada `anda`, `desarrollo` o `idea` (lo que no anda, más chico y
+  apagado). **Se arma leyendo el código del sitio** —sus pantallas, sus
+  colecciones, su documentación de flujos y pendientes— y cada área y parte
+  lleva `fuentes`; si un cambio de código cambia lo que hace un área, el mapa
+  cambia en la misma tanda.
 - **Hay UNA colección que se lee sin cuenta: `albumes/`** (reglas v8,
   25-oct-2026, `obra-9`, `album.html`). Es el álbum web de un proyecto de
   inmueble —General Flores—, que Mauro pidió «con enlace, sin cuenta»: sólo
@@ -308,8 +315,8 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   le pide a la IA); `node pruebas/herramientas/notificaciones.mjs` (12 casos) para las
   notificaciones del 13C, que prueba sobre todo que descartar no deje copia;
   `node pruebas/exportar.mjs` (7 casos) para lo que se le pasa a Gemini, que
-  prueba sobre todo lo que NO sale; `node pruebas/esquema.mjs` (10 casos) para el esquema de
-  globos de cada proyecto en la página del invitado; `node pruebas/ojos.mjs` (6 casos) para el
+  prueba sobre todo lo que NO sale; `node pruebas/esquema.mjs` (16 casos) para el esquema de
+  globos y el mapa por niveles de cada proyecto en la página del invitado; `node pruebas/ojos.mjs` (6 casos) para el
   ojo de las contraseñas que usan los cinco sitios; `node pruebas/callmebot.mjs`
   (7 casos) para la lectura de la respuesta de CallMeBot, que usan tres sitios y
   `avisos.mjs`; `node pruebas/errores.mjs` (7 casos) para las causas de los

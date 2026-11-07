@@ -606,6 +606,22 @@ panel de acceso».
   regla de pedidos no cambió) y despierta a Claude, que contesta como
   comentario, abajo de la pregunta (TRASPASO § 4 bis, e). Sin sesión no se ve
   nada; con sesión y sin invitación, sólo «pedir acceso».
+- **El MAPA del proyecto, de lo general a lo particular** (`invitado-10`,
+  `esquema-2`, 7-nov-2026, Mauro: «una visualización simplificada global… y al
+  hacer clic… ampliar conceptualmente esa parte… en base a lo que está
+  desarrollado y lo que se busca»). `proyectos/<id>.estructura.mapa` =
+  `{objetivo, quienes, areas: [{id, titulo, que, estado, conecta, explica,
+  detalle, fuentes, hijos: [{id, titulo, que, estado, a, explica, fuentes}]}]}`.
+  Arriba, el objetivo en un círculo; colgadas de él, las áreas. Tocar un área
+  acerca la vista y el dibujo pasa a ser el de esa área por dentro (sus partes
+  encadenadas), con el camino para volver, su explicación y las áreas con las
+  que se conecta (que llevan a ellas). `estado`: `anda`, `desarrollo` o `idea`;
+  lo que no anda va más chico, punteado y apagado, y lo suelto al final
+  (Mauro: «menos resaltado… un poco más pequeño»). `fuentes` dice de qué
+  archivos y colecciones sale cada cosa: el mapa se arma leyendo el código del
+  sitio, no de memoria. Con `mapa`, reemplaza al esquema de `nodos`. Hoy lo
+  tiene remateTaller (8 áreas, 32 partes); los demás, cuando se arme el suyo.
+  Banco: `node pruebas/esquema.mjs` (16 casos).
 - **Una pestaña por proyecto, y el esquema como un dibujo de globos que se
   amplía** (`invitado-9`, `esquema.js`, 7-nov-2026, Mauro: «cuando son varios
   tienen que tener una pestaña por proyecto… más como una imagen con globitos…
@@ -617,7 +633,7 @@ panel de acceso».
   cajas), por niveles. Tocar un globo anima la vista hasta él y sus vecinos y
   abre abajo su explicación (la de su `parte`), con «Preguntar sobre esto» y
   «Ver el esquema entero». Sin animación si el teléfono pide menos movimiento.
-  Banco: `node pruebas/esquema.mjs` (10 casos).
+  Banco: `node pruebas/esquema.mjs`.
 - **«👁 Ver como» abre la página del invitado tal como la ve esa persona**
   (`invitado-8`, `panel-50`, 7-nov-2026): `invitado.html?como=<uid>` (desde
   Puerta) o `?como=mail:<mail>` (alguien invitado que todavía no se registró).
@@ -738,8 +754,8 @@ teléfono.
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-50` |
-| `invitado.html` | `P.PANEL` | `invitado-9` |
-| `esquema.js` | `VERSION` | `esquema-1` |
+| `invitado.html` | `P.PANEL` | `invitado-10` |
+| `esquema.js` | `VERSION` | `esquema-2` |
 | `glosario.js` | `VERSION` | `glosario-1` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
@@ -749,7 +765,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v54` |
+| `sw.js` | `VERSION` | `panel-shell-v55` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

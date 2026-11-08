@@ -26,7 +26,7 @@
      node herramientas/invitados.mjs sitio <proyecto> <mail> --permisos a,b [--nombre "X"] --autorizado "<lo que dijo Mauro>"
        (invitados-2: la invitación en la base DEL SITIO —hoy CasaYourte—, siempre de colaborador)
    ═══════════════════════════════════════════════════════════ */
-export const VERSION = "invitados-2";
+export const VERSION = "invitados-3";
 export const LINK = "https://maurogasta-crypto.github.io/datos/invitado.html";
 
 export const limpiarMail = (m) => String(m || "").trim().toLowerCase();
@@ -47,14 +47,19 @@ export function validar({ mail, proyectos, autorizado }, existentes) {
 /** Quiénes participan en cada proyecto: Mauro primero (dueño), después cada
     persona activa con ese proyecto (colaborador), y cuántas invitaciones
     esperan. Nombres y roles, nunca mails. */
-export function participantesPor(proyectos, personas, invitaciones) {
+/* invitados-3 (8-nov-2026, Mauro: «no debe decir Mauro dueño, Mariano
+   colaborador, sino Mauro diseñador o desarrollador, Mariano administrador»):
+   el papel de cada uno se define POR PROYECTO, en `proyectos/<id>.papeles`
+   ({ mauro: "...", <uid de la ficha>: "..." }). Sin eso, lo de siempre. */
+export function participantesPor(proyectos, personas, invitaciones, papeles = {}) {
   const reg = new Set(personas.map((p) => limpiarMail(p.mail)).filter(Boolean));
   const out = {};
   for (const id of proyectos) {
-    const gente = [{ nombre: "Mauro", rol: "dueño" }];
+    const pp = papeles[id] || {};
+    const gente = [{ nombre: "Mauro", rol: String(pp.mauro || "dueño").slice(0, 40) }];
     for (const p of personas) {
       if (p.activo === true && Array.isArray(p.proyectos) && p.proyectos.includes(id))
-        gente.push({ nombre: String(p.nombre || "Sin nombre").slice(0, 60), rol: "colaborador" });
+        gente.push({ nombre: String(p.nombre || "Sin nombre").slice(0, 60), rol: String((p.id && pp[p.id]) || "colaborador").slice(0, 40) });
     }
     const esperan = invitaciones.filter((i) => Array.isArray(i.proyectos) && i.proyectos.includes(id) && !reg.has(limpiarMail(i.id))).length;
     out[id] = { gente, invitacionesSinUsar: esperan };
@@ -116,7 +121,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     if (!i) { console.error("\n✖ no hay invitación para ese mail\n"); process.exit(1); }
     console.log("\n  " + mensaje(i.id, (i.proyectos || []).map(nombre)) + "\n");
   } else if (cmd === "participantes") {
-    const por = participantesPor(ids, personas, invitaciones);
+    const por = participantesPor(ids, personas, invitaciones, Object.fromEntries(proyectos.map((p) => [p.id, p.papeles || {}])));
     for (const id of ids) {
       if (id === "panel") continue;
       await fusionarRutas(cfg, s, "proyectos", id, [[["participantes"], por[id]]]);

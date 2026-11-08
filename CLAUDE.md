@@ -260,6 +260,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   "…"`, por `invitarEnSitio` de `firestore.mjs`): hoy sólo CasaYourte
   (`invita` en su entrada de `PROYECTOS`), siempre de colaborador y con lo que
   dijo Mauro escrito adentro; `invitaciones` sigue sellada para leer.
+  **El papel de cada uno en un proyecto lo define `proyectos/<id>.papeles`**
+  (`invitados-3`, 8-nov-2026, Mauro: «no debe decir Mauro dueño, Mariano
+  colaborador, sino Mauro desarrollador, Mariano administrador»): `{ mauro,
+  <uid>: "…" }`; sin eso, «dueño» y «colaborador».
   **Desde `invitado-9` cada proyecto es una PESTAÑA y su esquema es un dibujo
   de GLOBOS** (`estructura.nodos`, `esquema.js`, SVG propio): tocar un globo lo
   amplía y abre su explicación. Un proyecto nuevo se explica escribiendo
@@ -299,7 +303,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   npm ni red) para la limpieza de Descargas del teléfono, que mueve archivos de
   verdad en el teléfono de Mauro; `node pruebas/herramientas/avisos.mjs` (44 casos, sin
   npm ni red) para los avisos por WhatsApp, que prueba sobre todo lo que NO
-  manda; `node pruebas/herramientas/invitados.mjs` (13 casos) para las
+  manda; `node pruebas/herramientas/invitados.mjs` (14 casos) para las
   invitaciones (las del panel y, desde invitados-2, las de un sitio), que prueba sobre todo que sin `--autorizado` no se invita y
   que `participantes` no lleve mails; `node pruebas/herramientas/novedades.mjs` (22 casos) para las novedades
   que se le mandan a Mauro, que prueba que nada se avise dos veces ni se avise

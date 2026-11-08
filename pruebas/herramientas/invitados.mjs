@@ -22,6 +22,12 @@ t("participantes: Mauro primero, después los activos con ese proyecto", () => {
   assert.equal(p.harmonia.invitacionesSinUsar, 1);
   assert.deepEqual(p.casaverde.gente.map((g) => g.nombre), ["Mauro", "Flor"]);
 });
+t("participantes: el papel de cada uno se define por proyecto", () => {
+  const p = participantesPor(["harmonia", "remate"], [{ id: "u1", mail: "m@x.com", nombre: "Mariano", activo: true, proyectos: ["harmonia", "remate"] }], [],
+    { harmonia: { mauro: "desarrollador", u1: "administrador" } });
+  assert.deepEqual(p.harmonia.gente.map((g) => g.rol), ["desarrollador", "administrador"]);
+  assert.deepEqual(p.remate.gente.map((g) => g.rol), ["dueño", "colaborador"]);
+});
 t("participantes no lleva mails", () => {
   const p = participantesPor(["harmonia"], [{ mail: "m@x.com", nombre: "Mariano", activo: true, proyectos: ["harmonia"] }], []);
   assert.ok(!JSON.stringify(p).includes("@"));

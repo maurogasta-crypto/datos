@@ -188,6 +188,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   `despertar`, `avisar-claude`), con número de contrato; si el servidor se muda
   (`general:C9`), cambia ese archivo y nada más. Banco `node
   pruebas/servidor.mjs` (8 casos). La usa Tiempos desde `init-6`.
+  **Y el servidor mismo vive en `servidor/`** (8-nov-2026, proyecto Netlify
+  `timon-servidor`): se despliega desde TERMUX, con la sesión de `netlify` de
+  Mauro, por `node herramientas/desplegar.mjs servidor`, que deja el registro
+  de cada despliegue en el teléfono y en `despliegues/` de la bodega (banco
+  `node pruebas/herramientas/desplegar.mjs`, 6 casos). El chat no tiene clave
+  de Netlify y no despliega.
   **La tercera es `errores.js`** (`errores-1`): las causas de los errores en
   castellano (PROTOCOLO-INTERFAZ § 7.2). Había dos tablas distintas (CasaYourte
   y este panel) y tres sitios que mostraban el código pelado. Cada sitio la

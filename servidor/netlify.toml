@@ -1,0 +1,23 @@
+# netlify.toml — el servidor del ecosistema (plan «Timón», 8-nov-2026)
+# Proyecto de Netlify `timon-servidor`. Sólo funciones.
+#
+# SE DESPLIEGA DESDE TERMUX, con  node herramientas/desplegar.mjs servidor
+# (ver servidor/README.md). Sin repositorio enganchado en Netlify: así un push a
+# `datos` no gasta el cupo gratuito; se despliega cuando una función cambia.
+#
+# Las seis funciones (cada despliegue reemplaza todo: van siempre las seis):
+#   claude-proxy     GEMINI_API_KEY
+#   notify-whatsapp  CALLMEBOT_PHONE, CALLMEBOT_APIKEY
+#   avisar-claude    CLAUDE_RUTINA_URL, CLAUDE_RUTINA_TOKEN (CLAUDE_RUTINA_BETA)
+#   despertar        FCM_CUENTA
+#   hielo            TURN_URLS, TURN_USUARIO, TURN_CLAVE (opcionales)
+#   luces-remate     TUYA_CLIENT_ID, TUYA_CLIENT_SECRET, TUYA_REGION,
+#                    TUYA_LUCES, ORIGENES_PERMITIDOS
+#                    (su código vive en rematetaller/remate: la herramienta lo
+#                     baja al armar el paquete, no hay copia acá)
+# Ningún valor acá: van en Project configuration → Environment variables.
+[build]
+  publish = "publico"
+  functions = "netlify/functions"
+[functions]
+  node_bundler = "esbuild"

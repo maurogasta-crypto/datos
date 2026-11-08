@@ -606,6 +606,19 @@ panel de acceso».
   regla de pedidos no cambió) y despierta a Claude, que contesta como
   comentario, abajo de la pregunta (TRASPASO § 4 bis, e). Sin sesión no se ve
   nada; con sesión y sin invitación, sólo «pedir acceso».
+- **La estética «hoja»** (`hoja.css`, `hoja-1`, `invitado-11`, 8-nov-2026,
+  Mauro: «quiero que la forma y la estética de este artefacto se reproduzca
+  en la parte que compartimos del panel… lo mismo para todo el panel»): la
+  de la página del plan de BandoMaps. Letras Libre Baskerville (títulos) y
+  Source Sans 3 (texto), tarjetas de borde redondeado, rótulos en mayúsculas
+  separadas, el estado como chip (listo · en curso · pendiente) y el avance
+  con la raya de acento. Claro u oscuro según el teléfono. Va DESPUÉS de
+  `estilos.css` (y del estilo propio de cada página) y pisa sus tokens, así
+  una pantalla cambia entera sin tocar su HTML. Hoy la carga
+  `invitado.html`; el panel la suma pantalla por pantalla. En la página del
+  invitado, arriba van quiénes participan, el nombre, la primera línea del
+  resumen y el mapa; después «Cómo va» (cada paso, una tarjeta con su
+  estado) y «Para entender y participar» (lo demás, plegado).
 - **El MAPA del proyecto, de lo general a lo particular** (`invitado-10`,
   `esquema-2`, 7-nov-2026, Mauro: «una visualización simplificada global… y al
   hacer clic… ampliar conceptualmente esa parte… en base a lo que está
@@ -755,8 +768,9 @@ teléfono.
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-50` |
-| `invitado.html` | `P.PANEL` | `invitado-10` |
+| `invitado.html` | `P.PANEL` | `invitado-11` |
 | `esquema.js` | `VERSION` | `esquema-2` |
+| `hoja.css` | comentario | `hoja-1` |
 | `glosario.js` | `VERSION` | `glosario-1` |
 | `obra.html` | `P.PANEL` | `obra-11` |
 | `gemini.html` | `P.PANEL` | `gemini-1` |
@@ -766,7 +780,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v55` |
+| `sw.js` | `VERSION` | `panel-shell-v56` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

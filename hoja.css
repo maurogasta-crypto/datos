@@ -1,0 +1,116 @@
+/* ═══════════════════════════════════════════════════════════
+   hoja.css — la estética «hoja» del panel. Sello: hoja-1 (8-nov-2026)
+
+   Mauro, 8-nov-2026, mostrando la página del plan de BandoMaps: «quiero que
+   la forma y la estética de este artefacto se reproduzca en la parte que
+   compartimos del panel… lo mismo para todo el panel». Es la misma paleta,
+   las mismas letras y las mismas tarjetas de esa página.
+
+   Va DESPUÉS de estilos.css y lo pisa: cambia los tokens (--tinta, --acento…)
+   y la forma de las piezas comunes (.tarj, .btn, details…), así cada pantalla
+   que lo cargue cambia entera sin tocar su HTML. Hoy lo carga invitado.html;
+   el panel lo suma pantalla por pantalla.
+
+   Letras: Libre Baskerville para los títulos y Source Sans 3 para el texto
+   (Google Fonts, con display=swap: si no bajan, se ve la del sistema).
+   Claro y oscuro según el teléfono, como la página del plan.
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  --tinta: #111315; --tinta2: #181b1e; --tinta3: #121416;
+  --linea: #2c3034; --texto: #ececec; --gris: #9aa0a6; --gris2: #6d7379;
+  --acento: #2dd4bf; --acento-suave: #13302c; --marca: #f0a07a;
+  --curso: #f2c86b; --curso-suave: #2e2612;
+  --ok: #2dd4bf; --mal: #f0a07a;
+  --r: 12px; --r-s: 10px;
+  --display: "Libre Baskerville", Georgia, serif;
+  --letra: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --tinta: #f6f5f1; --tinta2: #ffffff; --tinta3: #fbfaf7;
+    --linea: #dcd9d1; --texto: #1d1f22; --gris: #5e6268; --gris2: #8a8e94;
+    --acento: #0f766e; --acento-suave: #e3f2ef; --marca: #a8411d;
+    --curso: #8a5a00; --curso-suave: #fbf0d9;
+    --ok: #0f766e; --mal: #a8411d;
+    color-scheme: light;
+  }
+}
+
+html, body { background: var(--tinta); color: var(--texto); font: 17px/1.6 var(--letra); }
+p { max-width: 65ch; }
+a { color: var(--acento); }
+.gris { color: var(--gris); font-size: .92rem; }
+
+/* ── títulos ── */
+h1, h2 { font-family: var(--display); font-weight: 700; letter-spacing: 0; text-wrap: balance; }
+h1 { font-size: clamp(26px, 6vw, 34px); line-height: 1.2; margin: 1.2rem 0 .4rem; }
+h2 { font-size: 21px; line-height: 1.3; margin: 1.6rem 0 .5rem; }
+h3 { font: 700 17px/1.35 var(--letra); margin: .3rem 0; }
+/* El rótulo de una sección: chico, en mayúsculas, separado. */
+.rotulo { font: 700 13px/1.2 var(--letra); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--gris); margin: 1.6rem 0 .6rem; }
+/* La marca arriba del título: el proyecto o la sección, en el color de acento cálido. */
+.marca-hoja { font: 700 12px/1 var(--letra); letter-spacing: .22em; text-transform: uppercase; color: var(--marca); margin-top: 1.2rem; }
+.bajada { color: var(--gris); font-size: 1.02rem; }
+
+/* ── la barra de arriba ── */
+#barra { background: var(--tinta); border-bottom: 1px solid var(--linea); }
+#barra .marca { font: 700 12px/1.3 var(--letra); letter-spacing: .22em; text-transform: uppercase; color: var(--marca); }
+#barra .marca small { letter-spacing: .04em; text-transform: none; color: var(--gris2); }
+
+/* ── tarjetas: todo lo que se agrupa es una tarjeta ── */
+.tarj, .esq-caja, details.nivel, .pend {
+  background: var(--tinta2); border: 1px solid var(--linea); border-radius: var(--r);
+  padding: 14px; margin: 12px 0; }
+details.nivel { border-top: 1px solid var(--linea); padding: 14px; }
+details.nivel > summary { font: 700 17px/1.35 var(--letra); list-style: none; cursor: pointer;
+  display: flex; align-items: baseline; gap: 8px; }
+details.nivel > summary::-webkit-details-marker { display: none; }
+details.nivel > summary::before { content: "▸"; color: var(--gris); }
+details.nivel[open] > summary::before { content: "▾"; }
+details.nivel[open] > summary { margin-bottom: 8px; }
+details.sub { background: var(--tinta3); border: 1px solid var(--linea); border-radius: var(--r-s);
+  padding: 10px 12px; margin: 8px 0; }
+details.sub > summary { font-weight: 600; cursor: pointer; }
+.pend { background: var(--tinta3); }
+
+/* El avance de algo: la raya de acento a la izquierda. */
+.esq-detalle, .avance { border-left: 3px solid var(--acento); padding: .2rem 0 .2rem 12px; margin: .6rem 0 .9rem; }
+.inv-com { border-left-color: var(--linea); }
+
+/* ── estados: el mismo chip en todo el panel ── */
+.chip-e, .estado { display: inline-block; font: 700 12px/1.6 var(--letra); letter-spacing: .04em;
+  padding: 1px 10px; border-radius: 999px; white-space: nowrap; color: var(--gris);
+  border: 1px solid var(--linea); background: transparent; margin-left: 6px; vertical-align: middle; }
+.e-hecho, .e-listo, .e-anda { background: var(--acento-suave); color: var(--acento); border-color: transparent; }
+.e-curso, .e-desarrollo, .e-en-curso { background: var(--curso-suave); color: var(--curso); border-color: transparent; }
+
+/* ── pestañas: como un chip, la elegida en el color de «listo» ── */
+.pestanas { background: var(--tinta); }
+.pestana { background: transparent; border: 1px solid var(--linea); color: var(--texto);
+  font: 600 15px/1 var(--letra); padding: 9px 14px; }
+.pestana.sel { background: var(--acento-suave); color: var(--acento); border-color: var(--acento); }
+
+/* ── botones ── */
+.btn { border-radius: var(--r-s); font: 600 15px/1 var(--letra); }
+.btn.p { background: var(--acento); border-color: var(--acento); color: var(--tinta); }
+.mini { font-family: var(--letra); border-radius: 999px; }
+
+/* ── campos ── */
+input, textarea, select { background: var(--tinta3); border-color: var(--linea); border-radius: var(--r-s); font-family: var(--letra); }
+textarea { font-family: var(--letra); font-size: 15px; line-height: 1.5; white-space: pre-wrap; }
+input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+/* ── los dibujos del mapa, con la misma paleta ── */
+.esq-objetivo { fill: var(--acento-suave); stroke: var(--acento); }
+.esq-globo { fill: var(--tinta3); stroke: var(--acento); }
+.esq-nodo:hover .esq-globo, .esq-nodo:focus .esq-globo { fill: var(--acento-suave); }
+.esq-nodo.activo .esq-globo { fill: var(--acento); }
+.esq-tit, .esq-obj-txt { font-family: var(--letra); }
+
+/* ── quiénes participan: como chips ── */
+.gente-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: .4rem 0 .8rem; }
+.gente-chips span { font-size: 14px; border: 1px solid var(--linea); border-radius: 999px; padding: 2px 10px; color: var(--texto); }
+.gente-chips small { color: var(--gris); }

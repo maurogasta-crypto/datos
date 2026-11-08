@@ -6,6 +6,8 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Panel · invitados</title>
 <link rel="stylesheet" href="estilos.css?v=estilos-14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <meta name="theme-color" content="#14161a">
 <link rel="icon" href="./icono-192.png">
 <!-- invitado-5 (15-oct-2026, Mauro: «no tengo la app instalable de panel para
@@ -72,6 +74,8 @@
   .chip-e { font-family: var(--mono); font-size: .7rem; border: 1px solid var(--linea); border-radius: 999px; padding: 0 .45rem; margin-left: .3rem; color: var(--gris); white-space: nowrap; }
   .spam { border: 1px solid #c9a227; border-radius: var(--r-s); padding: .6rem .7rem; font-size: .9rem; margin: .6rem 0; }
 </style>
+<!-- hoja.css va DESPUÉS del estilo propio de esta página, así la estética de la hoja manda (invitado-11). -->
+<link rel="stylesheet" href="hoja.css?v=hoja-1">
 </head>
 <body>
 <!--
@@ -105,7 +109,7 @@
 -->
 
 <div id="barra">
-  <div class="marca">Panel<small id="sello"></small></div>
+  <div class="marca">Panel compartido<small id="sello"></small></div>
   <button class="btn hide" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
 </div>
 
@@ -180,7 +184,7 @@ import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeAre
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-10";
+P.PANEL = "invitado-11";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -371,16 +375,30 @@ function pintar() {
     const esPreg = (x) => String(x.titulo || "").startsWith("❓");
     const misPreg = pend.filter(esPreg);
     const sueltos = pend.filter((x) => !enPasos.has(x.id) && !esPreg(x));
+    const gente = pa.gente || [];
     return `<section class="inv-proy">
-      <h2>${P.esc(pr.nombre || pr.id)}</h2>
+      <div class="marca-hoja">${P.esc(gente.map((g) => g.nombre).join(" · ") || "Proyecto compartido")}</div>
+      <h1>${P.esc(pr.nombre || pr.id)}</h1>
+      ${resumen1 ? `<p class="bajada">${P.esc(resumen1)}</p>` : ""}
+      ${gente.length ? `<div class="gente-chips" aria-label="Quiénes participan">${gente.map((g) => `<span>${P.esc(g.nombre)} <small>· ${P.esc(g.rol)}</small></span>`).join("")}</div>` : ""}
       ${mapaDe(es) ? `<div class="esq-caja" data-mapa="${P.esc(pr.id)}"><div class="esq-migas" data-migas="${P.esc(pr.id)}"></div>
         <div data-mapa-svg="${P.esc(pr.id)}">${svgMapa(mapaDe(es))}</div>
         <p class="gris esq-ayuda">Tocá un área para entrar. Lo más chico y punteado está en desarrollo o se busca.</p></div>
         <div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""}
       ${mapaDe(es) ? "" : (() => { const nd = nodosDe(es); return nd.length ? `<div class="esq-caja" data-esq="${P.esc(pr.id)}">${svgEsquema(nd)}
         <p class="gris esq-ayuda">Tocá un globo para ampliarlo.</p></div><div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""; })()}
-      ${resumen1 ? `<p>${P.esc(resumen1)}</p>` : ""}
-      ${(pa.gente || []).length ? `<p class="gente">Participan: ${pa.gente.map((g) => P.esc(g.nombre) + " (" + P.esc(g.rol) + ")").join(" · ")}</p>` : ""}
+
+      ${(e.pasos || []).length || sueltos.length ? `<div class="rotulo">Cómo va</div>
+      ${(e.pasos || []).map((p) => {
+        const suyos = pend.filter((x) => (p.ids || []).includes(x.id)), ab = suyos.filter(abierto).length;
+        return `<details class="nivel paso-hoja"><summary><span style="flex:1">${P.esc(p.titulo)}</span>${suyos.length ? (ab ? `<span class="chip-e e-curso">en curso</span>` : `<span class="chip-e e-hecho">listo</span>`) : ""}</summary>
+          <p class="gris" style="margin:0 0 .4rem">Lo lleva ${P.esc(p.quien === "claude" ? "Claude" : "Mauro")}${suyos.length ? ` · ${ab} abierto${ab === 1 ? "" : "s"}` : ""}.</p>
+          ${suyos.map(htmlPendiente).join("") || '<p class="gris">Sin pendientes a la vista.</p>'}</details>`;
+      }).join("")}
+      ${sueltos.length ? `<details class="nivel"><summary><span style="flex:1">Otros pendientes</span><span class="chip-e">${sueltos.filter(abierto).length} abierto${sueltos.filter(abierto).length === 1 ? "" : "s"}</span></summary>${sueltos.map(htmlPendiente).join("")}</details>` : ""}
+      ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}` : ""}
+
+      <div class="rotulo">Para entender y participar</div>
 
       ${es.intro ? `<details class="nivel"><summary>Cómo funciona, para empezar</summary><p class="explica">${P.esc(es.intro)}</p></details>` : ""}
 
@@ -397,16 +415,6 @@ function pintar() {
         <textarea data-preg="${P.esc(pr.id)}" rows="3" maxlength="1500" placeholder="¿Qué es la base de datos y qué guarda?"></textarea>
         <div class="fila-btn"><button class="btn p" data-mandar-preg="${P.esc(pr.id)}">Preguntar</button></div>
         ${misPreg.map(htmlPregunta).join("")}
-      </details>
-
-      <details class="nivel"><summary>Líneas de trabajo (${(e.pasos || []).length || pend.filter(abierto).length})</summary>
-        ${(e.pasos || []).map((p) => {
-          const suyos = pend.filter((x) => (p.ids || []).includes(x.id));
-          return `<details class="sub"><summary>${P.esc(p.titulo)}<span class="chip-e">${P.esc(p.quien === "claude" ? "Claude" : "Mauro")}</span>${suyos.length ? `<span class="chip-e">${suyos.filter(abierto).length} abierto${suyos.filter(abierto).length === 1 ? "" : "s"}</span>` : ""}</summary>
-            ${suyos.map(htmlPendiente).join("") || '<p class="gris">Sin pendientes a la vista.</p>'}</details>`;
-        }).join("")}
-        ${sueltos.length ? `<details class="sub"><summary>Otros pendientes<span class="chip-e">${sueltos.filter(abierto).length} abierto${sueltos.filter(abierto).length === 1 ? "" : "s"}</span></summary>${sueltos.map(htmlPendiente).join("")}</details>` : ""}
-        ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}
       </details>
 
       <details class="nivel"><summary>Hacer un pedido</summary>
@@ -481,7 +489,7 @@ function montarMapa(caja) {
   const pid = caja.dataset.mapa, pr = PROY.find((p) => p.id === pid) || {}, mapa = mapaDe(pr.estructura);
   const lienzo = caja.querySelector("[data-mapa-svg]"), migas = caja.querySelector("[data-migas]");
   const det = document.querySelector(`[data-esq-det="${pid}"]`);
-  const chip = (e) => e === "anda" ? "" : `<span class="chip-e">${e === "idea" ? "💡 se busca" : "🛠 en desarrollo"}</span>`;
+  const chip = (e) => e === "anda" ? "" : `<span class="chip-e e-${e === "idea" ? "idea" : "desarrollo"}">${e === "idea" ? "se busca" : "en desarrollo"}</span>`;
   const preguntaSobre = (titulo) => `<button class="mini" data-preg-sobre="${P.esc(titulo)}">❓ Preguntar sobre esto</button>`;
   const enganchar2 = () => {
     det.querySelectorAll("[data-preg-sobre]").forEach((b) => b.onclick = () => {
@@ -595,10 +603,15 @@ async function preguntar(pid, boton) {
   } catch (e) { P.aviso("No se pudo mandar: " + P.explicar(e), "error"); boton.disabled = false; }
 }
 
+/* invitado-11: el estado con el mismo chip que la página del plan (hoja.css). */
+const estadoChip = (e) => e === "hecho" ? '<span class="chip-e e-hecho">listo</span>'
+  : e === "retirado" ? '<span class="chip-e">retirado</span>'
+  : e === "en curso" || e === "curso" ? '<span class="chip-e e-curso">en curso</span>'
+  : '<span class="chip-e">pendiente</span>';
 function htmlPendiente(x) {
   const h = (x.historia || []).slice(0, 3);
   return `<div class="pend">
-    <div class="cola-cab"><span class="proy">${P.esc(x.clave || x.id)}</span> <span class="prio">${P.esc(x.estado || "")}</span></div>
+    <div class="cola-cab"><span class="proy">${P.esc(x.clave || x.id)}</span>${estadoChip(x.estado)}</div>
     <p class="cola-de">${P.esc(x.titulo || "")}</p>
     ${x.porQue ? `<p class="cola-pq gris">${P.esc(x.porQue)}</p>` : ""}
     ${P.esImagenNuestra(x.imagen) ? `<a href="${P.esc(x.imagen)}" target="_blank" rel="noopener"><img class="inv-captura" src="${P.esc(x.imagen)}" alt="captura"></a>` : ""}

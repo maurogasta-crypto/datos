@@ -183,6 +183,11 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   copias que ya decían cosas distintas (Casa Verde, CasaYourte, remate y
   `herramientas/avisos.mjs`); ahora los sitios la piden diferida al usarla, y
   si no baja dicen que no pudieron leer (`sin_leer`), nunca «salió bien».
+  **La cuarta es `servidor-1.js`** (8-nov-2026, plan «Timón»): la dirección
+  del servidor del ecosistema y la forma de llamar a sus funciones (la IA,
+  `despertar`, `avisar-claude`), con número de contrato; si el servidor se muda
+  (`general:C9`), cambia ese archivo y nada más. Banco `node
+  pruebas/servidor.mjs` (8 casos). La usa Tiempos desde `init-6`.
   **La tercera es `errores.js`** (`errores-1`): las causas de los errores en
   castellano (PROTOCOLO-INTERFAZ § 7.2). Había dos tablas distintas (CasaYourte
   y este panel) y tres sitios que mostraban el código pelado. Cada sitio la

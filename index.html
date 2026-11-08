@@ -567,7 +567,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-6";
 
-P.PANEL = "panel-51";
+P.PANEL = "panel-52";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -1070,6 +1070,19 @@ function pintarCola() {
     + "</div>";
 }
 
+/* panel-52 (8-nov-2026, Mauro: «cada vez que respondo… me manda al inicio de
+   la página y tengo que bajar hasta donde están las preguntas»): después de
+   responder o saltar, la pantalla se queda en la pregunta que sigue, justo
+   debajo de la barra de arriba, y no vuelve al principio. Se mide DESPUÉS de
+   repintar: lo de arriba (el esquema, «Lo primero») puede cambiar de alto al
+   leer la base de nuevo. */
+function verCola() {
+  const caja = $("lista"); if (!caja) return;
+  const barra = document.getElementById("barra");
+  const tapa = (barra ? barra.getBoundingClientRect().height : 0) + 8;
+  window.scrollTo({ top: Math.max(0, caja.getBoundingClientRect().top + window.scrollY - tapa), behavior: "instant" });
+}
+
 /* Un solo listener, delegado: `#lista` se repinta entero en cada paso. */
 $("lista").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-cola]"); if (!b) return;
@@ -1077,7 +1090,7 @@ $("lista").addEventListener("click", async (e) => {
   if (!cola.length) return;
   if (b.dataset.cola === "salta") {
     colaIdx = (colaIdx + 1) % cola.length;
-    pintarCola(); window.scrollTo(0, 0); return;
+    pintarCola(); verCola(); return;
   }
   const p = cola[colaIdx];
   const texto = $("cola-resp").value.trim();
@@ -1086,7 +1099,7 @@ $("lista").addEventListener("click", async (e) => {
     /* Sin cambio no se escribe: escribir lo mismo sumaría una línea falsa a la
        historia, que es lo único que no se puede reconstruir. */
     colaIdx = (colaIdx + 1) % cola.length;
-    pintarCola(); window.scrollTo(0, 0); return;
+    pintarCola(); verCola(); return;
   }
   b.disabled = true; b.textContent = "…";
   try {
@@ -1106,7 +1119,7 @@ $("lista").addEventListener("click", async (e) => {
     /* No se avanza el índice: al quedar respondida se va al final de la fila
        sola, así que la posición actual YA es la siguiente sin responder. */
     pintarCola();
-    window.scrollTo(0, 0);
+    verCola();
     P.aviso("Respondido. Lo leo de la base.");
   } catch (e2) {
     P.aviso(P.explicar(e2), "error");

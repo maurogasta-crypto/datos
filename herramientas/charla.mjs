@@ -29,12 +29,13 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { url } from "../servidor-1.js";
 
 export const VERSION = "charla-7";   // 29-oct: los cambios de nombre de los teléfonos (pizarra-80, familia/telefonos)
 export const VERSION_ANTERIOR = "charla-5";   // 28-oct: «salud», la auditoría de lo que se pierde (pizarra-78, reglas v24)
 export const VERSION_VIEJISIMA = "charla-4";   // 28-oct: «limpiar», el gestor de la charla (reglas v23 de Tiempos)
 export const VERSION_VIEJA = "charla-3";   // 24-oct: muestra los archivos (pizarra-64) y «bajar» para mirarlos   // 24-oct: flash-lite y tope por corrida (PROTOCOLO-DESARROLLO § 13, los cupos gratis)
-export const PROXY = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
+export const PROXY = url("ia");   // de servidor-1.js (timon-servidor)
 /** Cuántos audios se transcriben por corrida, como mucho: el resto queda «sin transcribir» y se lee en la próxima. */
 export const TOPE_TRANSCRIPCIONES = 30;
 export const PIDE = "Transcribí literalmente este mensaje de voz, en el idioma en que se habla. " +

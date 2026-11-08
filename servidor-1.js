@@ -29,6 +29,8 @@ export const FUNCIONES = Object.freeze({
   despertar: "despertar",      // aviso SIN contenido a las Pizarras (FCM)
   avisarClaude: "avisar-claude", // despierta la rutina «Consulta en vivo»
   hielo: "hielo",              // servidores de conexión para las llamadas
+  whatsapp: "notify-whatsapp", // avisos por CallMeBot (lo usan los sitios y avisos.mjs)
+  luces: "luces-remate",       // el puente de luces de remate (código en rematetaller/remate)
 });
 
 /** La dirección de una función del servidor, por su nombre en FUNCIONES. */

@@ -178,13 +178,13 @@
 </div>
 
 <script type="module">
-import { P, $, db, auth } from "./nucleo.js?v=nucleo-12";
+import { P, $, db, auth } from "./nucleo.js?v=nucleo-13";
 import { GLOSARIO } from "./glosario.js?v=glosario-1";
 import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeArea, ESTADOS } from "./esquema.js?v=esquema-2";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-12";
+P.PANEL = "invitado-13";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -201,8 +201,8 @@ P.pintarSello();
 const CUPO_DIA = 12;
 const SITIOS_EN_DESARROLLO = ["casaverde", "casayourte", "remate", "tiempos", "hilux", "harmonia"];
 const CUPO_SITIO = Math.max(1, Math.floor(CUPO_DIA / SITIOS_EN_DESARROLLO.length));
-// La función que despierta a la «Consulta en vivo» de Claude (Netlify de Casa Verde).
-const AVISAR = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/avisar-claude";
+// La función que despierta a la «Consulta en vivo» de Claude (timon-servidor, desde invitado-13).
+const AVISAR = "https://timon-servidor.netlify.app/.netlify/functions/avisar-claude";
 
 let yo = null, persona = null, PROY = [], PEND = [], FICHAS = [];
 let pestana = (() => { try { return localStorage.getItem("inv-pestana") || ""; } catch (e) { return ""; } })();

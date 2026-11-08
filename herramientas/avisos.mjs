@@ -57,7 +57,7 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
    igual para una persona de CasaYourte que para una de Casa Verde, y dar de
    alta a alguien nuevo no toca Netlify. Ver casaverdecanas/netlify/functions/
    notify-whatsapp.js. */
-export const PUENTE = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/notify-whatsapp";
+export const PUENTE = url("whatsapp");   // de servidor-1.js (timon-servidor)
 
 /* Las bases que tienen PERSONAS con pantalla de avisos. Tiempos no está: su
    gente es la de Casa Verde (Mauro y Florencia), que ya tiene su número en
@@ -153,6 +153,7 @@ export function armarMensaje(base, tema, texto, sobre) {
    del ecosistema (`general:C7`): la usan también Casa Verde, CasaYourte y
    remate. Acá se reexporta con el nombre de siempre. */
 import { taparNumeros, leerRespuestaWa as leerRespuesta } from "../callmebot.js";
+import { url } from "../servidor-1.js";
 export { taparNumeros, leerRespuesta };
 
 /* ── Quién ───────────────────────────────────────────────────────────────── */

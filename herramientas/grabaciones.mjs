@@ -21,9 +21,10 @@
 // `analisis/` o al panel.
 import fs from "node:fs";
 import path from "node:path";
+import { url } from "../servidor-1.js";
 
 export const VERSION = "grabaciones-1";
-export const PROXY = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
+export const PROXY = url("ia");   // de servidor-1.js (timon-servidor)
 
 /** Un .wav de PCM de 16 bits mono a partir de los bytes que guarda la APK. */
 export function wavDe(pcm, hz) {

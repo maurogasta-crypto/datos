@@ -765,12 +765,12 @@ teléfono.
 
 | Archivo | Constante | Valor |
 |---|---|---|
-| `nucleo.js` | `P.VERSION` | `nucleo-12` |
+| `nucleo.js` | `P.VERSION` | `nucleo-13` |
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-52` |
-| `invitado.html` | `P.PANEL` | `invitado-12` |
+| `invitado.html` | `P.PANEL` | `invitado-13` |
 | `esquema.js` | `VERSION` | `esquema-2` |
 | `hoja.css` | comentario | `hoja-2` |
 | `glosario.js` | `VERSION` | `glosario-1` |
@@ -788,7 +788,7 @@ teléfono.
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-12`. Sin ese número, el
+pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-13`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

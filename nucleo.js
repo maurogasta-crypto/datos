@@ -18,7 +18,7 @@ import {
 } from "./firebase-init.js?v=init-6";
 
 export const P = {};
-P.VERSION = "nucleo-12";
+P.VERSION = "nucleo-13";
 P.PANEL = "";           // lo pone cada pantalla con su propio sello
 
 /* ---------- lo mínimo, en un solo lugar ---------- */
@@ -148,7 +148,7 @@ P.subirCaptura = async function (file) {
    —flash-lite y 2000 tokens: el que «piensa» corta el JSON—, y lo que vuelve
    se lee con desconfianza: lo que no se entiende queda vacío, nunca
    inventado. Nunca bloquea: si no anda, se completa a mano. */
-P.IA = "https://serene-scone-76bd4e.netlify.app/.netlify/functions/claude-proxy";
+P.IA = "https://timon-servidor.netlify.app/.netlify/functions/claude-proxy";   // nucleo-13: timon-servidor (la de servidor-1.js; el banco las compara)
 P.MONEDAS_IA = ["UYU", "USD", "BRL"];
 P.MEDIOS_PAGO = { efectivo: "Efectivo", debito: "Débito", credito: "Crédito", transferencia: "Transferencia", pix: "PIX" };
 P.leerFacturaIA = function (texto, rubros = []) {

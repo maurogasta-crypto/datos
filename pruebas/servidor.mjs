@@ -14,16 +14,22 @@ const prueba = (n, f) => esperando.push((async () => {
 const falso = (resp) => { const v = []; const f = async (u, o) => { v.push({ u, o, body: JSON.parse(o.body) }); if (resp instanceof Error) throw resp; return resp; }; f.vistos = v; return f; };
 const ok = (j = {}) => ({ ok: true, status: 200, json: async () => j });
 
-prueba("el contrato y las cuatro funciones", () => {
+prueba("el contrato y las seis funciones", () => {
   assert.equal(S.CONTRATO, "servidor-1");
-  assert.deepEqual(Object.keys(S.FUNCIONES).sort(), ["avisarClaude", "despertar", "hielo", "ia"]);
+  assert.deepEqual(Object.keys(S.FUNCIONES).sort(), ["avisarClaude", "despertar", "hielo", "ia", "luces", "whatsapp"]);
   assert.equal(S.url("ia"), S.SERVIDOR + "/claude-proxy");
   assert.throws(() => S.url("otra"));
 });
 prueba("apunta a timon-servidor, y cada función está en servidor/ de este repositorio (o se baja de remate)", () => {
   assert.equal(S.SERVIDOR, "https://timon-servidor.netlify.app/.netlify/functions");
   const hay = fs.readdirSync(new URL("../servidor/netlify/functions/", import.meta.url)).map((f) => f.replace(/\.m?js$/, ""));
-  for (const n of Object.values(S.FUNCIONES)) assert.ok(hay.includes(n), n);
+  for (const n of Object.values(S.FUNCIONES)) assert.ok(hay.includes(n) || n === "luces-remate", n);
+});
+prueba("nada de este repositorio llama al servidor viejo (el Netlify de Casa Verde)", () => {
+  const raiz = new URL("../", import.meta.url).pathname;
+  const mirar = ["nucleo.js", "invitado.html", "herramientas/charla.mjs", "herramientas/grabaciones.mjs", "herramientas/avisos.mjs"];
+  for (const f of mirar) assert.doesNotMatch(fs.readFileSync(raiz + f, "utf8"), /serene-scone-76bd4e\.netlify\.app/, f);
+  assert.match(fs.readFileSync(raiz + "nucleo.js", "utf8"), new RegExp('P\\.IA = "' + S.url("ia").replace(/[.\/]/g, "\\$&") + '"'));
 });
 prueba("preguntarIA manda el contenido y devuelve el texto", async () => {
   const f = falso(ok({ content: [{ text: "hola" }] }));

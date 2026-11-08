@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    servidor-1.js — EL SERVIDOR DEL ECOSISTEMA, en un solo lugar.
-   Sello: servidor-1 (8-nov-2026)
+   Sello: servidor-1 (8-nov-2026; apunta a timon-servidor desde el mismo día)
 
    Plan «Timón» (Mauro, 8-nov-2026: «independizar estas estructuras»). Las
    funciones de servidor del ecosistema —la IA, despertar a las Pizarras,
@@ -23,7 +23,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 export const CONTRATO = "servidor-1";
-export const SERVIDOR = "https://serene-scone-76bd4e.netlify.app/.netlify/functions";
+export const SERVIDOR = "https://timon-servidor.netlify.app/.netlify/functions";   // desde el 8-nov-2026 (antes, el Netlify de Casa Verde)
 export const FUNCIONES = Object.freeze({
   ia: "claude-proxy",          // Gemini, con la ÚNICA clave del ecosistema
   despertar: "despertar",      // aviso SIN contenido a las Pizarras (FCM)

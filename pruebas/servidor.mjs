@@ -20,10 +20,9 @@ prueba("el contrato y las cuatro funciones", () => {
   assert.equal(S.url("ia"), S.SERVIDOR + "/claude-proxy");
   assert.throws(() => S.url("otra"));
 });
-prueba("las funciones existen en el servidor de hoy (si casaverdecanas está al lado)", () => {
-  const dir = new URL("../../casaverdecanas/netlify/functions/", import.meta.url);
-  if (!fs.existsSync(dir)) { console.log("      (no está casaverdecanas al lado)"); return; }
-  const hay = fs.readdirSync(dir).map((f) => f.replace(/\.m?js$/, ""));
+prueba("apunta a timon-servidor, y cada función está en servidor/ de este repositorio (o se baja de remate)", () => {
+  assert.equal(S.SERVIDOR, "https://timon-servidor.netlify.app/.netlify/functions");
+  const hay = fs.readdirSync(new URL("../servidor/netlify/functions/", import.meta.url)).map((f) => f.replace(/\.m?js$/, ""));
   for (const n of Object.values(S.FUNCIONES)) assert.ok(hay.includes(n), n);
 });
 prueba("preguntarIA manda el contenido y devuelve el texto", async () => {

@@ -614,8 +614,10 @@ panel de acceso».
   separadas, el estado como chip (listo · en curso · pendiente) y el avance
   con la raya de acento. Claro u oscuro según el teléfono. Va DESPUÉS de
   `estilos.css` (y del estilo propio de cada página) y pisa sus tokens, así
-  una pantalla cambia entera sin tocar su HTML. Hoy la carga
-  `invitado.html`; el panel la suma pantalla por pantalla. En la página del
+  una pantalla cambia entera sin tocar su HTML. Desde `hoja-2`
+  la cargan todas las pantallas del panel: `index.html`, `gemini.html`,
+  `obra.html`, `placa.html` e `invitado.html`, y en el tablero también los
+  rótulos chicos, las pestañas de abajo y los chips de prioridad. En la página del
   invitado, arriba van quiénes participan, el nombre, la primera línea del
   resumen y el mapa; después «Cómo va» (cada paso, una tarjeta con su
   estado) y «Para entender y participar» (lo demás, plegado).
@@ -767,20 +769,20 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-50` |
-| `invitado.html` | `P.PANEL` | `invitado-11` |
+| `index.html` | `P.PANEL` | `panel-51` |
+| `invitado.html` | `P.PANEL` | `invitado-12` |
 | `esquema.js` | `VERSION` | `esquema-2` |
-| `hoja.css` | comentario | `hoja-1` |
+| `hoja.css` | comentario | `hoja-2` |
 | `glosario.js` | `VERSION` | `glosario-1` |
-| `obra.html` | `P.PANEL` | `obra-11` |
-| `gemini.html` | `P.PANEL` | `gemini-1` |
+| `obra.html` | `P.PANEL` | `obra-12` |
+| `gemini.html` | `P.PANEL` | `gemini-2` |
 | `exportar.js` | `VERSION` | `exportar-1` |
 | `album.html` | `SELLO` | `album-2` |
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v56` |
+| `sw.js` | `VERSION` | `panel-shell-v57` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

@@ -16,6 +16,10 @@
   #ge-estado { white-space: pre-wrap; font-size: .82rem; }
   .ge-ok { color: var(--verde, #7fd18b); }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<!-- hoja-1 (8-nov-2026): la estética de la página del plan de BandoMaps, para todo el panel. Va al final de los estilos, así manda. -->
+<link rel="stylesheet" href="hoja.css?v=hoja-2">
 </head>
 <body>
 
@@ -88,7 +92,7 @@
 import { P, $, db } from "./nucleo.js?v=nucleo-12";
 import { doc, getDoc, getDocs, collection } from "./firebase-init.js?v=init-6";
 import { reposDe, entra, vaAlMapa, archivo, cabecera, estadoPanel, tokens, VERSION as LOGICA } from "./exportar.js?v=exportar-1";
-P.PANEL = "gemini-1";
+P.PANEL = "gemini-2";
 P.pintarSello();
 
 let PROYECTOS = [];

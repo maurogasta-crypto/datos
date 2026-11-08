@@ -271,7 +271,9 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   **Desde `invitado-11` la página del invitado tiene la estética «hoja»**
   (`hoja.css`, la de la página del plan de BandoMaps; Mauro, 8-nov: «lo
   mismo para todo el panel»): se carga DESPUÉS de los estilos de la página y
-  pisa sus tokens; el panel la suma pantalla por pantalla.
+  pisa sus tokens. Desde `hoja-2` la cargan todas las pantallas del panel
+  (`index`, `gemini`, `obra`, `placa` e `invitado`): una pantalla nueva la
+  carga al final de sus estilos.
   **Y desde `invitado-10` el MAPA** (`estructura.mapa`): el objetivo, quiénes
   lo usan y las áreas, y al tocar un área su esquema por dentro, con cada cosa
   marcada `anda`, `desarrollo` o `idea` (lo que no anda, más chico y

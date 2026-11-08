@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   hoja.css — la estética «hoja» del panel. Sello: hoja-1 (8-nov-2026)
+   hoja.css — la estética «hoja» del panel. Sello: hoja-2 (8-nov-2026)
 
    Mauro, 8-nov-2026, mostrando la página del plan de BandoMaps: «quiero que
    la forma y la estética de este artefacto se reproduzca en la parte que
@@ -114,3 +114,28 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .gente-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: .4rem 0 .8rem; }
 .gente-chips span { font-size: 14px; border: 1px solid var(--linea); border-radius: 999px; padding: 2px 10px; color: var(--texto); }
 .gente-chips small { color: var(--gris); }
+
+/* ── el panel (index.html): sus rótulos chicos pasan de la letra de máquina
+   de escribir a la de la hoja, como «LO QUE YA ESTÁ» en la página del plan ── */
+#nav button, .seg button { font: 700 11px/1.2 var(--letra); letter-spacing: .1em; }
+#nav { background: var(--tinta2); }
+#nav button[aria-pressed="true"] { color: var(--acento); background: var(--acento-suave); }
+.seg button[aria-pressed="true"] { background: var(--acento-suave); color: var(--acento); }
+#barra .marca small { font: 400 11px/1.3 var(--letra); white-space: nowrap; }
+.proy, .rev .que, .campo .k, .preg .k, .resp .k, .regla .porque .k, .deque, .traba .k, .frena .k {
+  font: 700 12px/1.3 var(--letra); letter-spacing: .14em; color: var(--gris); }
+.proy { margin: 1.6rem 0 .6rem; border-bottom: 0; }
+.regla .cuando, .pend .clave { font: 400 12px/1.3 var(--letra); color: var(--gris2); }
+.pend .quien, .prio, .regla .quien { font: 700 11.5px/1.5 var(--letra); letter-spacing: .04em; padding: 1px 9px; }
+.pend .tit { font-size: 16px; }
+.prio.alta, .pend.tuyo .quien { color: var(--curso); border-color: transparent; background: var(--curso-suave); }
+.sit-tabs button { background: transparent; color: var(--texto); font: 600 14px/1 var(--letra); letter-spacing: 0; text-transform: none; }
+.sit-tabs button[aria-pressed="true"] { background: var(--acento-suave); color: var(--acento); border-color: var(--acento); }
+#barra select, #barra select#cual-app { flex: none; width: 104px; max-width: none; min-width: 0; padding-right: 4px; }
+#barra .marca { flex: 1; min-width: 70px; overflow: hidden; }
+/* La barra del panel tiene cinco cosas en 390 px: más justas, sin pasarse del ancho. */
+#barra { gap: 6px; }
+#barra .btn { padding: .35rem .55rem !important; font-size: 13px !important; }
+#barra .marca { min-width: 56px; }
+/* Un nombre de archivo o un enlace largo no estira la pantalla (pasaba en Tandas). */
+.contenedor { overflow-wrap: anywhere; }

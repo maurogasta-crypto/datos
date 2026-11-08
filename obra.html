@@ -56,6 +56,10 @@
   .ob-alb-med [data-alb-tit] { right: 2.1rem; }
   .ob-alb-med small { position: absolute; left: 0; right: 0; bottom: 0; font-size: .7rem; padding: .1rem .3rem; background: rgba(0,0,0,.6); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<!-- hoja-1 (8-nov-2026): la estética de la página del plan de BandoMaps, para todo el panel. Va al final de los estilos, así manda. -->
+<link rel="stylesheet" href="hoja.css?v=hoja-2">
 </head>
 <body>
 <!--
@@ -187,7 +191,7 @@
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-12";
 import { doc, getDoc, getDocs, setDoc, collection, query, where, deleteField } from "./firebase-init.js?v=init-6";
-P.PANEL = "obra-11";
+P.PANEL = "obra-12";
 P.pintarSello();
 
 /* Los tipos de cosa que se le anotan a un proyecto. `plata`: si lleva monto;

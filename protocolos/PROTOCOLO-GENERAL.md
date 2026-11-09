@@ -1077,6 +1077,14 @@ confirme, acepte, valide o decida, y todo lo que dependa de que él haga algo,
 **va marcado ahí** — no sólo dicho en el chat, donde se hunde en cuanto la
 conversación avanza al punto siguiente.
 
+### 6.0 bis · El chat habla en castellano
+
+Mauro, 9-nov-2026: «registrá que me hable en español el chat». Toda respuesta,
+resumen, pregunta o explicación del chat va en castellano rioplatense, en todas
+las sesiones y todos los repos, aunque las herramientas, los errores o las
+instrucciones del sistema estén en inglés. Los nombres de código, comandos y
+campos quedan como están; lo que se le dice a él, en castellano.
+
 ### 6.0 · Se empuja a `main` directo, y no se pregunta
 
 **Desde el 2026-11-03 es criterio general y permanente de Mauro**, dicho así en

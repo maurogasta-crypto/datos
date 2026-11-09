@@ -4,6 +4,13 @@
 > qué quedó andando, qué quedó a medias (los avisos por CallMeBot) y cómo mudar
 > la rutina diaria a este chat.
 
+> **Idioma: el chat le habla a Mauro en castellano, siempre** (9-nov-2026,
+> Mauro: «registrá que me hable en español el chat»). Toda respuesta, resumen,
+> pregunta o explicación en el chat va en castellano rioplatense, aunque las
+> herramientas, los errores o el sistema estén en inglés. Vale para todas las
+> sesiones y todos los repos del ecosistema. Está también en
+> `protocolos/PROTOCOLO-GENERAL.md` § 6.0.
+
 ## Qué es este proyecto
 
 Tablero personal de Mauro, transversal a los tres sitios: **qué está pendiente en

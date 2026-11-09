@@ -180,11 +180,12 @@
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-13";
 import { GLOSARIO } from "./glosario.js?v=glosario-1";
+import * as CH from "./chat.js?v=chat-1";
 import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeArea, ESTADOS } from "./esquema.js?v=esquema-2";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-13";
+P.PANEL = "invitado-14";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -207,6 +208,7 @@ const AVISAR = "https://timon-servidor.netlify.app/.netlify/functions/avisar-cla
 let yo = null, persona = null, PROY = [], PEND = [], FICHAS = [];
 let pestana = (() => { try { return localStorage.getItem("inv-pestana") || ""; } catch (e) { return ""; } })();
 const capturas = {};       // proyecto → File elegido, se sube recién al mandar
+const COMMITS = {};        // proyecto → lo último subido, para el resumen de su chat (invitado-14)
 
 async function arrancar() {
   for (const id of ["sin-sdk", "puerta", "confirmar", "pedir", "app"]) $(id).classList.add("hide");
@@ -374,13 +376,18 @@ function pintar() {
     const enPasos = new Set((e.pasos || []).flatMap((p) => p.ids || []));
     const esPreg = (x) => String(x.titulo || "").startsWith("❓");
     const misPreg = pend.filter(esPreg);
-    const sueltos = pend.filter((x) => !enPasos.has(x.id) && !esPreg(x));
+    const sueltos = pend.filter((x) => !enPasos.has(x.id) && !esPreg(x) && !CH.esConsulta(x));
+    const consultas = CH.consultasDe(PEND, pr.id), faltan = consultas.filter((x) => !CH.contestada(x, yo.uid)).length;
     const gente = pa.gente || [];
     return `<section class="inv-proy">
       <div class="marca-hoja">${P.esc(gente.map((g) => g.nombre).join(" · ") || "Proyecto compartido")}</div>
       <h1>${P.esc(pr.nombre || pr.id)}</h1>
       ${resumen1 ? `<p class="bajada">${P.esc(resumen1)}</p>` : ""}
       ${gente.length ? `<div class="gente-chips" aria-label="Quiénes participan">${gente.map((g) => `<span>${P.esc(g.nombre)} <small>· ${P.esc(g.rol)}</small></span>`).join("")}</div>` : ""}
+      ${consultas.length ? `<div class="tarj" style="border-color:var(--acento,#0f766e)">
+        <div class="rotulo" style="margin-top:0">Te preguntamos${faltan ? ` · ${faltan} sin contestar` : " · contestadas"}</div>
+        <p class="gris" style="margin:.2rem 0 .6rem">Contestá con tus palabras, aunque sea corto. Claude lo analiza contra el resto del proyecto antes de cambiar nada.</p>
+        ${consultas.map(htmlConsulta).join("")}</div>` : ""}
       ${mapaDe(es) ? `<div class="esq-caja" data-mapa="${P.esc(pr.id)}"><div class="esq-migas" data-migas="${P.esc(pr.id)}"></div>
         <div data-mapa-svg="${P.esc(pr.id)}">${svgMapa(mapaDe(es))}</div>
         <p class="gris esq-ayuda">Tocá un área para entrar. Lo más chico y punteado está en desarrollo o se busca.</p></div>
@@ -399,6 +406,17 @@ function pintar() {
       ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}` : ""}
 
       <div class="rotulo">Para entender y participar</div>
+
+      <details class="nivel" data-capa-chat="${P.esc(pr.id)}"><summary>🤖 Trabajar con tu propio chat</summary>
+        <p class="gris">1) Bajá el resumen del proyecto y dáselo a tu chat de IA. 2) Pegá acá lo que te conteste, o subí el archivo. Claude lo lee y lo analiza contra el resto del proyecto; nada cambia sin que lo charlemos.</p>
+        <div class="fila-btn"><button class="btn" data-md="${P.esc(pr.id)}">⬇ Bajar el resumen (.md)</button></div>
+        <textarea data-chat="${P.esc(pr.id)}" rows="4" placeholder="Pegá acá la respuesta de tu chat…"></textarea>
+        <div class="fila-btn">
+          <label class="mini">📄 Subir un archivo (.md o .txt)<input type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" data-chat-arch="${P.esc(pr.id)}" hidden></label>
+          <button class="btn p" data-chat-mandar="${P.esc(pr.id)}">Mandar a Claude</button>
+        </div>
+        <p class="gris" data-chat-estado="${P.esc(pr.id)}"></p>
+      </details>
 
       ${es.intro ? `<details class="nivel"><summary>Cómo funciona, para empezar</summary><p class="explica">${P.esc(es.intro)}</p></details>` : ""}
 
@@ -572,6 +590,52 @@ function htmlGlosario() {
 }
 
 /* Una pregunta y lo que contestaron: la respuesta llega como comentario. */
+/* invitado-14: una pregunta de Claude al invitado (`tipo: "consulta"`). Se
+   contesta comentando: lo único que la regla le deja tocar de un pendiente. */
+function htmlConsulta(x) {
+  const ya = CH.contestada(x, yo.uid);
+  return `<div class="pend">
+    <p class="cola-de"><b>${P.esc(x.titulo || "")}</b>${ya ? ' <span class="chip-e e-hecho">contestada</span>' : ""}</p>
+    ${x.porQue ? `<p class="gris" style="margin:.1rem 0 .3rem">${P.esc(x.porQue)}</p>` : ""}
+    ${(x.comentarios || []).map((c) => `<p class="inv-com">${P.esc(c.nombre || "")} (${P.esc(c.fecha || "")}): ${P.esc(c.texto || "")}</p>`).join("")}
+    <textarea data-resp="${P.esc(x.id)}" rows="2" maxlength="3000" placeholder="${ya ? "Agregar algo…" : "Tu respuesta…"}"></textarea>
+    <div class="fila-btn"><button class="mini" data-responder="${P.esc(x.id)}">${ya ? "Agregar" : "Responder"}</button></div>
+  </div>`;
+}
+
+/* invitado-14: el resumen para su chat, y lo que su chat contestó de vuelta.
+   La respuesta entra como un pedido con el texto entero en un comentario
+   (`porQue` llega a 2000 caracteres; un comentario, al techo del documento). */
+function bajarResumen(pid) {
+  const pr = PROY.find((p) => p.id === pid); if (!pr) return;
+  const md = CH.resumenMd(pr, PEND, { commits: COMMITS[pid] || [], fecha: P.hoy(), quien: persona.nombre || "" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([md], { type: "text/markdown;charset=utf-8" }));
+  a.download = CH.nombreArchivo(pr, P.hoy());
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function mandarChat(pid, boton) {
+  const caja = document.querySelector(`[data-chat="${pid}"]`), estado = document.querySelector(`[data-chat-estado="${pid}"]`);
+  const r = CH.prepararRespuesta(caja.value);
+  if (!r.ok) return P.aviso(r.motivo, "error");
+  boton.disabled = true; estado.textContent = "Mandando…";
+  try {
+    const clave = proximaClave(pid), id = pid + ":" + clave, quien = persona.nombre || yo.email || "";
+    await setDoc(doc(db, "pendientes", id), {
+      proyecto: pid, autor: yo.uid, autorNombre: quien, tipo: "pedido", estado: "abierto", quien: "claude",
+      prioridad: "media", titulo: ("🤖 Lo que dijo el chat de " + quien).slice(0, 120),
+      porQue: r.resumen + (r.texto.length > r.resumen.length ? " … (entero, en el comentario)" : ""),
+      origen: "panel:invitado/" + yo.uid + "/chat", clave, sitios: [pid], creadoEn: P.hoy(),
+      historia: [{ fecha: P.hoy(), por: "invitado", texto: quien + " cargó la respuesta de su chat desde el panel." }],
+    });
+    await updateDoc(doc(db, "pendientes", id), { comentarios: arrayUnion({ por: yo.uid, nombre: quien, texto: r.texto, fecha: P.hoy(), de: "chat" }) });
+    avisarClaude(id);
+    caja.value = ""; estado.textContent = "Mandado. Claude lo analiza y te contesta en «Otros pendientes».";
+    await leer();
+  } catch (e) { estado.textContent = ""; P.aviso("No se pudo mandar: " + P.explicar(e), "error"); boton.disabled = false; }
+}
+
 function htmlPregunta(x) {
   const resp = (x.comentarios || []);
   return `<div class="pend">
@@ -645,6 +709,7 @@ async function traerCommits(pr) {
     const r = await fetch(`https://api.github.com/repos/${pr.sitio.repo}/commits?per_page=6`);
     if (!r.ok) throw new Error("GitHub contestó " + r.status);
     const l = await r.json();
+    COMMITS[pr.id] = l.map((c) => ({ fecha: String(c.commit.author.date).slice(0, 10), texto: String(c.commit.message).split("\n")[0].slice(0, 120) }));
     caja.innerHTML = l.map((c) => `<div class="inv-commit"><span class="gris">${P.esc(String(c.commit.author.date).slice(0, 10))}</span>
       ${P.esc(String(c.commit.message).split("\n")[0].slice(0, 120))}</div>`).join("");
   } catch (e) { caja.innerHTML = '<p class="gris">' + P.esc(e.message) + "</p>"; }
@@ -704,6 +769,27 @@ function enganchar() {
       `<img class="inv-captura" src="${URL.createObjectURL(f)}" alt=""><p class="gris">Se sube al mandar.</p>`;
   });
   document.querySelectorAll("[data-mandar]").forEach((b) => b.onclick = () => mandar(b.dataset.mandar, b));
+  document.querySelectorAll("[data-md]").forEach((b) => b.onclick = () => bajarResumen(b.dataset.md));
+  document.querySelectorAll("[data-chat-mandar]").forEach((b) => b.onclick = () => mandarChat(b.dataset.chatMandar, b));
+  document.querySelectorAll("[data-chat-arch]").forEach((i) => i.onchange = async () => {
+    const pid = i.dataset.chatArch, f = i.files && i.files[0]; i.value = "";
+    if (!f) return;
+    if (!CH.esArchivoDeTexto(f)) return P.aviso("Ese archivo no es de texto: subí un .md o un .txt, o pegá la respuesta.", "error");
+    if (f.size > CH.MAX_RESPUESTA * 4) return P.aviso("El archivo es muy grande: pedile a tu chat un resumen.", "error");
+    document.querySelector(`[data-chat="${pid}"]`).value = await f.text();
+    document.querySelector(`[data-chat-estado="${pid}"]`).textContent = "Archivo «" + f.name + "» cargado: revisalo y tocá «Mandar a Claude».";
+  });
+  document.querySelectorAll("[data-responder]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.responder, caja = document.querySelector(`[data-resp="${id}"]`), txt = caja.value.trim();
+    if (!txt) return P.aviso("Escribí tu respuesta.", "error");
+    b.disabled = true;
+    try {
+      await updateDoc(doc(db, "pendientes", id), { comentarios: arrayUnion({ por: yo.uid, nombre: persona.nombre || "", texto: txt.slice(0, 3000), fecha: P.hoy() }) });
+      avisarClaude(id);
+      P.aviso("Gracias, quedó guardada.");
+      await leer();
+    } catch (e) { P.aviso(P.explicar(e), "error"); b.disabled = false; }
+  });
   document.querySelectorAll("[data-comentar]").forEach((b) => b.onclick = async () => {
     const id = b.dataset.comentar, i = document.querySelector(`[data-com="${id}"]`), t = i.value.trim();
     if (!t) return;

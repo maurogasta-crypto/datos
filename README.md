@@ -770,7 +770,8 @@ teléfono.
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-52` |
-| `invitado.html` | `P.PANEL` | `invitado-13` |
+| `invitado.html` | `P.PANEL` | `invitado-14` |
+| `chat.js` | `SELLO` | `chat-1` |
 | `esquema.js` | `VERSION` | `esquema-2` |
 | `hoja.css` | comentario | `hoja-2` |
 | `glosario.js` | `VERSION` | `glosario-1` |
@@ -782,7 +783,7 @@ teléfono.
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `placa.js` | `VERSION` | `placa-js-8` |
-| `sw.js` | `VERSION` | `panel-shell-v58` |
+| `sw.js` | `VERSION` | `panel-shell-v60` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

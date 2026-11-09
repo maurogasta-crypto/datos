@@ -14,7 +14,7 @@
    parece que el despliegue no hizo nada y en realidad hizo la mitad.
    ═══════════════════════════════════════════════════════════ */
 
-const VERSION = 'panel-shell-v59';
+const VERSION = 'panel-shell-v60';
 
 /* Sin `?v=` a propósito. El panel pide `estilos.css?v=estilos-4` y
    `nucleo.js?v=nucleo-3`, y repetir esos números acá sería la TERCERA copia
@@ -33,6 +33,7 @@ const SHELL = [
   './firebase-init.js',
   './glosario.js',
   './esquema.js',
+  './chat.js',
   './hoja.css',
   './reglas.txt',
   './manifest.json',

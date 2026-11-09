@@ -292,6 +292,15 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pisa sus tokens. Desde `hoja-2` la cargan todas las pantallas del panel
   (`index`, `gemini`, `obra`, `placa` e `invitado`): una pantalla nueva la
   carga al final de sus estilos.
+  **Desde `invitado-14` (9-nov-2026) arriba va «Te preguntamos» y al
+  costado su propio chat** (Mauro: «la interfaz tiene que ser simple y las
+  preguntas bien concisas; las implicaciones se analizan en el chat»). Las
+  preguntas de Claude al invitado son pendientes con `tipo: "consulta"` y
+  `quien: "invitado"`, y se contestan comentando; «🤖 Trabajar con tu propio
+  chat» baja un `.md` con el resumen del proyecto (`chat.js`, banco `node
+  pruebas/chat.mjs`) y carga lo que su chat contestó como un pedido con el texto
+  entero en un comentario. Sin regla nueva. Cómo se tratan: TRASPASO § 4 bis,
+  e) a g).
   **Y desde `invitado-10` el MAPA** (`estructura.mapa`): el objetivo, quiénes
   lo usan y las áreas, y al tocar un área su esquema por dentro, con cada cosa
   marcada `anda`, `desarrollo` o `idea` (lo que no anda, más chico y

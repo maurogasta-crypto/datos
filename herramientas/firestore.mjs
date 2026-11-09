@@ -320,6 +320,12 @@ const PROYECTOS = {
                   // 18-oct-2026: los pedidos de alquiler de Facebook
                   // (herramientas/facebook.mjs). Los escribe el agente.
                   "pedidos_alquiler", "cambios_reserva",
+                  // 9-nov-2026 (revisión de arquitectura): faltaban en el
+                  // respaldo diario. `sesiones` son las horas registradas de
+                  // donde salen los honorarios (203 al 9-nov): si se perdían,
+                  // no había copia. Las demás, chicas pero propias del sitio.
+                  "sesiones", "estado_usuario", "airbnb_estado", "pedidos_busqueda",
+                  "comunicaciones_lecturas", "recuerdos_contactos",
                   "_historial"],
     /* Hasta el 29-sep-2026 eran tres familias selladas: credenciales, el
        libro del negocio y la gente. Ese día Mauro abrió las dos últimas

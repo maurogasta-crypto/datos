@@ -253,9 +253,11 @@ const PROYECTOS = {
     /* El agente lee lo común y las horas, y ESCRIBE `miembros/` al aprobar
        una solicitud: es lo único que escribe. Las tareas personales se las
        niega la regla (no hay cómo sellarlas por colección: es por campo). */
-    /* `tareas` no está: el agente sólo puede leer las COMUNES, y listar la
-       colección entera la regla lo rechaza (no puede probar que no hay una
-       personal adentro). Respaldarlas pide una consulta filtrada; pendiente. */
+    /* `tareas`: el agente sólo puede leer las COMUNES, y listar la colección
+       entera la regla lo rechaza (no puede probar que no hay una personal
+       adentro). Desde el 9-nov-2026 se piden con una consulta filtrada
+       (`filtradas`, abajo): entran al respaldo las comunes; las personales
+       siguen siendo de su dueño y no salen. */
     /* v3 de las reglas (app-3, 29-sep-2026): lo cotidiano (`dias`), con quién
        están los chicos (`familia`, `turnos`) y sus actividades (`eventos`).
        Todo eso lo ven los dos y el agente. La agenda de cada uno (`agendas`)
@@ -264,9 +266,10 @@ const PROYECTOS = {
     /* v4 (app-4): los acuerdos de tiempo, la plata, lo que propone el agente
        y sus observaciones. La plata el agente la LEE; lo que quiere agregar
        lo escribe en `propuestas` y una persona lo aprueba desde la app. */
+    filtradas: { tareas: ["alcance", "comun"] },
     colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
                   "bloques", "marcas", "movimientos", "recurrentes", "propuestas", "auditoria",
-                  "reportes", "_historial", "alertas", "deseos", "extractos", "mensajes"],
+                  "reportes", "_historial", "alertas", "deseos", "extractos", "mensajes", "tareas"],
     /* v14 (10-oct-2026, tiempos:V12): `extractos`, lo que dice cada banco
        línea por línea. El agente las carga (`extractos.mjs`) y las clasifica
        mientras están pendientes; registrarlas es de una persona. */
@@ -605,8 +608,24 @@ async function pedir(cfg, sesion, ruta, opciones = {}) {
 
 /* Lista una colección entera, paginando. Sin `orderBy`: se ordena en memoria,
    que es lo que hace el panel y evita pedir un índice por veinte documentos. */
+/* Una colección que la regla no deja LISTAR entera, pero sí consultar con un
+   filtro que la regla puede probar (9-nov-2026, revisión de arquitectura): las
+   `tareas` de Tiempos, de las que el agente lee sólo las comunes. Se declara en
+   `filtradas` del proyecto: { coleccion: [campo, valor] }. Sin esto, las tareas
+   —el corazón de Timón— no tenían respaldo. */
+function cuerpoFiltrado(coleccion, [campo, valor]) {
+  return { structuredQuery: { from: [{ collectionId: coleccion }],
+    where: { fieldFilter: { field: { fieldPath: campo }, op: "EQUAL", value: { stringValue: String(valor) } } } } };
+}
+const filtroDe = (cfg, coleccion) => (cfg.filtradas || {})[coleccion] || null;
+
 async function listar(cfg, sesion, coleccion, suave = false, campos = null) {
   guardia(cfg, coleccion);
+  const filtro = filtroDe(cfg, coleccion);
+  if (filtro) {
+    const j = await pedir(cfg, sesion, ":runQuery", { method: "POST", suave, body: JSON.stringify(cuerpoFiltrado(coleccion, filtro)) });
+    return (Array.isArray(j) ? j : []).filter((x) => x.document).map((x) => ({ id: x.document.name.split("/").pop(), ...objeto(x.document.fields || {}) }));
+  }
   const salida = [];
   let token = "";
   // `campos`: sólo esos (una máscara), para saber QUÉ hay sin bajar los bytes de un audio (charla-5).
@@ -915,7 +934,7 @@ async function deshacer(cfg, sesion, hid) {
   return e;
 }
 
-export { HISTORIAL, deshacer, crearAviso, crearNuevo, invitarEnSitio, validarInvitacionSitio, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
+export { cuerpoFiltrado, filtroDe, HISTORIAL, deshacer, crearAviso, crearNuevo, invitarEnSitio, validarInvitacionSitio, fusionarRutas, rutaCampo, adondeAnota, contactoAviso, guardiaEscritura, PROYECTOS, MAIL_COMPARTIDO, CLAVE_COMPARTIDA, MAIL_HEREDADO, CLAVE_HEREDADA, credenciales,
          entrar, entrarSuave, listar, leerUno, leerCrudo, escribir, fusionar, copiar, borrar, guardia, aFirestore, deFirestore };
 
 /* ── La línea de comandos ────────────────────────────────────────────────────*/

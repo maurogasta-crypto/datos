@@ -60,7 +60,7 @@ import { readdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PROYECTOS, entrar, entrarSuave, deFirestore, escribir, borrar } from "./firestore.mjs";
+import { PROYECTOS, entrar, entrarSuave, deFirestore, escribir, borrar, cuerpoFiltrado, filtroDe } from "./firestore.mjs";
 
 /* Las bases de sitio donde puede haber FALLAS reportadas: todas las que la
    herramienta conoce, menos el panel —que es donde se cruzan— y menos las que
@@ -752,6 +752,19 @@ async function listarSuave(cfg, sesion, coleccion, campos) {
   let token = "";
   const mascara = (campos || []).map((c) => "&mask.fieldPaths=" + encodeURIComponent(c)).join("");
   try {
+    const filtro = filtroDe(cfg, coleccion);   // 9-nov-2026: las tareas comunes de Tiempos
+    if (filtro) {
+      const r = await fetch(RAIZ(cfg.projectId) + ":runQuery", { method: "POST",
+        headers: { Authorization: "Bearer " + sesion.token, "Content-Type": "application/json" },
+        body: JSON.stringify(cuerpoFiltrado(coleccion, filtro)) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const m = (j.error && j.error.message) || (j[0] && j[0].error && j[0].error.message) || String(r.status);
+        return { ok: false, motivo: r.status === 403 ? "las reglas dijeron que no: " + m : m, docs: [] };
+      }
+      for (const x of (Array.isArray(j) ? j : [])) if (x.document) salida.push({ id: x.document.name.split("/").pop(), ...objeto(x.document.fields) });
+      return { ok: true, motivo: "", docs: salida };
+    }
     do {
       const q = "?pageSize=300" + mascara + (token ? "&pageToken=" + encodeURIComponent(token) : "");
       const r = await fetch(RAIZ(cfg.projectId) + "/" + coleccion + q,

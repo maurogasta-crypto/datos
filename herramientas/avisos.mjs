@@ -128,7 +128,7 @@ export function validarTexto(texto) {
    título es `sobre` (uno o varios: «tiempos», ["tiempos", "casaverde"]…) y la
    base queda sólo en el pie. */
 export const NOMBRES = { casaverde: "Casa Verde", casayourte: "CasaYourte", remate: "remateTaller", tiempos: "Tiempos",
-  pizarra: "Pizarra", hilux: "Hilux", gestos: "gestos", harmonia: "Harmonía", panel: "el panel", datos: "el panel", partitura: "partitura" };
+  pizarra: "Pizarra", hilux: "Hilux", gestos: "gestos", harmonia: "Harmonía", panel: "el panel", datos: "el panel", partitura: "partitura", roli: "Roli" };
 export const nombreDe = (k) => NOMBRES[String(k).toLowerCase()] || String(k);
 export function tituloDe(base, sobre) {
   const lista = [...new Set((Array.isArray(sobre) ? sobre : sobre ? [sobre] : [base]).filter(Boolean).map(nombreDe))];

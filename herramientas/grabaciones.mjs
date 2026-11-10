@@ -142,7 +142,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       const [id] = args.filter((x, i) => !x.startsWith("--") && !(i > 0 && args[i - 1].startsWith("--")));
       const a = opt("--a", "");
       if (!id || !a) throw new Error("uso: bajar <id> --a <carpeta fuera de los repositorios> [--ia]");
-      if (/\/home\/user\/(datos2|bodega|casaverdecanas|CasaYourte|remate|tiempos|pizarra|gestos|sitd-hilux)(\/|$)/.test(path.resolve(a)))
+      if (/\/home\/user\/(datos2|bodega|casaverdecanas|CasaYourte|remate|tiempos|pizarra|gestos|sitd-hilux|roli)(\/|$)/.test(path.resolve(a)))
         throw new Error("no adentro de un repositorio: usá el scratchpad");
       const g = await F.leerUno(h, s, "grabaciones", id);
       if (!g) { console.log("\n  No está.\n"); return; }

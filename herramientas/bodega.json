@@ -1,5 +1,5 @@
 {
-  "generado": "2026-11-03",
+  "generado": "2026-11-10",
   "proyectos": [
     {
       "id": "casaverde",
@@ -99,6 +99,15 @@
       "url": "https://rematetaller.github.io/remate/",
       "apk": null,
       "resumen": "Catálogo por invitación y panel interno del remate. Estático, más una función que prende las luces del depósito: vive en el Netlify de Casa Verde desde el 1-oct (Vercel no se llegó a crear)."
+    },
+    {
+      "id": "roli",
+      "nombre": "Roli",
+      "repo": "maurogasta-crypto/roli",
+      "respaldar": true,
+      "url": null,
+      "apk": null,
+      "resumen": "Robot Arduino UNO que Mauro armó con sus hijos Yacko y Kala (10 y 7 años) para aprender a programar con palabras. Se maneja desde una laptop por Bluetooth. Repositorio privado, sin servidor ni base."
     },
     {
       "id": "tiempos",

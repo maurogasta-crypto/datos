@@ -25,6 +25,7 @@ privada, las variables del entorno).
    | `/home/user/gestos` | `maurogasta-crypto/gestos` | |
    | `/home/user/sitd-hilux` | `maurogasta-crypto/sitd-hilux` | |
    | `/home/user/tiempos` | `maurogasta-crypto/tiempos` | |
+   | `/home/user/roli` | `maurogasta-crypto/roli` | **privado**: robot Arduino (alta 10-nov-2026) |
    | `/home/user/bodega` | `maurogasta-crypto/bodega` | **privado**: mensajes, borradores, respaldos |
 
 3. **Las credenciales del agente** están en las variables del entorno de la nube
@@ -157,7 +158,7 @@ hay que tocar el disparador.
 RONDA DIARIA UNIFICADA. Mauro pidió el 29-sep que todas las rutinas corran en ESTE chat, con todos los protocolos que armamos, en un solo lugar. Corrés sin nadie delante.
 
 Los repositorios van en /home/user, con ESTOS nombres de carpeta:
-  datos2 (= maurogasta-crypto/datos, el panel y las herramientas) · casaverdecanas (casaverdecanas-blip) · CasaYourte (casayourte) · remate (rematetaller) · gestos · sitd-hilux · tiempos · bodega (privado, datos) — los que no dicen dueño son de maurogasta-crypto.
+  datos2 (= maurogasta-crypto/datos, el panel y las herramientas) · casaverdecanas (casaverdecanas-blip) · CasaYourte (casayourte) · remate (rematetaller) · gestos · sitd-hilux · tiempos · roli (privado) · bodega (privado, datos) — los que no dicen dueño son de maurogasta-crypto.
 Si falta alguno (el contenedor pudo haberse renovado), clonalo ahí: git clone https://github.com/<dueño>/<repo>.git /home/user/<carpeta>. Si no se puede clonar, decilo arriba de todo y seguí con lo que haya.
 (/home/user/datos, si existe, es un resto vacío: no se usa.)
 

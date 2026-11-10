@@ -301,6 +301,14 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas/chat.mjs`) y carga lo que su chat contestó como un pedido con el texto
   entero en un comentario. Sin regla nueva. Cómo se tratan: TRASPASO § 4 bis,
   e) a g).
+  **Desde `invitado-15` (10-nov-2026) las preguntas se ORDENAN y se contestan
+  con un toque**: cada consulta lleva `orden` (el que se quiere contestar
+  primero), `grupo` (el primer grupo va abierto, los demás plegados) y
+  `opciones: [{t, r}]` (`r` = la recomendada). Elegir una opción agrega un
+  comentario `{texto: "Elegí: …", opcion}` y gana la última elección de esa
+  persona; sigue siendo sólo un comentario, sin regla nueva. Las decisiones de
+  estructura y arquitectura le llegan al invitado así, de a una y con la
+  recomendación a la vista.
   **Y desde `invitado-10` el MAPA** (`estructura.mapa`): el objetivo, quiénes
   lo usan y las áreas, y al tocar un área su esquema por dentro, con cada cosa
   marcada `anda`, `desarrollo` o `idea` (lo que no anda, más chico y

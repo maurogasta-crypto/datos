@@ -180,12 +180,12 @@
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-13";
 import { GLOSARIO } from "./glosario.js?v=glosario-1";
-import * as CH from "./chat.js?v=chat-1";
+import * as CH from "./chat.js?v=chat-2";
 import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeArea, ESTADOS } from "./esquema.js?v=esquema-2";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-14";
+P.PANEL = "invitado-15";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -386,8 +386,14 @@ function pintar() {
       ${gente.length ? `<div class="gente-chips" aria-label="Quiénes participan">${gente.map((g) => `<span>${P.esc(g.nombre)} <small>· ${P.esc(g.rol)}</small></span>`).join("")}</div>` : ""}
       ${consultas.length ? `<div class="tarj" style="border-color:var(--acento,#0f766e)">
         <div class="rotulo" style="margin-top:0">Te preguntamos${faltan ? ` · ${faltan} sin contestar` : " · contestadas"}</div>
-        <p class="gris" style="margin:.2rem 0 .6rem">Contestá con tus palabras, aunque sea corto. Claude lo analiza contra el resto del proyecto antes de cambiar nada.</p>
-        ${consultas.map(htmlConsulta).join("")}</div>` : ""}
+        <p class="gris" style="margin:.2rem 0 .6rem">Tocá una opción o escribí con tus palabras, aunque sea corto. Claude lo analiza contra el resto del proyecto antes de cambiar nada.</p>
+        ${CH.agrupar(consultas).map((g, i) => {
+          const f = g.items.filter((x) => !CH.contestada(x, yo.uid)).length;
+          const cuerpo = g.items.map(htmlConsulta).join("");
+          return !g.grupo ? cuerpo
+            : i === 0 ? `<div class="rotulo">${P.esc(g.grupo)}</div>${cuerpo}`
+            : `<details class="nivel"><summary><span style="flex:1">${P.esc(g.grupo)}</span><span class="chip-e">${f ? f + " sin contestar" : "contestadas"}</span></summary>${cuerpo}</details>`;
+        }).join("")}</div>` : ""}
       ${mapaDe(es) ? `<div class="esq-caja" data-mapa="${P.esc(pr.id)}"><div class="esq-migas" data-migas="${P.esc(pr.id)}"></div>
         <div data-mapa-svg="${P.esc(pr.id)}">${svgMapa(mapaDe(es))}</div>
         <p class="gris esq-ayuda">Tocá un área para entrar. Lo más chico y punteado está en desarrollo o se busca.</p></div>
@@ -593,13 +599,15 @@ function htmlGlosario() {
 /* invitado-14: una pregunta de Claude al invitado (`tipo: "consulta"`). Se
    contesta comentando: lo único que la regla le deja tocar de un pendiente. */
 function htmlConsulta(x) {
-  const ya = CH.contestada(x, yo.uid);
+  const ya = CH.contestada(x, yo.uid), ops = CH.opcionesDe(x), eligio = CH.eleccion(x, yo.uid);
   return `<div class="pend">
     <p class="cola-de"><b>${P.esc(x.titulo || "")}</b>${ya ? ' <span class="chip-e e-hecho">contestada</span>' : ""}</p>
     ${x.porQue ? `<p class="gris" style="margin:.1rem 0 .3rem">${P.esc(x.porQue)}</p>` : ""}
+    ${ops.length ? `<div class="fila-btn" style="flex-direction:column;align-items:stretch">${ops.map((o, i) =>
+      `<button class="${eligio === o.t ? "btn p" : "btn"}" style="text-align:left" data-opcion="${P.esc(x.id)}" data-i="${i}">${eligio === o.t ? "✔ " : ""}${P.esc(o.t)}${o.r ? ' <small>★ recomendada</small>' : ""}</button>`).join("")}</div>` : ""}
     ${(x.comentarios || []).map((c) => `<p class="inv-com">${P.esc(c.nombre || "")} (${P.esc(c.fecha || "")}): ${P.esc(c.texto || "")}</p>`).join("")}
-    <textarea data-resp="${P.esc(x.id)}" rows="2" maxlength="3000" placeholder="${ya ? "Agregar algo…" : "Tu respuesta…"}"></textarea>
-    <div class="fila-btn"><button class="mini" data-responder="${P.esc(x.id)}">${ya ? "Agregar" : "Responder"}</button></div>
+    <textarea data-resp="${P.esc(x.id)}" rows="2" maxlength="3000" placeholder="${ops.length ? "¿Querés aclarar algo? (opcional)" : ya ? "Agregar algo…" : "Tu respuesta…"}"></textarea>
+    <div class="fila-btn"><button class="mini" data-responder="${P.esc(x.id)}">${ya || ops.length ? "Agregar" : "Responder"}</button></div>
   </div>`;
 }
 
@@ -778,6 +786,17 @@ function enganchar() {
     if (f.size > CH.MAX_RESPUESTA * 4) return P.aviso("El archivo es muy grande: pedile a tu chat un resumen.", "error");
     document.querySelector(`[data-chat="${pid}"]`).value = await f.text();
     document.querySelector(`[data-chat-estado="${pid}"]`).textContent = "Archivo «" + f.name + "» cargado: revisalo y tocá «Mandar a Claude».";
+  });
+  document.querySelectorAll("[data-opcion]").forEach((b) => b.onclick = async () => {
+    const id = b.dataset.opcion, x = PEND.find((y) => y.id === id), o = x && CH.opcionesDe(x)[Number(b.dataset.i)];
+    if (!o) return;
+    b.disabled = true;
+    try {
+      await updateDoc(doc(db, "pendientes", id), { comentarios: arrayUnion(CH.comentarioDeEleccion(yo.uid, persona.nombre, o.t, P.hoy())) });
+      avisarClaude(id);
+      P.aviso("Anotado: " + o.t.slice(0, 60));
+      await leer();
+    } catch (e) { P.aviso(P.explicar(e), "error"); b.disabled = false; }
   });
   document.querySelectorAll("[data-responder]").forEach((b) => b.onclick = async () => {
     const id = b.dataset.responder, caja = document.querySelector(`[data-resp="${id}"]`), txt = caja.value.trim();

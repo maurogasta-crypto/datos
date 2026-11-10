@@ -44,6 +44,27 @@ t("una respuesta vacía o enorme no se manda; una buena trae su resumen", () => 
 t("sólo se leen archivos de texto", () => {
   assert.equal(C.esArchivoDeTexto({ name: "a.md" }), true); assert.equal(C.esArchivoDeTexto({ name: "r.TXT" }), true);
   assert.equal(C.esArchivoDeTexto({ name: "foto.jpg", type: "image/jpeg" }), false); });
+t("el orden manda sobre la fecha, y lo sin orden va al final", () => {
+  const l = [{ id: "p:3", proyecto: "p", tipo: "consulta", estado: "abierto", orden: 3 }, { id: "p:x", proyecto: "p", tipo: "consulta", estado: "abierto", creadoEn: "2020-01-01" },
+    { id: "p:1", proyecto: "p", tipo: "consulta", estado: "abierto", orden: 1, creadoEn: "2026-11-10" }];
+  assert.deepEqual(C.consultasDe(l, "p").map((x) => x.id), ["p:1", "p:3", "p:x"]);
+});
+t("las consultas se agrupan en el orden de la primera de cada grupo", () => {
+  const g = C.agrupar([{ id: 1, grupo: "A" }, { id: 2, grupo: "B" }, { id: 3, grupo: "A" }, { id: 4 }]);
+  assert.deepEqual(g.map((x) => [x.grupo, x.items.map((y) => y.id)]), [["A", [1, 3]], ["B", [2]], ["", [4]]]);
+});
+t("las opciones se limpian y la elección es la última de esa persona", () => {
+  const x = { opciones: [{ t: "Sí", r: true }, { t: "" }, null, { t: "No" }], comentarios: [] };
+  assert.deepEqual(C.opcionesDe(x), [{ t: "Sí", r: true }, { t: "No", r: false }]);
+  assert.equal(C.opcionesDe({}).length, 0);
+  x.comentarios.push(C.comentarioDeEleccion("u1", "Mariano", "Sí", "2026-11-10"), { por: "u2", opcion: "No" }, C.comentarioDeEleccion("u1", "Mariano", "No", "2026-11-10"));
+  assert.equal(C.eleccion(x, "u1"), "No"); assert.equal(C.eleccion(x, "u3"), null);
+  assert.equal(C.comentarioDeEleccion("u1", "M", "Sí", "f").texto, "Elegí: Sí");
+});
+t("el resumen para el chat lista las opciones con la recomendada", () => {
+  const md = C.resumenMd({ id: "p" }, [{ id: "p:1", proyecto: "p", tipo: "consulta", estado: "abierto", titulo: "¿Cómo?", opciones: [{ t: "Así", r: true }, { t: "Asá" }] }]);
+  assert.ok(md.includes("- Así (recomendada)") && md.includes("- Asá"));
+});
 t("chat.js no habla con Firebase ni con la red", () => {
   const s = fs.readFileSync(new URL("../chat.js", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
   assert.doesNotMatch(s, /^import /m); assert.doesNotMatch(s, /fetch\(|firebase|claves/i);

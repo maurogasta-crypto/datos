@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    chat.js — el canal entre un invitado y SU propio chat de IA
-   Sello: chat-1 (9-nov-2026)
+   Sello: chat-2 (10-nov-2026; chat-1, 9-nov)
 
    Mauro, 9-nov-2026: «una herramienta que permita descargar un md que resuma
    el desarrollo de la app para su chat y un espacio en el que pueda cargar la
@@ -19,25 +19,52 @@
    falta una regla nueva.
    ═══════════════════════════════════════════════════════════ */
 
-export const SELLO = "chat-1";
+export const SELLO = "chat-2";
 /* Una respuesta de un chat va entera como comentario de un pedido. Un
    documento de Firestore no pasa de 1 MiB: con 200 mil caracteres queda lugar
    para la conversación de después. */
 export const MAX_RESPUESTA = 200000;
 
+const linea = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
 const abierto = (x) => x.estado !== "hecho" && x.estado !== "retirado";
 export const esConsulta = (x) => !!x && x.tipo === "consulta";
 
-/** Las consultas abiertas de un proyecto, de la más vieja a la más nueva. */
+/** Las consultas abiertas de un proyecto, en el orden en que se quieren contestar
+ *  (`orden`; sin él, al final y por fecha). */
 export function consultasDe(pend, pid) {
+  const o = (x) => (Number.isFinite(x.orden) ? x.orden : 9999);
   return (pend || []).filter((x) => x.proyecto === pid && esConsulta(x) && abierto(x))
-    .sort((a, b) => String(a.creadoEn || "").localeCompare(String(b.creadoEn || "")) || String(a.id).localeCompare(String(b.id)));
+    .sort((a, b) => o(a) - o(b) || String(a.creadoEn || "").localeCompare(String(b.creadoEn || "")) || String(a.id).localeCompare(String(b.id)));
 }
+
+/** Las consultas agrupadas por `grupo`, en el orden de la primera de cada grupo. */
+export function agrupar(consultas) {
+  const out = [];
+  for (const x of consultas || []) {
+    const g = linea(x.grupo);
+    let b = out.find((o) => o.grupo === g);
+    if (!b) { b = { grupo: g, items: [] }; out.push(b); }
+    b.items.push(x);
+  }
+  return out;
+}
+
+/** Las opciones para elegir con un toque (`opciones: [{t, r}]`, `r` = la recomendada). */
+export const opcionesDe = (x) => (Array.isArray(x && x.opciones) ? x.opciones : [])
+  .filter((o) => o && o.t).slice(0, 6).map((o) => ({ t: String(o.t).slice(0, 160), r: !!o.r }));
+
+/** Lo último que eligió esta persona, o null. Elegir de nuevo agrega un comentario: gana el último. */
+export function eleccion(x, uid) {
+  const l = ((x && x.comentarios) || []).filter((c) => c && c.por === uid && c.opcion);
+  return l.length ? String(l[l.length - 1].opcion) : null;
+}
+
+/** El comentario que deja una elección: la opción va aparte para poder contarla. */
+export const comentarioDeEleccion = (uid, nombre, opcion, fecha) =>
+  ({ por: uid, nombre: nombre || "", texto: ("Elegí: " + opcion).slice(0, 3000), opcion: String(opcion).slice(0, 160), fecha });
 
 /** ¿Ya la contestó esta persona? */
 export const contestada = (x, uid) => (x.comentarios || []).some((c) => c && c.por === uid);
-
-const linea = (s) => String(s == null ? "" : s).replace(/\s+/g, " ").trim();
 
 /** El resumen del proyecto en Markdown, para dárselo a otro chat. */
 export function resumenMd(pr, pend, { commits = [], fecha = "", quien = "" } = {}) {
@@ -86,7 +113,10 @@ export function resumenMd(pr, pend, { commits = [], fecha = "", quien = "" } = {
   const cons = consultasDe(pend, pr.id);
   if (cons.length) {
     L.push(""); L.push("## Preguntas abiertas para vos"); L.push("");
-    cons.forEach((x) => L.push(`- **${linea(x.titulo)}**${x.porQue ? ` — ${linea(x.porQue)}` : ""}`));
+    cons.forEach((x) => {
+      L.push(`- **${linea(x.titulo)}**${x.porQue ? ` — ${linea(x.porQue)}` : ""}`);
+      opcionesDe(x).forEach((o) => L.push(`  - ${linea(o.t)}${o.r ? " (recomendada)" : ""}`));
+    });
   }
   const ab = mios.filter((x) => abierto(x) && !esConsulta(x));
   if (ab.length) {

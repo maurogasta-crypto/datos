@@ -382,8 +382,42 @@ orden en la misma tanda, y corrige la tabla de abajo.
 | Tiempos · ＋ Tarea (`index.html`) | **no** | pide «Adentro de» y «Ámbito» antes del día; el día va después de la meta |
 | Casa Verde, CasaYourte, remate, el panel | sin revisar | se revisan al tocarlos |
 
+## 14. De lo simple a lo profundo (desde el 2026-11-10)
+
+Mauro, 10-nov-2026: «Muestra todo muy rápido, trae mucho ruido, genera
+confusión… arrancar con claridad desde un esquema bien simple. Dejar bien
+fácil y directo los accesos más cotidianos y aumentar la complejidad donde se
+busca profundizar. Ese criterio de orden visual, disminución de textos y
+simplicidad creo que es necesario en cada app, en cada pantalla».
+
+Toda pantalla, de todo sitio y de la Pizarra, tiene tres niveles y en este
+orden:
+
+1. **Mirar.** Lo primero que se ve se entiende en tres segundos: pocas cosas,
+   pocas palabras. Si la pantalla explica un sistema, arranca con un esquema.
+2. **Hacer.** Lo cotidiano se hace desde ahí, con un toque (tildar, agregar,
+   contestar), sin abrir nada antes.
+3. **Profundizar.** Lo demás existe, plegado: aparece cuando la persona lo
+   pide.
+
+- **Un widget hace UNA cosa.** Un botón nuevo en un widget entra sacando otro.
+- **Menos texto.** Un rótulo son una o dos palabras; la explicación va en el
+  nivel 3 o en la ayuda (§ 3), no en la pantalla.
+- **Lo que se agrega va al nivel que le toca.** Antes de sumar algo al primer
+  nivel se dice qué se usa todos los días y qué no; lo que no, va plegado.
+- **Los flujos se dibujan.** Cada app lleva el esquema de sus flujos
+  principales, armado leyendo el código y con sus `fuentes`, como los globos y
+  el mapa de `proyectos/<id>.estructura`. Sirve para comparar lo que hace el
+  código con el objetivo de la app, y es la ayuda de la pantalla: el «?»
+  muestra el flujo. Si un cambio toca un archivo de un flujo, el esquema se
+  revisa en la misma tanda.
+
+**Cómo se aplica:** a toda pantalla nueva desde hoy. Las que existen se
+ordenan al tocarlas, o con un pedido de Mauro; no en una tanda de reescritura
+(el mismo criterio del § 13).
+
 ---
 
 *Creado el 2026-09-07, a partir de la lectura directa de los tres sitios.
-El § 11 se agregó el 2026-09-08; el § 13, el 2026-10-29.
+El § 11 se agregó el 2026-09-08; el § 13, el 2026-10-29; el § 14, el 2026-11-10.
 Qué le falta a cada uno: `ESTADO-DE-LOS-TRES.md`.*

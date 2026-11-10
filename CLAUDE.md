@@ -309,6 +309,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   persona; sigue siendo sólo un comentario, sin regla nueva. Las decisiones de
   estructura y arquitectura le llegan al invitado así, de a una y con la
   recomendación a la vista.
+  **Desde `invitado-17` cada consulta puede llevar `amplia`**: el porqué en
+  más detalle, plegado («Por qué, en más detalle»), para que la pregunta siga
+  siendo corta y quien quiera entender más lo abra (Mauro, 10-nov: «explicar el
+  porqué de cada cosa en lenguaje simple, con posibilidad de ampliar»).
   **Desde `invitado-16` (10-nov-2026) el chat propio baja también la guía de
   desarrollo y el PAQUETE de un área** (Mauro: «un link fácil de descargar para
   darle a su Claude… intervenciones sobre archivos más pequeños, con una guía

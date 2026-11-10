@@ -109,6 +109,10 @@ t("el paquete trae las piezas que usa, con tope, y nombra las que no entran", ()
   assert.ok(md.includes("No se incluye el código de: enorme") && md.includes("sólo para leer"));
   assert.ok(!C.armarPaquete({ proyecto: "P", area, codigo: cod, guia: "g" }).includes("Piezas de otras áreas"));
 });
+t("el resumen trae el porqué ampliado de cada pregunta", () => {
+  const md = C.resumenMd({ id: "p" }, [{ id: "p:1", proyecto: "p", tipo: "consulta", estado: "abierto", titulo: "¿Cómo?", amplia: "Porque sí." }]);
+  assert.ok(md.includes("Por qué: Porque sí."));
+});
 t("las áreas de chat.js son una copia exacta de las de tocatoca (si está al lado)", () => {
   const otra = new URL("../../tocatoca/herramientas/areas.mjs", import.meta.url);
   if (!fs.existsSync(otra)) { console.log("      (no está tocatoca al lado)"); return; }

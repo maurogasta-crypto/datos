@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    chat.js — el canal entre un invitado y SU propio chat de IA
-   Sello: chat-3 (10-nov-2026; chat-1, 9-nov)
+   Sello: chat-4 (10-nov-2026; chat-1, 9-nov)
 
    Mauro, 9-nov-2026: «una herramienta que permita descargar un md que resuma
    el desarrollo de la app para su chat y un espacio en el que pueda cargar la
@@ -19,7 +19,7 @@
    falta una regla nueva.
    ═══════════════════════════════════════════════════════════ */
 
-export const SELLO = "chat-3";
+export const SELLO = "chat-4";
 /* Una respuesta de un chat va entera como comentario de un pedido. Un
    documento de Firestore no pasa de 1 MiB: con 200 mil caracteres queda lugar
    para la conversación de después. */
@@ -115,6 +115,7 @@ export function resumenMd(pr, pend, { commits = [], fecha = "", quien = "" } = {
     L.push(""); L.push("## Preguntas abiertas para vos"); L.push("");
     cons.forEach((x) => {
       L.push(`- **${linea(x.titulo)}**${x.porQue ? ` — ${linea(x.porQue)}` : ""}`);
+      if (x.amplia) L.push(`  - Por qué: ${linea(x.amplia)}`);
       opcionesDe(x).forEach((o) => L.push(`  - ${linea(o.t)}${o.r ? " (recomendada)" : ""}`));
     });
   }

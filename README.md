@@ -721,6 +721,27 @@ panel de acceso».
   `api_secret`). **Hay que publicar las reglas v8**; hasta entonces el editor
   dice que la base no deja.
 
+## Roli, el robot (`roli.html`, desde el 10-nov-2026)
+
+Las actividades por niveles para Yacko y Kala y la lista de lo que conviene
+comprarle al robot (Mauro: «actividades que contemplen el cuello, el sensor
+ultrasónico delantero y trasero y los movimientos», y «una sección con lo que
+recomendamos comprar»). Se llega desde la ficha de Roli (`sitio.guias` de
+`proyectos/roli`: «🤖 Actividades de Roli» y «🛒 Qué comprar para Roli»).
+
+- **El contenido vive en `roli.js`**: 11 actividades en seis niveles, cada paso
+  con lo que se teclea y lo que tendría que pasar, y 10 compras con precio
+  aproximado, prioridad y advertencia. Las palabras salen de `ayuda()` de
+  `firmware/roli_programa.ino` (`maurogasta-crypto/roli`): si el firmware cambia
+  una palabra, cambia `NIVEL_DE` y las actividades en la misma tanda.
+  Banco: `node pruebas/roli.mjs` (7 casos; falla si una actividad usa una
+  palabra que no existe en su nivel).
+- **Sin cuenta ni Firebase, a propósito**: la abren los chicos desde la laptop.
+  Lo tildado se recuerda en ese navegador (`localStorage`), no en el panel.
+- Los niveles 5 y 6 avisan que los ojos y el cuello se están terminando de
+  ajustar (los sensores no están cerrados en el robot, traspaso del 9-nov).
+- No está en el `SHELL` de `sw.js`: se pide por red, como `placa.html`.
+
 ## La placa de la Hilux (`placa.html`, desde el 4-nov-2026)
 
 La guía para armar la placa de la Hilux, paso a paso: medir, comprar, armar y
@@ -782,6 +803,8 @@ teléfono.
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
+| `roli.html` | sello de la barra | `roli-1` |
+| `roli.js` | `VERSION` | `roli-js-1` |
 | `placa.js` | `VERSION` | `placa-js-8` |
 | `sw.js` | `VERSION` | `panel-shell-v63` |
 

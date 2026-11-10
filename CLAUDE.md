@@ -782,6 +782,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sólo el título. Los repos salen de `sitio.repo` de `proyectos/`: uno nuevo
   aparece solo. Lo que Gemini propone vuelve como pedido con `origen:
   "gemini"`, y la ronda lo marca en ORGANIZAR para evaluarlo, no obedecerlo.
+- **Las actividades de Roli y lo que conviene comprarle son `roli.html` + `roli.js`**
+  (10-nov-2026, Mauro: «actividades que contemplen el cuello, los sensores
+  delantero y trasero y los movimientos» y «una sección con lo que recomendamos
+  comprar»). Sin cuenta ni base. Las palabras salen del firmware de
+  `maurogasta-crypto/roli`: si cambia un comando allá, cambia `roli.js` en la
+  misma tanda (`node pruebas/roli.mjs`, 7 casos).
 - **La guía para armar la placa de la Hilux es `placa.html` + `placa.js`**
   (placa-8, 4-nov-2026, Mauro: «una pantalla dedicada para el proceso de
   construcción… primero conseguir materiales y después proceso de

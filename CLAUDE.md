@@ -866,9 +866,10 @@ regla que sólo llega si alguien se acordó de algo no es una regla.
 | `protocolos/PROTOCOLO-GENERAL.md` | pedidos no verificados, git, estructura del `CLAUDE.md`, mecánica de sesiones |
 | `protocolos/PROTOCOLO-SECRETOS.md` | qué tipo de secreto va en cada lugar |
 | `protocolos/PROTOCOLO-DESARROLLO.md` | el reglamento técnico común a los cuatro proyectos. Su § 10 dice qué hereda una app nueva, y este panel es el primer caso de prueba de ese párrafo |
-| `protocolos/PROTOCOLO-INTERFAZ.md` | cómo se maneja la gente en todos |
+| `protocolos/PROTOCOLO-INTERFAZ.md` | cómo se maneja la gente en todos; su § 14 (10-nov-2026) manda sobre toda pantalla: mirar, hacer, profundizar |
 | `protocolos/PROTOCOLO-AVISOS.md` | cuándo y cómo el agente le escribe a una persona por WhatsApp (CallMeBot), desde el 30-sep-2026, y el buzón de la Pizarra con su guía de instalación (§ 6 bis), desde el 9-oct |
 | `protocolos/PROTOCOLO-PLATA.md` | cómo entra la información de plata a Tiempos y cómo se va afinando: todo lo que llega se evalúa y se incorpora sin repetir, completando lo que había (desde el 11-oct-2026) |
+| `protocolos/ARQUITECTURA.md` | adónde va cada cosa: una sola app de uso diario (Timón) con espacios, la Pizarra como su cáscara, cada negocio en su app, Claude como miembro y la ronda por trabajos; con el estado de cada etapa (desde el 10-nov-2026) |
 | `protocolos/ESTADO-DE-LOS-TRES.md` | qué le falta a cada proyecto y qué le puede dar a los otros |
 | `protocolos/ESTADO-ACTUAL.md` | en qué versión está cada pieza hoy y qué encontró la última auditoría (desde el 12-oct-2026); se corrige el renglón de una pieza cuando cambia |
 

@@ -309,6 +309,17 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   persona; sigue siendo sólo un comentario, sin regla nueva. Las decisiones de
   estructura y arquitectura le llegan al invitado así, de a una y con la
   recomendación a la vista.
+  **Desde `invitado-16` (10-nov-2026) el chat propio baja también la guía de
+  desarrollo y el PAQUETE de un área** (Mauro: «un link fácil de descargar para
+  darle a su Claude… intervenciones sobre archivos más pequeños, con una guía
+  del contenido global»). Si el repositorio del proyecto (`sitio.repo`) trae
+  `areas.json`, el panel lo lee sin credencial de `raw.githubusercontent.com`
+  con el archivo que dice y arma el `.md`: guía + ficha del área + su código
+  recortado + las piezas de otras áreas que usa (`chat.js`: `declaraciones`,
+  `extraer`, `usa`, `armarPaquete`). **Esas funciones son copia EXACTA de
+  `herramientas/areas.mjs` de tocatoca** y `node pruebas/chat.mjs` las compara
+  si el repo está al lado: si cambia una, cambia la otra en la misma tanda. Hoy
+  sólo BandoMaps tiene `areas.json`; otro proyecto lo suma con su mapa.
   **Y desde `invitado-10` el MAPA** (`estructura.mapa`): el objetivo, quiénes
   lo usan y las áreas, y al tocar un área su esquema por dentro, con cada cosa
   marcada `anda`, `desarrollo` o `idea` (lo que no anda, más chico y

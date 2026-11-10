@@ -180,12 +180,12 @@
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-13";
 import { GLOSARIO } from "./glosario.js?v=glosario-1";
-import * as CH from "./chat.js?v=chat-2";
+import * as CH from "./chat.js?v=chat-3";
 import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeArea, ESTADOS } from "./esquema.js?v=esquema-2";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-15";
+P.PANEL = "invitado-16";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -208,6 +208,7 @@ const AVISAR = "https://timon-servidor.netlify.app/.netlify/functions/avisar-cla
 let yo = null, persona = null, PROY = [], PEND = [], FICHAS = [];
 let pestana = (() => { try { return localStorage.getItem("inv-pestana") || ""; } catch (e) { return ""; } })();
 const capturas = {};       // proyecto → File elegido, se sube recién al mandar
+const AREAS = {};          // proyecto → { mapa, fuente } cuando el repositorio tiene areas.json (invitado-16)
 const COMMITS = {};        // proyecto → lo último subido, para el resumen de su chat (invitado-14)
 
 async function arrancar() {
@@ -414,8 +415,9 @@ function pintar() {
       <div class="rotulo">Para entender y participar</div>
 
       <details class="nivel" data-capa-chat="${P.esc(pr.id)}"><summary>🤖 Trabajar con tu propio chat</summary>
-        <p class="gris">1) Bajá el resumen del proyecto y dáselo a tu chat de IA. 2) Pegá acá lo que te conteste, o subí el archivo. Claude lo lee y lo analiza contra el resto del proyecto; nada cambia sin que lo charlemos.</p>
-        <div class="fila-btn"><button class="btn" data-md="${P.esc(pr.id)}">⬇ Bajar el resumen (.md)</button></div>
+        <p class="gris">1) Bajá lo que necesite tu chat de IA y dáselo. 2) Pegá acá lo que te conteste, o subí el archivo. Claude lo lee y lo analiza contra el resto del proyecto; nada cambia sin que lo charlemos.</p>
+        <div class="fila-btn"><button class="btn" data-md="${P.esc(pr.id)}">⬇ Resumen del proyecto (.md)</button></div>
+        <div data-areas="${P.esc(pr.id)}"></div>
         <textarea data-chat="${P.esc(pr.id)}" rows="4" placeholder="Pegá acá la respuesta de tu chat…"></textarea>
         <div class="fila-btn">
           <label class="mini">📄 Subir un archivo (.md o .txt)<input type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" data-chat-arch="${P.esc(pr.id)}" hidden></label>
@@ -614,6 +616,54 @@ function htmlConsulta(x) {
 /* invitado-14: el resumen para su chat, y lo que su chat contestó de vuelta.
    La respuesta entra como un pedido con el texto entero en un comentario
    (`porQue` llega a 2000 caracteres; un comentario, al techo del documento). */
+/* invitado-16 (Mauro, 10-nov: «un link fácil de descargar para darle a su Claude… intervenciones sobre
+   archivos más pequeños, con una guía del contenido global»). Si el repositorio del proyecto trae
+   areas.json, se ofrece la guía de desarrollo y el PAQUETE de cualquier área: la guía + su ficha + el código
+   de esa área recortado, que cabe en el cupo gratuito de un chat. Todo sale del repositorio público,
+   leído sin credencial. */
+const crudo = (repo, ruta) => `https://raw.githubusercontent.com/${repo}/main/${ruta}`;
+async function leerTexto(url) { const r = await fetch(url); if (!r.ok) throw new Error("GitHub contestó " + r.status); return r.text(); }
+function descargar(nombre, texto) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([texto], { type: "text/markdown;charset=utf-8" }));
+  a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function traerAreas(pr) {
+  const caja = document.querySelector(`[data-areas="${pr.id}"]`);
+  if (!caja || AREAS[pr.id] || !pr.sitio || !/^[\w.-]+\/[\w.-]+$/.test(pr.sitio.repo || "")) return;
+  try {
+    const mapa = JSON.parse(await leerTexto(crudo(pr.sitio.repo, "areas.json")));
+    const fuente = await leerTexto(crudo(pr.sitio.repo, mapa.archivo || "src/App.jsx"));
+    const decls = CH.declaraciones(fuente);
+    AREAS[pr.id] = { mapa, fuente, decls };
+    const filas = mapa.areas.map((a) => { const e = CH.extraer(fuente, a, decls); return { a, e }; });
+    caja.innerHTML = `<p class="gris" style="margin:.6rem 0 .2rem"><b>Para una intervención enfocada</b> (entra en un chat gratuito): elegí un área.</p>
+      <select data-area-sel="${P.esc(pr.id)}" style="width:100%;margin:.2rem 0">${filas.map(({ a, e }) =>
+        `<option value="${P.esc(a.id)}">${P.esc(a.titulo)} · ${e.lineas} líneas · ~${Math.max(1, Math.round(e.tokens / 1000))} mil</option>`).join("")}</select>
+      <div class="fila-btn">
+        <button class="btn p" data-paquete="${P.esc(pr.id)}">⬇ Paquete del área (.md)</button>
+        <button class="mini" data-guia="${P.esc(pr.id)}">⬇ Guía de desarrollo (.md)</button>
+        <a class="mini" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${P.esc(pr.sitio.repo)}/blob/main/ARQUITECTURA.md">Ver la propuesta de arquitectura</a>
+      </div>
+      <p class="gris" data-area-info="${P.esc(pr.id)}" style="font-size:.85rem"></p>`;
+    const sel = caja.querySelector("select"), info = caja.querySelector("[data-area-info]");
+    const mostrar = () => { const f = filas.find((x) => x.a.id === sel.value); info.textContent = f ? f.a.que + (f.e.tokens > 20000 ? " ⚠ Es el área grande: conviene pedir algo muy puntual." : "") : ""; };
+    sel.onchange = mostrar; mostrar();
+    caja.querySelector("[data-paquete]").onclick = async (ev) => {
+      const area = mapa.areas.find((x) => x.id === sel.value); if (!area) return;
+      ev.target.disabled = true;
+      let guia = ""; try { guia = await leerTexto(crudo(pr.sitio.repo, mapa.guia || "GUIA-PARA-TU-CHAT.md")); } catch (e) { P.aviso("No pude bajar la guía general: va el paquete sin ella.", "error"); }
+      descargar(CH.nombrePaquete(pr, area, P.hoy()), CH.armarPaquete({ proyecto: pr.nombre || pr.id, area, codigo: CH.extraer(fuente, area, decls), guia, fecha: P.hoy(), archivo: mapa.archivo, usadas: CH.usa(fuente, area, mapa.areas, decls) }));
+      ev.target.disabled = false;
+    };
+    caja.querySelector("[data-guia]").onclick = async () => {
+      try { descargar(`${pr.id}-guia-de-desarrollo.md`, await leerTexto(crudo(pr.sitio.repo, mapa.guia || "GUIA-PARA-TU-CHAT.md"))); }
+      catch (e) { P.aviso("No pude bajar la guía: " + P.explicar(e), "error"); }
+    };
+  } catch (e) { caja.innerHTML = ""; }   // sin areas.json (o sin red): el resumen de arriba sigue andando
+}
+
 function bajarResumen(pid) {
   const pr = PROY.find((p) => p.id === pid); if (!pr) return;
   const md = CH.resumenMd(pr, PEND, { commits: COMMITS[pid] || [], fecha: P.hoy(), quien: persona.nombre || "" });
@@ -778,6 +828,10 @@ function enganchar() {
   });
   document.querySelectorAll("[data-mandar]").forEach((b) => b.onclick = () => mandar(b.dataset.mandar, b));
   document.querySelectorAll("[data-md]").forEach((b) => b.onclick = () => bajarResumen(b.dataset.md));
+  document.querySelectorAll("[data-capa-chat]").forEach((d) => {
+    const abrir = () => { const pr = PROY.find((p) => p.id === d.dataset.capaChat); if (pr) traerAreas(pr); };
+    d.addEventListener("toggle", () => { if (d.open) abrir(); }); if (d.open) abrir();
+  });
   document.querySelectorAll("[data-chat-mandar]").forEach((b) => b.onclick = () => mandarChat(b.dataset.chatMandar, b));
   document.querySelectorAll("[data-chat-arch]").forEach((i) => i.onchange = async () => {
     const pid = i.dataset.chatArch, f = i.files && i.files[0]; i.value = "";

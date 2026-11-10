@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    chat.js — el canal entre un invitado y SU propio chat de IA
-   Sello: chat-2 (10-nov-2026; chat-1, 9-nov)
+   Sello: chat-3 (10-nov-2026; chat-1, 9-nov)
 
    Mauro, 9-nov-2026: «una herramienta que permita descargar un md que resuma
    el desarrollo de la app para su chat y un espacio en el que pueda cargar la
@@ -19,7 +19,7 @@
    falta una regla nueva.
    ═══════════════════════════════════════════════════════════ */
 
-export const SELLO = "chat-2";
+export const SELLO = "chat-3";
 /* Una respuesta de un chat va entera como comentario de un pedido. Un
    documento de Firestore no pasa de 1 MiB: con 200 mil caracteres queda lugar
    para la conversación de después. */
@@ -148,3 +148,127 @@ export function prepararRespuesta(texto) {
 
 /** Un archivo que no es texto no se lee: se dice. */
 export const esArchivoDeTexto = (f) => !!f && (/\.(md|markdown|txt)$/i.test(f.name || "") || /^text\//.test(f.type || ""));
+
+/* ═══ ÁREAS (copia EXACTA de herramientas/areas.mjs de tocatoca; pruebas/chat.mjs las compara) ═══
+   Parten el código de un proyecto en las áreas que dice su areas.json, para bajar «el paquete de
+   un área» y dárselo a un chat con poco cupo. */
+const DECL = /^(?:export default function|export function|function|const|let)\s+([A-Za-z_$][\w$]*)/;
+
+/** Las declaraciones de primer nivel: { nombre, desde, hasta } (líneas, desde 1).
+ *  Los comentarios pegados arriba de una declaración (sin renglón en blanco) viajan con ella. */
+export function declaraciones(src) {
+  const L = String(src).split("\n"), out = [];
+  L.forEach((l, i) => { const m = DECL.exec(l); if (m) out.push({ nombre: m[1], desde: i + 1 }); });
+  out.forEach((d) => {
+    let a = d.desde;
+    while (a > 1 && /^\s*(\/\/|\/\*|\*)/.test(L[a - 2]) && !DECL.test(L[a - 2])) a--;
+    d.desde = a;
+  });
+  out.forEach((d, i) => { d.hasta = i + 1 < out.length ? out[i + 1].desde - 1 : L.length; });
+  return out;
+}
+
+/** Controla que las áreas cubran TODAS las declaraciones, en orden y sin repetir. Devuelve la lista de problemas. */
+export function verificar(areas, decls) {
+  const err = [], idx = new Map(decls.map((d, i) => [d.nombre, i]));
+  const ids = new Set();
+  let siguiente = 0;
+  for (const a of areas) {
+    if (ids.has(a.id)) err.push(`área repetida: ${a.id}`); ids.add(a.id);
+    for (const [d, h] of a.tramos || []) {
+      if (!idx.has(d)) { err.push(`${a.id}: no existe «${d}» en el archivo`); continue; }
+      if (!idx.has(h)) { err.push(`${a.id}: no existe «${h}» en el archivo`); continue; }
+      const i = idx.get(d), j = idx.get(h);
+      if (j < i) err.push(`${a.id}: «${h}» está antes que «${d}»`);
+      else if (i !== siguiente) err.push(`${a.id}: empieza en «${d}» y debería empezar en «${decls[siguiente] && decls[siguiente].nombre}»`);
+      siguiente = Math.max(siguiente, j + 1);
+    }
+  }
+  if (siguiente < decls.length) err.push(`quedan sin área desde «${decls[siguiente].nombre}»`);
+  return err;
+}
+
+/** El código de un área (todos sus tramos) y cuánto pesa. */
+export function extraer(src, area, decls = declaraciones(src)) {
+  const L = String(src).split("\n"), idx = new Map(decls.map((d) => [d.nombre, d]));
+  const partes = (area.tramos || []).map(([d, h]) => {
+    const a = idx.get(d), b = idx.get(h);
+    return { de: a.desde, a: b.hasta, texto: L.slice(a.desde - 1, b.hasta).join("\n") };
+  });
+  const texto = partes.map((p) => `// ── ${area.id}: líneas ${p.de}–${p.a} de src/App.jsx ──\n${p.texto}`).join("\n\n");
+  const lineas = partes.reduce((t, p) => t + (p.a - p.de + 1), 0);
+  return { texto, lineas, tokens: Math.round(texto.length / 3.3), partes };
+}
+
+/** Qué declaraciones de OTRAS áreas usa un área (por nombre, mirando el código). Sirve para que el
+ *  paquete traiga también lo que hace falta para entenderla. Puede incluir de más, nunca de menos
+ *  en el primer nivel (no sigue las dependencias de las dependencias). */
+export function usa(src, area, areas, decls = declaraciones(src)) {
+  const propios = new Set();
+  for (const [d, h] of area.tramos || []) {
+    const i = decls.findIndex((x) => x.nombre === d), j = decls.findIndex((x) => x.nombre === h);
+    for (let k = i; k <= j && i >= 0 && j >= 0; k++) propios.add(decls[k].nombre);
+  }
+  const dueno = new Map();
+  for (const a of areas) for (const [d, h] of a.tramos || []) {
+    const i = decls.findIndex((x) => x.nombre === d), j = decls.findIndex((x) => x.nombre === h);
+    for (let k = i; k <= j && i >= 0 && j >= 0; k++) dueno.set(decls[k].nombre, a.id);
+  }
+  const L = String(src).split("\n"), texto = extraer(src, area, decls).texto;
+  const sinCom = texto.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const out = [];
+  for (const d of decls) {
+    if (propios.has(d.nombre) || !new RegExp("(?<![\\w$.])" + d.nombre.replace(/\$/g, "\\$") + "(?![\\w$])").test(sinCom)) continue;
+    out.push({ nombre: d.nombre, area: dueno.get(d.nombre), lineas: d.hasta - d.desde + 1, texto: L.slice(d.desde - 1, d.hasta).join("\n") });
+  }
+  return out;
+}
+/* ═══ FIN ÁREAS ═══ */
+
+/** El paquete de un área: lo que se le da al chat de la persona, en un solo .md. */
+export function armarPaquete({ proyecto = "", area, codigo, guia = "", fecha = "", archivo = "src/App.jsx", usadas = [] }) {
+  const L = [];
+  L.push(`# Paquete de desarrollo — ${linea(proyecto)} · ${linea(area.titulo)}`);
+  L.push("");
+  L.push(`Armado desde el panel${fecha ? " el " + fecha : ""} con el código de \`${archivo}\`. Dáselo a tu chat de IA junto con tu pedido.`);
+  L.push("");
+  L.push("## Tu pedido");
+  L.push("");
+  L.push("_(escribí acá qué querés cambiar en esta área, con tus palabras)_");
+  L.push("");
+  L.push("## Esta área");
+  L.push("");
+  L.push(`- **Qué hace:** ${linea(area.que)}`);
+  L.push(`- **Tamaño:** ${codigo.lineas} líneas, unas ${Math.max(1, Math.round(codigo.tokens / 1000))} mil unidades de lectura.`);
+  L.push(`- **Adónde va cuando se parta:** ${linea(area.destino)}`);
+  L.push(`- **Cómo probarla:** ${linea(area.probar)}`);
+  L.push(`- **Riesgo de tocarla:** ${linea(area.riesgo)}`);
+  if (codigo.tokens > 20000) L.push(`- ⚠ **Es un área grande**: conviene pedir un cambio muy puntual, o partirla primero (está en el plan de arquitectura).`);
+  L.push("");
+  L.push("## Guía general");
+  L.push("");
+  L.push(String(guia).trim() || "_(no se pudo bajar la guía general: pedila aparte)_");
+  L.push("");
+  L.push("## El código del área");
+  L.push("");
+  L.push("Sólo esta parte de `" + archivo + "`. Si necesitás algo de otra área, pedilo antes de suponerlo.");
+  L.push("");
+  L.push("````jsx");
+  L.push(codigo.texto);
+  L.push("````");
+  if (usadas.length) {
+    let presupuesto = 400;
+    const trae = [], solo = [];
+    for (const u of usadas) { if (u.lineas <= presupuesto) { presupuesto -= u.lineas; trae.push(u); } else solo.push(u); }
+    L.push(""); L.push("## Piezas de otras áreas que esta usa (sólo para leer: no las cambies)"); L.push("");
+    L.push(usadas.map((u) => `\`${u.nombre}\` (${linea(u.area)}, ${u.lineas} líneas)`).join(" · "));
+    if (trae.length) { L.push(""); L.push("````jsx"); L.push(trae.map((u) => u.texto).join("\n\n")); L.push("````"); }
+    if (solo.length) { L.push(""); L.push(`No se incluye el código de: ${solo.map((u) => u.nombre).join(", ")}. Pedilo antes de suponer qué hacen.`); }
+  }
+  L.push("");
+  return L.join("\n");
+}
+
+/** El nombre del archivo del paquete: `bandomaps-paquete-formas-recomendadas-2026-11-10.md`. */
+export const nombrePaquete = (pr, area, fecha) =>
+  nombreArchivo({ nombre: `${pr.nombre || pr.id} paquete ${area.id}` }, fecha).replace("-resumen", "");

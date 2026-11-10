@@ -65,6 +65,58 @@ t("el resumen para el chat lista las opciones con la recomendada", () => {
   const md = C.resumenMd({ id: "p" }, [{ id: "p:1", proyecto: "p", tipo: "consulta", estado: "abierto", titulo: "¿Cómo?", opciones: [{ t: "Así", r: true }, { t: "Asá" }] }]);
   assert.ok(md.includes("- Así (recomendada)") && md.includes("- Asá"));
 });
+// ── las áreas y el paquete (chat-3) ──
+const fuenteApp = `import x from "y";
+
+// ─── cabecera
+const A = 1;
+function uno(){ return A; }
+
+// el dos
+const DOS = 2;
+export default function Raiz(){ return uno()+DOS; }
+`;
+t("declaraciones: encuentra las de primer nivel y pega el comentario de arriba", () => {
+  const d = C.declaraciones(fuenteApp);
+  assert.deepEqual(d.map((x) => x.nombre), ["A", "uno", "DOS", "Raiz"]);
+  assert.equal(d.find((x) => x.nombre === "DOS").desde, 7, "el comentario viaja con DOS");
+  assert.equal(d[3].hasta, fuenteApp.split("\n").length);
+});
+t("verificar: cubre todo, en orden, y avisa lo que falta", () => {
+  const d = C.declaraciones(fuenteApp);
+  assert.deepEqual(C.verificar([{ id: "a", tramos: [["A", "uno"]] }, { id: "b", tramos: [["DOS", "Raiz"]] }], d), []);
+  assert.ok(C.verificar([{ id: "a", tramos: [["A", "uno"]] }], d).some((e) => e.includes("DOS")));
+  assert.ok(C.verificar([{ id: "a", tramos: [["uno", "uno"]] }], d).length > 0);
+});
+t("armarPaquete: trae el pedido en blanco, la ficha del área, la guía y SÓLO el código del área", () => {
+  const d = C.declaraciones(fuenteApp), area = { id: "x", titulo: "Las dos", que: "Hace dos.", destino: "src/x.js", probar: "abrir", riesgo: "bajo", tramos: [["DOS", "Raiz"]] };
+  const cod = C.extraer(fuenteApp, area, d);
+  const md = C.armarPaquete({ proyecto: "BandoMaps", area, codigo: cod, guia: "GUÍA GENERAL", fecha: "2026-11-10" });
+  for (const s of ["# Paquete de desarrollo — BandoMaps · Las dos", "## Tu pedido", "Hace dos.", "src/x.js", "GUÍA GENERAL", "const DOS = 2;", "function Raiz"]) assert.ok(md.includes(s), s);
+  assert.ok(!md.includes("function uno"), "no trae lo de otra área");
+  assert.ok(md.includes("````jsx"));
+});
+t("un área enorme avisa; una guía que no bajó también", () => {
+  const area = { id: "g", titulo: "Grande", que: "q", destino: "d", probar: "p", riesgo: "alto" };
+  const md = C.armarPaquete({ proyecto: "P", area, codigo: { texto: "x", lineas: 1100, tokens: 30000 }, guia: "" });
+  assert.ok(md.includes("área grande") && md.includes("no se pudo bajar la guía"));
+});
+t("el nombre del paquete", () => assert.equal(C.nombrePaquete({ nombre: "BandoMaps" }, { id: "formas-recomendadas" }, "2026-11-10"), "bandomaps-paquete-formas-recomendadas-2026-11-10.md"));
+t("el paquete trae las piezas que usa, con tope, y nombra las que no entran", () => {
+  const area = { id: "x", titulo: "X", que: "q", destino: "d", probar: "p", riesgo: "bajo" }, cod = { texto: "const Z=1;", lineas: 1, tokens: 100 };
+  const md = C.armarPaquete({ proyecto: "P", area, codigo: cod, guia: "g", usadas: [{ nombre: "pequena", area: "a", lineas: 3, texto: "function pequena(){}" }, { nombre: "enorme", area: "b", lineas: 999, texto: "function enorme(){}" }] });
+  assert.ok(md.includes("function pequena(){}") && !md.includes("function enorme(){}"));
+  assert.ok(md.includes("No se incluye el código de: enorme") && md.includes("sólo para leer"));
+  assert.ok(!C.armarPaquete({ proyecto: "P", area, codigo: cod, guia: "g" }).includes("Piezas de otras áreas"));
+});
+t("las áreas de chat.js son una copia exacta de las de tocatoca (si está al lado)", () => {
+  const otra = new URL("../../tocatoca/herramientas/areas.mjs", import.meta.url);
+  if (!fs.existsSync(otra)) { console.log("      (no está tocatoca al lado)"); return; }
+  const norm = (s) => s.replace(/\s+/g, " ").trim();
+  const origen = fs.readFileSync(otra, "utf8"), copia = fs.readFileSync(new URL("../chat.js", import.meta.url), "utf8");
+  const a = origen.slice(origen.indexOf("const DECL")), b = copia.slice(copia.indexOf("const DECL"), copia.indexOf("/* ═══ FIN ÁREAS"));
+  assert.equal(norm(b), norm(a));
+});
 t("chat.js no habla con Firebase ni con la red", () => {
   const s = fs.readFileSync(new URL("../chat.js", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
   assert.doesNotMatch(s, /^import /m); assert.doesNotMatch(s, /fetch\(|firebase|claves/i);

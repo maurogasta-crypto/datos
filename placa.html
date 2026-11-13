@@ -95,7 +95,7 @@
   Esta página sólo DIBUJA: el contenido de la guía (pasos, piezas, precios,
   qué espera a qué) y sus cuentas viven en `placa.js`, que se prueba sin
   navegador (`node pruebas/placa.mjs`). El porqué de cada decisión está en
-  CRUCERO.md de sitd-hilux.
+  CRUCERO.md y PLACA-FASE-1.md de sitd-hilux.
 
   LO QUE SE MARCA va a `proyectos/hilux.placa` (marcas, notas, medidas y
   compras), escrito campo por campo con `updateDoc` para que dos teléfonos
@@ -115,7 +115,7 @@
 
 <div class="contenedor">
   <h1>🔧 La placa de la Hilux</h1>
-  <p class="pl-sub">Primero, lo más básico: una caja que sólo MIDE el freno, las RPM y la velocidad del tablero —y, si se quiere, con su propio GPS y acelerómetro—, sin tocar el pedal ni cortar un cable, y sin soldar nada adentro de la caja. Con lo que aprenda se diseña después el crucero, en la misma placa.</p>
+  <p class="pl-sub">Primero, lo más básico: una caja que sólo MIDE el freno, las RPM y la velocidad del tablero, lee el pedal en paralelo —y, si se quiere, con su propio GPS y acelerómetro—, sin cortar un cable ni mandar nada a la ECU, y sin soldar nada adentro de la caja. Con lo que aprenda se diseña después el crucero, en la misma placa.</p>
 
   <div class="tarj">
     <svg class="pl-diag" viewBox="0 0 360 300" role="img" aria-label="Diagrama de la placa: el pedal va a la ECU por la placa; la caja de sensores lee y manda por Bluetooth al teléfono; en la etapa B el interceptor queda en el medio, con relés que sin corriente dejan pasar el pedal real.">
@@ -145,7 +145,7 @@
       <text x="180" y="213" text-anchor="middle" class="chico">Bluetooth al teléfono</text>
       <path class="lin-a" d="M49 60 V196 H120"/>
       <text x="54" y="150" class="chico">lee el pedal</text>
-      <text x="54" y="161" class="chico">(100 kΩ)</text>
+      <text x="54" y="161" class="chico">(en paralelo)</text>
       <rect class="caja" x="8" y="236" width="98" height="52" rx="6"/>
       <text x="57" y="252" text-anchor="middle">Tablero · GPS</text>
       <text x="57" y="265" text-anchor="middle" class="chico">velocidad · RPM</text>
@@ -212,14 +212,14 @@
     <h2>💡 Ideas que se evaluaron</h2>
     <p class="gris" style="margin-top:.2rem">Entran sólo si no complican de más el diseño ni la seguridad.</p>
     <ul class="pl-reglas" id="accesorias"></ul>
-    <p class="gris" style="margin-bottom:0">El porqué de cada una, en <a href="https://github.com/maurogasta-crypto/sitd-hilux/blob/main/CRUCERO.md" target="_blank" rel="noopener noreferrer">CRUCERO.md</a>.</p>
+    <p class="gris" style="margin-bottom:0">El porqué de cada una, en <a href="https://github.com/maurogasta-crypto/sitd-hilux/blob/main/CRUCERO.md" target="_blank" rel="noopener noreferrer">CRUCERO.md</a> y <a href="https://github.com/maurogasta-crypto/sitd-hilux/blob/main/PLACA-FASE-1.md" target="_blank" rel="noopener noreferrer">PLACA-FASE-1.md</a>.</p>
   </div>
 </div>
 
 <script type="module">
 import { P, $, db } from "./nucleo.js?v=nucleo-13";
 import { doc, getDoc, updateDoc, deleteField } from "./firebase-init.js?v=init-6";
-import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-8";
+import { SECCIONES, PASOS, PIEZAS, EMERGENCIAS, USO_ESPERADO, ACCESORIAS, progreso, bloqueos, siguiente, costo, relacionVPA } from "./placa.js?v=placa-js-9";
 P.PANEL = "placa-8";
 P.pintarSello();
 

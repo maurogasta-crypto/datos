@@ -800,7 +800,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   caracteres, hoy `index.html`) va por piezas salvo que se pida lo contrario. La respuesta se guarda ENTERA en el
   pedido, para que la ronda la integre sin que la persona toque el repositorio.
 - **Roli tiene su base privada: `roli-467a4`** (14-nov-2026). Nombres de los chicos, medidas y notas de desarrollo van ahí, detrás del login, y no a un repositorio público ni al `localStorage`. Entrada `roli` en `PROYECTOS` de `firestore.mjs` (`FB_ROLI_MAIL`/`FB_ROLI_CLAVE`, `usuarios` sellada); la plantilla de las reglas es `firestore.rules` del repo `roli`.
-- **«▶ Empezar una ronda» es `roli-ronda.html`** (`roli-js-6`): preparar (adulto), elegir juego, tablero. La preparación vive en `roli.js` (`PREPARACION`), y el banco comprueba que todo lo que hace teclear sea una palabra real del firmware. Si cambia el cargado o la calibración de Roli, cambia ahí.
+- **«▶ Empezar una ronda» vive en el repo `roli` (`jugar.html`), con login y base privada** (14-nov-2026): los nombres y datos de quienes juegan y las partidas no van al `localStorage` ni a un repositorio. Acá `roli-ronda.html` sólo redirige. La preparación del adulto, los juegos y los roles son de `roli.js` (`PREPARACION`), y `jugar.html` lo trae de acá: si cambia su forma, cambia allá en la misma tanda (`node pruebas-sitio.mjs` del repo `roli` comprueba la página, y `node pruebas/roli.mjs` el contenido).
 - **Las actividades de Roli y lo que conviene comprarle son `roli.html` + `roli.js`**
   (10-nov-2026, Mauro: «actividades que contemplen el cuello, los sensores
   delantero y trasero y los movimientos» y «una sección con lo que recomendamos

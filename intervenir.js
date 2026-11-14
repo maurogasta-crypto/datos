@@ -2,7 +2,7 @@
    intervenir.js — «🛠 Intervenir una sección»: la pantalla del invitado que
    baja el paquete de una sección, avisa con el semáforo que la está editando,
    y trae la respuesta de su chat para dejar los archivos listos para subir.
-   Sello: intervenir-4 (14-nov-2026: el texto habla de sesiones gratuitas de Claude; intervenir-3 el 12-nov)
+   Sello: intervenir-5 (14-nov-2026: el paquete lleva los archivos COMPLETOS —elegís el modo— y la respuesta trae archivos enteros; intervenir-4, el texto de sesiones gratuitas; intervenir-3 el 12-nov)
 
    Lo carga `invitado.html` DIFERIDO y con catch (igual que `ojos.js`): si no
    baja, o el sitio no tiene `secciones.json`, la página sigue como estaba.
@@ -18,11 +18,11 @@
    `ctx` lo arma invitado.html: { pr, caja, P, F, yo, persona, leerTexto,
    crudo, descargar, dejarRegistro, comentarPendiente }.
    ═══════════════════════════════════════════════════════════ */
-import * as K from "./paquete.js?v=paquete-3";
+import * as K from "./paquete.js?v=paquete-4";
 import * as S from "./semaforo.js?v=semaforo-1";
 
-export const VERSION = "intervenir-4";
-const MAX_RESPUESTA = 200000;
+export const VERSION = "intervenir-5";
+const MAX_RESPUESTA = 400000;   // archivos completos: caben varios (el pedido se guarda entero en un comentario, y un documento de Firestore llega a 1 MiB)
 
 /** Las opciones de la lista: cada sección con su semáforo. (Pura: la prueba la corre en Node.) */
 export function htmlOpciones(secciones, semaforos, ahoraMs, miUid, esc = (s) => s) {
@@ -81,13 +81,19 @@ export async function montar(ctx) {
   caja.innerHTML = `<div class="rotulo">🛠 Intervenir una sección</div>
     <p class="gris" style="margin:.2rem 0">Para una modificación <b>pequeña y completa</b> de una parte del sitio. El panel te da un solo archivo con esa parte y todo lo que depende de ella; se lo das a tu Claude (una sesión gratuita alcanza), y lo que te devuelva se arma acá para subir; si tenés acceso de colaborador al repositorio, también podés subirlo vos directo. Mientras la tengas, queda marcada «en edición» para que nadie más la toque.</p>
     <select data-sec-sel style="width:100%;margin:.2rem 0"></select>
+    <label class="gris" style="display:block;font-size:.85rem;margin:.2rem 0">Cómo bajarlo:
+      <select data-sec-modo style="width:100%;margin:.15rem 0">
+        <option value="auto">Archivos completos (los muy grandes, por piezas) — lo recomendado</option>
+        <option value="completo">Todo completo, pese lo que pese (puede no entrar en una sesión gratuita)</option>
+        <option value="piezas">Sólo las piezas que se editan (lo más liviano)</option>
+      </select></label>
     <p class="gris" data-sec-info style="font-size:.85rem"></p>
     <div class="fila-btn">
       <button class="btn p" data-sec-bajar>⬇ Bajar el paquete y avisar que la edito</button>
       <button class="mini" data-sec-mirar>⬇ Sólo para mirar (no avisa)</button>
       <button class="mini" data-sec-soltar hidden>Soltar el aviso</button>
     </div>
-    <textarea data-sec-resp rows="4" maxlength="${MAX_RESPUESTA}" placeholder="Pegá acá lo que te devolvió tu chat (las piezas completas)…" style="margin-top:.5rem"></textarea>
+    <textarea data-sec-resp rows="4" maxlength="${MAX_RESPUESTA}" placeholder="Pegá acá lo que te devolvió tu Claude: los archivos completos que cambió, y el registro…" style="margin-top:.5rem"></textarea>
     <div class="fila-btn"><button class="btn" data-sec-traer>Traer la respuesta</button></div>
     <div data-sec-out></div>`;
   const $q = (s) => caja.querySelector(s);
@@ -96,13 +102,28 @@ export async function montar(ctx) {
   let semaforos = {}, registro = null;
   if (faltan.length) { bBajar.disabled = true; info.textContent = "El aviso de edición no está disponible: a firebase-init.js le falta exportar " + faltan.join(", ") + ". Podés bajar el paquete sólo para mirar."; }
 
+  const modo = () => ($q("[data-sec-modo]") || {}).value || "auto";
   const estado = () => S.estadoDe(semaforos[sel.value], Date.now(), yo.uid);
   const actualizar = () => {
     const el = estado(), s = secciones.find((x) => x.id === sel.value);
+    mostrarPesos();
     if (!faltan.length) info.textContent = (s ? s.que + " " : "") + (el.estado === "ocupada" ? `Está tomada: pedile a ${el.quien} que la termine, o esperá a que venza.` : "");
     bBajar.disabled = faltan.length > 0 || el.estado === "ocupada";
     bSoltar.hidden = el.estado !== "mia";
   };
+  /* Cuánto pesa cada archivo y cómo viajaría, antes de bajar: así se elige con los números a la vista. */
+  const pesosEl = document.createElement("p"); pesosEl.className = "gris"; pesosEl.style.cssText = "font-size:.85rem;margin:.1rem 0"; info.after(pesosEl);
+  let pesoSeq = 0;
+  const mostrarPesos = async () => {
+    const mi = ++pesoSeq, id = sel.value; if (!id) return;
+    try {
+      const t = await K.tamanos(cfg, id, leer, modo());
+      if (mi !== pesoSeq) return;
+      const mil = (n) => (n < 1000 ? n : Math.round(n / 100) / 10 + " mil");
+      pesosEl.textContent = t.length ? "Archivos que se editan: " + t.map((x) => `${x.ruta} ≈ ${mil(x.tokens)} (${x.entero ? "completo" : "por piezas"})`).join(" · ") : "";
+    } catch (e) { pesosEl.textContent = ""; }
+  };
+  $q("[data-sec-modo]").onchange = mostrarPesos;
   const refrescar = async () => {
     if (!faltan.length) { try { semaforos = await S.listar(F, pr.id); } catch (e) { semaforos = {}; } }
     const actual = sel.value;
@@ -119,14 +140,14 @@ export async function montar(ctx) {
       await refrescar();
       if (avisar && estado().estado === "ocupada") return P.aviso("Esa sección la está editando " + estado().quien + ".", "error");
       const horas = cfg.semaforoHoras || S.HORAS;
-      const r = await K.construir(cfg, id, leer, { fecha: P.hoy(), semaforo: avisar ? { horas } : null, repo, listar: () => listarGitHub(repo, cfg.rama || "main") });
+      const r = await K.construir(cfg, id, leer, { fecha: P.hoy(), semaforo: avisar ? { horas } : null, repo, modo: modo(), listar: () => listarGitHub(repo, cfg.rama || "main") });
       if (avisar) {
         const t = await S.tomar(F, { proyecto: pr.id, seccion: id, uid: yo.uid, nombre, archivos: r.archivos, piezas: r.huellas, horas, paquete: K.VERSION });
         if (!t.ok) { await refrescar(); return P.aviso("La acaba de tomar " + (t.estado.quien || "otra persona") + ". Probá con otra o esperá.", "error"); }
       }
       descargar(`${pr.id}-${id}-paquete-${P.hoy()}.md`, r.md);
       if (r.avisos.length) P.aviso("El paquete salió con avisos: " + r.avisos[0], "error");
-      else P.aviso(avisar ? "Paquete bajado. La sección quedó marcada a tu nombre." : "Paquete bajado, sin aviso.");
+      else P.aviso((avisar ? "Paquete bajado. La sección quedó marcada a tu nombre." : "Paquete bajado, sin aviso.") + (r.porPiezas && r.porPiezas.length ? " Va por piezas: " + r.porPiezas.join(", ") + "." : " Los archivos van completos."));
       await refrescar();
     } catch (e) { P.aviso("No se pudo armar el paquete: " + P.explicar(e), "error"); }
     finally { bMirar.disabled = false; actualizar(); }
@@ -148,7 +169,7 @@ export async function montar(ctx) {
       await refrescar();
       const mio = estado().estado === "mia";
       const previas = mio ? (semaforos[id].piezas || {}) : {};
-      const res = await K.aplicarSeccion(cfg, id, texto, leer, previas);
+      const res = await K.aplicarSeccion(cfg, id, texto, leer, previas, modo());
       let liberado = false;
       if (res.cambiados.length && !res.conflictos.length && mio) { try { await S.soltar(F, pr.id, id); liberado = true; } catch (e) { /* queda puesto: se ve en el resumen */ } }
       const lineas = resumenDeVuelta(res, { liberado, repo, verificacion: cfg.verificacion || "" });

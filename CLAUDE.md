@@ -793,6 +793,12 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   **v10**, **hay que publicarlas**) que vence a las 48 h. Nada llega al sitio sin
   pasar por la ronda. `node pruebas/paquete.mjs`; el detalle, en
   `guias/panel-53-registro-y-procedimiento.md`.
+  **Desde `paquete-4` / `intervenir-5` (14-nov-2026) el paquete lleva los archivos COMPLETOS** (Mauro: «cuerpos
+  completos que pueda comprender el otro chat… y entregar los archivos que haya modificado»), con la guía de
+  integración y la lista de lo que debe ir publicado (sellos, `sw.js`, documentación, pruebas, registro de tanda);
+  la pantalla deja elegir completos / todo completo / sólo piezas, y un archivo de más de `ENTERO_MAX` (70.000
+  caracteres, hoy `index.html`) va por piezas salvo que se pida lo contrario. La respuesta se guarda ENTERA en el
+  pedido, para que la ronda la integre sin que la persona toque el repositorio.
 - **Las actividades de Roli y lo que conviene comprarle son `roli.html` + `roli.js`**
   (10-nov-2026, Mauro: «actividades que contemplen el cuello, los sensores
   delantero y trasero y los movimientos» y «una sección con lo que recomendamos

@@ -370,5 +370,33 @@ if (existsSync(join(raiz, "secciones.json"))) {
   }
 }
 
+/* ── paquete-4: los archivos viajan COMPLETOS (Mauro, 14-nov-2026) ── */
+{
+  const completo = await K.construir(CFG, "a", leerFx, { modo: "auto" });
+  ok(completo.enteros.includes("f.js") && completo.porPiezas.length === 0, "paquete-4 · auto: un archivo chico va ENTERO aunque el mapa le ponga tramos");
+  ok(completo.md.includes("P.otra = () => 1;") && completo.md.includes("P.esc = (s)"), "paquete-4 · auto: viaja todo el archivo, también lo que el mapa no pedía");
+  ok(completo.md.includes("## Cómo se integra lo que devuelvas") && completo.md.includes("## Qué tiene que ir publicado con tu cambio") && completo.md.includes("registro de tanda"), "paquete-4: trae la guía de integración, lo que tiene que ir publicado y el registro");
+  ok(completo.md.includes("COMPLETOS") && completo.md.includes("Sellos y documentación"), "paquete-4: pide los archivos completos y el sello y la documentación");
+  const piezas = await K.construir(CFG, "a", leerFx, { modo: "piezas" });
+  ok(piezas.porPiezas.includes("f.js") && !piezas.md.includes("P.otra = () => 1;"), "paquete-4 · piezas: como antes, sólo lo que el mapa pide");
+  const porDefecto = await K.construir(CFG, "a", leerFx);
+  ok(porDefecto.modo === "piezas" && porDefecto.porPiezas.includes("f.js"), "paquete-4: sin pedir modo, la biblioteca se comporta como paquete-3");
+  const GRANDE = SRC + "\n// " + "x".repeat(K.ENTERO_MAX);
+  const leerG = async (r) => ({ "f.js": GRANDE, "n.js": SRC, "r.txt": REGLAS })[r];
+  const g1 = await K.construir(CFG, "a", leerG, { modo: "auto" });
+  ok(g1.porPiezas.includes("f.js"), "paquete-4 · auto: un archivo de más de ENTERO_MAX va por piezas (no entra cómodo en una sesión gratuita)");
+  const g2 = await K.construir(CFG, "a", leerG, { modo: "completo" });
+  ok(g2.enteros.includes("f.js"), "paquete-4 · completo: lo pedido a propósito va entero pese lo que pese");
+  const t = await K.tamanos(CFG, "a", leerG, "auto");
+  ok(t.length === 1 && t[0].ruta === "f.js" && t[0].entero === false && t[0].tokens > 20000, "paquete-4: tamanos() dice cuánto pesa y cómo viajaría");
+  // la vuelta: un archivo entero con un cambio se acepta, se reconoce como completo y no se pierde nada
+  const arreglado = SRC.replace('P.otra = () => 1;', 'P.otra = () => 2;');
+  const vuelta = await K.aplicarSeccion(CFG, "a", "```js\n// ── f.js: líneas 1–" + arreglado.split("\n").length + " ──\n" + arreglado + "\n```", leerFx, completo.huellas, "auto");
+  ok(vuelta.cambiados.length === 1 && vuelta.cambiados[0].completo && vuelta.cambiados[0].texto.includes("P.otra = () => 2;") && vuelta.rechazadas.length === 0, "paquete-4 · vuelta: el archivo entero con su cambio se acepta y queda completo");
+  ok(vuelta.cambiados[0].texto.includes("P.esc = (s)") && vuelta.cambiados[0].texto.includes("import { auth, db }"), "paquete-4 · vuelta: no se pierde nada del resto del archivo");
+  const alterado = await K.aplicarSeccion(CFG, "a", "```js\n// ── f.js: líneas 1–9 ──\n" + arreglado + "\n```", async (r) => leerFx(r).then((x) => r === "f.js" ? x.replace("P.otra = () => 1;", "P.otra = () => 9;") : x), completo.huellas, "auto");
+  ok(alterado.conflictos.length === 1, "paquete-4 · vuelta: si alguien tocó el archivo mientras tanto, se AVISA el choque");
+}
+
 console.log(mal ? `✗ ${mal} de ${n} fallan` : `✓ ${n} comprobaciones, todas bien`);
 process.exit(mal ? 1 : 0);

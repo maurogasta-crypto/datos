@@ -37,7 +37,34 @@
    porque necesita `async function` y `P.nombre = …`, que aquélla no ve.
    ═══════════════════════════════════════════════════════════ */
 
-export const VERSION = "paquete-3";
+export const VERSION = "paquete-4";
+
+/* paquete-4 (14-nov-2026, Mauro: «tendría que llevar cuerpos completos que pueda comprender el otro chat como están
+   realmente en el repositorio… y entregar los archivos que haya modificado»). Antes, lo marcado con `tramos` viajaba
+   recortado en PIEZAS. Ahora un archivo viaja ENTERO, como está en el repositorio, salvo que sea tan grande que no
+   entre cómodo en una sesión gratuita (más de ENTERO_MAX caracteres): ésos siguen por piezas.
+     · modo "completo": todo lo EDITAR va entero, pese lo que pese.
+     · modo "auto":     entero si pesa hasta ENTERO_MAX; por piezas si es más grande.
+     · modo "piezas":   como en paquete-3 (es el de la biblioteca, para no cambiar lo que ya andaba; la pantalla pide "auto"). */
+export const ENTERO_MAX = 70000;
+export const MODOS = ["auto", "completo", "piezas"];
+/** ¿Este archivo del mapa viaja entero? `a` es su entrada de secciones.json y `src` su texto. */
+export function entregaEntera(a, src, modo = "piezas") {
+  if (!(a.tramos && a.tramos.length)) return true;
+  if (modo === "completo") return true;
+  return modo === "auto" && String(src).length <= ENTERO_MAX;
+}
+/** Qué pesa cada archivo EDITAR y cómo viajaría. Sin armar el paquete: sirve para elegir el modo. */
+export async function tamanos(cfg, id, leer, modo = "auto") {
+  const iv = (cfg.secciones || cfg.intervenciones || []).find((x) => x.id === id);
+  if (!iv) return [];
+  const out = [];
+  for (const a of (iv.archivos || []).filter((x) => (x.rol || "leer") === "editar")) {
+    let src = ""; try { src = await leer(a.ruta); } catch (e) { continue; }
+    out.push({ ruta: a.ruta, tokens: tokens(src), entero: entregaEntera(a, src, modo) });
+  }
+  return out;
+}
 
 /** La misma medida de «cuánto pesa» que usa chat.js. */
 export const tokens = (t) => Math.round(String(t || "").length / 3.3);
@@ -243,9 +270,9 @@ const PASOS = ({ destino, aplicarEnPanel, semaforo }) => [
   "Escribí abajo, en «Tu pedido», qué querés cambiar y qué ves mal.",
   "Dale este archivo ENTERO a tu chat de IA.",
   "Pedile que primero DIAGNOSTIQUE (qué dicen las reglas, qué hace la pantalla, qué dicen los datos) y recién después proponga el cambio. Si le falta un archivo, que mire el MAPA DEL SITIO de más abajo y te pida bajarlo de GitHub: que no lo suponga.",
-  "Pedile que te devuelva lo marcado EDITAR: las PIEZAS completas (mismo nombre, mismos comentarios de arriba) o, si el archivo está marcado «entero», el ARCHIVO COMPLETO. En los dos casos con la línea `// ── archivo: líneas … ──` que trae cada bloque. Si el cambio toca algo marcado SOLO LEER, que te lo diga en vez de cambiarlo. Si el código lleva ``` adentro, que use una valla de cuatro o más.",
+  "Pedile que te devuelva los archivos marcados EDITAR COMPLETOS: tal como están en el repositorio, con tu cambio puesto, con TODAS sus líneas (también las que no tocó) y sin «…» ni «el resto igual». Cada uno va en su propia valla de código y precedido por la línea `// ── archivo: líneas … ──` que trae su bloque. Si un archivo viene marcado «por piezas» (los muy grandes), que devuelva sólo las piezas completas, con el mismo nombre y sus comentarios de arriba. Que devuelva SÓLO lo que cambió. Si el cambio toca algo marcado SOLO LEER, que te lo diga en vez de cambiarlo. Si el código lleva ``` adentro, que use una valla de cuatro o más.",
   aplicarEnPanel
-    ? "Volvé al panel, a esta misma sección, y pegá su respuesta en «Traer la respuesta»: el panel pone cada pieza en su lugar, revisa que no se rompa la sintaxis y te deja los archivos completos para subir."
+    ? "Volvé al panel, a esta misma sección, y pegá su respuesta en «Traer la respuesta»: el panel recibe los archivos completos (o pone cada pieza en su lugar), revisa que no se rompa la sintaxis y te los deja listos."
     : "Reemplazá cada pieza en su archivo: el nombre y las líneas que figuran en cada pieza te dicen cuál es.",
   destino ? `Subí los archivos que cambiaron a ${destino} y esperá unos minutos a que se publique. Probalo con tu cuenta.`
           : "Subí los archivos que cambiaron al repositorio que te indicó Mauro y esperá unos minutos a que se publique. Probalo con tu cuenta.",
@@ -392,7 +419,7 @@ export function impactoFuera(ruta, nombresEditables, srcArchivo, indice) {
 /** Lee la sección `id` de `cfg` con `leer(ruta)` (async: fs en Node, fetch en el panel) y arma el .md.
  *  Devuelve también lo que hace falta para el semáforo y para detectar choques al volver:
  *  `archivos` (los que se pueden editar) y `huellas` ({ "ruta#pieza": huella }). */
-export async function construir(cfg, id, leer, { fecha = "", semaforo = null, repo = "", listar = null } = {}) {
+export async function construir(cfg, id, leer, { fecha = "", semaforo = null, repo = "", listar = null, modo = "piezas" } = {}) {
   const secciones = cfg.secciones || cfg.intervenciones || [];
   const iv = secciones.find((x) => x.id === id);
   if (!iv) throw new Error("No existe la sección «" + id + "» en el mapa del sitio");
@@ -405,12 +432,13 @@ export async function construir(cfg, id, leer, { fecha = "", semaforo = null, re
     fuentes[a.ruta] = src;
     const decls = declaraciones(src), L = src.split("\n");
     texts[a.ruta] = Object.fromEntries(decls.map((d) => [d.nombre, L.slice(d.desde - 1, d.hasta).join("\n")]));
-    if (a.tramos && a.tramos.length) {
+    const entera = entregaEntera(a, src, modo);
+    if (!entera) {
       const { piezas, faltan } = extraer(src, a.tramos, decls);
       faltan.forEach((n) => avisos.push(`El mapa pide «${n}» de ${a.ruta} y ese archivo ya no la tiene: el mapa está desactualizado.`));
       piezas.forEach((p) => partes.push({ ruta: a.ruta, rol: a.rol || "editar", para: a.para || "", ...p, imports: importsDe(src) }));
     } else {
-      partes.push({ ruta: a.ruta, rol: a.rol || "leer", para: a.para || "", nombre: "(archivo entero)", desde: 1, hasta: L.length, texto: src, imports: importsDe(src), entero: true });
+      partes.push({ ruta: a.ruta, rol: a.rol || (a.tramos && a.tramos.length ? "editar" : "leer"), para: a.para || "", nombre: "(archivo entero)", desde: 1, hasta: L.length, texto: src, imports: importsDe(src), entero: true });
     }
   }
 
@@ -521,7 +549,7 @@ export async function construir(cfg, id, leer, { fecha = "", semaforo = null, re
     const indice = {};
     for (const r of cfg.indice) { if (fuentes[r] != null) indice[r] = fuentes[r]; else { try { indice[r] = await leer(r); } catch (e) { /* un archivo del índice que no baja no impide armar el paquete */ } } }
     for (const a of (iv.archivos || []).filter((x) => (x.rol || "leer") === "editar" && fuentes[x.ruta] != null)) {
-      const im = impactoFuera(a.ruta, a.tramos && a.tramos.length ? a.tramos : null, fuentes[a.ruta], indice);
+      const im = impactoFuera(a.ruta, a.tramos && a.tramos.length && !entregaEntera(a, fuentes[a.ruta], modo) ? a.tramos : null, fuentes[a.ruta], indice);
       if (!im.cerrada) cierre.push({ ruta: a.ruta, ...im });
     }
   }
@@ -536,7 +564,7 @@ export async function construir(cfg, id, leer, { fecha = "", semaforo = null, re
   // ── lo que se necesita para el semáforo y para detectar choques ──
   const huellas = {};
   editables.forEach((p) => { if (!p.entero) huellas[p.ruta + "#" + p.nombre] = huellaDe(p.texto); });
-  for (const a of (iv.archivos || []).filter((x) => (x.rol || "leer") === "editar" && (!x.tramos || !x.tramos.length) && fuentes[x.ruta] != null)) {
+  for (const a of (iv.archivos || []).filter((x) => (x.rol || "leer") === "editar" && fuentes[x.ruta] != null && entregaEntera(x, fuentes[x.ruta], modo))) {
     huellas[a.ruta + "#*"] = huellaDe(fuentes[a.ruta]);
     declaraciones(fuentes[a.ruta]).forEach((d) => { huellas[a.ruta + "#" + d.nombre] = huellaDe(fuentes[a.ruta].split("\n").slice(d.desde - 1, d.hasta).join("\n")); });
   }
@@ -568,6 +596,19 @@ export async function construir(cfg, id, leer, { fecha = "", semaforo = null, re
   M.push(linea(iv.que));
   M.push(""); M.push("## Cómo trabajar con este paquete"); M.push("");
   PASOS({ destino: cfg.destino, aplicarEnPanel: !!cfg.aplicarEnPanel, semaforo: !!semaforo }).forEach((t, i) => M.push(`${i + 1}. ${t}`));
+  M.push(""); M.push("## Cómo se integra lo que devuelvas"); M.push("");
+  M.push("- **Si trabajás desde el panel, sin pasar por GitHub** (como la mayoría del equipo): traé la respuesta de tu chat a esta misma sección del panel. El panel revisa que cada archivo parsee, te deja los archivos completos y guarda en el pedido TODA la respuesta y el registro. Después Claude (el de Mauro) lo integra en la ronda: lo compara con el repositorio de ese día, corre las comprobaciones y lo sube. **Tu cambio queda guardado completo: no hace falta que hagas nada más.**");
+  M.push("- **Si tenés acceso de colaborador al repositorio:** subí vos los archivos completos por la web de GitHub (abrir el archivo → lápiz → pegar → «Commit changes», una cosa por subida) y después traé igual la respuesta al panel, para que quede el registro.");
+  M.push("- En los dos casos nada llega a los usuarios finales sin las comprobaciones del repositorio.");
+  M.push(""); M.push("## Qué tiene que ir publicado con tu cambio"); M.push("");
+  M.push("Tu cambio está completo cuando entrega TODO esto, no sólo el código:"); M.push("");
+  M.push("1. **Los archivos completos que cambiaron**, cada uno con su ruta del repositorio, y la lista de cuáles son al final de tu respuesta.");
+  M.push("2. **El sello de versión** de cada archivo con lógica que tocaste, subido un número (`P.PANEL`, `VERSION`, `SELLO` o el que lleve en su cabecera).");
+  M.push("3. **Si un archivo cambiado está en la lista `SHELL` de `sw.js`** (o en la que corresponda a este sitio): sube también la `VERSION` de ese `sw.js` y los `?v=` con que se pide el archivo. Si no, los teléfonos sirven una mezcla de viejo y nuevo.");
+  M.push("4. **La documentación al día**: si tu cambio hace falsa una línea del README, del mapa o de la tabla de sellos, la corregís en el mismo cambio.");
+  M.push("5. **Las pruebas del repositorio** que correspondan, corridas" + (cfg.verificacion ? " (" + linea(cfg.verificacion) + ")" : "") + "; si tu chat no puede correrlas, que diga cuáles faltan y por qué.");
+  M.push("6. **El registro de tanda**, con la forma de abajo, al final de tu respuesta.");
+  (cfg.publicar || []).forEach((t, i) => M.push(`${7 + i}. ${t}`));
   if ((cfg.reglasDelRepo || []).length) {
     M.push(""); M.push("## Reglas de este repositorio que tu chat no puede romper"); M.push("");
     cfg.reglasDelRepo.forEach((r) => M.push(`- ${r}`));
@@ -672,13 +713,17 @@ export async function construir(cfg, id, leer, { fecha = "", semaforo = null, re
   if (nucleo) nucleo.piezas.forEach((p) => bloque(nucleo.ruta, "leer", p.nombre, p.desde, p.hasta, p.texto));
   dependencias.forEach((d) => d.piezas.forEach((p) => bloque(d.ruta, "leer", p.nombre, p.desde, p.hasta, p.texto)));
 
-  M.push("## Al terminar"); M.push("");
-  M.push("Volvé al panel y traé la respuesta de tu chat: con ella el panel deja el registro para la próxima sesión. Si querés dejar algo más dicho, que sea con esta forma:"); M.push("");
+  M.push("## Al terminar: cómo tiene que ser tu respuesta"); M.push("");
+  M.push("Tres partes, en este orden:"); M.push("");
+  M.push("1. **Qué cambiaste y por qué**, en tres renglones, sin jerga.");
+  M.push("2. **Los archivos completos que cambiaron**, cada uno en su valla de código y precedido por su línea `// ── archivo: líneas … ──` (la del bloque de arriba), con todas sus líneas. Después, una lista de una línea por archivo: ruta y qué cambia.");
+  M.push("3. **El registro de tanda**, con esta forma:"); M.push("");
   M.push("```");
   M.push("## <qué se cambió> · registro de tanda · <fecha>");
   M.push("**Pedido:** qué se quería y quién lo pidió.");
   M.push("**Lo que se subió:** archivos y qué cambia en cada uno.");
   M.push("**Lo que NO se subió:** y qué función queda a medias por eso.");
+  M.push("**Sellos y documentación:** qué sellos subieron y qué documentos se corrigieron.");
   M.push("**Lo que se probó y se descartó:** y por qué.");
   M.push("**Sin cambios:** lo que no se tocó (reglas, datos…).");
   M.push("**Pendiente de verificar:** qué falta comprobar y cómo.");
@@ -686,7 +731,8 @@ export async function construir(cfg, id, leer, { fecha = "", semaforo = null, re
 
   const md = M.join("\n");
   return {
-    md, avisos, tokens: tokens(md), pesoCodigo,
+    md, avisos, tokens: tokens(md), pesoCodigo, modo,
+    enteros: editables.filter((p) => p.entero).map((p) => p.ruta), porPiezas: unico(editables.filter((p) => !p.entero).map((p) => p.ruta)),
     editables: editables.map((p) => ({ ruta: p.ruta, nombre: p.nombre })),
     archivos: archivosEditables, huellas, colecciones: cols, cierre,
   };
@@ -836,7 +882,7 @@ export function aplicarEnArchivos(originales, respuesta, permitidos, enteros = {
 
 /** Todo el camino de vuelta de una sección: lee los archivos como están AHORA, detecta si alguien
  *  tocó una pieza desde que se bajó el paquete (`huellasPrevias`) y reparte lo que devolvió el chat. */
-export async function aplicarSeccion(cfg, id, respuesta, leer, huellasPrevias = {}) {
+export async function aplicarSeccion(cfg, id, respuesta, leer, huellasPrevias = {}, modo = "piezas") {
   const iv = (cfg.secciones || cfg.intervenciones || []).find((x) => x.id === id);
   if (!iv) throw new Error("No existe la sección «" + id + "» en el mapa del sitio");
   const originales = {}, permitidos = {}, enteros = {}, conflictos = [];
@@ -844,7 +890,9 @@ export async function aplicarSeccion(cfg, id, respuesta, leer, huellasPrevias = 
     originales[a.ruta] = await leer(a.ruta);
     const ds = declaraciones(originales[a.ruta]);
     permitidos[a.ruta] = a.tramos && a.tramos.length ? a.tramos : ds.map((d) => d.nombre);
-    enteros[a.ruta] = !(a.tramos && a.tramos.length);
+    enteros[a.ruta] = entregaEntera(a, originales[a.ruta], modo);
+    // un archivo entregado entero se puede tocar entero: se permiten todas sus piezas
+    if (enteros[a.ruta]) permitidos[a.ruta] = ds.map((d) => d.nombre);
   }
   const r = aplicarEnArchivos(originales, respuesta, permitidos, enteros);
   for (const [ruta, a] of Object.entries(r.archivos)) {

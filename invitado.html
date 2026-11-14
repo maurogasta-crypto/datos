@@ -702,7 +702,7 @@ async function traerSecciones(pr) {
   if (!caja || SECCIONES[pr.id] || !pr.sitio || !/^[\w.-]+\/[\w.-]+$/.test(pr.sitio.repo || "")) return;
   SECCIONES[pr.id] = true;
   try {
-    const M = await import("./intervenir.js?v=intervenir-4");
+    const M = await import("./intervenir.js?v=intervenir-5");
     const ok = await M.montar({
       pr, caja, P, yo, persona, leerTexto, crudo, descargar, dejarRegistro, comentarPendiente,
       F: { db, doc, setDoc, getDocs, collection, query, where },

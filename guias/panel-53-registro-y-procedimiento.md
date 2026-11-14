@@ -350,3 +350,22 @@ Se agregó lo que pidió Mauro: que **cada sitio tenga un mapa** de qué es cada
 Subilo al repositorio `datos`, desde el mismo lugar desde donde bajaste el primer archivo, por ejemplo en `guias/panel-53-registro-y-procedimiento.md` **[a validar: elegí la carpeta que corresponda]**, para que las corridas automáticas que revisan el chat lo encuentren.
 
 Vale para **cualquier invitado** que quiera intervenir: Florencia, Mariano o quien venga después. Las modificaciones se hacen en la **copia de pruebas**; este registro describe lo que se subió a `datos`.
+
+## paquete-4 (14-nov-2026): archivos completos
+
+Mauro probó «Intervenir una sección» desde la vista de Florencia y no le gustó lo que se llevaba al chat: **piezas
+recortadas**, no los archivos como están en el repositorio. Pidió «cuerpos completos que pueda comprender el otro chat…
+para poder hacer una intervención y entregar los archivos que haya modificado», con todo lo que debe publicarse y una
+guía de integración dentro de la misma exportación.
+
+Qué cambió: `construir` acepta `modo` (`auto`, `completo`, `piezas`); la pantalla pide `auto`. Un archivo va entero salvo que
+pase de `ENTERO_MAX` (70.000 caracteres): hoy sólo `index.html` (215 KB) sigue por piezas, y se puede pedir «todo completo»
+sabiendo que ≈ 65 mil unidades pueden no entrar en una sesión gratuita (la pantalla muestra cuánto pesa cada archivo antes
+de bajar). El paquete trae «Cómo se integra lo que devuelvas» (con y sin acceso al repositorio), «Qué tiene que ir publicado
+con tu cambio» (archivos, sellos, `sw.js`, documentación, pruebas y registro) y pide la respuesta en tres partes: qué
+cambió, los archivos completos y el registro de tanda. La vuelta acepta un archivo entero y avisa si alguien lo tocó
+mientras tanto. Sin regla nueva.
+
+Lo que queda decidido a medias: la respuesta de Florencia se guarda entera en un comentario del pedido (hasta 400.000
+caracteres); si algún día hace falta más, el lugar es una colección propia.
+

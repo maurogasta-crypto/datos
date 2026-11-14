@@ -744,16 +744,21 @@ recomendamos comprar»). Se llega desde la ficha de Roli (`sitio.guias` de
 
 ## Intervenir una sección (`intervenir.js`, `paquete.js`, `semaforo.js`; panel-53, 10-nov-2026)
 
-Un invitado baja de su proyecto el paquete de UNA sección (guía, ficha, el código
-recortado y un mapa del sitio) para llevarlo a su chat, y trae la respuesta de
-vuelta. Es el camino genérico: cada sitio lo activa con un `secciones.json` en su
+Un invitado baja de su proyecto el paquete de UNA sección (guía, ficha, **los archivos
+COMPLETOS como están en el repositorio** —los muy grandes, por piezas—, la guía de
+integración, qué tiene que ir publicado con el cambio y un mapa del sitio) para
+llevarlo a su chat, y trae la respuesta de vuelta: los archivos completos que cambió
+y el registro de tanda (`paquete-4`, 14-nov: Mauro, «cuerpos completos… para poder
+hacer una intervención y entregar los archivos que haya modificado»). Se elige el modo
+al bajar: *completos* (lo recomendado; pasado de 70.000 caracteres un archivo va por
+piezas), *todo completo* o *sólo piezas*. Es el camino genérico: cada sitio lo activa con un `secciones.json` en su
 repositorio. Armado por otro chat de Claude con Mauro; lo implementó la ronda
 desde el zip `subir-al-repositorio-panel-53.zip` (14-nov). El registro y el
 procedimiento completos: `guias/panel-53-registro-y-procedimiento.md`.
 
 - `secciones.json` (el del panel: `repo` `maurogasta-crypto/datos`), `MAPA.md`
   (`node herramientas/secciones.mjs mapa` lo actualiza) y el banco
-  `node pruebas/paquete.mjs` (149 comprobaciones).
+  `node pruebas/paquete.mjs` (161 comprobaciones).
 - **El semáforo de edición** vive en `ediciones/{proyecto}__{sección}` con su
   regla (**reglas v10**: hay que publicarlas). Es un aviso de «estoy editando
   esto» que nace con la hora del servidor y vence a las 48 h; no protege datos.
@@ -813,8 +818,8 @@ teléfono.
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-52` |
 | `invitado.html` | `P.PANEL` | `invitado-21` |
-| `intervenir.js` | pedido con `?v=` | `intervenir-4` |
-| `paquete.js` · `semaforo.js` | — | `paquete-2` |
+| `intervenir.js` | pedido con `?v=` | `intervenir-5` |
+| `paquete.js` · `semaforo.js` | — | `paquete-4` |
 | `chat.js` | `SELLO` | `chat-5` |
 | `esquema.js` | `VERSION` | `esquema-2` |
 | `hoja.css` | comentario | `hoja-2` |

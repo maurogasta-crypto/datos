@@ -180,12 +180,12 @@
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-13";
 import { GLOSARIO } from "./glosario.js?v=glosario-1";
-import * as CH from "./chat.js?v=chat-4";
+import * as CH from "./chat.js?v=chat-5";
 import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeArea, ESTADOS } from "./esquema.js?v=esquema-2";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-20";
+P.PANEL = "invitado-21";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -428,12 +428,17 @@ function pintar() {
 
       <div class="rotulo">Para entender y participar</div>
 
-      <details class="nivel" data-capa-chat="${P.esc(pr.id)}"><summary>🤖 Trabajar con tu propio chat</summary>
-        <p class="gris">1) Bajá lo que necesite tu chat de IA y dáselo. 2) Pegá acá lo que te conteste, o subí el archivo. Claude lo lee y lo analiza contra el resto del proyecto; nada cambia sin que lo charlemos.</p>
+      <details class="nivel" data-capa-chat="${P.esc(pr.id)}"><summary>🤖 Trabajar con una sesión gratuita de Claude</summary>
+        <p class="gris">Podés trabajar con una <b>sesión gratuita de Claude</b> (claude.ai): no hace falta pagar nada. <b>1)</b> Bajá lo que necesita (el resumen del proyecto, o el paquete de un área) y dáselo a tu Claude. <b>2)</b> Lo que te devuelva llega al proyecto por uno de dos caminos, según tu experiencia:</p>
+        <ul class="gris" style="margin:.2rem 0 .4rem 1.1rem">
+          <li><b>Si usás GitHub y Mauro te dio acceso de colaborador al repositorio:</b> subí vos el archivo, directo, por la web de GitHub, con tu cuenta (los pasos están en la guía que se baja con el paquete). La ronda de Mauro lo comprueba.</li>
+          <li><b>Si no usás GitHub:</b> pegá acá lo que te contestó, o subí el archivo. Claude lo lee, lo analiza contra el resto del proyecto y se ocupa de subirlo.</li>
+        </ul>
+        <p class="gris">En los dos caminos, nada llega a los alumnos sin que Mauro lo pase del sitio de desarrollo al estable.</p>
         <div class="fila-btn"><button class="btn" data-md="${P.esc(pr.id)}">⬇ Resumen del proyecto (.md)</button></div>
         <div data-areas="${P.esc(pr.id)}"></div>
         <div data-secciones="${P.esc(pr.id)}"></div>
-        <textarea data-chat="${P.esc(pr.id)}" rows="4" placeholder="Pegá acá la respuesta de tu chat…"></textarea>
+        <textarea data-chat="${P.esc(pr.id)}" rows="4" placeholder="Pegá acá lo que te contestó tu Claude…"></textarea>
         <div class="fila-btn">
           <label class="mini">📄 Subir un archivo (.md o .txt)<input type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" data-chat-arch="${P.esc(pr.id)}" hidden></label>
           <button class="btn p" data-chat-mandar="${P.esc(pr.id)}">Mandar a Claude</button>
@@ -663,7 +668,7 @@ async function traerAreas(pr) {
     }));
     const extraerDe = (a) => ARCH[a.id] || CH.extraer(fuente, a, decls);
     const filas = mapa.areas.map((a) => { const e = extraerDe(a); return { a, e }; });
-    caja.innerHTML = `<p class="gris" style="margin:.6rem 0 .2rem"><b>Para una intervención enfocada</b> (entra en un chat gratuito): elegí un área.</p>
+    caja.innerHTML = `<p class="gris" style="margin:.6rem 0 .2rem"><b>Para una intervención enfocada</b> (entra en una sesión gratuita de Claude): elegí un área.</p>
       <select data-area-sel="${P.esc(pr.id)}" style="width:100%;margin:.2rem 0">${filas.map(({ a, e }) =>
         `<option value="${P.esc(a.id)}">${P.esc(a.titulo)} · ${e.lineas} líneas · ~${Math.max(1, Math.round(e.tokens / 1000))} mil</option>`).join("")}</select>
       <div class="fila-btn">
@@ -697,7 +702,7 @@ async function traerSecciones(pr) {
   if (!caja || SECCIONES[pr.id] || !pr.sitio || !/^[\w.-]+\/[\w.-]+$/.test(pr.sitio.repo || "")) return;
   SECCIONES[pr.id] = true;
   try {
-    const M = await import("./intervenir.js?v=intervenir-3");
+    const M = await import("./intervenir.js?v=intervenir-4");
     const ok = await M.montar({
       pr, caja, P, yo, persona, leerTexto, crudo, descargar, dejarRegistro, comentarPendiente,
       F: { db, doc, setDoc, getDocs, collection, query, where },

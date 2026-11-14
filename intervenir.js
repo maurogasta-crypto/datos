@@ -2,7 +2,7 @@
    intervenir.js — «🛠 Intervenir una sección»: la pantalla del invitado que
    baja el paquete de una sección, avisa con el semáforo que la está editando,
    y trae la respuesta de su chat para dejar los archivos listos para subir.
-   Sello: intervenir-3 (12-nov-2026; intervenir-1 el 10-nov)
+   Sello: intervenir-4 (14-nov-2026: el texto habla de sesiones gratuitas de Claude; intervenir-3 el 12-nov)
 
    Lo carga `invitado.html` DIFERIDO y con catch (igual que `ojos.js`): si no
    baja, o el sitio no tiene `secciones.json`, la página sigue como estaba.
@@ -21,7 +21,7 @@
 import * as K from "./paquete.js?v=paquete-3";
 import * as S from "./semaforo.js?v=semaforo-1";
 
-export const VERSION = "intervenir-3";
+export const VERSION = "intervenir-4";
 const MAX_RESPUESTA = 200000;
 
 /** Las opciones de la lista: cada sección con su semáforo. (Pura: la prueba la corre en Node.) */
@@ -79,7 +79,7 @@ export async function montar(ctx) {
   const faltan = ["deleteDoc", "serverTimestamp", "Timestamp", "setDoc", "getDocs"].filter((n) => !F || !F[n]);
 
   caja.innerHTML = `<div class="rotulo">🛠 Intervenir una sección</div>
-    <p class="gris" style="margin:.2rem 0">Para una modificación <b>pequeña y completa</b> de una parte del sitio. El panel te da un solo archivo con esa parte y todo lo que depende de ella; se lo das a tu chat, y lo que te devuelva se arma acá para subir. Mientras la tengas, queda marcada «en edición» para que nadie más la toque.</p>
+    <p class="gris" style="margin:.2rem 0">Para una modificación <b>pequeña y completa</b> de una parte del sitio. El panel te da un solo archivo con esa parte y todo lo que depende de ella; se lo das a tu Claude (una sesión gratuita alcanza), y lo que te devuelva se arma acá para subir; si tenés acceso de colaborador al repositorio, también podés subirlo vos directo. Mientras la tengas, queda marcada «en edición» para que nadie más la toque.</p>
     <select data-sec-sel style="width:100%;margin:.2rem 0"></select>
     <p class="gris" data-sec-info style="font-size:.85rem"></p>
     <div class="fila-btn">

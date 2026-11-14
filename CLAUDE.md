@@ -301,6 +301,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   pruebas/chat.mjs`) y carga lo que su chat contestó como un pedido con el texto
   entero en un comentario. Sin regla nueva. Cómo se tratan: TRASPASO § 4 bis,
   e) a g).
+  **Desde `invitado-21` (14-nov-2026) el chat propio se llama «Trabajar con una sesión gratuita de Claude»** (Mauro: los
+  invitados pueden trabajar con sesiones gratuitas de Claude) y tiene dos caminos: quien **usa GitHub y tiene acceso de
+  colaborador** (Mariano) sube el resultado directo al repositorio con su cuenta, siguiendo la guía; quien no, lo
+  pega o sube el archivo acá y Claude lo analiza y lo sube. En los dos nada llega a los alumnos sin el paso de Mauro.
   **Desde `invitado-15` (10-nov-2026) las preguntas se ORDENAN y se contestan
   con un toque**: cada consulta lleva `orden` (el que se quiere contestar
   primero), `grupo` (el primer grupo va abierto, los demás plegados) y

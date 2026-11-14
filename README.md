@@ -812,10 +812,10 @@ teléfono.
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-52` |
-| `invitado.html` | `P.PANEL` | `invitado-20` |
-| `intervenir.js` | pedido con `?v=` | `intervenir-3` |
+| `invitado.html` | `P.PANEL` | `invitado-21` |
+| `intervenir.js` | pedido con `?v=` | `intervenir-4` |
 | `paquete.js` · `semaforo.js` | — | `paquete-2` |
-| `chat.js` | `SELLO` | `chat-4` |
+| `chat.js` | `SELLO` | `chat-5` |
 | `esquema.js` | `VERSION` | `esquema-2` |
 | `hoja.css` | comentario | `hoja-2` |
 | `glosario.js` | `VERSION` | `glosario-1` |

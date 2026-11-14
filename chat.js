@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    chat.js — el canal entre un invitado y SU propio chat de IA
-   Sello: chat-4 (10-nov-2026; chat-1, 9-nov)
+   Sello: chat-5 (14-nov-2026: habla de sesiones gratuitas de Claude y de los dos caminos; chat-4, 10-nov)
 
    Mauro, 9-nov-2026: «una herramienta que permita descargar un md que resuma
    el desarrollo de la app para su chat y un espacio en el que pueda cargar la
@@ -19,7 +19,7 @@
    falta una regla nueva.
    ═══════════════════════════════════════════════════════════ */
 
-export const SELLO = "chat-4";
+export const SELLO = "chat-5";
 /* Una respuesta de un chat va entera como comentario de un pedido. Un
    documento de Firestore no pasa de 1 MiB: con 200 mil caracteres queda lugar
    para la conversación de después. */
@@ -76,9 +76,9 @@ export function resumenMd(pr, pend, { commits = [], fecha = "", quien = "" } = {
   L.push("");
   L.push("## Cómo usarlo");
   L.push("");
-  L.push("1. Dale este archivo a tu chat de IA.");
+  L.push("1. Dale este archivo a tu Claude (una sesión gratuita de claude.ai alcanza).");
   L.push("2. Pedile lo que quieras: opinar, proponer, revisar un punto.");
-  L.push("3. Cargá su respuesta en tu panel, en «Trabajar con tu propio chat». Claude la analiza contra el resto del proyecto antes de cambiar nada.");
+  L.push("3. Cargá su respuesta en tu panel, en «Trabajar con una sesión gratuita de Claude». Si tenés acceso de colaborador al repositorio, podés en cambio subir el resultado vos, directo, siguiendo la guía de desarrollo. En los dos casos se analiza contra el resto del proyecto antes de llegar a los alumnos.");
   L.push("");
   L.push("> Para tu chat: el código vive en el repositorio" + (pr.sitio && pr.sitio.repo ? ` \`${pr.sitio.repo}\`` : "") + ". No cambies el código directamente: proponé, y explicá el porqué de cada propuesta.");
   const resumen = linea(e.resumen || (pr.sitio && pr.sitio.resumen));
@@ -231,7 +231,7 @@ export function armarPaquete({ proyecto = "", area, codigo, guia = "", fecha = "
   const L = [];
   L.push(`# Paquete de desarrollo — ${linea(proyecto)} · ${linea(area.titulo)}`);
   L.push("");
-  L.push(`Armado desde el panel${fecha ? " el " + fecha : ""} con el código de \`${archivo}\`. Dáselo a tu chat de IA junto con tu pedido.`);
+  L.push(`Armado desde el panel${fecha ? " el " + fecha : ""} con el código de \`${archivo}\`. Dáselo a tu Claude (una sesión gratuita alcanza) junto con tu pedido.`);
   L.push("");
   L.push("## Tu pedido");
   L.push("");

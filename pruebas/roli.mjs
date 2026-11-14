@@ -46,43 +46,54 @@ t("roli.js parsea como módulo, la página lo importa y no toca Firebase ni la r
   assert.doesNotMatch(html.replace(/<!--[\s\S]*?-->/g, "") + fs.readFileSync(path.join(raiz, "roli.js"), "utf8"), /firebase|gstatic|fetch\(|apiKey/i);
 });
 
-/* ── Jugar hoy (roli-js-2) ── */
-t("las rondas de la dinámica usan sólo palabras de su nivel, y lo que depende de los ojos va marcado", () => {
+/* ── Jugar hoy (roli-js-3): dinámicas de equipo, no de competencia ── */
+t("las rondas usan sólo palabras de su nivel, y lo que depende de los ojos va marcado y es sólo el bonus", () => {
   for (const d of R.DINAMICAS) for (const r of d.rondas) {
     for (const p of r.pasos) for (const l of p.escribi || []) {
       const w = R.palabraDe(l), n = R.NIVEL_DE[w];
       assert.ok(n, `${d.id}/${r.id}: «${l}» no es una palabra de Roli`);
       assert.ok(n <= r.nivel, `${d.id}/${r.id} (nivel ${r.nivel}) usa «${w}», que llega en el nivel ${n}`);
     }
+    assert.ok(r.pasos.length >= 2 && r.que && r.logro && r.minutos, r.id);
     if (r.nivel >= 5) assert.ok(r.ojos, `${r.id}: usa los ojos y no lo avisa`);
-    assert.ok(r.pasos.length >= 2 && r.que && r.puntos && r.minutos, r.id);
-    if (r.escala) assert.ok(R.ESCALA[r.escala], `${r.id}: escala inexistente`);
   }
+  assert.ok(R.DINAMICAS[0].rondas.every((r) => r.ojos || r.nivel <= 4));
+  assert.ok(R.DINAMICAS[0].rondas.filter((r) => r.ojos).length === 1);
 });
-t("lo que se juega hoy sin los ojos no los necesita (el bonus es lo único con ojos)", () => {
-  const d = R.DINAMICAS[0];
-  assert.ok(d.rondas.filter((r) => !r.ojos).length >= 4 && d.rondas.filter((r) => r.ojos).every((r) => r.id === "solo"));
-  assert.ok(d.rondas.every((r) => r.ojos || r.nivel <= 4));
+t("es colaborativa: ninguna ronda se hace solo, todas reparten roles que se necesitan, y no hay puntos por persona ni podio", () => {
+  for (const d of R.DINAMICAS) {
+    for (const r of d.rondas) { assert.ok(r.roles.length >= 2, `${r.id}: una ronda necesita al menos dos roles`); assert.equal(new Set(r.roles.map((x) => x.id)).size, r.roles.length); for (const ro of r.roles) assert.ok(ro.nombre && ro.hace && ro.ic, r.id); }
+    assert.ok(d.rondas.some((r) => r.roles.some((x) => x.id === "operador")) && d.rondas.some((r) => r.roles.some((x) => x.id === "terreno")), "falta quien escribe o quien prepara el terreno");
+    assert.ok(d.rondas.some((r) => r.roles.some((x) => x.id === "acelerador")) && d.rondas.some((r) => r.roles.some((x) => x.id === "direccion")), "falta la ronda donde dos personas controlan dos aspectos de Roli");
+    assert.ok(d.metaEstrellas > 0 && d.metaEstrellas <= R.totalEstrellas({}, d.rondas).max);
+  }
+  const fuente = fs.readFileSync(path.join(raiz, "roli.js"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "") + fs.readFileSync(path.join(raiz, "roli.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
+  assert.doesNotMatch(fuente, /podio|ganador|ganá|gana quien|posiciones|puntosPorDistancia/i, "quedó algo de la competencia");
 });
-t("los puntos por distancia: la primera franja que alcanza, y lo vacío o roto no puntúa", () => {
-  assert.equal(R.puntosPorDistancia(3, R.ESCALA.marca), 5);
-  assert.equal(R.puntosPorDistancia(5, R.ESCALA.marca), 5);
-  assert.equal(R.puntosPorDistancia(8, R.ESCALA.marca), 3);
-  assert.equal(R.puntosPorDistancia(20, R.ESCALA.marca), 1);
-  assert.equal(R.puntosPorDistancia(21, R.ESCALA.marca), 0);
-  assert.equal(R.puntosPorDistancia("", R.ESCALA.marca), 0);
-  assert.equal(R.puntosPorDistancia("abc", R.ESCALA.marca), 0);
-  assert.equal(R.puntosPorDistancia(-4, R.ESCALA.marca), 0);
-  assert.equal(R.puntosPorDistancia(20, R.ESCALA.cierre), 3);
-  assert.equal(R.puntosPorDistancia(29, R.ESCALA.prediccion), 3);
-  assert.equal(R.puntosPorDistancia(31, R.ESCALA.prediccion), 0);
+t("las estrellas: menos intentos, más estrellas; si no se logró, cero; nunca resta", () => {
+  assert.equal(R.estrellasPorIntentos(1), 3); assert.equal(R.estrellasPorIntentos(2), 2); assert.equal(R.estrellasPorIntentos(3), 1); assert.equal(R.estrellasPorIntentos(9), 1);
+  assert.equal(R.estrellasPorIntentos(1, false), 0); assert.equal(R.estrellasPorIntentos(""), 0); assert.equal(R.estrellasPorIntentos("x"), 0); assert.equal(R.estrellasPorIntentos(0), 0); assert.equal(R.estrellasPorIntentos(-2), 0);
 });
-t("la tabla: suma, ordena, comparte lugar en un empate y no cuenta puntos negativos", () => {
-  const pos = R.posiciones(["A", "B", "C"], { A: { x: 3, y: 2 }, B: { x: 5 }, C: { x: 4, y: 1, z: "" } });
-  assert.deepEqual(pos.map((f) => [f.jugador, f.total, f.lugar]), [["A", 5, 1], ["B", 5, 1], ["C", 5, 1]]);
-  const p2 = R.posiciones(["A", "B"], { A: { x: -3, y: 2 }, B: { x: 1 } });
-  assert.deepEqual(p2.map((f) => [f.jugador, f.total, f.lugar]), [["A", 2, 1], ["B", 1, 2]]);
-  assert.deepEqual(R.posiciones(["A"], {}).map((f) => f.total), [0]);
+t("el total del equipo: suma las rondas, el bonus suma pero no entra en el máximo", () => {
+  const rs = R.DINAMICAS[0].rondas, est = { despierta: { intentos: 1, logrado: true }, guia: { intentos: 2, logrado: true }, solo: { intentos: 1, logrado: true } };
+  const tt = R.totalEstrellas(est, rs);
+  assert.equal(tt.total, 3 + 2 + 3); assert.equal(tt.max, 12);
+  assert.deepEqual(R.totalEstrellas({}, rs), { total: 0, max: 12 });
+});
+t("el mensaje al equipo es siempre en plural y para adelante (nunca reproche)", () => {
+  for (const [a, b, c] of [[0, 12, 8], [3, 12, 8], [8, 12, 8], [12, 12, 8]]) {
+    const m = R.mensajeDeEquipo(a, b, c); assert.ok(m.length > 10); assert.doesNotMatch(m, /perdi|fall|mal\b|no lograron/i);
+  }
+  assert.match(R.mensajeDeEquipo(8, 12, 8), /Lo logramos/); assert.match(R.mensajeDeEquipo(12, 12, 8), /todas/);
+});
+t("los roles rotan de a uno por ronda y todos hacen de todo; con menos personas que roles, a alguien le tocan dos", () => {
+  const roles = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  const r0 = R.asignarRoles(["Ana", "Beto", "Cami"], roles, 0), r1 = R.asignarRoles(["Ana", "Beto", "Cami"], roles, 1), r3 = R.asignarRoles(["Ana", "Beto", "Cami"], roles, 3);
+  assert.deepEqual(r0.map((x) => x.persona), ["Ana", "Beto", "Cami"]); assert.deepEqual(r1.map((x) => x.persona), ["Beto", "Cami", "Ana"]); assert.deepEqual(r3, r0);
+  const quien = (rol) => new Set([0, 1, 2].map((i) => R.asignarRoles(["Ana", "Beto", "Cami"], roles, i).find((x) => x.rol === rol).persona));
+  assert.ok(["a", "b", "c"].every((rol) => quien(rol).size === 3), "cada persona hace cada rol una vez");
+  const dos = R.asignarRoles(["Ana", "Beto"], roles, 0); assert.equal(dos.length, 3); assert.ok(dos.every((x) => ["Ana", "Beto"].includes(x.persona)));
+  assert.deepEqual(R.asignarRoles([], roles, 0), []); assert.deepEqual(R.asignarRoles(["", "  "], roles, 0), []); assert.equal(R.asignarRoles(["Ana"], roles, -1).length, 3);
 });
 t("las medidas para Mauro: dicen lo que hay, lo que falta, y no inventan", () => {
   const vacio = R.medidasParaMauro({}, "2026-11-14");
@@ -96,6 +107,6 @@ t("la dinámica del día: la más reciente que no sea del futuro; si todas lo so
   assert.equal(R.dinamicaDe("2026-11-14", L).id, "b"); assert.equal(R.dinamicaDe("2026-11-15", L).id, "b");
   assert.equal(R.dinamicaDe("2026-11-01", L).id, "a"); assert.equal(R.dinamicaDe("2026-12-01", L).id, "c");
   assert.equal(R.dinamicaDe("2026-11-14", []), null);
-  assert.equal(R.dinamicaDe("2026-11-14").id, "gran-premio");
+  assert.equal(R.dinamicaDe("2026-11-14").id, "mision-equipo");
 });
 console.log(`\n${ok} pasadas, ${mal} fallidas`); process.exit(mal ? 1 : 0);

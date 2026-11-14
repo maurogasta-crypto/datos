@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    roli.js — las actividades de Roli y lo que conviene comprarle.
-   Sello: roli-js-2 (14-nov-2026: «Jugar hoy», la dinámica del día; roli-js-1, 10-nov)
+   Sello: roli-js-3 (14-nov-2026: «Jugar hoy», dinámicas COLABORATIVAS; roli-js-2 la primera, competitiva; roli-js-1, 10-nov)
 
    Mauro, 10-nov-2026: «la página con actividades que contemplen la
    integración del cuello (servo), el sensor ultrasónico delantero y
@@ -14,7 +14,7 @@
    en la misma tanda (el banco falla si una actividad usa una palabra que
    todavía no existe en su nivel).
    ═══════════════════════════════════════════════════════════ */
-export const VERSION = "roli-js-2";
+export const VERSION = "roli-js-3";
 
 /* Desde qué nivel existe cada palabra. */
 export const NIVEL_DE = {
@@ -162,84 +162,110 @@ export const palabraDe = (linea) => String(linea || "").trim().split(/\s+/)[0].t
 export const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 export const usd = (r) => (r[0] === r[1] ? "USD " + r[0] : "USD " + r[0] + "–" + r[1]);
 
-/* ═══ JUGAR HOY: dinámicas de entrenamiento y de juego (roli-js-2, 14-nov-2026) ═══
-   Mauro, 14-nov-2026: «quiero hacer experiencias de entrenamiento y de juego con Roli… alguna dinámica para el día de
-   hoy en particular que se publique en el sitio». Cada dinámica es una tanda de rondas con puntos, con una persona
-   que ESCRIBE (la piloto) y otra que MIDE y ANOTA (la jueza); cambian en cada ronda. Sólo usa palabras que ya existen
-   en su nivel (el banco lo comprueba); lo que depende de los ojos va aparte, marcado `ojos`, como bonus.
-   `fecha` dice para qué día es: la página muestra la más reciente que no sea del futuro. */
+/* ═══ JUGAR HOY: dinámicas de equipo (roli-js-3, 14-nov-2026) ═══
+   Mauro, 14-nov-2026: «las dinámicas de juegos deben ser colaborativas y no competitivas: un jugador controla un
+   aspecto de Roli y otro indica los movimientos; uno inicia las órdenes en la consola y el otro prepara el terreno».
+   Por eso no hay puntos por persona, ni podio, ni lugares: el equipo entero junta ESTRELLAS ⭐ y busca una meta
+   común. Cada ronda reparte ROLES que se necesitan entre sí (uno escribe, otro guía, otro prepara el terreno) y se
+   rotan de a una ronda, para que todos hagan de todo. Menos intentos para lograrlo = más estrellas, pero no se resta
+   nada: equivocarse es parte de aprender. Sólo usa palabras que ya existen en su nivel (el banco lo comprueba); lo que
+   depende de los ojos es un bonus aparte, marcado `ojos`. `fecha` dice para qué día es: la página muestra la más
+   reciente que no sea del futuro. */
 
-/** Los puntos de cada ronda se piden por distancia (en cm): menos cm, más puntos. Se prueban con node. */
-export const ESCALA = {
-  marca:  [[5, 5], [10, 3], [20, 1]],     // la marca justa: a cuántos cm de la cinta se paró
-  cierre: [[10, 5], [25, 3], [50, 1]],    // el cuadrado: a cuántos cm del punto de salida volvió
-  prediccion: [[30, 3]],                  // predecir dónde termina: a menos de 30 cm de lo que dijo
-};
-/** Puntos de una ronda por distancia: la primera franja que alcanza; si no, 0. cm vacío o negativo no puntúa. */
-export function puntosPorDistancia(cm, escala) {
-  const d = Number(cm);
-  if (!Number.isFinite(d) || d < 0 || cm === "" || cm == null) return 0;
-  const f = (escala || []).find(([max]) => d <= max);
-  return f ? f[1] : 0;
+/** Estrellas de una ronda: 1.er intento 3, 2.º 2, de ahí en adelante 1; si todavía no se logró, 0. Nunca resta. */
+export function estrellasPorIntentos(intentos, logrado = true) {
+  const n = Math.floor(Number(intentos));
+  if (!logrado || !Number.isFinite(n) || n < 1) return 0;
+  return n === 1 ? 3 : n === 2 ? 2 : 1;
 }
-/** La tabla de puntos: `puntos[jugador][rondaId]` → totales ordenados de mayor a menor (empatados comparten lugar). */
-export function posiciones(jugadores, puntos = {}) {
-  const filas = jugadores.map((j) => ({ jugador: j, total: Object.values(puntos[j] || {}).reduce((t, v) => t + (Number(v) > 0 ? Number(v) : 0), 0) }))
-    .sort((a, b) => b.total - a.total);
-  let lugar = 0, prev = null;
-  return filas.map((f, i) => { if (f.total !== prev) { lugar = i + 1; prev = f.total; } return { ...f, lugar }; });
+/** Las estrellas del equipo: `estado[rondaId] = { intentos, logrado }`. El bonus (`ojos`) suma pero no entra en el máximo. */
+export function totalEstrellas(estado = {}, rondas = []) {
+  let total = 0, max = 0;
+  for (const r of rondas) {
+    const e = estado[r.id] || {}, est = estrellasPorIntentos(e.intentos, !!e.logrado);
+    total += est; if (!r.ojos) max += 3;
+  }
+  return { total, max };
 }
-/** Lo que se le cuenta a Mauro al final del juego: las medidas de hoy, para ajustar a Roli. */
+/** Lo que le dice la página al equipo: siempre en plural, siempre para adelante. */
+export function mensajeDeEquipo(total, max, meta) {
+  if (total <= 0) return "Todavía no hay estrellas: la primera ronda es para entrar en calor. ¡Juntos se puede!";
+  if (total >= max) return "¡Estrella en todas! Roli y el equipo salieron perfectos.";
+  if (total >= meta) return "¡Lo logramos! Llegaron a la meta del equipo (" + meta + " ⭐). Sigan por más.";
+  return "Van " + total + " ⭐ de la meta de " + meta + ". Cada intento enseña algo: ¡a seguir juntos!";
+}
+/** Reparte los roles de una ronda entre las personas, rotando de a uno por ronda. Si hay menos personas que roles,
+ *  a alguien le tocan dos (el que más rota se queda con el sobrante); si hay más, algunas personas ayudan en la ronda. */
+export function asignarRoles(jugadores, roles, ronda = 0) {
+  const J = jugadores.filter((j) => String(j || "").trim());
+  if (!J.length || !roles.length) return [];
+  const k = ((ronda % J.length) + J.length) % J.length;
+  return roles.map((r, i) => ({ rol: r.id, persona: J[(i + k) % J.length] }));
+}
+/** Lo que se le cuenta a Mauro al final: las medidas de hoy, para ajustar a Roli. */
 export function medidasParaMauro(m = {}, fecha = "") {
   const n = (v) => (v === "" || v == null || !Number.isFinite(Number(v)) || Number(v) <= 0 ? null : Number(v));
   const vel = n(m.velocidad), seg = n(m.segundosPorMetro), giro = n(m.giro90);
   const L = [`Medidas de Roli${fecha ? " · " + fecha : ""}`];
   L.push(seg ? `- A velocidad ${vel || "(la de siempre)"}, avanza 1 metro en ${seg} s.` : "- Segundos para 1 metro: sin medir.");
-  L.push(giro ? `- Con «izquierda ${giro}» gira unos 90°${giro ? ` (≈ ${Math.round((giro * 1000) / 90)} ms por grado; orientativo para GIRO_MS_POR_GRADO, lo confirma Mauro)` : ""}.` : "- Tiempo del giro de 90°: sin medir.");
+  L.push(giro ? `- Con «izquierda ${giro}» gira unos 90° (≈ ${Math.round((giro * 1000) / 90)} ms por grado; orientativo para GIRO_MS_POR_GRADO, lo confirma Mauro).` : "- Tiempo del giro de 90°: sin medir.");
   if (m.nota) L.push("- " + String(m.nota).trim().slice(0, 300));
   return L.join("\n");
 }
 
+const R_OPERADOR = { id: "operador", ic: "⌨️", nombre: "Operador", hace: "Es el ÚNICO que escribe en la consola. Teclea lo que le dicen, ni una letra más." };
+const R_NAVEGANTE = { id: "navegante", ic: "🧭", nombre: "Navegante", hace: "Mira a Roli y dice en voz alta qué tiene que hacer, paso a paso. No toca el teclado." };
+const R_TERRENO = { id: "terreno", ic: "🏗", nombre: "Constructor del terreno", hace: "Prepara el piso con cinta, cajas y marcas antes de cada intento, y ayuda a medir." };
+
 export const DINAMICAS = [
-  { id: "gran-premio", fecha: "2026-11-14", ic: "🏁", titulo: "El Gran Premio de Roli", minutos: "40 a 50",
-    meta: "Competir por puntos, y de paso medir a Roli para ajustarlo mejor.",
-    como: "Juegan dos o más. En cada ronda una persona es la PILOTA (escribe en la consola) y otra es la JUEZA (mide con la cinta y anota los puntos). Se cambian de lugar en cada ronda. Gana quien junta más puntos; el que se equivoca no pierde nada: se anota y se prueba de nuevo.",
-    cosas: ["Roli con las baterías cargadas, prendido y conectado a la laptop", "Un piso liso y libre de 2 × 2 metros", "Cinta de pintor", "Una regla o cinta métrica", "Papel y lápiz (o esta misma hoja de puntos)"],
+  { id: "mision-equipo", fecha: "2026-11-14", ic: "🤝", titulo: "La misión de Roli: todos juntos", minutos: "40 a 50",
+    meta: "Lograr entre todos cuatro misiones con Roli, y medirlo de paso para ajustarlo mejor.",
+    como: "No se compite: el equipo entero junta ESTRELLAS ⭐ y busca una meta común. En cada ronda cada persona tiene un ROL y ninguno puede hacer la misión solo: uno escribe en la consola, otro guía con la voz y otro prepara el terreno. Los roles rotan de a uno por ronda, para que todos hagan de todo. Menos intentos para lograrlo, más estrellas; equivocarse nunca resta.",
+    metaEstrellas: 8,
+    cosas: ["Roli con las baterías cargadas, prendido y conectado a la laptop", "Un piso liso y libre de 2 × 2 metros", "Cinta de pintor y unas cajas o libros", "Una regla o cinta métrica"],
     rondas: [
-      { id: "despierta", ic: "👋", titulo: "Roli despierta", nivel: 1, minutos: 5, puntos: "1 por cada cosa lograda sin ayuda (hasta 3)",
-        que: "Calentamiento: que Roli haga tres cosas pedidas por la pilota.",
+      { id: "despierta", ic: "👋", titulo: "Roli despierta", nivel: 1, minutos: 5, roles: [R_OPERADOR, R_NAVEGANTE],
+        que: "Calentamiento: el equipo hace que Roli salude, diga una frase y titile. El Navegante dicta, el Operador teclea.",
+        logro: "Que Roli haga las tres cosas.",
         pasos: [
-          { t: "Saludalo y pedile una frase tuya.", escribi: ["hola", "di Vamos Roli"], ve: "Roli contesta y repite la frase." },
+          { t: "El Navegante dicta; el Operador escribe. Saludalo y pedile una frase de ustedes.", escribi: ["hola", "di Vamos Roli"], ve: "Roli contesta y repite la frase." },
           { t: "Que parpadee tres veces.", escribi: ["parpadear 3"], ve: "La luz titila tres veces." },
           { t: "Que prenda y apague su luz.", escribi: ["led 1", "led 0"], ve: "Se enciende y se apaga." } ] },
-      { id: "marca", ic: "🎯", titulo: "La marca justa", nivel: 3, minutos: 12, puntos: "Según a cuántos cm de la meta se paró: hasta 5 cm = 5 · hasta 10 = 3 · hasta 20 = 1", escala: "marca", intentos: 3,
-        que: "Cinta de salida y cinta de meta a 1 metro. La pilota decide la velocidad y cuántos segundos, y Roli se para SOLO. Tres intentos por persona; vale el mejor.",
+      { id: "guia", ic: "🧭", titulo: "Guiá a Roli hasta la meta", nivel: 3, minutos: 12, roles: [R_TERRENO, R_NAVEGANTE, R_OPERADOR],
+        que: "El Constructor arma una pista de 1 metro con una curva suave: cinta de salida y cinta de meta. El Navegante MIRA a Roli y dice qué hacer («avanzá dos segundos… ahora girá un poquito»); el Operador teclea sólo lo que oye. Nadie más puede decirle nada a la consola.",
+        logro: "Que Roli llegue hasta la cinta de meta.",
         pasos: [
-          { t: "Poné a Roli en la cinta de salida, mirando la meta.", ve: "Las ruedas justo sobre la cinta." },
-          { t: "Elegí una velocidad y los segundos, y mandalo.", escribi: ["velocidad 150", "adelante 2"], ve: "Avanza y se para solo. La jueza mide a cuántos cm de la meta quedó." },
-          { t: "Ajustá y repetí: más o menos segundos, otra velocidad.", escribi: ["velocidad 120", "adelante 3"], ve: "Cada intento enseña algo: anotá qué combinación llegó mejor." } ],
-        entrena: "Anotá en «Las medidas de hoy» la velocidad y los segundos que hicieron llegar justo a 1 metro." },
-      { id: "predeci", ic: "🔮", titulo: "Predecí y ejecutá", nivel: 4, minutos: 12, puntos: "La jueza que acierta (a menos de 30 cm) 3 puntos; la pilota, 1 por programa que corre", escala: "prediccion",
-        que: "La pilota graba un programa corto. ANTES de ejecutarlo, la jueza marca con cinta dónde cree que va a terminar Roli. Después se ejecuta y se mide.",
+          { t: "Constructor: armen la pista (salida, curva, meta) y pongan a Roli en la salida.", ve: "Las ruedas justo sobre la cinta de salida." },
+          { t: "Navegante: dictá el primer tramo. Operador: escribilo.", escribi: ["velocidad 150", "adelante 2"], ve: "Roli avanza y se para solo." },
+          { t: "Sigan por la curva, de a un tramo por vez.", escribi: ["izquierda 0.5", "adelante 1"], ve: "El Navegante corrige con la voz: «un poco más», «menos»." },
+          { t: "Si no llegó, ajusten y cuenten un intento más.", ve: "Cada intento enseña algo: anótenlo en las medidas." } ],
+        entrena: "Anoten en «Las medidas de hoy» la velocidad y cuántos segundos hicieron falta para 1 metro." },
+      { id: "dosmanos", ic: "🕹", titulo: "Dos manos, un Roli", nivel: 3, minutos: 12,
+        roles: [{ id: "acelerador", ic: "⚡", nombre: "Acelerador", hace: "Controla SÓLO la velocidad: es el único que escribe `velocidad`." }, { id: "direccion", ic: "🕹", nombre: "Dirección", hace: "Controla SÓLO el rumbo: escribe adelante, atras, izquierda, derecha y parar." }, R_TERRENO],
+        que: "Roli tiene dos aspectos y los manejan dos personas distintas: una la velocidad y otra la dirección. Tienen que hablarse todo el tiempo. El Constructor arma la pista con una ZONA LENTA marcada con cinta (ahí hay que ir despacio).",
+        logro: "Recorrer la pista sin salir de la cinta, yendo despacio en la zona lenta.",
         pasos: [
-          { t: "Grabá un programa de tres o cuatro pasos.", escribi: ["programa", "adelante 2", "izquierda 1", "adelante 1", "fin"], ve: "Roli dice «Grabando» y guarda los pasos." },
-          { t: "Mirá la lista. La jueza marca con cinta dónde cree que termina.", escribi: ["listar"], ve: "Aparece la lista numerada. Nadie toca a Roli todavía." },
-          { t: "¡Ejecutalo!", escribi: ["ejecutar"], ve: "Roli hace todo solo. La jueza mide la distancia entre su marca y donde quedó." },
-          { t: "Para empezar de nuevo con otro programa:", escribi: ["borrar"], ve: "Se borra el programa anterior." } ] },
-      { id: "cuadrado", ic: "⬛", titulo: "El cuadrado que vuelve", nivel: 4, minutos: 12, puntos: "Según a cuántos cm del punto de salida volvió: hasta 10 cm = 5 · hasta 25 = 3 · hasta 50 = 1", escala: "cierre",
-        que: "Que Roli dibuje un cuadrado y vuelva al lugar de donde salió. El truco es el tiempo de «izquierda»: el justo para un giro de 90°.",
+          { t: "Constructor: pista con un tramo recto, una zona lenta marcada y la meta.", ve: "Todos saben dónde está la zona lenta." },
+          { t: "Acelerador: velocidad para el tramo recto. Dirección: arrancá.", escribi: ["velocidad 170", "adelante 1"], ve: "Avanza rápido por el tramo recto." },
+          { t: "Antes de la zona lenta, el Acelerador baja la velocidad; la Dirección sigue.", escribi: ["velocidad 100", "adelante 1"], ve: "Entra despacio a la zona lenta." },
+          { t: "Terminen en la meta.", escribi: ["parar"], ve: "Roli se detiene sobre la cinta de meta." } ] },
+      { id: "ciegas", ic: "📝", titulo: "El programa a ciegas", nivel: 4, minutos: 12, roles: [R_TERRENO, R_OPERADOR, R_NAVEGANTE],
+        que: "El Constructor arma un recorrido con tres tramos, SIN mostrárselo al Operador (que se da vuelta) y se lo describe sólo con palabras. El Operador graba el programa. Antes de ejecutarlo, el Navegante lo lee en la lista y dice si coincide con lo que se describió.",
+        logro: "Que Roli haga el recorrido entero con el programa grabado.",
         pasos: [
-          { t: "Grabá cuatro lados y cuatro giros.", escribi: ["programa", "adelante 2", "izquierda 1", "adelante 2", "izquierda 1", "adelante 2", "izquierda 1", "adelante 2", "izquierda 1", "fin"], ve: "Se guardan los ocho pasos." },
-          { t: "Ejecutalo y mirá cuánto se corre del punto de salida.", escribi: ["ejecutar"], ve: "La jueza mide a cuántos cm volvió." },
-          { t: "Ajustá el tiempo del giro (por ejemplo 0.8 o 1.2) y repetí.", escribi: ["borrar"], ve: "Volvé a grabar con otro tiempo de «izquierda»." } ],
-        entrena: "Anotá en «Las medidas de hoy» cuántos segundos de «izquierda» hicieron un giro de 90°." },
-      { id: "solo", ic: "🛑", titulo: "Bonus · Roli frena solo", nivel: 5, minutos: 5, ojos: true, puntos: "3 si frena sin tocar la pared",
-        que: "SÓLO si los ojos de Roli andan hoy. Una pared o caja grande a 1 metro.",
+          { t: "Constructor: armá el recorrido y describilo con palabras. Operador: de espaldas.", ve: "El Operador no ve el piso: sólo escucha." },
+          { t: "Operador: grabá el programa que imaginás.", escribi: ["programa", "adelante 2", "izquierda 1", "adelante 2", "fin"], ve: "Roli dice «Grabando» y guarda los pasos." },
+          { t: "Navegante: mirá la lista y decí si coincide con el recorrido.", escribi: ["listar"], ve: "Aparece la lista numerada. Si hay que cambiar algo, se vuelve a grabar." },
+          { t: "Ejecuten juntos.", escribi: ["ejecutar"], ve: "Roli hace todo solo." },
+          { t: "Borren y prueben otro recorrido.", escribi: ["borrar"], ve: "Se borra el programa anterior." } ] },
+      { id: "solo", ic: "🛑", titulo: "Bonus · Roli frena solo", nivel: 5, minutos: 5, ojos: true, roles: [R_TERRENO, R_OPERADOR, R_NAVEGANTE],
+        que: "SÓLO si los ojos de Roli andan hoy. El Constructor pone una pared o caja grande a 1 metro; el Operador activa la protección; el Navegante vigila con la mano lista.",
+        logro: "Que Roli se frene solo antes de tocar la pared.",
         pasos: [
           { t: "Activá la protección y mandalo hacia la pared.", escribi: ["proteccion 20", "adelante 3"], ve: "Se frena solo antes de tocarla." },
-          { t: "Apagá la protección cuando termines.", escribi: ["proteccion 0"], ve: "Ya no frena solo: usalo con la mano lista." } ] },
+          { t: "Apagá la protección cuando terminen.", escribi: ["proteccion 0"], ve: "Ya no frena solo: usalo con la mano lista." } ] },
     ],
-    cierre: ["Sumen los puntos y anuncien el podio.", "Cada uno cuenta cuál fue la ronda más difícil y por qué.", "Las medidas de hoy (abajo) se le pasan a Mauro para ajustar a Roli."],
+    cierre: ["Cuenten las estrellas del equipo y celebren juntos, ganen las que ganen.", "Cada uno cuenta qué rol le gustó más y cuál le costó.", "Las medidas de hoy (abajo) se le pasan a Mauro para ajustar a Roli."],
   },
 ];
 

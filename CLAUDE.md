@@ -804,8 +804,10 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   delantero y trasero y los movimientos» y «una sección con lo que recomendamos
   comprar»). Sin cuenta ni base. Las palabras salen del firmware de
   `maurogasta-crypto/roli`: si cambia un comando allá, cambia `roli.js` en la
-  misma tanda (`node pruebas/roli.mjs`, 13 casos). **Desde `roli-js-2` (14-nov-2026) tiene «🎮 Jugar hoy»**: las
-  dinámicas de juego y entrenamiento (`DINAMICAS`, con `fecha`), una hoja de puntos y las medidas para pasarle a Mauro.
+  misma tanda (`node pruebas/roli.mjs`, 15 casos). **Desde `roli-js-3` (14-nov-2026) tiene «🎮 Jugar hoy»**: dinámicas de juego y
+  entrenamiento **colaborativas, nunca competitivas** (Mauro: «un jugador controla un aspecto de Roli y otro indica los
+  movimientos; uno inicia las órdenes en la consola y el otro prepara el terreno»): roles que rotan, ⭐ del equipo y las
+  medidas para pasarle a Mauro (`DINAMICAS`, con `fecha`). No se vuelve a agregar un podio ni puntos por persona.
 - **La guía para armar la placa de la Hilux es `placa.html` + `placa.js`**
   (placa-8, 4-nov-2026, Mauro: «una pantalla dedicada para el proceso de
   construcción… primero conseguir materiales y después proceso de

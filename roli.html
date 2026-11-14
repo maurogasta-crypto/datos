@@ -48,7 +48,7 @@
   .ro-pts label { display: flex; gap: .3rem; align-items: center; }
   .ro-pts input[type=number] { width: 4.2rem; min-height: 44px; }
   .ro-hoja input[type=text] { width: 100%; min-height: 44px; }
-  .ro-podio { font-size: 1.05rem; margin: .4rem 0; }
+  .ro-total { font-size: 1.05rem; margin: .4rem 0; }
   .ro-med { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
   .ro-med label { font-size: .85rem; color: var(--gris); display: block; }
   .ro-med input { width: 100%; min-height: 44px; }
@@ -58,7 +58,7 @@
 </head>
 <body>
 <!--
-  roli.html — las actividades de Roli, la dinámica de juego del día y lo que conviene comprarle. Sello: roli-js-2
+  roli.html — las actividades de Roli, la dinámica de juego del día y lo que conviene comprarle. Sello: roli-js-3
 
   Mauro, 10-nov-2026. Esta página sólo DIBUJA: las actividades, las palabras
   y las compras viven en `roli.js`, que se prueba sin navegador (`node
@@ -118,11 +118,12 @@ function pintarActs() {
   }).join("");
 }
 
-/* ── Jugar hoy: la dinámica del día, con su hoja de puntos (se recuerda en ESTE navegador) ── */
+/* ── Jugar hoy: la dinámica del día, en equipo (se recuerda en ESTE navegador) ── */
 const din = R.dinamicaDe(new Date().toISOString().slice(0, 10));
-let juego = guardado("roli_juego_" + (din ? din.id : ""), { jugadores: ["Jugador 1", "Jugador 2"], puntos: {}, cm: {}, medidas: {}, hechos: {} });
-const guardarJuego = () => guardar("roli_juego_" + din.id, juego);
+let juego = guardado("roli_juego3_" + (din ? din.id : ""), { jugadores: ["Persona 1", "Persona 2", "Persona 3"], est: {}, medidas: {}, hechos: {} });
+const guardarJuego = () => guardar("roli_juego3_" + din.id, juego);
 const abiertasJ = new Set(["despierta"]);
+const estrellas = (n) => "⭐".repeat(n) + "☆".repeat(Math.max(0, 3 - n));
 
 function pintarJugar() {
   if (!din) { $("jugar").innerHTML = '<p class="gris">Todavía no hay una dinámica cargada.</p>'; return; }
@@ -130,32 +131,32 @@ function pintarJugar() {
   let h = '<h2 style="margin:.4rem 0">' + din.ic + " " + R.esc(din.titulo) + (esHoy ? '<span class="ro-hoy">HOY</span>' : '<span class="gris" style="font-size:.8rem;font-weight:400"> · ' + R.esc(din.fecha) + "</span>") + "</h2>"
     + '<p class="gris" style="margin:.2rem 0">' + R.esc(din.meta) + " · " + R.esc(din.minutos) + " minutos.</p>"
     + '<p style="margin:.4rem 0">' + R.esc(din.como) + "</p>"
+    + '<div class="tarj ro-hoja"><div class="ro-grupo" style="margin-top:0">👥 El equipo</div><p class="gris" style="margin:.2rem 0">Pongan los nombres. En cada ronda la página dice quién hace cada rol, y rotan solos.</p>'
+    + '<div class="ro-med">' + juego.jugadores.map((j, i) => '<label>Persona ' + (i + 1) + '<input type="text" maxlength="20" data-nom="' + i + '" value="' + R.esc(j) + '"></label>').join("") + "</div>"
+    + '<div class="fila-btn"><button class="mini" id="jMas">＋ Sumar a alguien</button><button class="mini" id="jMenos"' + (juego.jugadores.length <= 2 ? " hidden" : "") + '>− Quitar al último</button></div></div>'
     + '<ul class="ro-cosas">' + din.cosas.map((c) => "<li>" + R.esc(c) + "</li>").join("") + "</ul>";
   din.rondas.forEach((r, ri) => {
-    const hs = r.pasos.filter((_, i) => juego.hechos[r.id + ":" + i]).length;
+    const hs = r.pasos.filter((_, i) => juego.hechos[r.id + ":" + i]).length, e = juego.est[r.id] || {}, est = R.estrellasPorIntentos(e.intentos, !!e.logrado);
+    const reparto = R.asignarRoles(juego.jugadores, r.roles, ri), por = {}; reparto.forEach((x) => { (por[x.rol] ||= []).push(x.persona); });
     h += '<details class="ro-act" data-r="' + r.id + '"' + (abiertasJ.has(r.id) ? " open" : "") + '><summary><span class="ic">' + r.ic + '</span><span class="n">Ronda ' + (ri + 1) + " · " + R.esc(r.titulo)
-      + "<small>" + R.esc(r.que) + '</small></span><span class="cta' + (hs === r.pasos.length ? " ok" : "") + '">' + hs + "/" + r.pasos.length + "</span></summary><div class=\"ro-cuerpo\">";
+      + "<small>" + R.esc(r.logro) + '</small></span><span class="cta' + (est ? " ok" : "") + '">' + (est ? estrellas(est) : hs + "/" + r.pasos.length) + "</span></summary><div class=\"ro-cuerpo\">";
     if (r.ojos) h += '<p class="ro-aviso">' + R.esc(R.AVISO_OJOS) + "</p>";
-    h += '<p class="gris" style="margin:.2rem 0">⏱ ' + r.minutos + " min · Nivel " + r.nivel + " · 🏅 " + R.esc(r.puntos) + "</p>";
+    h += '<p class="gris" style="margin:.2rem 0">⏱ ' + r.minutos + " min · Nivel " + r.nivel + "</p><p>" + R.esc(r.que) + "</p>"
+      + '<div class="ro-des" style="margin:.4rem 0">' + r.roles.map((ro) => ro.ic + " <b>" + R.esc((por[ro.id] || ["¿?"]).join(" y ")) + "</b> — " + R.esc(ro.nombre) + ": " + R.esc(ro.hace)).join("<br>")
+      + (() => { const ayudan = juego.jugadores.filter((j) => j.trim() && !reparto.some((x) => x.persona === j)); return ayudan.length ? "<br>👀 <b>" + R.esc(ayudan.join(" y ")) + "</b> — Ayuda: cuenta los segundos, anota los intentos y avisa si algo se sale de la cinta." : ""; })() + "</div>";
     r.pasos.forEach((p, i) => {
       const ok = juego.hechos[r.id + ":" + i];
       h += '<div class="ro-paso' + (ok ? " hecho" : "") + '"><input type="checkbox" data-jp="' + r.id + ":" + i + '"' + (ok ? " checked" : "") + ' aria-label="Hecho"><div class="t"><b>' + (i + 1) + ". " + R.esc(p.t) + "</b><br>"
         + (p.escribi || []).map((c) => "<code>" + R.esc(c) + "</code>").join("") + (p.ve ? '<p class="ro-ve">👉 ' + R.esc(p.ve) + "</p>" : "") + "</div></div>";
     });
     if (r.entrena) h += '<div class="ro-des">📏 <b>Entrenamiento:</b> ' + R.esc(r.entrena) + "</div>";
-    h += '<div class="ro-pts"><b>Puntos:</b>' + juego.jugadores.map((j, ji) => {
-      const pts = (juego.puntos[j] || {})[r.id] ?? "", cm = (juego.cm[j] || {})[r.id] ?? "";
-      return '<label>' + R.esc(j) + (r.escala ? ' <input type="number" inputmode="decimal" min="0" placeholder="cm" data-cm="' + ji + ":" + r.id + '" value="' + R.esc(String(cm)) + '" aria-label="Centímetros de ' + R.esc(j) + '">' : "")
-        + ' <input type="number" inputmode="numeric" min="0" max="20" placeholder="pts" data-pt="' + ji + ":" + r.id + '" value="' + R.esc(String(pts)) + '" aria-label="Puntos de ' + R.esc(j) + '"></label>';
-    }).join("") + "</div></div></details>";
+    h += '<div class="ro-pts"><label>Intentos hasta lograrlo <input type="number" inputmode="numeric" min="1" max="20" data-int="' + r.id + '" value="' + R.esc(String(e.intentos ?? "")) + '"></label>'
+      + '<label><input type="checkbox" data-logro="' + r.id + '"' + (e.logrado ? " checked" : "") + '> ¡Lo logramos!</label><b>' + (est ? estrellas(est) : "") + "</b></div></div></details>";
   });
-  const pos = R.posiciones(juego.jugadores, juego.puntos);
-  h += '<div class="tarj ro-hoja"><div class="ro-grupo" style="margin-top:0">🏆 Hoja de puntos</div>'
-    + '<div class="ro-med">' + juego.jugadores.map((j, i) => '<label>Jugador ' + (i + 1) + '<input type="text" maxlength="20" data-nom="' + i + '" value="' + R.esc(j) + '"></label>').join("") + "</div>"
-    + pos.map((f) => '<div class="ro-podio">' + (f.lugar === 1 && f.total > 0 ? "🥇" : f.lugar + "º") + " <b>" + R.esc(f.jugador) + "</b> — " + f.total + " puntos</div>").join("")
-    + '<div class="fila-btn"><button class="mini" id="jMas">＋ Sumar jugador</button><button class="mini" id="jMenos"' + (juego.jugadores.length <= 2 ? " hidden" : "") + '>− Quitar el último</button></div></div>';
+  const tot = R.totalEstrellas(juego.est, din.rondas);
+  h += '<div class="tarj"><div class="ro-grupo" style="margin-top:0">⭐ Las estrellas del equipo</div><div class="ro-total"><b>' + tot.total + "</b> ⭐ · meta del equipo: " + din.metaEstrellas + " (máximo " + tot.max + " sin el bonus)</div><p>" + R.esc(R.mensajeDeEquipo(tot.total, tot.max, din.metaEstrellas)) + "</p></div>";
   const m = juego.medidas;
-  h += '<div class="tarj"><div class="ro-grupo" style="margin-top:0">📏 Las medidas de hoy</div><p class="gris" style="margin:.2rem 0">Lo que se mide jugando sirve para ajustar a Roli. Se las pasás a Mauro con el botón de abajo.</p>'
+  h += '<div class="tarj"><div class="ro-grupo" style="margin-top:0">📏 Las medidas de hoy</div><p class="gris" style="margin:.2rem 0">Lo que se mide jugando sirve para ajustar a Roli. Se las pasan a Mauro con el botón de abajo.</p>'
     + '<div class="ro-med"><label>Velocidad usada<input type="number" inputmode="numeric" data-med="velocidad" value="' + R.esc(String(m.velocidad ?? "")) + '"></label>'
     + '<label>Segundos para 1 metro<input type="number" inputmode="decimal" step="0.1" data-med="segundosPorMetro" value="' + R.esc(String(m.segundosPorMetro ?? "")) + '"></label>'
     + '<label>Segundos de «izquierda» para 90°<input type="number" inputmode="decimal" step="0.1" data-med="giro90" value="' + R.esc(String(m.giro90 ?? "")) + '"></label>'
@@ -189,20 +190,16 @@ $("jugar").addEventListener("toggle", (ev) => { const d = ev.target; if (!d.data
 $("jugar").addEventListener("change", (ev) => {
   const t = ev.target, d = t.dataset;
   if (d.jp) { if (t.checked) juego.hechos[d.jp] = 1; else delete juego.hechos[d.jp]; }
-  else if (d.cm != null || d.pt != null) {
-    const [ji, rid] = (d.cm ?? d.pt).split(":"), j = juego.jugadores[+ji], ronda = din.rondas.find((r) => r.id === rid);
-    if (d.cm != null) { (juego.cm[j] ||= {})[rid] = t.value; if (ronda && ronda.escala) { (juego.puntos[j] ||= {})[rid] = R.puntosPorDistancia(t.value, R.ESCALA[ronda.escala]); } }
-    else (juego.puntos[j] ||= {})[rid] = t.value === "" ? "" : Math.max(0, Math.min(20, +t.value));
-  } else if (d.nom != null) {
-    const viejo = juego.jugadores[+d.nom], nuevo = t.value.trim() || viejo;
-    if (nuevo !== viejo && !juego.jugadores.includes(nuevo)) { juego.jugadores[+d.nom] = nuevo; juego.puntos[nuevo] = juego.puntos[viejo] || {}; juego.cm[nuevo] = juego.cm[viejo] || {}; delete juego.puntos[viejo]; delete juego.cm[viejo]; }
-  } else if (d.med) { juego.medidas[d.med] = t.value; }
+  else if (d.int != null) { (juego.est[d.int] ||= {}).intentos = t.value === "" ? "" : Math.max(1, Math.min(20, +t.value)); if (t.value !== "") juego.est[d.int].logrado = true; }
+  else if (d.logro != null) { (juego.est[d.logro] ||= {}).logrado = t.checked; }
+  else if (d.nom != null) { const nuevo = t.value.trim(); if (nuevo && !juego.jugadores.includes(nuevo)) juego.jugadores[+d.nom] = nuevo; }
+  else if (d.med) { juego.medidas[d.med] = t.value; }
   guardarJuego(); pintarJugar();
 });
 $("jugar").addEventListener("click", async (ev) => {
   const b = ev.target.closest("button"); if (!b) return;
-  if (b.id === "jMas" && juego.jugadores.length < 6) { juego.jugadores.push("Jugador " + (juego.jugadores.length + 1)); guardarJuego(); pintarJugar(); }
-  else if (b.id === "jMenos" && juego.jugadores.length > 2) { const j = juego.jugadores.pop(); delete juego.puntos[j]; delete juego.cm[j]; guardarJuego(); pintarJugar(); }
+  if (b.id === "jMas" && juego.jugadores.length < 6) { juego.jugadores.push("Persona " + (juego.jugadores.length + 1)); guardarJuego(); pintarJugar(); }
+  else if (b.id === "jMenos" && juego.jugadores.length > 2) { juego.jugadores.pop(); guardarJuego(); pintarJugar(); }
   else if (b.id === "jCopiar") {
     const texto = R.medidasParaMauro(juego.medidas, din.fecha); $("jTexto").textContent = texto;
     try { await navigator.clipboard.writeText(texto); b.textContent = "✔ Copiado"; } catch (e) { b.textContent = "Copialo desde acá abajo"; }

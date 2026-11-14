@@ -805,7 +805,7 @@ teléfono.
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `roli.html` | sello de la barra | `roli-1` |
 | `roli.js` | `VERSION` | `roli-js-1` |
-| `placa.js` | `VERSION` | `placa-js-8` |
+| `placa.js` | `VERSION` | `placa-js-10` |
 | `sw.js` | `VERSION` | `panel-shell-v63` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el

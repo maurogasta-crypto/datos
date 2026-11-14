@@ -119,7 +119,7 @@
    la ECU, y `siguiente()` no deja saltarlos. El banco lo comprueba.
    ═══════════════════════════════════════════════════════════════════ */
 
-export const VERSION = "placa-js-9";
+export const VERSION = "placa-js-10";
 
 /* Las dos etapas, en el orden en que se hacen. La A no comanda el pedal —sólo
    lo lee, en paralelo— y sirve sola (CRUCERO.md § 9.1 y PLACA-FASE-1.md); la B
@@ -127,7 +127,7 @@ export const VERSION = "placa-js-9";
 export const SECCIONES = [
   {
     id: "cables", ic: "🔎", n: "1 · Encontrar los cables, sin cortar nada",
-    d: "Antes de conectar, se encuentra cada cable en el diagrama y se CONFIRMA con el tester. Los colores cambian según el año y el mercado: nunca alcanza con el color. Para buscar: en Asia esta Hilux se llama «Vigo»; el código es KUN26 (está en la chapa del vano o en el marco de la puerta del conductor). El documento que manda es el diagrama eléctrico de Toyota, el EWD («Electrical Wiring Diagram»), y en los foros suele estar en PDF. Para preguntar en un foro: código, año, mercado y si es manual. Cada cosa que encuentres, anotala en la nota del paso: pin, color y dónde está. El pedal también se busca y se mide acá, con el tester, ANTES de conectar nada: la placa lo va a leer en paralelo, sin cortar.",
+    d: "Antes de conectar, se encuentra cada cable en el diagrama y se CONFIRMA con el tester. Los colores cambian según el año y el mercado: nunca alcanza con el color. Para buscar: en Asia esta Hilux se llama «Vigo»; el código es KUN26 en los foros; la chapa de la camioneta de Mauro dice KUN36L-PRMSYG (13-nov), así que antes de comprar un kit o buscar un diagrama conviene preguntar si sirve para KUN36L (está en la chapa del vano o en el marco de la puerta del conductor). El documento que manda es el diagrama eléctrico de Toyota, el EWD («Electrical Wiring Diagram»), y en los foros suele estar en PDF. Para preguntar en un foro: código, año, mercado y si es manual. Cada cosa que encuentres, anotala en la nota del paso: pin, color y dónde está. El pedal también se busca y se mide acá, con el tester, ANTES de conectar nada: la placa lo va a leer en paralelo, sin cortar.",
     pasos: [
       { id: "k-codigo", t: "El código exacto de la camioneta", quien: "mauro",
         d: "En la chapa del vano motor o en el marco de la puerta: modelo (KUN26…), año y el código completo de la versión. Con eso se buscan los diagramas correctos.",

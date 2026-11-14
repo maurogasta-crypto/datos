@@ -121,4 +121,20 @@ t("la dinámica del día: la más reciente que no sea del futuro; si todas lo so
   assert.equal(R.dinamicaDe("2026-11-14", []), null);
   assert.equal(R.dinamicaDe("2026-11-14").id, "mision-equipo");
 });
+t("la preparación de la ronda: sin calibrar en los niveles 1 y 2, con calibrar desde el 3", () => {
+  const nivel1 = { rondas: [{ nivel: 1 }, { nivel: 2 }] }, nivel4 = { rondas: [{ nivel: 3 }, { nivel: 4 }] };
+  assert.equal(R.nivelDeJuego(nivel1), 2); assert.equal(R.nivelDeJuego(nivel4), 4); assert.equal(R.nivelDeJuego({}), 1);
+  assert.ok(!R.preparacionDe(nivel1).some((g) => g.id === "calibrar"), "en nivel 2 no existe calibrar");
+  const g4 = R.preparacionDe(nivel4); assert.deepEqual(g4.map((g) => g.id), ["laptop", "arduino", "consola", "calibrar"]);
+  for (const d of R.DINAMICAS) { const gs = R.preparacionDe(d); assert.ok(gs.length >= 3 && gs.every((g) => g.pasos.length), d.id); }
+});
+t("todo lo que la preparación y el cierre le hacen teclear a Roli es una palabra que existe en su nivel", () => {
+  const teclea = [...R.PREPARACION.flatMap((g) => g.pasos), ...R.CIERRE_RONDA].flatMap((p) => p.escribi || []);
+  for (const linea of teclea) {
+    const w = R.palabraDe(linea);
+    if (["git", "bash"].includes(w)) continue; // son de la terminal de la laptop, no de Roli
+    assert.ok(R.NIVEL_DE[w] != null, "palabra desconocida: " + linea);
+    assert.ok(R.NIVEL_DE[w] <= 3, "la preparación pide una palabra de nivel alto: " + linea);
+  }
+});
 console.log(`\n${ok} pasadas, ${mal} fallidas`); process.exit(mal ? 1 : 0);

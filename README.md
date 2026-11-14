@@ -729,6 +729,7 @@ ultrasónico delantero y trasero y los movimientos», y «una sección con lo qu
 recomendamos comprar»). Se llega desde la ficha de Roli (`sitio.guias` de
 `proyectos/roli`: «🤖 Actividades de Roli» y «🛒 Qué comprar para Roli»).
 
+- **«▶ Empezar una ronda» (`roli-ronda.html`, `roli-js-6`, 14-nov-2026)**: la pantalla de la TABLET al costado durante la partida (Mauro: un adulto prepara, uno lee la tablet, otro escribe en la laptop, otro prepara el terreno, y se rotan). Tres fases: 1 Preparar (guía del adulto: laptop, Arduino, consola, calibración; `PREPARACION` y `preparacionDe` en `roli.js`, la calibración sólo desde el nivel 3), 2 Elegir juego y equipo, 3 el tablero ronda por ronda con los lugares rotando. Fondos con fotos de Roli (`roli-foto-frente.jpg`, `roli-foto-arriba.jpg`, sin personas). Comparte el equipo y las estrellas con «Jugar hoy» (mismas claves de localStorage).
 - **El contenido vive en `roli.js`**: 12 actividades en seis niveles (la 12.ª, «Que Roli vaya derecho», calibra con `calibrar` y `desvio`, `roli-js-5`), cada paso
   con lo que se teclea y lo que tendría que pasar, y 10 compras con precio
   aproximado, prioridad y advertencia. Las palabras salen de `ayuda()` de
@@ -848,8 +849,9 @@ teléfono.
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
-| `roli.html` | sello de la barra | `roli-js-5` |
-| `roli.js` | `VERSION` | `roli-js-5` |
+| `roli.html` | sello de la barra | `roli-js-6` |
+| `roli-ronda.html` | sello al pie (`roli.js`) | `roli-js-6` |
+| `roli.js` | `VERSION` | `roli-js-6` |
 | `placa.js` | `VERSION` | `placa-js-10` |
 | `sw.js` | `VERSION` | `panel-shell-v63` |
 

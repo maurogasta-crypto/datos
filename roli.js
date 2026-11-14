@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    roli.js — las actividades de Roli y lo que conviene comprarle.
-   Sello: roli-js-5 (14-nov-2026: calibrar y desvio, el cero de Roli; roli-js-4: cuatro dinámicas colaborativas; roli-js-3 la primera versión colaborativa; roli-js-2 la primera, competitiva; roli-js-1, 10-nov)
+   Sello: roli-js-6 (14-nov-2026: la preparación de la ronda; roli-js-5: calibrar y desvio, el cero de Roli; roli-js-4: cuatro dinámicas colaborativas; roli-js-3 la primera versión colaborativa; roli-js-2 la primera, competitiva; roli-js-1, 10-nov)
 
    Mauro, 10-nov-2026: «la página con actividades que contemplen la
    integración del cuello (servo), el sensor ultrasónico delantero y
@@ -14,7 +14,7 @@
    en la misma tanda (el banco falla si una actividad usa una palabra que
    todavía no existe en su nivel).
    ═══════════════════════════════════════════════════════════ */
-export const VERSION = "roli-js-5";
+export const VERSION = "roli-js-6";
 
 /* Desde qué nivel existe cada palabra. */
 export const NIVEL_DE = {
@@ -203,6 +203,49 @@ export function mensajeDeEquipo(total, max, meta) {
   if (total >= meta) return "¡Lo logramos! Llegaron a la meta del equipo (" + meta + " ⭐). Sigan por más.";
   return "Van " + total + " ⭐ de la meta de " + meta + ". Cada intento enseña algo: ¡a seguir juntos!";
 }
+
+/* ── Antes de cada ronda: la preparación que hace el ADULTO con los chicos (roli-js-6) ──
+   Tres pistas que se hacen en este orden: la laptop, el robot (Arduino) y la calibración.
+   Cada paso: t = qué hacer; escribi = lo que se teclea; nota = el porqué o el cuidado; desde = nivel mínimo
+   del juego a partir del cual el paso tiene sentido (la calibración existe desde el nivel 3). */
+export const PREPARACION = [
+  { id: "laptop", ic: "💻", titulo: "La laptop", quien: "Adulto, con alguien mirando",
+    pasos: [
+      { t: "Abrí una terminal en la carpeta de Roli y bajá las últimas versiones.", escribi: ["git pull"], nota: "Así la laptop tiene el último programa y la última consola. Si dice «Already up to date», ya estaba." },
+      { t: "Probá que las pruebas del robot pasen (opcional, 30 segundos).", escribi: ["bash pruebas/correr.sh"], nota: "Tiene que terminar con «TODO BIEN»." } ] },
+  { id: "arduino", ic: "🔌", titulo: "El robot (Arduino)", quien: "Adulto; los chicos sostienen el cable y miran",
+    pasos: [
+      { t: "Conectá el cable USB azul de la laptop al Arduino y prendé las baterías de Roli.", nota: "Con el USB se carga el programa; con las baterías Roli se mueve." },
+      { t: "En el Arduino IDE abrí firmware/roli_programa.ino." },
+      { t: "Poné en NIVEL el número que pide el juego de hoy (se ve abajo) y elegí placa Arduino Uno y el puerto USB.", nota: "Es la línea «#define NIVEL» del principio del programa." },
+      { t: "Tocá «Subir» y esperá a que diga «Subido».", nota: "Mientras sube, Roli no se mueve. Cuando termina, se puede desenchufar el USB: le habla la laptop por Bluetooth." } ] },
+  { id: "consola", ic: "⌨️", titulo: "La consola", quien: "Quien opera la laptop en la primera ronda",
+    pasos: [
+      { t: "Con Roli prendido y el celular desconectado de su Bluetooth, abrí la consola.", escribi: ["bash laptop/roli.sh"], nota: "Si no conecta, probá `bash laptop/bt_arreglar.sh` y volvé a abrirla." },
+      { t: "Saludá a Roli para saber que se entienden.", escribi: ["hola"], ve: "Roli contesta con su nombre y su nivel. Si el nivel no es el del juego, hay que volver a subir el programa." } ] },
+  { id: "calibrar", ic: "🎯", titulo: "Calibrar a Roli", quien: "Todos: es la primera ronda del juego", desde: 3,
+    pasos: [
+      { t: "Mirá cómo está calibrado hoy.", escribi: ["calibrar ver"], desde: 3 },
+      { t: "Poné a Roli sobre una cinta de 2 metros despejada y probá que vaya derecho.", escribi: ["calibrar recto"], ve: "Avanza dos segundos y pregunta si fue derecho.", desde: 3 },
+      { t: "Si se fue de lado, corregilo y probá de nuevo (repetí hasta que vaya derecho).", escribi: ["desvio izq", "desvio der", "calibrar recto"], nota: "«desvio izq» si se fue hacia la izquierda, «desvio der» si se fue hacia la derecha.", desde: 3 },
+      { t: "Dejá guardado lo que aprendió.", escribi: ["calibrar guardar"], ve: "Queda en la memoria de Roli aunque se apague.", desde: 3 } ] },
+];
+
+/* El nivel que pide un juego: el más alto de sus rondas. */
+export const nivelDeJuego = (d) => Math.max(1, ...((d && d.rondas) || []).map((r) => r.nivel || 1));
+
+/* Las pistas de preparación que valen para un juego: lo que pide calibrar sólo aparece desde el nivel 3. */
+export function preparacionDe(d) {
+  const n = nivelDeJuego(d);
+  return PREPARACION.map((g) => ({ ...g, pasos: g.pasos.filter((p) => (p.desde || 1) <= n) })).filter((g) => (g.desde || 1) <= n && g.pasos.length);
+}
+
+/* Lo que se hace al terminar la partida, para llevarle a Mauro lo aprendido. */
+export const CIERRE_RONDA = [
+  { t: "Si recalibraron, pidan la lista para llevarla al chat.", escribi: ["calibrar guardar", "calibrar exportar"], desde: 3 },
+  { t: "Copien las medidas de hoy (abajo, en «Las medidas») y mándenselas a Mauro." },
+];
+
 /** Reparte los roles de una ronda entre las personas, rotando de a uno por ronda. Si hay menos personas que roles,
  *  a alguien le tocan dos (el que más rota se queda con el sobrante); si hay más, algunas personas ayudan en la ronda. */
 export function asignarRoles(jugadores, roles, ronda = 0) {

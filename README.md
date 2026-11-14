@@ -734,22 +734,25 @@ recomendamos comprar»). Se llega desde la ficha de Roli (`sitio.guias` de
   aproximado, prioridad y advertencia. Las palabras salen de `ayuda()` de
   `firmware/roli_programa.ino` (`maurogasta-crypto/roli`): si el firmware cambia
   una palabra, cambia `NIVEL_DE` y las actividades en la misma tanda.
-  Banco: `node pruebas/roli.mjs` (15 casos; falla si una actividad usa una
+  Banco: `node pruebas/roli.mjs` (17 casos; falla si una actividad usa una
   palabra que no existe en su nivel).
-- **«🎮 Jugar hoy»** (`roli-js-3`, 14-nov-2026, Mauro: «las dinámicas de juegos deben ser
+- **«🎮 Jugar hoy»** (`roli-js-4`, 14-nov-2026, Mauro: «las dinámicas de juegos deben ser
   colaborativas y no competitivas: un jugador controla un aspecto de Roli y otro indica
-  los movimientos; uno inicia las órdenes en la consola y el otro prepara el terreno»):
-  `DINAMICAS` en `roli.js`. Hoy, «La misión de Roli: todos juntos»: cuatro rondas más un
-  bonus con los ojos, cada una con ROLES que se necesitan entre sí (**Operador**, el único
-  que teclea; **Navegante**, que guía con la voz; **Constructor del terreno**; y en una
-  ronda **Acelerador** —sólo `velocidad`— y **Dirección** —sólo el rumbo—), que rotan solos
-  de a uno por ronda según los nombres que pone el equipo. **No hay puntos por persona ni
-  podio**: el equipo junta ⭐ (menos intentos, más estrellas; nunca resta) y busca una meta
-  común (el banco falla si reaparece algo de competencia). Incluye «Las medidas de hoy»,
-  que se copian para pasárselas a Mauro (sirven para calibrar `GIRO_MS_POR_GRADO`, que
-  sigue sin calibrar). Las rondas usan sólo los niveles 1 a 4; lo que necesita los ojos es
-  el bonus, marcado. Cada dinámica lleva su `fecha`: una nueva es un objeto más en
-  `DINAMICAS`. Banco: 15 casos.
+  los movimientos; uno inicia las órdenes en la consola y el otro prepara el terreno», y
+  «agregá los juegos, el primero está bien»): `DINAMICAS` en `roli.js`, con un selector
+  arriba. Cuatro juegos: **La misión de Roli** (guiar, dos manos —Acelerador y Dirección—,
+  programa a ciegas), **El baile de Roli** (movimiento, luces y voz entre personas
+  distintas), **El laberinto del equipo** (con la voz, con tiempos y con un programa de
+  salida) y **El mensajero** (tres casas, en orden, y la vuelta). Cada ronda reparte ROLES
+  que se necesitan entre sí (Operador, el único que teclea; Navegante; Constructor del
+  terreno; Coreógrafo; Director de luces y voz; Escenógrafo; Redactor de mensajes), y rotan
+  solos de a uno por ronda según los nombres que pone el equipo (los nombres sirven para
+  todos los juegos). **No hay puntos por persona ni podio**: el equipo junta ⭐ (menos
+  intentos, más estrellas; nunca resta) y busca una meta común; el banco falla si reaparece
+  algo de competencia. «Las medidas de hoy» se copian para pasárselas a Mauro (sirven para
+  calibrar `GIRO_MS_POR_GRADO`, que sigue sin calibrar). Las rondas usan los niveles 1 a 4;
+  lo que necesita los ojos es un bonus marcado. Cada juego se recuerda por separado en ese
+  navegador. Un juego nuevo es un objeto más en `DINAMICAS`. Banco: 17 casos.
 - **Sin cuenta ni Firebase, a propósito**: la abren los chicos desde la laptop.
   Lo tildado se recuerda en ese navegador (`localStorage`), no en el panel.
 - Los niveles 5 y 6 avisan que los ojos y el cuello se están terminando de
@@ -845,7 +848,7 @@ teléfono.
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
-| `roli.html` | sello de la barra | `roli-js-3` |
+| `roli.html` | sello de la barra | `roli-js-4` |
 | `roli.js` | `VERSION` | `roli-js-1` |
 | `placa.js` | `VERSION` | `placa-js-10` |
 | `sw.js` | `VERSION` | `panel-shell-v63` |

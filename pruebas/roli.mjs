@@ -63,12 +63,24 @@ t("las rondas usan sólo palabras de su nivel, y lo que depende de los ojos va m
 t("es colaborativa: ninguna ronda se hace solo, todas reparten roles que se necesitan, y no hay puntos por persona ni podio", () => {
   for (const d of R.DINAMICAS) {
     for (const r of d.rondas) { assert.ok(r.roles.length >= 2, `${r.id}: una ronda necesita al menos dos roles`); assert.equal(new Set(r.roles.map((x) => x.id)).size, r.roles.length); for (const ro of r.roles) assert.ok(ro.nombre && ro.hace && ro.ic, r.id); }
-    assert.ok(d.rondas.some((r) => r.roles.some((x) => x.id === "operador")) && d.rondas.some((r) => r.roles.some((x) => x.id === "terreno")), "falta quien escribe o quien prepara el terreno");
-    assert.ok(d.rondas.some((r) => r.roles.some((x) => x.id === "acelerador")) && d.rondas.some((r) => r.roles.some((x) => x.id === "direccion")), "falta la ronda donde dos personas controlan dos aspectos de Roli");
-    assert.ok(d.metaEstrellas > 0 && d.metaEstrellas <= R.totalEstrellas({}, d.rondas).max);
+    assert.ok(d.metaEstrellas > 0 && d.metaEstrellas <= R.totalEstrellas({}, d.rondas).max, d.id + ": la meta tiene que poder alcanzarse");
+    assert.ok(d.rondas.some((r) => r.roles.some((x) => x.id === "operador")), d.id + ": alguien tiene que teclear");
   }
+  const roles = (id) => R.DINAMICAS.some((d) => d.rondas.some((r) => r.roles.some((x) => x.id === id)));
+  for (const id of ["operador", "navegante", "terreno", "acelerador", "direccion", "coreografo", "luces", "escenario", "redactor"]) assert.ok(roles(id), "ningún juego usa el rol " + id);
   const fuente = fs.readFileSync(path.join(raiz, "roli.js"), "utf8").replace(/\/\*[\s\S]*?\*\//g, "") + fs.readFileSync(path.join(raiz, "roli.html"), "utf8").replace(/<!--[\s\S]*?-->/g, "");
   assert.doesNotMatch(fuente, /podio|ganador|ganá|gana quien|posiciones|puntosPorDistancia/i, "quedó algo de la competencia");
+});
+t("hay varios juegos, con ids únicos (de juego y de ronda, que es la clave de lo guardado) y uno nuevo es sólo un objeto más", () => {
+  assert.ok(R.DINAMICAS.length >= 4);
+  const ids = R.DINAMICAS.map((d) => d.id); assert.equal(new Set(ids).size, ids.length);
+  for (const d of R.DINAMICAS) { const rs = d.rondas.map((r) => r.id); assert.equal(new Set(rs).size, rs.length, d.id); assert.ok(d.ic && d.titulo && d.meta && d.como && d.cosas.length && d.cierre.length && /^\d{4}-\d{2}-\d{2}$/.test(d.fecha), d.id); }
+  assert.ok(R.DINAMICAS.find((d) => d.id === "mision-equipo"), "el primero se queda tal cual");
+});
+t("el baile reparte movimiento, luces y escenario entre personas distintas; el mensajero, los mensajes", () => {
+  const baile = R.DINAMICAS.find((d) => d.id === "baile"), men = R.DINAMICAS.find((d) => d.id === "mensajero");
+  assert.ok(baile.rondas.some((r) => ["coreografo", "luces", "operador"].every((id) => r.roles.some((x) => x.id === id))));
+  assert.ok(men.rondas.some((r) => r.roles.some((x) => x.id === "redactor")));
 });
 t("las estrellas: menos intentos, más estrellas; si no se logró, cero; nunca resta", () => {
   assert.equal(R.estrellasPorIntentos(1), 3); assert.equal(R.estrellasPorIntentos(2), 2); assert.equal(R.estrellasPorIntentos(3), 1); assert.equal(R.estrellasPorIntentos(9), 1);

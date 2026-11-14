@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    roli.js — las actividades de Roli y lo que conviene comprarle.
-   Sello: roli-js-3 (14-nov-2026: «Jugar hoy», dinámicas COLABORATIVAS; roli-js-2 la primera, competitiva; roli-js-1, 10-nov)
+   Sello: roli-js-4 (14-nov-2026: cuatro dinámicas colaborativas; roli-js-3 la primera versión colaborativa; roli-js-2 la primera, competitiva; roli-js-1, 10-nov)
 
    Mauro, 10-nov-2026: «la página con actividades que contemplen la
    integración del cuello (servo), el sensor ultrasónico delantero y
@@ -14,7 +14,7 @@
    en la misma tanda (el banco falla si una actividad usa una palabra que
    todavía no existe en su nivel).
    ═══════════════════════════════════════════════════════════ */
-export const VERSION = "roli-js-3";
+export const VERSION = "roli-js-4";
 
 /* Desde qué nivel existe cada palabra. */
 export const NIVEL_DE = {
@@ -217,6 +217,11 @@ const R_OPERADOR = { id: "operador", ic: "⌨️", nombre: "Operador", hace: "Es
 const R_NAVEGANTE = { id: "navegante", ic: "🧭", nombre: "Navegante", hace: "Mira a Roli y dice en voz alta qué tiene que hacer, paso a paso. No toca el teclado." };
 const R_TERRENO = { id: "terreno", ic: "🏗", nombre: "Constructor del terreno", hace: "Prepara el piso con cinta, cajas y marcas antes de cada intento, y ayuda a medir." };
 
+const R_COREOGRAFO = { id: "coreografo", ic: "🩰", nombre: "Coreógrafo del movimiento", hace: "Decide SÓLO cómo se mueve Roli: adelante, atrás, giros y pausas." };
+const R_LUCES = { id: "luces", ic: "💡", nombre: "Director de luces y voz", hace: "Decide SÓLO lo que Roli enciende y dice: la luz, los parpadeos y las frases." };
+const R_ESCENARIO = { id: "escenario", ic: "🎪", nombre: "Escenógrafo", hace: "Prepara el escenario con cinta y marcas, y decide dónde empieza y dónde termina el baile." };
+const R_REDACTOR = { id: "redactor", ic: "📝", nombre: "Redactor de mensajes", hace: "Inventa lo que Roli le dice a cada casa y lo dicta para que el Operador lo escriba después de «di»." };
+
 export const DINAMICAS = [
   { id: "mision-equipo", fecha: "2026-11-14", ic: "🤝", titulo: "La misión de Roli: todos juntos", minutos: "40 a 50",
     meta: "Lograr entre todos cuatro misiones con Roli, y medirlo de paso para ajustarlo mejor.",
@@ -267,10 +272,109 @@ export const DINAMICAS = [
     ],
     cierre: ["Cuenten las estrellas del equipo y celebren juntos, ganen las que ganen.", "Cada uno cuenta qué rol le gustó más y cuál le costó.", "Las medidas de hoy (abajo) se le pasan a Mauro para ajustar a Roli."],
   },
+  { id: "baile", fecha: "2026-11-14", ic: "💃", titulo: "El baile de Roli", minutos: "30 a 40",
+    meta: "Inventar entre todos un baile de Roli con movimiento, luces y voz, y mostrárselo a la familia.",
+    como: "Roli baila siguiendo un PROGRAMA, y el programa lo inventan entre varios: uno decide cómo se mueve, otro qué luces y frases tiene, otro arma el escenario y otro lo teclea. Nadie baila solo y nadie decide por los demás. Las estrellas son del equipo: menos intentos para que salga bien, más estrellas. Si una línea no hace lo esperado dentro del programa, se prueba suelta y se vuelve a grabar.",
+    metaEstrellas: 6,
+    cosas: ["Roli con las baterías cargadas y conectado a la laptop", "Un piso liso de 2 × 2 metros", "Cinta de pintor para marcar el escenario", "Papel y lápiz para anotar el baile"],
+    rondas: [
+      { id: "acuerdo", ic: "🤝", titulo: "Ponerse de acuerdo", nivel: 4, minutos: 10, roles: [R_OPERADOR, R_COREOGRAFO, R_LUCES],
+        que: "Un baile cortito de tres momentos. El Coreógrafo dicta los movimientos, el Director las luces, y el Operador los va escribiendo EN ORDEN, un renglón por vez.",
+        logro: "Que el baile de tres momentos salga a la primera.",
+        pasos: [
+          { t: "Empiecen a grabar y escriban el primer momento: avanzar y encender la luz.", escribi: ["programa", "adelante 1", "led 1"], ve: "Roli dice «Grabando» y guarda los renglones." },
+          { t: "Segundo momento: una pausa y girar con la luz apagada.", escribi: ["esperar 1", "led 0", "izquierda 0.5"], ve: "Los renglones se guardan, todavía no se ejecutan." },
+          { t: "Tercer momento: avanzar, titilar y terminar. Cierren la grabación y miren la lista.", escribi: ["adelante 1", "parpadear 2", "fin", "listar"], ve: "Aparece la lista numerada de todos los pasos del baile." },
+          { t: "¡A bailar!", escribi: ["ejecutar"], ve: "Roli baila solo, de punta a punta." } ] },
+      { id: "voces", ic: "🎶", titulo: "A dos voces", nivel: 4, minutos: 12, roles: [R_OPERADOR, R_COREOGRAFO, R_LUCES, R_ESCENARIO],
+        que: "Ahora con voz. El Escenógrafo marca con cinta dónde empieza y dónde termina el baile; el Director de luces y voz inventa una frase para Roli; el Coreógrafo suma movimientos. Se graba de nuevo.",
+        logro: "Que Roli baile con movimiento, luces y una frase, y termine dentro del escenario.",
+        pasos: [
+          { t: "Borren el programa anterior y marquen el escenario.", escribi: ["borrar"], ve: "El programa queda vacío. Roli en la cinta de salida." },
+          { t: "Graben el baile con una frase en el medio (la inventa el Director de luces y voz).", escribi: ["programa", "adelante 1", "di Buenas tardes", "led 1", "izquierda 0.5", "parpadear 3", "fin"], ve: "Se guardan los pasos, con la frase adentro." },
+          { t: "Revisen la lista juntos y ejecuten.", escribi: ["listar", "ejecutar"], ve: "Roli baila y dice su frase. Si una línea no se ejecuta, pruébenla suelta." } ] },
+      { id: "funcion", ic: "🎭", titulo: "La función", nivel: 4, minutos: 8, roles: [R_OPERADOR, R_COREOGRAFO, R_LUCES, R_ESCENARIO],
+        que: "El baile final, para mostrárselo a alguien de la familia. Cada uno presenta SU parte antes de que Roli baile: el movimiento, las luces y el escenario.",
+        logro: "Que el baile se repita dos veces seguidas igual, para el público.",
+        pasos: [
+          { t: "Presenten el baile: cada uno cuenta qué hizo.", ve: "El público sabe quién hizo qué." },
+          { t: "Ejecútenlo dos veces seguidas.", escribi: ["ejecutar 2"], ve: "Roli repite el baile completo dos veces." } ],
+        entrena: "Si la segunda vuelta no empieza donde empezó la primera, anoten cuánto se corrió: sirve para ajustar los giros." },
+    ],
+    cierre: ["Muéstrenle el baile a alguien y cuenten juntos cómo lo inventaron.", "Cada uno cuenta qué parte del baile fue idea suya y cuál fue idea de otro.", "Las medidas de hoy se le pasan a Mauro."],
+  },
+  { id: "laberinto", fecha: "2026-11-14", ic: "🧩", titulo: "El laberinto del equipo", minutos: "35 a 45",
+    meta: "Armar un laberinto de cajas y sacar a Roli del otro lado, primero guiándolo y después programándolo.",
+    como: "Un equipo, un laberinto. Quien lo construye conoce el camino, quien guía habla, y quien teclea sólo hace lo que le dicen. Cada ronda cambia la forma de pasarle el camino a Roli: con la voz, con tiempos medidos y, al final, con un programa. Las estrellas son del equipo.",
+    metaEstrellas: 6,
+    cosas: ["Roli con las baterías cargadas y conectado a la laptop", "Cajas, libros y almohadones para las paredes", "Cinta de pintor para marcar la entrada y la salida", "Papel y lápiz para dibujar el mapa"],
+    rondas: [
+      { id: "mapa", ic: "🗺", titulo: "El mapa y la voz", nivel: 2, minutos: 12, roles: [R_TERRENO, R_NAVEGANTE, R_OPERADOR],
+        que: "El Constructor arma un laberinto de cajas con pasillos de unos 40 cm (que Roli pase cómodo) y dibuja el mapa en papel. El Navegante mira a Roli y lo guía con la voz, de a un movimiento; el Operador teclea sólo lo que oye.",
+        logro: "Que Roli salga del laberinto sin tocar una caja.",
+        pasos: [
+          { t: "Constructor: armen el laberinto, marquen entrada y salida, y dibujen el mapa.", ve: "El mapa muestra el camino de la entrada a la salida." },
+          { t: "Navegante: guiá de a un movimiento. Operador: tecleá y frená.", escribi: ["d", "r", "i", "r"], ve: "Roli avanza, se frena, gira, se frena. d = adelante, i = izquierda, r = parar." },
+          { t: "Sigan hasta la salida. Si Roli toca una caja, cuenten un intento más y vuelvan a empezar.", escribi: ["e", "r", "d", "r"], ve: "Cada intento enseña dónde hay que frenar antes." } ] },
+      { id: "tiempos", ic: "⏱", titulo: "Con tiempos medidos", nivel: 3, minutos: 12,
+        roles: [{ id: "acelerador", ic: "⚡", nombre: "Acelerador", hace: "Controla SÓLO la velocidad: es el único que escribe `velocidad`." }, { id: "direccion", ic: "🕹", nombre: "Dirección", hace: "Controla SÓLO el rumbo y cuántos segundos dura cada tramo." }, R_TERRENO],
+        que: "El mismo laberinto, pero ahora cada tramo lleva su tiempo: «adelante 2» avanza dos segundos. El Acelerador elige la velocidad y Dirección elige el rumbo y los segundos; el Constructor cambia una pared de lugar para que haya que adaptarse.",
+        logro: "Salir del laberinto cambiando el tiempo de cada tramo.",
+        pasos: [
+          { t: "Constructor: cambien una pared de lugar. Acelerador: elegí una velocidad.", escribi: ["velocidad 130"], ve: "Roli recuerda la velocidad." },
+          { t: "Dirección: tramo por tramo, con su tiempo.", escribi: ["adelante 2", "izquierda 0.5", "adelante 1"], ve: "Roli avanza, gira y avanza, y se detiene solo al cumplirse el tiempo." },
+          { t: "Si se pasó o se quedó corto, ajusten el tiempo y repitan.", ve: "Anoten en las medidas qué tiempo y qué velocidad hicieron falta." } ],
+        entrena: "Anoten en «Las medidas de hoy» los segundos que hicieron falta para 1 metro." },
+      { id: "salida", ic: "📝", titulo: "El programa de salida", nivel: 4, minutos: 12, roles: [R_TERRENO, R_OPERADOR, R_NAVEGANTE],
+        que: "Ahora Roli sale solo. Entre todos escriben el camino completo como un programa: el Constructor lo dicta mirando el mapa, el Operador lo graba y el Navegante lo revisa antes de ejecutar.",
+        logro: "Que el programa saque a Roli del laberinto de una sola vez.",
+        pasos: [
+          { t: "Operador: grabá el camino que dicta el Constructor.", escribi: ["programa", "adelante 2", "izquierda 0.5", "adelante 1", "derecha 0.5", "adelante 2", "fin"], ve: "Se guardan los pasos del camino." },
+          { t: "Navegante: mirá la lista y verificá contra el mapa.", escribi: ["listar"], ve: "Aparece la lista. Si algo no coincide, se borra y se graba de nuevo." },
+          { t: "Ejecuten.", escribi: ["ejecutar"], ve: "Roli sale solo. Para otro laberinto: borrar y empezar de nuevo." } ] },
+      { id: "explora", ic: "🧭", titulo: "Bonus · Roli explora solo", nivel: 6, minutos: 8, ojos: true, roles: [R_TERRENO, R_OPERADOR, R_NAVEGANTE],
+        que: "SÓLO si los ojos y el cuello de Roli andan hoy. El Constructor arma un laberinto nuevo y NO lo cuenta; el Operador deja explorar a Roli; el Navegante tiene la mano lista para pararlo.",
+        logro: "Que Roli encuentre solo por dónde ir, sin tocar las cajas.",
+        pasos: [
+          { t: "Dejen explorar a Roli veinte segundos.", escribi: ["explorar 20"], ve: "Avanza, frena ante lo que ve, mira para varios lados y elige por dónde seguir." },
+          { t: "El Navegante lo para si hace falta.", escribi: ["parar"], ve: "Se detiene en el acto." } ] },
+    ],
+    cierre: ["Dibujen entre todos el camino que hizo Roli y compárenlo con el mapa.", "Cada uno cuenta qué rol le resultó más difícil de hacer bien y por qué.", "Las medidas de hoy se le pasan a Mauro."],
+  },
+  { id: "mensajero", fecha: "2026-11-14", ic: "📬", titulo: "El mensajero", minutos: "30 a 40",
+    meta: "Que Roli lleve un mensaje a tres casas, en orden, y vuelva.",
+    como: "Roli es un mensajero. En el piso hay tres «casas» marcadas A, B y C, y Roli tiene que visitarlas en orden y decirle algo distinto a cada una, encendiendo su luz al llegar. Uno arma el mapa de casas, otro inventa los mensajes, otro guía y otro teclea. Las estrellas son del equipo.",
+    metaEstrellas: 6,
+    cosas: ["Roli con las baterías cargadas y conectado a la laptop", "Tres marcas en el piso (A, B y C), con cinta o con una hoja cada una", "Papel y lápiz para el mapa y los mensajes"],
+    rondas: [
+      { id: "una", ic: "🏠", titulo: "Una casa", nivel: 3, minutos: 8, roles: [R_TERRENO, R_REDACTOR, R_OPERADOR],
+        que: "Primero, una sola casa. El Constructor pone la casa A a un metro; el Redactor inventa el mensaje; el Operador teclea.",
+        logro: "Que Roli llegue a la casa A, la salude y encienda su luz.",
+        pasos: [
+          { t: "Constructor: pongan la casa A a un metro de Roli.", ve: "Todos saben dónde está la casa." },
+          { t: "Operador: mandalo hasta la casa y que diga el mensaje del Redactor.", escribi: ["adelante 2", "di Hola casa A", "led 1"], ve: "Roli avanza, se para, dice el mensaje y enciende la luz." },
+          { t: "Si no llegó justo, ajusten los segundos y repitan.", escribi: ["led 0"], ve: "La luz se apaga para volver a empezar." } ] },
+      { id: "tres", ic: "🏘", titulo: "Tres casas, en orden", nivel: 4, minutos: 14, roles: [R_TERRENO, R_REDACTOR, R_NAVEGANTE, R_OPERADOR],
+        que: "El recorrido completo: A, después B, después C. El Constructor dibuja el mapa; el Redactor inventa un mensaje distinto para cada casa; el Navegante planifica los giros y el Operador graba todo como un programa.",
+        logro: "Que Roli visite las tres casas en orden y diga el mensaje correcto en cada una.",
+        pasos: [
+          { t: "Grabá el recorrido: ir a la casa, mensaje, luz, y a la siguiente.", escribi: ["programa", "adelante 2", "di Mensaje para A", "led 1", "esperar 1", "led 0", "izquierda 0.5", "adelante 2", "di Mensaje para B", "led 1", "fin"], ve: "Se guarda el recorrido de las dos primeras casas. Sigan igual con la C." },
+          { t: "Navegante: revisá la lista contra el mapa.", escribi: ["listar"], ve: "Si el orden no es el del mapa, se borra y se vuelve a grabar." },
+          { t: "Ejecuten el recorrido.", escribi: ["ejecutar"], ve: "Roli recorre las casas solo, diciendo cada mensaje." } ] },
+      { id: "vuelta", ic: "↩️", titulo: "Ida y vuelta", nivel: 4, minutos: 10, roles: [R_TERRENO, R_NAVEGANTE, R_OPERADOR],
+        que: "El mensajero tiene que volver a su base. El Navegante piensa cómo se hace el camino al revés (lo que fue adelante ahora es atrás, y los giros se invierten) y el Operador lo graba.",
+        logro: "Que Roli vuelva a la salida después de visitar las casas.",
+        pasos: [
+          { t: "Navegante: dictá el camino de vuelta, al revés.", escribi: ["programa", "atras 2", "derecha 0.5", "atras 2", "fin"], ve: "Se guarda el regreso." },
+          { t: "Revisen y ejecuten.", escribi: ["listar", "ejecutar"], ve: "Roli vuelve. Si no llega justo a la base, ajustan los tiempos y repiten." } ],
+        entrena: "Anoten cuánto se corrió Roli de la base al volver: sirve para ajustar los tiempos." },
+    ],
+    cierre: ["Cuenten entre todos el recorrido que hizo Roli, casa por casa.", "Cada uno cuenta qué mensaje fue su favorito.", "Las medidas de hoy se le pasan a Mauro."],
+  },
 ];
 
 /** La dinámica que corresponde a un día: la más reciente que no sea del futuro; si todas lo son, la primera. */
 export function dinamicaDe(hoy, lista = DINAMICAS) {
-  const pasadas = lista.filter((d) => d.fecha <= hoy).sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+  const pasadas = lista.filter((d) => d.fecha <= hoy).sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0));
   return pasadas[0] || lista[0] || null;
 }

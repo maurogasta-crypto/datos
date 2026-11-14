@@ -734,8 +734,18 @@ recomendamos comprar»). Se llega desde la ficha de Roli (`sitio.guias` de
   aproximado, prioridad y advertencia. Las palabras salen de `ayuda()` de
   `firmware/roli_programa.ino` (`maurogasta-crypto/roli`): si el firmware cambia
   una palabra, cambia `NIVEL_DE` y las actividades en la misma tanda.
-  Banco: `node pruebas/roli.mjs` (7 casos; falla si una actividad usa una
+  Banco: `node pruebas/roli.mjs` (13 casos; falla si una actividad usa una
   palabra que no existe en su nivel).
+- **«🎮 Jugar hoy»** (`roli-2`, 14-nov-2026, Mauro: «experiencias de entrenamiento y de
+  juego… una dinámica para el día de hoy»): `DINAMICAS` en `roli.js`. Hoy, «El Gran
+  Premio de Roli»: cinco rondas con pilota y jueza (saludar, la marca justa a 1 m,
+  predecí y ejecutá, el cuadrado que vuelve y un bonus con los ojos), una hoja de puntos
+  con podio y «Las medidas de hoy», que se copian para pasárselas a Mauro (sirven para
+  calibrar `GIRO_MS_POR_GRADO`, que sigue sin calibrar). Las rondas usan sólo los niveles 1
+  a 4; lo que necesita los ojos es el bonus, marcado. Cada dinámica lleva su `fecha` y la
+  página muestra la más reciente que no sea del futuro: una dinámica nueva es un objeto
+  más en `DINAMICAS`. Banco: 13 casos (palabras por nivel, puntos por distancia, tabla,
+  medidas y fecha).
 - **Sin cuenta ni Firebase, a propósito**: la abren los chicos desde la laptop.
   Lo tildado se recuerda en ese navegador (`localStorage`), no en el panel.
 - Los niveles 5 y 6 avisan que los ojos y el cuello se están terminando de
@@ -831,7 +841,7 @@ teléfono.
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
-| `roli.html` | sello de la barra | `roli-1` |
+| `roli.html` | sello de la barra | `roli-js-2` |
 | `roli.js` | `VERSION` | `roli-js-1` |
 | `placa.js` | `VERSION` | `placa-js-10` |
 | `sw.js` | `VERSION` | `panel-shell-v63` |

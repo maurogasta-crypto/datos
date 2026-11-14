@@ -45,4 +45,57 @@ t("roli.js parsea como módulo, la página lo importa y no toca Firebase ni la r
   assert.ok(html.includes('from "./roli.js"') || html.includes("import * as R from \"./roli.js\""));
   assert.doesNotMatch(html.replace(/<!--[\s\S]*?-->/g, "") + fs.readFileSync(path.join(raiz, "roli.js"), "utf8"), /firebase|gstatic|fetch\(|apiKey/i);
 });
+
+/* ── Jugar hoy (roli-js-2) ── */
+t("las rondas de la dinámica usan sólo palabras de su nivel, y lo que depende de los ojos va marcado", () => {
+  for (const d of R.DINAMICAS) for (const r of d.rondas) {
+    for (const p of r.pasos) for (const l of p.escribi || []) {
+      const w = R.palabraDe(l), n = R.NIVEL_DE[w];
+      assert.ok(n, `${d.id}/${r.id}: «${l}» no es una palabra de Roli`);
+      assert.ok(n <= r.nivel, `${d.id}/${r.id} (nivel ${r.nivel}) usa «${w}», que llega en el nivel ${n}`);
+    }
+    if (r.nivel >= 5) assert.ok(r.ojos, `${r.id}: usa los ojos y no lo avisa`);
+    assert.ok(r.pasos.length >= 2 && r.que && r.puntos && r.minutos, r.id);
+    if (r.escala) assert.ok(R.ESCALA[r.escala], `${r.id}: escala inexistente`);
+  }
+});
+t("lo que se juega hoy sin los ojos no los necesita (el bonus es lo único con ojos)", () => {
+  const d = R.DINAMICAS[0];
+  assert.ok(d.rondas.filter((r) => !r.ojos).length >= 4 && d.rondas.filter((r) => r.ojos).every((r) => r.id === "solo"));
+  assert.ok(d.rondas.every((r) => r.ojos || r.nivel <= 4));
+});
+t("los puntos por distancia: la primera franja que alcanza, y lo vacío o roto no puntúa", () => {
+  assert.equal(R.puntosPorDistancia(3, R.ESCALA.marca), 5);
+  assert.equal(R.puntosPorDistancia(5, R.ESCALA.marca), 5);
+  assert.equal(R.puntosPorDistancia(8, R.ESCALA.marca), 3);
+  assert.equal(R.puntosPorDistancia(20, R.ESCALA.marca), 1);
+  assert.equal(R.puntosPorDistancia(21, R.ESCALA.marca), 0);
+  assert.equal(R.puntosPorDistancia("", R.ESCALA.marca), 0);
+  assert.equal(R.puntosPorDistancia("abc", R.ESCALA.marca), 0);
+  assert.equal(R.puntosPorDistancia(-4, R.ESCALA.marca), 0);
+  assert.equal(R.puntosPorDistancia(20, R.ESCALA.cierre), 3);
+  assert.equal(R.puntosPorDistancia(29, R.ESCALA.prediccion), 3);
+  assert.equal(R.puntosPorDistancia(31, R.ESCALA.prediccion), 0);
+});
+t("la tabla: suma, ordena, comparte lugar en un empate y no cuenta puntos negativos", () => {
+  const pos = R.posiciones(["A", "B", "C"], { A: { x: 3, y: 2 }, B: { x: 5 }, C: { x: 4, y: 1, z: "" } });
+  assert.deepEqual(pos.map((f) => [f.jugador, f.total, f.lugar]), [["A", 5, 1], ["B", 5, 1], ["C", 5, 1]]);
+  const p2 = R.posiciones(["A", "B"], { A: { x: -3, y: 2 }, B: { x: 1 } });
+  assert.deepEqual(p2.map((f) => [f.jugador, f.total, f.lugar]), [["A", 2, 1], ["B", 1, 2]]);
+  assert.deepEqual(R.posiciones(["A"], {}).map((f) => f.total), [0]);
+});
+t("las medidas para Mauro: dicen lo que hay, lo que falta, y no inventan", () => {
+  const vacio = R.medidasParaMauro({}, "2026-11-14");
+  assert.match(vacio, /sin medir/); assert.ok(!/ms por grado/.test(vacio));
+  const t1 = R.medidasParaMauro({ velocidad: "150", segundosPorMetro: "2.2", giro90: "0.9", nota: "se desvía a la derecha" }, "2026-11-14");
+  assert.match(t1, /velocidad 150, avanza 1 metro en 2\.2 s/); assert.match(t1, /≈ 10 ms por grado/); assert.match(t1, /lo confirma Mauro/); assert.match(t1, /se desvía/);
+  assert.ok(!/NaN|undefined/.test(R.medidasParaMauro({ giro90: "x", segundosPorMetro: "-1" })));
+});
+t("la dinámica del día: la más reciente que no sea del futuro; si todas lo son, la primera", () => {
+  const L = [{ id: "a", fecha: "2026-11-10" }, { id: "b", fecha: "2026-11-14" }, { id: "c", fecha: "2026-11-20" }];
+  assert.equal(R.dinamicaDe("2026-11-14", L).id, "b"); assert.equal(R.dinamicaDe("2026-11-15", L).id, "b");
+  assert.equal(R.dinamicaDe("2026-11-01", L).id, "a"); assert.equal(R.dinamicaDe("2026-12-01", L).id, "c");
+  assert.equal(R.dinamicaDe("2026-11-14", []), null);
+  assert.equal(R.dinamicaDe("2026-11-14").id, "gran-premio");
+});
 console.log(`\n${ok} pasadas, ${mal} fallidas`); process.exit(mal ? 1 : 0);

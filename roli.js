@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    roli.js — las actividades de Roli y lo que conviene comprarle.
-   Sello: roli-js-1 (10-nov-2026)
+   Sello: roli-js-2 (14-nov-2026: «Jugar hoy», la dinámica del día; roli-js-1, 10-nov)
 
    Mauro, 10-nov-2026: «la página con actividades que contemplen la
    integración del cuello (servo), el sensor ultrasónico delantero y
@@ -14,7 +14,7 @@
    en la misma tanda (el banco falla si una actividad usa una palabra que
    todavía no existe en su nivel).
    ═══════════════════════════════════════════════════════════ */
-export const VERSION = "roli-js-1";
+export const VERSION = "roli-js-2";
 
 /* Desde qué nivel existe cada palabra. */
 export const NIVEL_DE = {
@@ -161,3 +161,90 @@ export const PRIORIDAD_TEXTO = { 1: "Primero: lo que arregla problemas de hoy", 
 export const palabraDe = (linea) => String(linea || "").trim().split(/\s+/)[0].toLowerCase();
 export const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 export const usd = (r) => (r[0] === r[1] ? "USD " + r[0] : "USD " + r[0] + "–" + r[1]);
+
+/* ═══ JUGAR HOY: dinámicas de entrenamiento y de juego (roli-js-2, 14-nov-2026) ═══
+   Mauro, 14-nov-2026: «quiero hacer experiencias de entrenamiento y de juego con Roli… alguna dinámica para el día de
+   hoy en particular que se publique en el sitio». Cada dinámica es una tanda de rondas con puntos, con una persona
+   que ESCRIBE (la piloto) y otra que MIDE y ANOTA (la jueza); cambian en cada ronda. Sólo usa palabras que ya existen
+   en su nivel (el banco lo comprueba); lo que depende de los ojos va aparte, marcado `ojos`, como bonus.
+   `fecha` dice para qué día es: la página muestra la más reciente que no sea del futuro. */
+
+/** Los puntos de cada ronda se piden por distancia (en cm): menos cm, más puntos. Se prueban con node. */
+export const ESCALA = {
+  marca:  [[5, 5], [10, 3], [20, 1]],     // la marca justa: a cuántos cm de la cinta se paró
+  cierre: [[10, 5], [25, 3], [50, 1]],    // el cuadrado: a cuántos cm del punto de salida volvió
+  prediccion: [[30, 3]],                  // predecir dónde termina: a menos de 30 cm de lo que dijo
+};
+/** Puntos de una ronda por distancia: la primera franja que alcanza; si no, 0. cm vacío o negativo no puntúa. */
+export function puntosPorDistancia(cm, escala) {
+  const d = Number(cm);
+  if (!Number.isFinite(d) || d < 0 || cm === "" || cm == null) return 0;
+  const f = (escala || []).find(([max]) => d <= max);
+  return f ? f[1] : 0;
+}
+/** La tabla de puntos: `puntos[jugador][rondaId]` → totales ordenados de mayor a menor (empatados comparten lugar). */
+export function posiciones(jugadores, puntos = {}) {
+  const filas = jugadores.map((j) => ({ jugador: j, total: Object.values(puntos[j] || {}).reduce((t, v) => t + (Number(v) > 0 ? Number(v) : 0), 0) }))
+    .sort((a, b) => b.total - a.total);
+  let lugar = 0, prev = null;
+  return filas.map((f, i) => { if (f.total !== prev) { lugar = i + 1; prev = f.total; } return { ...f, lugar }; });
+}
+/** Lo que se le cuenta a Mauro al final del juego: las medidas de hoy, para ajustar a Roli. */
+export function medidasParaMauro(m = {}, fecha = "") {
+  const n = (v) => (v === "" || v == null || !Number.isFinite(Number(v)) || Number(v) <= 0 ? null : Number(v));
+  const vel = n(m.velocidad), seg = n(m.segundosPorMetro), giro = n(m.giro90);
+  const L = [`Medidas de Roli${fecha ? " · " + fecha : ""}`];
+  L.push(seg ? `- A velocidad ${vel || "(la de siempre)"}, avanza 1 metro en ${seg} s.` : "- Segundos para 1 metro: sin medir.");
+  L.push(giro ? `- Con «izquierda ${giro}» gira unos 90°${giro ? ` (≈ ${Math.round((giro * 1000) / 90)} ms por grado; orientativo para GIRO_MS_POR_GRADO, lo confirma Mauro)` : ""}.` : "- Tiempo del giro de 90°: sin medir.");
+  if (m.nota) L.push("- " + String(m.nota).trim().slice(0, 300));
+  return L.join("\n");
+}
+
+export const DINAMICAS = [
+  { id: "gran-premio", fecha: "2026-11-14", ic: "🏁", titulo: "El Gran Premio de Roli", minutos: "40 a 50",
+    meta: "Competir por puntos, y de paso medir a Roli para ajustarlo mejor.",
+    como: "Juegan dos o más. En cada ronda una persona es la PILOTA (escribe en la consola) y otra es la JUEZA (mide con la cinta y anota los puntos). Se cambian de lugar en cada ronda. Gana quien junta más puntos; el que se equivoca no pierde nada: se anota y se prueba de nuevo.",
+    cosas: ["Roli con las baterías cargadas, prendido y conectado a la laptop", "Un piso liso y libre de 2 × 2 metros", "Cinta de pintor", "Una regla o cinta métrica", "Papel y lápiz (o esta misma hoja de puntos)"],
+    rondas: [
+      { id: "despierta", ic: "👋", titulo: "Roli despierta", nivel: 1, minutos: 5, puntos: "1 por cada cosa lograda sin ayuda (hasta 3)",
+        que: "Calentamiento: que Roli haga tres cosas pedidas por la pilota.",
+        pasos: [
+          { t: "Saludalo y pedile una frase tuya.", escribi: ["hola", "di Vamos Roli"], ve: "Roli contesta y repite la frase." },
+          { t: "Que parpadee tres veces.", escribi: ["parpadear 3"], ve: "La luz titila tres veces." },
+          { t: "Que prenda y apague su luz.", escribi: ["led 1", "led 0"], ve: "Se enciende y se apaga." } ] },
+      { id: "marca", ic: "🎯", titulo: "La marca justa", nivel: 3, minutos: 12, puntos: "Según a cuántos cm de la meta se paró: hasta 5 cm = 5 · hasta 10 = 3 · hasta 20 = 1", escala: "marca", intentos: 3,
+        que: "Cinta de salida y cinta de meta a 1 metro. La pilota decide la velocidad y cuántos segundos, y Roli se para SOLO. Tres intentos por persona; vale el mejor.",
+        pasos: [
+          { t: "Poné a Roli en la cinta de salida, mirando la meta.", ve: "Las ruedas justo sobre la cinta." },
+          { t: "Elegí una velocidad y los segundos, y mandalo.", escribi: ["velocidad 150", "adelante 2"], ve: "Avanza y se para solo. La jueza mide a cuántos cm de la meta quedó." },
+          { t: "Ajustá y repetí: más o menos segundos, otra velocidad.", escribi: ["velocidad 120", "adelante 3"], ve: "Cada intento enseña algo: anotá qué combinación llegó mejor." } ],
+        entrena: "Anotá en «Las medidas de hoy» la velocidad y los segundos que hicieron llegar justo a 1 metro." },
+      { id: "predeci", ic: "🔮", titulo: "Predecí y ejecutá", nivel: 4, minutos: 12, puntos: "La jueza que acierta (a menos de 30 cm) 3 puntos; la pilota, 1 por programa que corre", escala: "prediccion",
+        que: "La pilota graba un programa corto. ANTES de ejecutarlo, la jueza marca con cinta dónde cree que va a terminar Roli. Después se ejecuta y se mide.",
+        pasos: [
+          { t: "Grabá un programa de tres o cuatro pasos.", escribi: ["programa", "adelante 2", "izquierda 1", "adelante 1", "fin"], ve: "Roli dice «Grabando» y guarda los pasos." },
+          { t: "Mirá la lista. La jueza marca con cinta dónde cree que termina.", escribi: ["listar"], ve: "Aparece la lista numerada. Nadie toca a Roli todavía." },
+          { t: "¡Ejecutalo!", escribi: ["ejecutar"], ve: "Roli hace todo solo. La jueza mide la distancia entre su marca y donde quedó." },
+          { t: "Para empezar de nuevo con otro programa:", escribi: ["borrar"], ve: "Se borra el programa anterior." } ] },
+      { id: "cuadrado", ic: "⬛", titulo: "El cuadrado que vuelve", nivel: 4, minutos: 12, puntos: "Según a cuántos cm del punto de salida volvió: hasta 10 cm = 5 · hasta 25 = 3 · hasta 50 = 1", escala: "cierre",
+        que: "Que Roli dibuje un cuadrado y vuelva al lugar de donde salió. El truco es el tiempo de «izquierda»: el justo para un giro de 90°.",
+        pasos: [
+          { t: "Grabá cuatro lados y cuatro giros.", escribi: ["programa", "adelante 2", "izquierda 1", "adelante 2", "izquierda 1", "adelante 2", "izquierda 1", "adelante 2", "izquierda 1", "fin"], ve: "Se guardan los ocho pasos." },
+          { t: "Ejecutalo y mirá cuánto se corre del punto de salida.", escribi: ["ejecutar"], ve: "La jueza mide a cuántos cm volvió." },
+          { t: "Ajustá el tiempo del giro (por ejemplo 0.8 o 1.2) y repetí.", escribi: ["borrar"], ve: "Volvé a grabar con otro tiempo de «izquierda»." } ],
+        entrena: "Anotá en «Las medidas de hoy» cuántos segundos de «izquierda» hicieron un giro de 90°." },
+      { id: "solo", ic: "🛑", titulo: "Bonus · Roli frena solo", nivel: 5, minutos: 5, ojos: true, puntos: "3 si frena sin tocar la pared",
+        que: "SÓLO si los ojos de Roli andan hoy. Una pared o caja grande a 1 metro.",
+        pasos: [
+          { t: "Activá la protección y mandalo hacia la pared.", escribi: ["proteccion 20", "adelante 3"], ve: "Se frena solo antes de tocarla." },
+          { t: "Apagá la protección cuando termines.", escribi: ["proteccion 0"], ve: "Ya no frena solo: usalo con la mano lista." } ] },
+    ],
+    cierre: ["Sumen los puntos y anuncien el podio.", "Cada uno cuenta cuál fue la ronda más difícil y por qué.", "Las medidas de hoy (abajo) se le pasan a Mauro para ajustar a Roli."],
+  },
+];
+
+/** La dinámica que corresponde a un día: la más reciente que no sea del futuro; si todas lo son, la primera. */
+export function dinamicaDe(hoy, lista = DINAMICAS) {
+  const pasadas = lista.filter((d) => d.fecha <= hoy).sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+  return pasadas[0] || lista[0] || null;
+}

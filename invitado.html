@@ -185,7 +185,7 @@ import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeAre
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-18";
+P.PANEL = "invitado-19";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -226,6 +226,20 @@ async function arrancar() {
      con la sesión de Mauro: nadie más puede leer la ficha ni la invitación
      de otro (las reglas), así que con otra cuenta el parámetro no hace nada.
      En la vista no se manda nada ni se abre una clave. */
+  /* invitado-19 (14-nov-2026, Mauro: «cuando mi usuario entra a panel no debería entrar a la sesión de
+     invitados, debería entrar a la del panel completa»): el equipo (Mauro y el agente) NO se queda acá,
+     aunque tenga ficha en `personas/`. Se le pregunta a la base, que es la que sabe: `lineas/` sólo la lee
+     el equipo. Si contesta, se va al panel; si dice que no o no se puede preguntar, esto sigue como estaba.
+     Con `?como=` (la vista previa de otra persona) o `?invitado=1` se queda a propósito. Es el espejo
+     de `entrarAlPanel()` de index.html: ése manda para acá sólo con un «no» de la base, así que no hay vuelta. */
+  const comoParam = new URLSearchParams(location.search);
+  if (!comoParam.get("como") && !comoParam.get("invitado")) {
+    const esEquipo = await getDoc(doc(db, "lineas", "_acceso")).then(() => true).catch(() => false);
+    /* Un solo rebote por sesión: si el navegador tuviera guardado un index.html viejo que lo devuelve
+       para acá, no se ida y vuelve para siempre. */
+    let rebote = false; try { rebote = !!sessionStorage.getItem("panel_rebote"); sessionStorage.setItem("panel_rebote", "1"); } catch (e) {}
+    if (esEquipo && !rebote) { location.replace("index.html"); return; }
+  }
   const como = new URLSearchParams(location.search).get("como");
   if (como && como !== yo.uid) {
     const vista = como.startsWith("mail:")

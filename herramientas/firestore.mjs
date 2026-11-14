@@ -407,7 +407,9 @@ const PROYECTOS = {
      logueo común con mail y contraseña»). Proyecto `roli-467a4`; el sitio vive
      en `maurogasta-crypto/roli` (index.html, firestore.rules). El agente lee
      todo y crea lo mismo que una persona con ficha; la ficha `usuarios/` la
-     escribe sólo Mauro, así que el agente no la toca ni la lista. */
+     escribe sólo Mauro. Nada de acá abre algo (como en harmonia: las fichas sólo
+     dicen rol y nombre), así que no hay colecciones selladas; las reglas v2
+     dejan leer `usuarios` al agente y el archivo dice lo mismo. */
   roli: {
     projectId: "roli-467a4",
     apiKey: "AIzaSyBJHfPcCoYZkm7As--nMxeVieqFEKduAMk",
@@ -416,7 +418,7 @@ const PROYECTOS = {
     colecciones: ["calibraciones", "partidas", "notas"],
     coleccionVigilada: "calibraciones",
     reportesSon: "calibraciones",
-    selladas: ["usuarios"],
+    selladas: [],
     historial: true
   }
 };

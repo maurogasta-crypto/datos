@@ -730,9 +730,7 @@ común con mail y contraseña»).** Proyecto Firebase `roli-467a4`, sitio en
 misma estructura que el paseo: SDK diferido sólo en `firebase-init.js`, ficha
 `usuarios/{uid}` que escribe sólo Mauro, y `calibraciones`, `partidas` y `notas`
 que crea quien tiene ficha activa. En `herramientas/firestore.mjs` es el proyecto
-`roli` (`FB_ROLI_MAIL` / `FB_ROLI_CLAVE`; `usuarios` sellada). **Falta, a mano de
-Mauro:** activar Email/Password, crear Firestore, el usuario del agente, publicar
-las reglas y cargar las dos variables.
+`roli`, sin colecciones selladas: el agente entra con el mismo usuario que en las otras bases (`FB_AGENTE_*`/`FB_PANEL_*`; `FB_ROLI_*` sólo si hubiera que separarlo). **Reglas v2 publicadas por Mauro el 14-nov-2026 y verificadas**: el agente lee `calibraciones`, `partidas`, `jugadores` y `notas`, y una colección inventada le dice que no.
 
 Las actividades por niveles para Yacko y Kala y la lista de lo que conviene
 comprarle al robot (Mauro: «actividades que contemplen el cuello, el sensor

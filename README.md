@@ -812,7 +812,7 @@ teléfono.
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
 | `index.html` | `P.PANEL` | `panel-52` |
-| `invitado.html` | `P.PANEL` | `invitado-19` |
+| `invitado.html` | `P.PANEL` | `invitado-20` |
 | `intervenir.js` | pedido con `?v=` | `intervenir-3` |
 | `paquete.js` · `semaforo.js` | — | `paquete-2` |
 | `chat.js` | `SELLO` | `chat-4` |

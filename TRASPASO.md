@@ -26,6 +26,7 @@ privada, las variables del entorno).
    | `/home/user/sitd-hilux` | `maurogasta-crypto/sitd-hilux` | |
    | `/home/user/tiempos` | `maurogasta-crypto/tiempos` | |
    | `/home/user/roli` | `maurogasta-crypto/roli` | **privado**: robot Arduino (alta 10-nov-2026) |
+   | `/home/user/tocatoca` | `masotromauro-ai/tocatoca` | BandoMaps; Mariano sube directo a `main` (§ 5 bis ⅞ ⅞ ⅞ ½) |
    | `/home/user/bodega` | `maurogasta-crypto/bodega` | **privado**: mensajes, borradores, respaldos |
 
 3. **Las credenciales del agente** están en las variables del entorno de la nube
@@ -158,7 +159,7 @@ hay que tocar el disparador.
 RONDA DIARIA UNIFICADA. Mauro pidió el 29-sep que todas las rutinas corran en ESTE chat, con todos los protocolos que armamos, en un solo lugar. Corrés sin nadie delante.
 
 Los repositorios van en /home/user, con ESTOS nombres de carpeta:
-  datos2 (= maurogasta-crypto/datos, el panel y las herramientas) · casaverdecanas (casaverdecanas-blip) · CasaYourte (casayourte) · remate (rematetaller) · gestos · sitd-hilux · tiempos · roli (privado) · bodega (privado, datos) — los que no dicen dueño son de maurogasta-crypto.
+  datos2 (= maurogasta-crypto/datos, el panel y las herramientas) · casaverdecanas (casaverdecanas-blip) · CasaYourte (casayourte) · remate (rematetaller) · gestos · sitd-hilux · tiempos · roli (privado) · tocatoca (masotromauro-ai, BandoMaps) · bodega (privado, datos) — los que no dicen dueño son de maurogasta-crypto.
 Si falta alguno (el contenedor pudo haberse renovado), clonalo ahí: git clone https://github.com/<dueño>/<repo>.git /home/user/<carpeta>. Si no se puede clonar, decilo arriba de todo y seguí con lo que haya.
 (/home/user/datos, si existe, es un resto vacío: no se usa.)
 
@@ -256,6 +257,11 @@ Si falta alguno (el contenedor pudo haberse renovado), clonalo ahí: git clone h
    c) Si un punto avanzó (un commit de tocatoca, algo publicado), poné al día su `estado` ("pendiente", "en-curso", "hecho"), `avance` (una o dos líneas) y `actualizado` con ArtifactData "update" (con if_version). Los puntos los escriben sólo Mauro y Claude: lo dicen las reglas de la página.
    En el resumen: cuántos comentarios nuevos, qué pendientes salieron, qué puntos cambiaron de estado — sin copiar lo que escribió Mariano.
 
+5 bis ⅞ ⅞ ⅞ ½. LO QUE MARIANO SUBE A BANDOMAPS (14-nov-2026, Mauro: «que él continúe haciendo modificaciones de forma directa subiendo a GitHub con su cuenta como colaborador»). Sube sus cambios por la web de GitHub, directo a `main` de masotromauro-ai/tocatoca (GUIA-PARA-TU-CHAT.md § 2). Lo que esta ronda hace es COMPROBARLO, no frenarlo:
+   a) git -C /home/user/tocatoca pull --ff-only origin main  y  git -C /home/user/tocatoca log --since="2 days ago" --format='%h %an %s'. Si no hay commits nuevos que no sean de Claude, saltá esto (en una corrida extra, también).
+   b) Con commits de otra persona: desde /home/user/tocatoca  node pruebas/humo.mjs  ·  node pruebas/arquitectura.mjs  ·  los bancos (areas, mover, medir, codigo, gestos, teoria, puerta, registro, usuarios). Si el commit movió código, node herramientas/mover.mjs --base <commit anterior> src/App.jsx <archivos>.
+   c) Todo verde: una línea en el resumen. Si humo dice «cambió» y el commit lo explica (un color, un botón), no es una falla: revisá el cambio, y si es lo que se quiso, rehacé la foto con  node pruebas/humo.mjs --guardar  y commit «Foto de humo al día». Rojo de verdad (error de consola, falta medir/medirLote/__tab, claves harmonia_, un archivo de más de 400 líneas, una pestaña que no abre): va ARRIBA del resumen a Mauro con el commit y el archivo, y un pendiente del proyecto harmonia. NO se revierte ni se corrige solo: es trabajo de Mariano; el único revert automático que se justifica es el de algo que deja la app sin abrir, y aun así se le pregunta a Mauro.
+   d) Con la fase 2 en adelante, antes de partir más código, comprobá que lo de Mariano no esté a medio camino: git status limpio y su último commit comprobado.
 5 ter. TIEMPOS · PROPUESTAS (desde app-4). En lo que Mauro o Florencia hayan escrito en este chat desde la última ronda (WhatsApp ya no se lee) buscá lo que sea un GASTO o un INGRESO de la familia («pagué 85 en la farmacia», un comprobante reenviado), una TAREA de la casa, o una ACTIVIDAD de los chicos (básquet, psicóloga, cumpleaños). Por cada una, antes  node herramientas/firestore.mjs tiempos leer propuestas  y  tiempos leer movimientos  para no duplicar, y después creá UNA propuesta:
      node herramientas/firestore.mjs tiempos escribir propuestas <id> <archivo.json>
    con {clase: "gasto"|"tarea"|"evento", estado: "pendiente", fuente: "chat", resumen (una línea, sin datos de más), datos, dudas: [campos que no sabés seguro], creadoEn}.

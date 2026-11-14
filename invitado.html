@@ -185,7 +185,7 @@ import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeAre
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-19";
+P.PANEL = "invitado-20";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -654,7 +654,15 @@ async function traerAreas(pr) {
     const fuente = await leerTexto(crudo(pr.sitio.repo, mapa.archivo || "src/App.jsx"));
     const decls = CH.declaraciones(fuente);
     AREAS[pr.id] = { mapa, fuente, decls };
-    const filas = mapa.areas.map((a) => { const e = CH.extraer(fuente, a, decls); return { a, e }; });
+    /* invitado-20: un área que ya salió de App.jsx (`archivos` en areas.json) se arma con sus archivos nuevos. */
+    const ARCH = {};
+    await Promise.all(mapa.areas.filter((a) => Array.isArray(a.archivos) && a.archivos.length).map(async (a) => {
+      const ts = await Promise.all(a.archivos.map((f) => leerTexto(crudo(pr.sitio.repo, f)).catch(() => "")));
+      const texto = ts.map((t, i) => "// ═══ " + a.archivos[i] + " ═══\n" + t).join("\n");
+      ARCH[a.id] = { texto, lineas: texto.split("\n").length, tokens: Math.round(texto.length / 3.3), partes: a.archivos.length };
+    }));
+    const extraerDe = (a) => ARCH[a.id] || CH.extraer(fuente, a, decls);
+    const filas = mapa.areas.map((a) => { const e = extraerDe(a); return { a, e }; });
     caja.innerHTML = `<p class="gris" style="margin:.6rem 0 .2rem"><b>Para una intervención enfocada</b> (entra en un chat gratuito): elegí un área.</p>
       <select data-area-sel="${P.esc(pr.id)}" style="width:100%;margin:.2rem 0">${filas.map(({ a, e }) =>
         `<option value="${P.esc(a.id)}">${P.esc(a.titulo)} · ${e.lineas} líneas · ~${Math.max(1, Math.round(e.tokens / 1000))} mil</option>`).join("")}</select>
@@ -671,7 +679,7 @@ async function traerAreas(pr) {
       const area = mapa.areas.find((x) => x.id === sel.value); if (!area) return;
       ev.target.disabled = true;
       let guia = ""; try { guia = await leerTexto(crudo(pr.sitio.repo, mapa.guia || "GUIA-PARA-TU-CHAT.md")); } catch (e) { P.aviso("No pude bajar la guía general: va el paquete sin ella.", "error"); }
-      descargar(CH.nombrePaquete(pr, area, P.hoy()), CH.armarPaquete({ proyecto: pr.nombre || pr.id, area, codigo: CH.extraer(fuente, area, decls), guia, fecha: P.hoy(), archivo: mapa.archivo, usadas: CH.usa(fuente, area, mapa.areas, decls) }));
+      descargar(CH.nombrePaquete(pr, area, P.hoy()), CH.armarPaquete({ proyecto: pr.nombre || pr.id, area, codigo: extraerDe(area), guia, fecha: P.hoy(), archivo: Array.isArray(area.archivos) && area.archivos.length ? area.archivos.join(", ") : mapa.archivo, usadas: CH.usa(fuente, area, mapa.areas, decls) }));
       ev.target.disabled = false;
     };
     caja.querySelector("[data-guia]").onclick = async () => {

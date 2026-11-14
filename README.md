@@ -729,7 +729,7 @@ ultrasónico delantero y trasero y los movimientos», y «una sección con lo qu
 recomendamos comprar»). Se llega desde la ficha de Roli (`sitio.guias` de
 `proyectos/roli`: «🤖 Actividades de Roli» y «🛒 Qué comprar para Roli»).
 
-- **El contenido vive en `roli.js`**: 11 actividades en seis niveles, cada paso
+- **El contenido vive en `roli.js`**: 12 actividades en seis niveles (la 12.ª, «Que Roli vaya derecho», calibra con `calibrar` y `desvio`, `roli-js-5`), cada paso
   con lo que se teclea y lo que tendría que pasar, y 10 compras con precio
   aproximado, prioridad y advertencia. Las palabras salen de `ayuda()` de
   `firmware/roli_programa.ino` (`maurogasta-crypto/roli`): si el firmware cambia
@@ -848,8 +848,8 @@ teléfono.
 | `estilos.css` | (en el comentario) | `estilos-14` |
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
-| `roli.html` | sello de la barra | `roli-js-4` |
-| `roli.js` | `VERSION` | `roli-js-1` |
+| `roli.html` | sello de la barra | `roli-js-5` |
+| `roli.js` | `VERSION` | `roli-js-5` |
 | `placa.js` | `VERSION` | `placa-js-10` |
 | `sw.js` | `VERSION` | `panel-shell-v63` |
 

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    roli.js — las actividades de Roli y lo que conviene comprarle.
-   Sello: roli-js-4 (14-nov-2026: cuatro dinámicas colaborativas; roli-js-3 la primera versión colaborativa; roli-js-2 la primera, competitiva; roli-js-1, 10-nov)
+   Sello: roli-js-5 (14-nov-2026: calibrar y desvio, el cero de Roli; roli-js-4: cuatro dinámicas colaborativas; roli-js-3 la primera versión colaborativa; roli-js-2 la primera, competitiva; roli-js-1, 10-nov)
 
    Mauro, 10-nov-2026: «la página con actividades que contemplen la
    integración del cuello (servo), el sensor ultrasónico delantero y
@@ -14,13 +14,13 @@
    en la misma tanda (el banco falla si una actividad usa una palabra que
    todavía no existe en su nivel).
    ═══════════════════════════════════════════════════════════ */
-export const VERSION = "roli-js-4";
+export const VERSION = "roli-js-5";
 
 /* Desde qué nivel existe cada palabra. */
 export const NIVEL_DE = {
   hola: 1, info: 1, bateria: 1, di: 1, led: 1, parpadear: 1, ayuda: 1,
   adelante: 2, atras: 2, izquierda: 2, derecha: 2, parar: 2, probar: 2,
-  velocidad: 3, zigzag: 3,
+  velocidad: 3, zigzag: 3, calibrar: 3, desvio: 3,
   programa: 4, fin: 4, listar: 4, ejecutar: 4, esperar: 4, borrar: 4,
   distancia: 5, escanear: 5, mirar: 5, proteccion: 5,
   cuando: 6, explorar: 6, girar: 6,
@@ -63,6 +63,15 @@ export const ACTIVIDADES = [
       { t: "Si se desvía, corregí una rueda.", escribi: ["velocidad izq 140", "adelante 2"], ve: "Cada rueda tiene su propia velocidad; así se compensa una que rinde distinto." },
       { t: "Probá el zigzag.", escribi: ["zigzag 1", "adelante 3", "zigzag 0"], ve: "Avanza serpenteando suave." } ],
     desafio: "Encontrá cuántos segundos hacen falta para llegar justo a la cinta, y anotalo." },
+  { id: "derecho", nivel: 3, ic: "🎯", titulo: "Que Roli vaya derecho", meta: "Calibrar a Roli sin volver a cargarle el programa.",
+    cosas: ["Cinta en el piso, un tramo de 2 metros despejado", "Roli con la consola conectada"],
+    pasos: [
+      { t: "Mirá cómo está calibrado hoy.", escribi: ["calibrar ver"], ve: "Roli lista sus valores: velocidades 90 y 84, empujón 160 y los golpes de enderezado." },
+      { t: "Pedile que avance y fijate si se va de lado.", escribi: ["calibrar recto"], ve: "Avanza dos segundos y te pregunta si fue derecho." },
+      { t: "Si se fue hacia un lado, corregilo y probá de nuevo.", escribi: ["desvio izq", "calibrar recto"], ve: "Cambia un poquito la fuerza de una rueda (usá «desvio der» si se fue a la derecha). Repetí hasta que vaya derecho." },
+      { t: "Dejá guardado lo que aprendió.", escribi: ["calibrar guardar"], ve: "Queda en la memoria de Roli, aunque lo apagues." },
+      { t: "Pedí la lista para llevar al chat.", escribi: ["calibrar exportar"], ve: "Roli escribe una lista de texto; la consola la guarda en un archivo para que Mauro reajuste el programa por USB." } ],
+    desafio: "Calibrá a Roli para que recorra 2 metros sobre la cinta sin salirse. Si algo sale mal, «calibrar cero» vuelve a empezar." },
   { id: "programa", nivel: 4, ic: "📝", titulo: "Mi primer programa", meta: "Que Roli dibuje un cuadrado solo.",
     cosas: ["Un lugar libre de 1,5 × 1,5 m"],
     pasos: [

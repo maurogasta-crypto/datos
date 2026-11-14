@@ -799,6 +799,7 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   la pantalla deja elegir completos / todo completo / sólo piezas, y un archivo de más de `ENTERO_MAX` (70.000
   caracteres, hoy `index.html`) va por piezas salvo que se pida lo contrario. La respuesta se guarda ENTERA en el
   pedido, para que la ronda la integre sin que la persona toque el repositorio.
+- **Roli tiene su base privada: `roli-467a4`** (14-nov-2026). Nombres de los chicos, medidas y notas de desarrollo van ahí, detrás del login, y no a un repositorio público ni al `localStorage`. Entrada `roli` en `PROYECTOS` de `firestore.mjs` (`FB_ROLI_MAIL`/`FB_ROLI_CLAVE`, `usuarios` sellada); la plantilla de las reglas es `firestore.rules` del repo `roli`.
 - **«▶ Empezar una ronda» es `roli-ronda.html`** (`roli-js-6`): preparar (adulto), elegir juego, tablero. La preparación vive en `roli.js` (`PREPARACION`), y el banco comprueba que todo lo que hace teclear sea una palabra real del firmware. Si cambia el cargado o la calibración de Roli, cambia ahí.
 - **Las actividades de Roli y lo que conviene comprarle son `roli.html` + `roli.js`**
   (10-nov-2026, Mauro: «actividades que contemplen el cuello, los sensores

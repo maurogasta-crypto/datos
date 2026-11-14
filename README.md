@@ -723,6 +723,17 @@ panel de acceso».
 
 ## Roli, el robot (`roli.html`, desde el 10-nov-2026)
 
+**La base privada de Roli (14-nov-2026, Mauro: «la base de datos para mirar todas
+las informaciones sensibles que se muestran sobre el desarrollo de Roli… logueo
+común con mail y contraseña»).** Proyecto Firebase `roli-467a4`, sitio en
+`maurogasta-crypto/roli` (`index.html`, `firestore.rules`, `registro.js`), con la
+misma estructura que el paseo: SDK diferido sólo en `firebase-init.js`, ficha
+`usuarios/{uid}` que escribe sólo Mauro, y `calibraciones`, `partidas` y `notas`
+que crea quien tiene ficha activa. En `herramientas/firestore.mjs` es el proyecto
+`roli` (`FB_ROLI_MAIL` / `FB_ROLI_CLAVE`; `usuarios` sellada). **Falta, a mano de
+Mauro:** activar Email/Password, crear Firestore, el usuario del agente, publicar
+las reglas y cargar las dos variables.
+
 Las actividades por niveles para Yacko y Kala y la lista de lo que conviene
 comprarle al robot (Mauro: «actividades que contemplen el cuello, el sensor
 ultrasónico delantero y trasero y los movimientos», y «una sección con lo que

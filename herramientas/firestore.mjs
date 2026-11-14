@@ -400,6 +400,24 @@ const PROYECTOS = {
     reportesSon: "álbumes",
     selladas: [],
     historial: true
+  },
+
+  /* roli (14-nov-2026, Mauro: «cree la base de datos para mirar todas las
+     informaciones sensibles que se muestran sobre el desarrollo de Roli… un
+     logueo común con mail y contraseña»). Proyecto `roli-467a4`; el sitio vive
+     en `maurogasta-crypto/roli` (index.html, firestore.rules). El agente lee
+     todo y crea lo mismo que una persona con ficha; la ficha `usuarios/` la
+     escribe sólo Mauro, así que el agente no la toca ni la lista. */
+  roli: {
+    projectId: "roli-467a4",
+    apiKey: "AIzaSyBJHfPcCoYZkm7As--nMxeVieqFEKduAMk",
+    mail: "FB_ROLI_MAIL",
+    clave: "FB_ROLI_CLAVE",
+    colecciones: ["calibraciones", "partidas", "notas"],
+    coleccionVigilada: "calibraciones",
+    reportesSon: "calibraciones",
+    selladas: ["usuarios"],
+    historial: true
   }
 };
 

@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "sitio": "datos",
+  "repo": "maurogasta-crypto/datos",
+  "rama": "main",
+  "proyecto": "panel de datos",
+  "espacio": "P",
+  "nucleo": "nucleo.js",
+  "noIncluir": [
+    "firebase-init.js"
+  ],
+  "reglas": "reglas.txt",
+  "indice": [
+    "index.html",
+    "invitado.html",
+    "nucleo.js",
+    "chat.js",
+    "errores.js",
+    "esquema.js",
+    "glosario.js",
+    "intervenir.js",
+    "paquete.js",
+    "semaforo.js"
+  ],
+  "limiteTokens": 30000,
+  "semaforoHoras": 24,
+  "aplicarEnPanel": true,
+  "destino": null,
+  "verificacion": "node pruebas/paquete.mjs y node pruebas-reglas.mjs",
+  "reglasDelRepo": [
+    "Se habla en castellano rioplatense (voseo), siempre.",
+    "Este repositorio es PÚBLICO: nunca va un UID real, una contraseña, un mail, un teléfono ni ninguna clave, ni siquiera de ejemplo. Los UID van como marcadores (`TU-UID-ACA`).",
+    "Sin build ni npm en el sitio: HTML, CSS y JS en módulos ES, servidos tal cual.",
+    "`db` y `auth` valen `undefined` hasta que `cargarFirebase()` resuelve: nada que dependa de Firebase puede correr al nivel superior de un módulo. Las suscripciones `onSnapshot` van al final.",
+    "El núcleo es `nucleo.js` y no se duplica: si algo hace falta en dos pantallas, sube ahí.",
+    "Las reglas de Firestore se editan completas, nunca por fragmentos (se suman), y una colección nueva entra con su regla en la misma tanda. Eso NO es de este paquete: lo hace Mauro.",
+    "Un cambio de pantalla se explica en lo que ve la persona; nunca se muestra un código de error pelado (usar `P.explicar`).",
+    "Si cambia un archivo, sube su sello de versión, y si es del cascarón, sube la `VERSION` de `sw.js`.",
+    "Se propone y se explica el porqué de cada cambio. No se cambia nada que no esté marcado EDITAR."
+  ],
+  "secciones": [
+    {
+      "id": "puerta-personas",
+      "titulo": "Quién entra al panel y qué ve cada persona (solapa Puerta)",
+      "que": "La solapa «Puerta» del panel de Mauro, donde se aprueba, se pausa y se le marcan proyectos a cada persona, y la decisión de a qué pantalla va cada cuenta al entrar (panel completo o página de invitado).",
+      "archivos": [
+        {
+          "ruta": "index.html",
+          "rol": "editar",
+          "tramos": [
+            "entrarAlPanel",
+            "pintarPersonas"
+          ],
+          "para": "Pantalla principal del panel. Estas piezas deciden a dónde va cada cuenta al entrar y dibujan la tarjeta de cada persona con sus casillas."
+        },
+        {
+          "ruta": "invitado.html",
+          "rol": "editar",
+          "tramos": [
+            "pintar"
+          ],
+          "para": "La página que ve un invitado: arma sus pestañas y secciones. Lee los campos de la ficha que se marcan en Puerta."
+        }
+      ]
+    },
+    {
+      "id": "pagina-invitado",
+      "titulo": "Qué ve un invitado en su página",
+      "que": "La página de los invitados: cada proyecto es una pestaña, con sus pendientes, sus preguntas, el chat propio y lo último que se subió.",
+      "archivos": [
+        {
+          "ruta": "invitado.html",
+          "rol": "editar",
+          "tramos": [
+            "pintar",
+            "htmlPendiente",
+            "htmlConsulta",
+            "htmlPregunta",
+            "htmlBoveda",
+            "estadoChip"
+          ],
+          "para": "Las piezas que dibujan cada parte de la página del invitado."
+        },
+        {
+          "ruta": "chat.js",
+          "rol": "leer",
+          "tramos": [
+            "consultasDe",
+            "agrupar",
+            "opcionesDe",
+            "eleccion",
+            "contestada",
+            "esConsulta"
+          ],
+          "para": "Qué cuenta como consulta, cómo se agrupan y se ordenan, y cuándo se da por contestada. Las usa la página; no se cambian desde acá."
+        }
+      ]
+    },
+    {
+      "id": "entrega-de-secciones",
+      "titulo": "Cómo el panel entrega una sección para llevar a un chat",
+      "que": "El botón «Intervenir una sección» de la página del invitado: arma el paquete, deja el aviso de edición (semáforo), recibe la respuesta del chat y deja los archivos listos para subir.",
+      "colecciones": [
+        "ediciones"
+      ],
+      "archivos": [
+        {
+          "ruta": "intervenir.js",
+          "rol": "editar",
+          "para": "La pantalla: lista de secciones con su semáforo, bajar el paquete, traer la respuesta."
+        },
+        {
+          "ruta": "semaforo.js",
+          "rol": "editar",
+          "para": "El aviso de «estoy editando esta sección»: quién, desde cuándo, hasta cuándo."
+        },
+        {
+          "ruta": "paquete.js",
+          "rol": "editar",
+          "tramos": [
+            "PASOS",
+            "construir",
+            "aplicarSeccion",
+            "aplicarEnArchivos",
+            "segmentosDeRespuesta"
+          ],
+          "para": "Arma el paquete (texto, dependencias, reglas) y reparte lo que devuelve el chat a cada archivo. Sirve para cualquier sitio: no sabe nada de este panel."
+        }
+      ]
+    },
+    {
+      "id": "textos-de-errores",
+      "titulo": "Los textos de los errores que ve la gente",
+      "que": "Las causas en castellano que se muestran cuando algo falla (permiso, red, sesión). Una sola tabla para todo el ecosistema, más las causas propias de este panel.",
+      "reglas": false,
+      "archivos": [
+        {
+          "ruta": "errores.js",
+          "rol": "editar",
+          "para": "La tabla común de causas de error, usada por los cinco sitios. Cambiar una frase la cambia en todos."
+        },
+        {
+          "ruta": "nucleo.js",
+          "rol": "editar",
+          "tramos": [
+            "PROPIAS",
+            "P.explicar"
+          ],
+          "para": "Las causas propias de este panel (las que nombran «La puerta») y la función que elige qué texto mostrar."
+        }
+      ]
+    }
+  ],
+  "mapaDoc": "MAPA.md"
+}

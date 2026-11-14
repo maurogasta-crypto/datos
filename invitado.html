@@ -185,11 +185,11 @@ import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeAre
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-17";
+P.PANEL = "invitado-18";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
-  if (e.target.closest("[data-mandar],[data-mandar-preg],[data-comentar],[data-ver],[data-captura]")) {
+  if (e.target.closest("[data-mandar],[data-mandar-preg],[data-comentar],[data-ver],[data-captura],[data-sec-bajar],[data-sec-traer],[data-sec-soltar],[data-sec-subido]")) {
     e.preventDefault(); e.stopPropagation(); P.aviso("Es una vista previa: no se manda ni se abre nada.");
   }
 }, true);
@@ -409,7 +409,7 @@ function pintar() {
           <p class="gris" style="margin:0 0 .4rem">Lo lleva ${P.esc(p.quien === "claude" ? "Claude" : "Mauro")}${suyos.length ? ` · ${ab} abierto${ab === 1 ? "" : "s"}` : ""}.</p>
           ${suyos.map(htmlPendiente).join("") || '<p class="gris">Sin pendientes a la vista.</p>'}</details>`;
       }).join("")}
-      ${sueltos.length ? `<details class="nivel"><summary><span style="flex:1">Otros pendientes</span><span class="chip-e">${sueltos.filter(abierto).length} abierto${sueltos.filter(abierto).length === 1 ? "" : "s"}</span></summary>${sueltos.map(htmlPendiente).join("")}</details>` : ""}
+      ${sueltos.length && persona.pendientes !== false ? `<details class="nivel"><summary><span style="flex:1">Otros pendientes</span><span class="chip-e">${sueltos.filter(abierto).length} abierto${sueltos.filter(abierto).length === 1 ? "" : "s"}</span></summary>${sueltos.map(htmlPendiente).join("")}</details>` : ""}
       ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}` : ""}
 
       <div class="rotulo">Para entender y participar</div>
@@ -418,6 +418,7 @@ function pintar() {
         <p class="gris">1) Bajá lo que necesite tu chat de IA y dáselo. 2) Pegá acá lo que te conteste, o subí el archivo. Claude lo lee y lo analiza contra el resto del proyecto; nada cambia sin que lo charlemos.</p>
         <div class="fila-btn"><button class="btn" data-md="${P.esc(pr.id)}">⬇ Resumen del proyecto (.md)</button></div>
         <div data-areas="${P.esc(pr.id)}"></div>
+        <div data-secciones="${P.esc(pr.id)}"></div>
         <textarea data-chat="${P.esc(pr.id)}" rows="4" placeholder="Pegá acá la respuesta de tu chat…"></textarea>
         <div class="fila-btn">
           <label class="mini">📄 Subir un archivo (.md o .txt)<input type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" data-chat-arch="${P.esc(pr.id)}" hidden></label>
@@ -666,6 +667,39 @@ async function traerAreas(pr) {
   } catch (e) { caja.innerHTML = ""; }   // sin areas.json (o sin red): el resumen de arriba sigue andando
 }
 
+/* intervenir-1 (10-nov-2026): «Intervenir una sección». Es un módulo aparte, diferido y con catch:
+   si no baja, o el sitio no tiene `secciones.json`, la página queda exactamente como estaba. */
+const SECCIONES = {};
+async function traerSecciones(pr) {
+  const caja = document.querySelector(`[data-secciones="${pr.id}"]`);
+  if (!caja || SECCIONES[pr.id] || !pr.sitio || !/^[\w.-]+\/[\w.-]+$/.test(pr.sitio.repo || "")) return;
+  SECCIONES[pr.id] = true;
+  try {
+    const M = await import("./intervenir.js?v=intervenir-3");
+    const ok = await M.montar({
+      pr, caja, P, yo, persona, leerTexto, crudo, descargar, dejarRegistro, comentarPendiente,
+      F: { db, doc, setDoc, getDocs, collection, query, where },
+    });
+    if (!ok) SECCIONES[pr.id] = false;
+  } catch (e) { SECCIONES[pr.id] = false; caja.innerHTML = ""; }
+}
+/* Un pedido para Claude con lo que trajo la persona: el mismo que arma «Mandar a Claude». */
+async function dejarRegistro({ pid, titulo, resumen, historia, texto, origen, de }) {
+  const clave = proximaClave(pid), id = pid + ":" + clave, quien = persona.nombre || yo.email || "";
+  await setDoc(doc(db, "pendientes", id), {
+    proyecto: pid, autor: yo.uid, autorNombre: quien, tipo: "pedido", estado: "abierto", quien: "claude",
+    prioridad: "media", titulo: String(titulo).slice(0, 120), porQue: String(resumen).slice(0, 2000),
+    origen: "panel:invitado/" + yo.uid + "/" + origen, clave, sitios: [pid], creadoEn: P.hoy(),
+    historia: [{ fecha: P.hoy(), por: "invitado", texto: historia }],
+  });
+  await updateDoc(doc(db, "pendientes", id), { comentarios: arrayUnion({ por: yo.uid, nombre: quien, texto, fecha: P.hoy(), de }) });
+  avisarClaude(id);
+  return id;
+}
+async function comentarPendiente(id, texto) {
+  await updateDoc(doc(db, "pendientes", id), { comentarios: arrayUnion({ por: yo.uid, nombre: persona.nombre || yo.email || "", texto, fecha: P.hoy(), de: "intervencion" }) });
+}
+
 function bajarResumen(pid) {
   const pr = PROY.find((p) => p.id === pid); if (!pr) return;
   const md = CH.resumenMd(pr, PEND, { commits: COMMITS[pid] || [], fecha: P.hoy(), quien: persona.nombre || "" });
@@ -681,16 +715,12 @@ async function mandarChat(pid, boton) {
   if (!r.ok) return P.aviso(r.motivo, "error");
   boton.disabled = true; estado.textContent = "Mandando…";
   try {
-    const clave = proximaClave(pid), id = pid + ":" + clave, quien = persona.nombre || yo.email || "";
-    await setDoc(doc(db, "pendientes", id), {
-      proyecto: pid, autor: yo.uid, autorNombre: quien, tipo: "pedido", estado: "abierto", quien: "claude",
-      prioridad: "media", titulo: ("🤖 Lo que dijo el chat de " + quien).slice(0, 120),
-      porQue: r.resumen + (r.texto.length > r.resumen.length ? " … (entero, en el comentario)" : ""),
-      origen: "panel:invitado/" + yo.uid + "/chat", clave, sitios: [pid], creadoEn: P.hoy(),
-      historia: [{ fecha: P.hoy(), por: "invitado", texto: quien + " cargó la respuesta de su chat desde el panel." }],
+    const quien = persona.nombre || yo.email || "";
+    await dejarRegistro({
+      pid, origen: "chat", de: "chat", titulo: "🤖 Lo que dijo el chat de " + quien,
+      resumen: r.resumen + (r.texto.length > r.resumen.length ? " … (entero, en el comentario)" : ""),
+      historia: quien + " cargó la respuesta de su chat desde el panel.", texto: r.texto,
     });
-    await updateDoc(doc(db, "pendientes", id), { comentarios: arrayUnion({ por: yo.uid, nombre: quien, texto: r.texto, fecha: P.hoy(), de: "chat" }) });
-    avisarClaude(id);
     caja.value = ""; estado.textContent = "Mandado. Claude lo analiza y te contesta en «Otros pendientes».";
     await leer();
   } catch (e) { estado.textContent = ""; P.aviso("No se pudo mandar: " + P.explicar(e), "error"); boton.disabled = false; }
@@ -831,7 +861,7 @@ function enganchar() {
   document.querySelectorAll("[data-mandar]").forEach((b) => b.onclick = () => mandar(b.dataset.mandar, b));
   document.querySelectorAll("[data-md]").forEach((b) => b.onclick = () => bajarResumen(b.dataset.md));
   document.querySelectorAll("[data-capa-chat]").forEach((d) => {
-    const abrir = () => { const pr = PROY.find((p) => p.id === d.dataset.capaChat); if (pr) traerAreas(pr); };
+    const abrir = () => { const pr = PROY.find((p) => p.id === d.dataset.capaChat); if (pr) { traerAreas(pr); traerSecciones(pr); } };
     d.addEventListener("toggle", () => { if (d.open) abrir(); }); if (d.open) abrir();
   });
   document.querySelectorAll("[data-chat-mandar]").forEach((b) => b.onclick = () => mandarChat(b.dataset.chatMandar, b));

@@ -782,6 +782,13 @@ el banco de pruebas corra, que los sellos hayan subido con la `VERSION` del
   sólo el título. Los repos salen de `sitio.repo` de `proyectos/`: uno nuevo
   aparece solo. Lo que Gemini propone vuelve como pedido con `origen:
   "gemini"`, y la ronda lo marca en ORGANIZAR para evaluarlo, no obedecerlo.
+- **Un invitado puede INTERVENIR una sección** (`intervenir.js`, `paquete.js`,
+  `semaforo.js`, panel-53, 10-nov-2026; implementado el 14-nov): baja el paquete
+  de una sección del sitio —el que lista su `secciones.json`—, lo lleva a su
+  chat y trae la respuesta como pedido. Deja un aviso en `ediciones/` (reglas
+  **v10**, **hay que publicarlas**) que vence a las 48 h. Nada llega al sitio sin
+  pasar por la ronda. `node pruebas/paquete.mjs`; el detalle, en
+  `guias/panel-53-registro-y-procedimiento.md`.
 - **Las actividades de Roli y lo que conviene comprarle son `roli.html` + `roli.js`**
   (10-nov-2026, Mauro: «actividades que contemplen el cuello, los sensores
   delantero y trasero y los movimientos» y «una sección con lo que recomendamos

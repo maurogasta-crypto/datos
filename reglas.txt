@@ -2,6 +2,7 @@ rules_version = '2';
 
 // ═══════════════════════════════════════════════════════════════
 //  PANEL DE DATOS — reglas de Firestore del proyecto datos-830f8
+//  v10 · 2026-11-10 · entra `ediciones/`: el SEMÁFORO de quién está editando qué sección (un invitado deja un aviso al bajar un paquete, y lo levanta al traer la respuesta)
 //  v9 · 2026-11-07 · COLABORADORES por invitación: `invitaciones/` y la ficha que se crea sola; la bóveda, sólo con `claves: true` que pone Mauro
 //  v8 · 2026-10-25 · los ÁLBUMES públicos de un proyecto de inmueble (General Flores): se leen sin cuenta, de a uno
 //  v7 · 2026-10-15 · un invitado EDITA los proyectos de inmuebles que Mauro le marca (`edita`)
@@ -179,6 +180,48 @@ service cloud.firestore {
     // escribirla al cerrar es justamente el agente. No es sensible — son
     // títulos de trabajo, no datos de nadie.
     match /lineas/{id}     { allow read, write: if equipo(); }
+
+    // ── v10 · EL SEMÁFORO DE EDICIÓN (2026-11-10) ──
+    // Cuando una persona baja del panel el paquete de una sección para llevarlo
+    // a su chat, deja acá un aviso «estoy editando esto» y lo levanta al traer
+    // la respuesta. Es un AVISO para que dos personas no pisen la misma
+    // sección, no una cerradura de seguridad: no protege ningún dato. Un
+    // documento por sección, con id `<proyecto>__<sección>`.
+    //
+    // Lo que SÍ hacen las reglas, y es lo que lo vuelve más que un cartel:
+    //  · sólo en un proyecto suyo y firmado por él (`uid`);
+    //  · el aviso nace con la hora del SERVIDOR (`desde == request.time`) y
+    //    vence en 48 h como máximo: se rompe hacia el verde, nunca queda
+    //    trabado para siempre;
+    //  · nadie pisa el aviso VIVO de otra persona; si venció, se puede tomar;
+    //  · lo levanta quien lo puso, o el equipo;
+    //  · sólo tiene los campos del aviso, con un techo de tamaño.
+    // Se LEE con una consulta por proyecto (`where proyecto == …`): un `get`
+    // de un documento que no existe no tiene de dónde sacar el proyecto.
+    function edicionValida(id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['proyecto', 'seccion', 'uid', 'nombre', 'desde', 'venceEn', 'archivos', 'piezas', 'paquete'])
+        && d.proyecto is string && d.seccion is string
+        && d.proyecto in susProyectos()
+        && id == d.proyecto + '__' + d.seccion
+        && d.uid == request.auth.uid
+        && d.nombre is string && d.nombre.size() <= 80
+        && d.desde == request.time
+        && d.venceEn is timestamp
+        && d.venceEn > request.time
+        && d.venceEn <= request.time + duration.value(48, 'h')
+        && d.archivos is list && d.archivos.size() <= 20
+        && d.piezas is map && d.piezas.size() <= 60
+        && d.paquete is string && d.paquete.size() <= 40;
+    }
+    match /ediciones/{id} {
+      allow read, write: if equipo();
+      allow read: if persona() && resource.data.proyecto in susProyectos();
+      allow create: if persona() && edicionValida(id);
+      allow update: if persona() && edicionValida(id)
+        && (resource.data.uid == request.auth.uid || resource.data.venceEn <= request.time);
+      allow delete: if persona() && resource.data.uid == request.auth.uid;
+    }
 
     // `reservas/` entra el 2026-09-22, y NO reemplaza a `lineas/`: las dos
     // hacen falta y dicen cosas distintas.

@@ -200,7 +200,7 @@ caso("el equipo llega a las seis colecciones del estado, y a ninguna más", () =
     trae(r, "match /" + c + "/{id}", "falta la colección");
   }
   const declaradas = [...new Set([...r.matchAll(/match \/([a-z-]+)\/\{(?:id|uid)\}/g)].map((m) => m[1]))].sort();
-  igual(declaradas.join(","), "albumes,claves,fichas,lineas,pendientes,personas,protocolos,proyectos,reservas,solicitudes,tandas",
+  igual(declaradas.join(","), "albumes,claves,ediciones,fichas,lineas,pendientes,personas,protocolos,proyectos,reservas,solicitudes,tandas",
     "cambió la lista de colecciones: si entró una nueva, agregala acá y a las reglas");
 });
 

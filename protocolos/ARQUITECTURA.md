@@ -95,7 +95,7 @@ les suma nada mientras tanto.
 | | Etapa | Estado |
 |---|---|---|
 | 1 | Cerrar el servidor: la Pizarra a `timon-servidor`; Casa Verde queda sólo con lo suyo | Pizarra: pizarra-82 (10-nov). Falta sacar las funciones del zip de Casa Verde cuando los teléfonos tengan pizarra-82 |
-| 2 | El reglamento: este archivo, § 14 de interfaz, y cada `CLAUDE.md` a reglas cortas con su historia aparte | **Hecha el 15-nov-2026**: `datos` y los otros diez repos con `CLAUDE.md` corto (de 485 KB a unos 120 KB en total) y el anterior completo en su `HISTORIA.md`. `roli` (3,8 KB) y `bodega` (2,4 KB) ya eran cortos y no se tocaron. Falta, si Mauro quiere, repasar cada uno con una sesión nueva para ver si alguna regla corta quedó coja |
+| 2 | El reglamento: este archivo, § 14 de interfaz, y cada `CLAUDE.md` a reglas cortas con su historia aparte | **Hecha el 15-nov-2026**: `datos` y los otros diez repos con `CLAUDE.md` corto (de 485 KB a unos 95 KB en total) y el anterior completo en su `HISTORIA.md`. `roli` (3,8 KB) y `bodega` (2,4 KB) ya eran cortos y no se tocaron. Falta, si Mauro quiere, repasar cada uno con una sesión nueva para ver si alguna regla corta quedó coja |
 | 3 | Prototipo de «Hoy» y de los widgets, para tocarlo antes de migrar nada | — |
 | 4 | Ítems y espacios en Timón, de a un tipo por vez | — |
 | 5 | La Pizarra como cáscara, con los widgets nuevos | — |

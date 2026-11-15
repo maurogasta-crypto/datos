@@ -95,7 +95,7 @@ les suma nada mientras tanto.
 | | Etapa | Estado |
 |---|---|---|
 | 1 | Cerrar el servidor: la Pizarra a `timon-servidor`; Casa Verde queda sólo con lo suyo | Pizarra: pizarra-82 (10-nov). Falta sacar las funciones del zip de Casa Verde cuando los teléfonos tengan pizarra-82 |
-| 2 | El reglamento: este archivo, § 14 de interfaz, y cada `CLAUDE.md` a reglas cortas con su historia aparte | Este archivo y el § 14, hechos. Los `CLAUDE.md`, de a un repo |
+| 2 | El reglamento: este archivo, § 14 de interfaz, y cada `CLAUDE.md` a reglas cortas con su historia aparte | Este archivo y el § 14, hechos. Los `CLAUDE.md`, de a un repo: **`datos` hecho el 15-nov-2026** (68 KB → 11 KB, el anterior completo en `HISTORIA.md`). Faltan `sitd-hilux`, `casayourte`, `pizarra`, `tiempos`, `casaverdecanas`, `remate`, `tocatoca`, `harmonia`, `paseo`, `gestos` y `roli` |
 | 3 | Prototipo de «Hoy» y de los widgets, para tocarlo antes de migrar nada | — |
 | 4 | Ítems y espacios en Timón, de a un tipo por vez | — |
 | 5 | La Pizarra como cáscara, con los widgets nuevos | — |

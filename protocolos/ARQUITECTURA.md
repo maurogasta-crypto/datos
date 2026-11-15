@@ -94,9 +94,9 @@ les suma nada mientras tanto.
 
 | | Etapa | Estado |
 |---|---|---|
-| 1 | Cerrar el servidor: la Pizarra a `timon-servidor`; Casa Verde queda sólo con lo suyo | Pizarra: pizarra-82 (10-nov). Falta sacar las funciones del zip de Casa Verde cuando los teléfonos tengan pizarra-82 |
+| 1 | Cerrar el servidor: la Pizarra a `timon-servidor`; Casa Verde queda sólo con lo suyo | **Ojo (visto el 15-nov): pizarra-82 NO está en `main`** — quedó en la rama `claude/brave-volta-ewxlur` (10-nov, `Servidor.kt`), así que el release `ultimo` sigue siendo pizarra-81 y los teléfonos apuntan al Netlify de Casa Verde. Falta: mezclar esa rama a `main` con la verificación (lo decide Mauro: cambia el servidor de avisos, llamadas y luces de todos los teléfonos), actualizar los teléfonos, y recién entonces sacar las funciones del zip de Casa Verde — mirando antes qué versión tiene cada teléfono. `timon-servidor` está desplegado y sus seis funciones contestan (comprobado el 15-nov); que `FCM_CUENTA` y las TURN estén cargadas allá sólo se ve con un aviso real |
 | 2 | El reglamento: este archivo, § 14 de interfaz, y cada `CLAUDE.md` a reglas cortas con su historia aparte | **Hecha el 15-nov-2026**: `datos` y los otros diez repos con `CLAUDE.md` corto (de 485 KB a unos 95 KB en total) y el anterior completo en su `HISTORIA.md`. `roli` (3,8 KB) y `bodega` (2,4 KB) ya eran cortos y no se tocaron. Falta, si Mauro quiere, repasar cada uno con una sesión nueva para ver si alguna regla corta quedó coja |
-| 3 | Prototipo de «Hoy» y de los widgets, para tocarlo antes de migrar nada | — |
+| 3 | Prototipo de «Hoy» y de los widgets, para tocarlo antes de migrar nada | Prototipo de «Hoy» entregado como artefacto (14-nov); **espera la opinión de Mauro, que destraba la 4, la 5, la 6 y la 8** |
 | 4 | Ítems y espacios en Timón, de a un tipo por vez | — |
 | 5 | La Pizarra como cáscara, con los widgets nuevos | — |
 | 6 | Los hilos dentro de Timón: mensaje a ítem, archivos, Claude en el hilo | — |

@@ -185,7 +185,7 @@ import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeAre
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-21";
+P.PANEL = "invitado-22";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -346,17 +346,22 @@ async function pantallaPedir() {
 
 /* ---------- leer: SÓLO lo de sus proyectos ---------- */
 async function leer() {
-  const ids = (persona.proyectos || []).slice(0, 10);   // `in` acepta hasta 10
+  /* invitado-22 (16-nov-2026, Mauro: su ficha tiene 13 aplicaciones y la
+     pestaña de Roli no aparecía): el `in` de Firestore acepta 10, pero eso se
+     resuelve consultando POR TANDAS de 10, no recortando los proyectos de la
+     persona. El tope de 20 es sólo cordura. */
+  const ids = (persona.proyectos || []).slice(0, 20);
   if (!ids.length) { $("proyectos").innerHTML = '<p class="gris">Todavía no tenés proyectos habilitados.</p>'; return; }
   try {
     PROY = (await Promise.all(ids.map((id) => getDoc(doc(db, "proyectos", id)))))
       .filter((d) => d.exists()).map((d) => ({ id: d.id, ...d.data() }));
-    const [pe, fi] = await Promise.all([
-      getDocs(query(collection(db, "pendientes"), where("proyecto", "in", ids))),
-      getDocs(query(collection(db, "fichas"), where("proyecto", "in", ids))),
-    ]);
-    PEND = pe.docs.map((d) => ({ id: d.id, ...d.data() }));
-    FICHAS = fi.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const tandas = [];
+    for (let i = 0; i < ids.length; i += 10) tandas.push(ids.slice(i, i + 10));
+    const porTandas = async (col) => (await Promise.all(tandas.map((t) =>
+      getDocs(query(collection(db, col), where("proyecto", "in", t)))))).flatMap((s) => s.docs);
+    const [pe, fi] = await Promise.all([porTandas("pendientes"), porTandas("fichas")]);
+    PEND = pe.map((d) => ({ id: d.id, ...d.data() }));
+    FICHAS = fi.map((d) => ({ id: d.id, ...d.data() }));
     pintar();
     PROY.forEach(traerCommits);
   } catch (e) { $("proyectos").innerHTML = '<p class="gris">' + P.esc(P.explicar(e)) + "</p>"; }
@@ -699,7 +704,57 @@ async function traerAreas(pr) {
       try { descargar(`${pr.id}-guia-de-desarrollo.md`, await leerTexto(crudo(pr.sitio.repo, mapa.guia || "GUIA-PARA-TU-CHAT.md"))); }
       catch (e) { P.aviso("No pude bajar la guía: " + P.explicar(e), "error"); }
     };
-  } catch (e) { caja.innerHTML = ""; }   // sin areas.json (o sin red): el resumen de arriba sigue andando
+  } catch (e) { traerArchivos(pr).catch(() => { caja.innerHTML = ""; }); }   // sin areas.json: el paquete por ARCHIVO (abajo); sin red, el resumen de arriba sigue andando
+}
+
+/* invitado-22 (16-nov-2026, Mauro: «quiero que ese procedimiento para BandoMaps esté en todos los
+   sitios del panel»): un sitio SIN areas.json también baja su paquete, por ARCHIVO. El árbol del
+   repositorio sale de la API pública de GitHub, sin credencial (un repo privado no contesta y la
+   caja queda vacía, como hasta ahora), y la guía general es el CLAUDE.md del repo: son sus reglas.
+   El zip es el mismo de chat-6: LEEME con el manual preciso + el archivo con su ruta real, para
+   que el chat devuelva el archivo completo listo para sustituir. */
+async function traerArchivos(pr) {
+  const caja = document.querySelector(`[data-areas="${pr.id}"]`);
+  if (!caja || caja.dataset.arch || !pr.sitio || !/^[\w.-]+\/[\w.-]+$/.test(pr.sitio.repo || "")) return;
+  caja.dataset.arch = "1";   // un intento por dibujado: la API pública tiene cupo por hora
+  const r = await fetch(`https://api.github.com/repos/${pr.sitio.repo}/git/trees/main?recursive=1`);
+  if (!r.ok) { caja.innerHTML = ""; return; }
+  const arbol = await r.json();
+  const archivos = (arbol.tree || []).filter((x) => x.type === "blob"
+    && /\.(m?jsx?|html|css|json|md|txt|rules|kt|dart|yml|ino)$/i.test(x.path)
+    && !/(^|\/)\./.test(x.path) && x.size > 0 && x.size <= 250000)
+    .sort((a, b) => a.path.localeCompare(b.path));
+  if (!archivos.length) { caja.innerHTML = ""; return; }
+  caja.innerHTML = `<p class="gris" style="margin:.6rem 0 .2rem"><b>Para una intervención enfocada</b> (entra en una sesión gratuita de Claude): elegí un archivo del repositorio.</p>
+    <select data-arch-sel style="width:100%;margin:.2rem 0">${archivos.map((x) =>
+      `<option value="${P.esc(x.path)}">${P.esc(x.path)} · ~${Math.max(1, Math.round(x.size / 1024))} KB</option>`).join("")}</select>
+    <div class="fila-btn">
+      <button class="btn p" data-paquete-arch>⬇ Paquete del archivo (.zip)</button>
+      <button class="mini" data-guia-arch>⬇ Guía del proyecto (.md)</button>
+      <a class="mini" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${P.esc(pr.sitio.repo)}">Ver el repositorio</a>
+    </div>`;
+  const sel = caja.querySelector("[data-arch-sel]");
+  const bajarGuia = () => leerTexto(crudo(pr.sitio.repo, "CLAUDE.md"))
+    .catch(() => leerTexto(crudo(pr.sitio.repo, "README.md")).catch(() => ""));
+  caja.querySelector("[data-paquete-arch]").onclick = async (ev) => {
+    ev.target.disabled = true;
+    try {
+      const ruta = sel.value;
+      const [texto, guia] = await Promise.all([leerTexto(crudo(pr.sitio.repo, ruta)), bajarGuia()]);
+      const area = { id: ruta.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), titulo: ruta,
+        que: `El archivo ${ruta} del repositorio, completo.`,
+        probar: "lo que diga la guía del proyecto (los bancos del repositorio)" };
+      const codigo = { texto, lineas: texto.split("\n").length, tokens: Math.round(texto.length / 3.3) };
+      descargar(CH.nombreZip(pr, area, P.hoy()),
+        CH.armarZip(CH.archivosDelPaquete({ proyecto: pr.nombre || pr.id, repo: pr.sitio.repo, area, codigo, guia, fecha: P.hoy(), reales: [{ ruta, texto }] }), P.hoy()),
+        "application/zip");
+    } catch (e) { P.aviso("No pude armar el paquete: " + P.explicar(e), "error"); }
+    ev.target.disabled = false;
+  };
+  caja.querySelector("[data-guia-arch]").onclick = async () => {
+    try { descargar(`${pr.id}-guia.md`, await bajarGuia()); }
+    catch (e) { P.aviso("No pude bajar la guía: " + P.explicar(e), "error"); }
+  };
 }
 
 /* intervenir-1 (10-nov-2026): «Intervenir una sección». Es un módulo aparte, diferido y con catch:

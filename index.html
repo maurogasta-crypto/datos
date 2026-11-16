@@ -31,10 +31,12 @@
        que vengan—, en su propia página (obra.html). panel-39: UN solo botón
        (Mauro: «quedó duplicado»); con un solo proyecto abre directo en él. -->
   <a class="btn" href="./obra.html" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;text-decoration:none">📁 Proyectos</a>
-  <!-- panel-44 (29-oct-2026): exportar el ecosistema para auditarlo con
-       Gemini (gemini.html). Gemini propone; lo propuesto vuelve como pedido
-       con la casilla de abajo, y Claude lo evalúa antes de tocar nada. -->
-  <a class="btn" href="./gemini.html" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;text-decoration:none" aria-label="Exportar para Gemini">🤖</a>
+  <!-- panel-53 (16-nov-2026, Mauro: «quiero eliminar a Gemini de esta parte»):
+       el botón 🤖 de exportar para Gemini salió de la barra, y la casilla
+       «Es una propuesta de Gemini» del pedido rápido también. El camino de
+       desarrollo asistido es el paquete por área/archivo del panel de
+       invitados (chat-6). gemini.html sigue existiendo por dirección directa,
+       y la ronda sigue reconociendo los pendientes viejos con origen "gemini". -->
   <button class="btn" id="btnSalir" style="min-height:38px;padding:.4rem .8rem;font-size:.8rem;">Salir</button>
 </div>
 
@@ -95,11 +97,6 @@
         <textarea id="pr-texto" class="libre" rows="2"
           placeholder="Qué querés que se haga. La primera línea es el título."></textarea>
         <p class="gris" id="pr-donde" style="margin:.3rem 0 0;font-size:.78rem"></p>
-        <!-- panel-44: lo que propuso Gemini entra marcado. La ronda lo trata
-             como una PROPUESTA que se evalúa contra las reglas y el código,
-             no como una orden (TRASPASO § 4, paso 6 bis). -->
-        <label style="display:flex;gap:.4rem;align-items:center;font-size:.85rem;margin:.4rem 0 0">
-          <input type="checkbox" id="pr-gemini" style="width:auto;min-height:0"> 🤖 Es una propuesta de Gemini</label>
         <div class="fila-btn">
           <button class="btn" id="btnPedido">Más opciones</button>
           <button class="btn p" id="btnPedidoRapido">Mandar el pedido</button>
@@ -567,7 +564,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-6";
 
-P.PANEL = "panel-52";
+P.PANEL = "panel-53";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -970,13 +967,12 @@ function pintarDondePedido() {
    arriba y prioridad media. Lo que el formulario completo decide con
    casillas, acá lo decide el selector. */
 $("btnPedidoRapido").addEventListener("click", async () => {
-  const r = armarPedido($("pr-texto").value, APP ? [APP] : [], "media", PENDIENTES, P.hoy(),
-    $("pr-gemini").checked ? "gemini" : "panel");
+  const r = armarPedido($("pr-texto").value, APP ? [APP] : [], "media", PENDIENTES, P.hoy());
   if (!r.ok) return P.aviso(r.motivo, "error");
   const b = $("btnPedidoRapido"); b.disabled = true; b.textContent = "…";
   try {
     await setDoc(doc(db, "pendientes", r.id), { ...r.datos, actualizadoEn: serverTimestamp() });
-    $("pr-texto").value = ""; $("pr-gemini").checked = false;
+    $("pr-texto").value = "";
     await leer();
     P.aviso("Cargado como " + r.id + ". Lo levanta la próxima ronda.");
   } catch (e) { P.aviso(P.explicar(e), "error"); }

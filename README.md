@@ -843,7 +843,7 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-52` |
+| `index.html` | `P.PANEL` | `panel-53` |
 | `invitado.html` | `P.PANEL` | `invitado-21` |
 | `intervenir.js` | pedido con `?v=` | `intervenir-5` |
 | `paquete.js` · `semaforo.js` | — | `paquete-4` |
@@ -855,7 +855,7 @@ teléfono.
 | `gemini.html` | `P.PANEL` | `gemini-2` |
 | `exportar.js` | `VERSION` | `exportar-1` |
 | `album.html` | `SELLO` | `album-2` |
-| `estilos.css` | (en el comentario) | `estilos-14` |
+| `estilos.css` | (en el comentario) | `estilos-15` |
 | `firebase-init.js` | (en el comentario) | `init-6` |
 | `placa.html` | `P.PANEL` | `placa-8` |
 | `roli.html` | sello de la barra | `roli-js-6` |
@@ -868,7 +868,7 @@ teléfono.
 > panel**: la tabla se copia a mano y se desactualiza en silencio.
 
 **El sello también va en la dirección**, y esto no es decorativo: `index.html`
-pide `estilos.css?v=estilos-14` y `nucleo.js?v=nucleo-13`. Sin ese número, el
+pide `estilos.css?v=estilos-15` y `nucleo.js?v=nucleo-13`. Sin ese número, el
 teléfono se queda con el archivo viejo y el sello de arriba miente. **Si subís
 un sello, subí el número de la dirección en la misma tanda.**
 

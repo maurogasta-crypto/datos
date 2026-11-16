@@ -59,6 +59,11 @@ const lecturas = [];
 const boveda = () => lecturas.filter((l) => l.startsWith("claves/"));
 const getDoc = async (r) => {
   lecturas.push(r.__c + "/" + r.__id);
+  /* panel-53: para un INVITADO la base niega `lineas/` (sólo la lee el equipo);
+     el panel usa esa respuesta para saber a quién mandar a su página. */
+  if (Array.isArray(BASE.niega) && BASE.niega.includes(r.__c)) {
+    const e = new Error("Missing or insufficient permissions."); e.code = "permission-denied"; throw e;
+  }
   const d = (BASE[r.__c] || {})[r.__id];
   return { exists: () => !!d, data: () => (d ? clonar(d) : undefined) };
 };
@@ -1620,7 +1625,11 @@ pe = api.armarPedido("Unificar el ojo de las claves\nSitio: datos", ["datos"], "
 ok(pe.ok && pe.datos.origen === "gemini" && /Gemini/.test(pe.datos.historia[0].texto) && pe.datos.quien === "claude",
    "una propuesta de Gemini: origen «gemini», de Claude, y la historia dice que se evalúa");
 ok(api.armarPedido("Algo", ["datos"], "media", PEND, "2026-10-29").datos.origen === "panel", "sin decir nada, sigue siendo del panel");
-ok(/id="pr-gemini"/.test(fs.readFileSync(new URL("../../index.html", import.meta.url), "utf8")), "el pedido rápido tiene la casilla de Gemini");
+/* panel-53 (16-nov-2026, Mauro: «quiero eliminar a Gemini de esta parte»): ni la casilla ni el 🤖
+   de exportar están en el panel; el camino asistido es el paquete del panel de invitados. El
+   origen "gemini" sigue valiendo para los pendientes viejos (la prueba de arriba). */
+ok(!/id="pr-gemini"/.test(fs.readFileSync(new URL("../../index.html", import.meta.url), "utf8")), "la casilla de Gemini ya no está en el pedido rápido");
+ok(!/href="\.\/gemini\.html"/.test(fs.readFileSync(new URL("../../index.html", import.meta.url), "utf8")), "el 🤖 de exportar ya no está en la barra");
 pe = api.armarPedido("x".repeat(200), [], "baja", [], "2026-10-02");
 ok(pe.id === "general:P1" && pe.datos.titulo.length === 90 && pe.datos.titulo.endsWith("…"),
    "ninguno: general, y un título largo se corta con puntos suspensivos");
@@ -1738,13 +1747,19 @@ per().querySelector('[data-pausar="uid-mariano"]').click(); await esperar(); awa
 ok(BASE.personas["uid-mariano"].activo === false, "pausar lo deja afuera sin borrar su ficha");
 ok(html.includes('id="btnCopiarInvitado"') && fs.existsSync(RAIZ + "invitado.html"), "el link para invitados existe y apunta a una página que existe");
 const inv = fs.readFileSync(RAIZ + "invitado.html", "utf8");
-ok(inv.includes('where("proyecto", "in", ids)') && !/getDocs\(collection\(db, "(pendientes|claves|lineas|tandas)"\)\)/.test(inv),
-   "la página de invitados lee SÓLO lo de sus proyectos y nunca lista la bóveda");
+ok(inv.includes("where(\"proyecto\", \"in\", t)") && !/getDocs\(collection\(db, "(pendientes|claves|lineas|tandas)"\)\)/.test(inv),
+   "la página de invitados lee SÓLO lo de sus proyectos (por tandas de 10, invitado-22) y nunca lista la bóveda");
 ok(per().ownerDocument.getElementById("linkInvitado").textContent === "https://maurogasta-crypto.github.io/datos/invitado.html",
    "el link para invitados es el del panel, terminado en invitado.html");
 redirigido = null; BASE.personas["uid-de-prueba"] = { proyectos: ["harmonia"], activo: true };
+BASE.niega = ["lineas"];   // a un invitado de verdad la base le niega lineas/ (panel-53)
 await api.arrancar(); await esperar(); await esperar();
 ok(redirigido === "invitado.html", "quien tiene ficha de invitado y entra al panel va a SU página");
+/* panel-53 (Mauro se ve como invitado para probar): CON ficha pero DEL equipo
+   (la base le contesta lineas/), se queda en el panel. */
+BASE.niega = null; redirigido = null;
+await api.arrancar(); await esperar(); await esperar();
+ok(redirigido === null, "panel-53: Mauro con ficha de invitado pero del equipo se queda en el panel");
 delete BASE.personas["uid-de-prueba"]; redirigido = null;
 await api.arrancar(); await esperar(); await esperar();
 ok(redirigido === null, "Mauro (sin ficha) se queda en el panel");

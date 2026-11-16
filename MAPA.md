@@ -15,13 +15,15 @@
 | `guias/` | ⚠ provisoria: guías y el estado actual de proyectos. |
 | `plantillas/` | ⚠ provisoria: plantillas, entre ellas las reglas de trabajo. |
 | `protocolos/` | ⚠ provisoria: protocolos y arquitectura (`ARQUITECTURA.md`). |
+| `ronda/` | la ronda por trabajos: un archivo por trabajo en `trabajos/`, índice y formato en `LEEME.md` (plan «Timón», etapa 7a). |
 | `servidor/` | ⚠ provisoria: funciones del servidor. |
 
 ## Raíz
 
 | Archivo | Qué es | Usa |
 |---|---|---|
-| `CLAUDE.md` | Reglas de trabajo del panel: qué es, las dos zonas (`claves/` y `fichas/`), cómo se publica, la ronda y los invitados. | `ojos.js` |
+| `CLAUDE.md` | Reglas de trabajo del panel: qué es, las dos zonas (`claves/` y `fichas/`), cómo se publica, la ronda y los invitados. | — |
+| `HISTORIA.md` | panel de datos — HISTORIA y porqués de las reglas | `ojos.js` |
 | `MAPA.md` | Este archivo: qué es cada archivo del repositorio y dónde está. Se actualiza con `node herramientas/secciones.mjs mapa`. | — |
 | `README.md` | Cómo está armado el panel, cómo se instala y cómo se publican las reglas (la puerta). | — |
 | `RUTINA-AUTOMATICA.md` | Rutinas de control | — |
@@ -50,6 +52,7 @@
 | `placa.js` | _(sin describir)_ | — |
 | `pruebas-reglas.mjs` | el banco de pruebas de «La puerta». | — |
 | `reglas.txt` | Plantilla de las reglas de Firestore, con marcadores en lugar de UID. | — |
+| `roli-ronda.html` | Roli · A jugar | — |
 | `roli.html` | Panel · Roli, el robot | `estilos.css`, `hoja.css`, `roli.js` |
 | `roli.js` | las actividades de Roli y lo que conviene comprarle. | — |
 | `secciones.json` | El mapa de secciones de este panel. | — |
@@ -106,6 +109,7 @@
 | `pruebas/reportes.mjs` | Banco del circuito «Reportar una falla», en los TRES sitios que lo tienen. | — |
 | `pruebas/roli.mjs` | _(sin describir)_ | — |
 | `pruebas/servidor.mjs` | _(sin describir)_ | `servidor-1.js` |
+| `pruebas/trabajos.mjs` | el banco de la ronda por trabajos: formato de cada trabajo, índice↔carpeta, reparto extra/completa y cobertura de comandos. | — |
 
 ## `pruebas/casayourte/`
 
@@ -144,24 +148,40 @@
 |---|---|---|
 | `pruebas/panel/LEEME.md` | Banco de pruebas del panel | — |
 | `pruebas/panel/banco.mjs` | Banco de pruebas: DOM real (jsdom) y Firestore de mentira. Corre el código | — |
-| `pruebas/panel/package-lock.json` | _(sin describir)_ | — |
 | `pruebas/panel/package.json` | _(sin describir)_ | — |
 | `pruebas/panel/parte-1-inicial.json` | _(sin describir)_ | — |
 | `pruebas/panel/reglas-emulador-v9.mjs` | _(sin describir)_ | — |
 | `pruebas/panel/reglas-emulador.mjs` | las reglas v6 y v7 contra el EMULADOR de Firestore. | — |
 
-## `respaldos/`
+## `ronda/`
 
 | Archivo | Qué es | Usa |
 |---|---|---|
-| `respaldos/2026-11-03-casayourte.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-03-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-04-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-07-casayourte.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-07-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-08-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-09-casaverde.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-09-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-09-tiempos.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-10-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-14-panel.json` | _(sin describir)_ | — |
+| `ronda/LEEME.md` | La ronda, por trabajos — LEEME | — |
+
+## `ronda/trabajos/`
+
+| Archivo | Qué es | Usa |
+|---|---|---|
+| `ronda/trabajos/010-abrir-el-panel.md` | Abrir el panel — trabajo de la ronda | — |
+| `ronda/trabajos/020-reportes-y-pedidos.md` | Reportes y pedidos nuevos → pendientes del panel — trabajo de la ronda | — |
+| `ronda/trabajos/030-pedidos-del-telefono.md` | Pedidos del teléfono — trabajo de la ronda | — |
+| `ronda/trabajos/040-mensajes-airbnb.md` | Mensajes de Airbnb (y el probador del teléfono de captura) — trabajo de la ronda | — |
+| `ronda/trabajos/050-pedidos-de-facebook.md` | Pedidos de alquiler de Facebook — trabajo de la ronda | — |
+| `ronda/trabajos/060-mail.md` | El mail (Casa Verde, proveedores de CasaYourte, Mariano) — trabajo de la ronda | — |
+| `ronda/trabajos/070-reservas-casaverde.md` | Reservas de Casa Verde — trabajo de la ronda | — |
+| `ronda/trabajos/080-notificaciones-13c.md` | Todas las notificaciones del 13C — trabajo de la ronda | — |
+| `ronda/trabajos/090-charla-pizarras.md` | La charla de las Pizarras — trabajo de la ronda | — |
+| `ronda/trabajos/100-grabaciones-hilux.md` | Las grabaciones de la Hilux — trabajo de la ronda | — |
+| `ronda/trabajos/110-consultas-casayourte.md` | Las consultas de CasaYourte — trabajo de la ronda | — |
+| `ronda/trabajos/120-plan-bandomaps.md` | El plan de BandoMaps (la página de discusión) — trabajo de la ronda | — |
+| `ronda/trabajos/130-bandomaps-commits.md` | Lo que Mariano sube a BandoMaps — trabajo de la ronda | — |
+| `ronda/trabajos/140-tiempos-propuestas.md` | Tiempos · Propuestas (lo que apareció en el chat) — trabajo de la ronda | — |
+| `ronda/trabajos/150-tiempos-auditoria.md` | Tiempos · Auditoría — trabajo de la ronda | — |
+| `ronda/trabajos/160-respaldo.md` | Respaldo de todas las bases — trabajo de la ronda | — |
+| `ronda/trabajos/170-ingresos-familia.md` | Ingresos de la familia — trabajo de la ronda | — |
+| `ronda/trabajos/180-organizar.md` | Organizar (planes y riesgo de lo contestado) — trabajo de la ronda | — |
+| `ronda/trabajos/190-coherencia-y-esquema.md` | Coherencia y esquema — trabajo de la ronda | — |
+| `ronda/trabajos/200-trabajar-pendientes.md` | Trabajar pendientes (código) — trabajo de la ronda | — |
+| `ronda/trabajos/210-avisos-whatsapp.md` | Avisos por WhatsApp al equipo — trabajo de la ronda | — |
+| `ronda/trabajos/220-cierre.md` | El cierre (panel y resumen) — trabajo de la ronda | — |

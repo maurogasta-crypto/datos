@@ -41,6 +41,13 @@ entero para que la siguiente se arme igual y no haya que volver a razonarlo.
 > prohibiciones —que mandan aunque el archivo dijera otra cosa— y un puntero:
 > los pasos se leen de `TRASPASO.md` § 4, recién bajados. Eran 16 mil
 > caracteres en dos lugares; cambiar la rutina ahora es cambiar un archivo.
+>
+> **16-nov-2026: la ronda corre por trabajos** (plan «Timón», etapa 7a).
+> Los pasos pasaron de `TRASPASO.md` § 4 a `ronda/trabajos/`, **un trabajo por
+> archivo** (de qué app es, cuándo corre, qué lee, con qué criterio, qué puede
+> dejar y su nivel; índice en `ronda/LEEME.md`, banco `pruebas/trabajos.mjs`).
+> El § 4 conserva el arranque y el NUNCA; el disparador no se tocó: su puntero
+> al § 4 sigue valiendo, y el § 4 apunta a los trabajos.
 
 ---
 

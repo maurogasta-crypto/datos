@@ -564,7 +564,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-6";
 
-P.PANEL = "panel-53";
+P.PANEL = "panel-54";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -1034,6 +1034,47 @@ function colaDePreguntas() {
 const sinResponder = (p) => !!(p.pregunta || "").trim()
   && !(p.respuesta || "").trim() && abierto(p);
 
+/* panel-54 (16-nov-2026, plan «Timón», etapa 7b; ARQUITECTURA § 4): «PARA
+   DECIDIR» — las decisiones que esperan a Mauro, de a TRES: primero la
+   prioridad que él puso, después las de UN TOQUE (traen `opciones`), después
+   la más vieja. Contestar una hace subir a la siguiente: nunca una pared de
+   preguntas. Cuando exista «Hoy» en Timón (etapa 5), el bloque se muda allá:
+   una pantalla no nace antes que su lugar. */
+function paraDecidir(pendientes, tope = 3) {
+  const peso = { alta: 0, media: 1, baja: 2 };
+  return (pendientes || []).filter(sinResponder)
+    .sort((a, b) => ((peso[a.prioridad] ?? 1) - (peso[b.prioridad] ?? 1))
+      || (Number(!!(b.opciones || []).length) - Number(!!(a.opciones || []).length))
+      || String(a.creadoEn || "").localeCompare(String(b.creadoEn || ""))
+      || String(a.id).localeCompare(String(b.id)))
+    .slice(0, tope);
+}
+const opcionesDePregunta = (p) => (Array.isArray(p.opciones) ? p.opciones : [])
+  .filter((o) => o && o.t).slice(0, 5).map((o) => ({ t: String(o.t).slice(0, 160), r: !!o.r }));
+
+/* El toque escribe EXACTAMENTE lo que escribiría responder en la cola
+   (respuesta, quien "claude", historia, tocado, respondidoEn); la historia
+   dice que fue con un toque y con cuál opción. */
+async function responderConOpcion(id, boton) {
+  const p = PENDIENTES.find((x) => x.id === id); if (!p) return;
+  const o = opcionesDePregunta(p)[Number(boton.dataset.op)];
+  if (!o) return;
+  boton.disabled = true;
+  try {
+    await setDoc(doc(db, "pendientes", id), {
+      respuesta: o.t,
+      quien: "claude",
+      historia: (Array.isArray(p.historia) ? p.historia : [])
+        .concat([{ fecha: P.hoy(), por: "mauro", texto: "Mauro: respondido con un toque — «" + o.t + "»" }]),
+      tocado: true,
+      respondidoEn: P.hoy(),
+      actualizadoEn: serverTimestamp()
+    }, { merge: true });
+    await leer();
+    P.aviso("Respondido. Lo leo de la base.");
+  } catch (e) { P.aviso(P.explicar(e), "error"); boton.disabled = false; }
+}
+
 /* Se pinta adentro de `#lista`, donde va la lista normal: el filtro
    «Preguntas» ya existe y Mauro ya lo toca. Una solapa nueva sería un lugar
    más que aprender para algo que ya tenía su puerta. */
@@ -1303,6 +1344,22 @@ function pintarTeToca() {
       + "</span></div>"
       + '<button class="btn" data-tt="sitios">Ir</button></div>';
   }
+  /* panel-54 (etapa 7b): las tres decisiones de arriba de la cola, acá mismo,
+     con sus opciones si las traen. El total sigue abajo como puerta a la cola. */
+  const decidir = paraDecidir(mios);
+  if (decidir.length) {
+    h += '<p class="gris" style="margin:.5rem 0 .2rem"><b>Para decidir</b>' + (decidir.some((p) => opcionesDePregunta(p).length) ? " · un toque alcanza" : "") + "</p>";
+    for (const p of decidir) {
+      const ops = opcionesDePregunta(p);
+      h += '<div class="tt-fila" style="flex-wrap:wrap"><div class="tt-que" style="min-width:100%"><b>'
+        + P.esc(p.titulo || p.id) + "</b><span>" + P.esc(String(p.pregunta || "").slice(0, 240)) + "</span>"
+        + '<div class="fila-btn" style="margin:.45rem 0 .1rem">'
+        + ops.map((o, i) => '<button class="mini" data-decidir="' + P.esc(p.id) + '" data-op="' + i + '">'
+          + P.esc(o.t) + (o.r ? " · sugerida" : "") + "</button>").join("")
+        + '<button class="mini" data-decidir-abrir="' + P.esc(p.id) + '">' + (ops.length ? "Otra respuesta…" : "Responder…") + "</button>"
+        + "</div></div></div>";
+    }
+  }
   if (preguntas) {
     h += '<div class="tt-fila"><div class="tt-que"><b>'
       + preguntas + (preguntas === 1 ? " pregunta espera" : " preguntas esperan")
@@ -1319,6 +1376,12 @@ function pintarTeToca() {
 }
 
 $("te-toca").addEventListener("click", (e) => {
+  /* panel-54: una opción de «Para decidir» contesta con un toque; «Otra
+     respuesta…» abre el pendiente para escribirla con sus palabras. */
+  const dec = e.target.closest("[data-decidir]");
+  if (dec) { responderConOpcion(dec.dataset.decidir, dec); return; }
+  const ab = e.target.closest("[data-decidir-abrir]");
+  if (ab) { const p = PENDIENTES.find((x) => x.id === ab.dataset.decidirAbrir); if (p) abrirPendiente(p); return; }
   const li = e.target.closest("[data-tt-linea]");
   if (li) {
     const l = LINEAS.find((x) => x.id === li.dataset.ttLinea);

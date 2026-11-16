@@ -79,7 +79,9 @@ funciones; el servidor vive en `servidor/` y se despliega desde Termux con `node
 ## El panel
 
 - **El sitio se elige UNA vez, en la barra, y manda en todas las pestañas** (no se le da selector propio a una pestaña).
-- **Lo que Mauro tiene que mirar va en «Lo primero»**, en este orden: reglas sin publicar, preguntas sin responder, pendientes que lo esperan.
+- **Lo que Mauro tiene que mirar va en «Lo primero»**, en este orden: reglas sin publicar, **«Para decidir»** (panel-54, etapa 7b: las decisiones de a TRES,
+  con `opciones` [{t, r}] de un toque —la misma forma que las consultas de invitados—; el toque escribe la `respuesta` igual que la cola; se muda a «Hoy» de
+  Timón en la etapa 5), preguntas sin responder, pendientes que lo esperan.
 - **Publicar reglas es UN solo mecanismo** (copiar, abrir consola, «Ya las publiqué», por `botonesDeReglas()`). **El estado se DERIVA** de comparar
   `acceso.repo.huella` con `acceso.publicado.huella`; nadie más lo teclea. El panel **no puede leer** las reglas publicadas: sólo el archivo del repo.
 - **No existe la pantalla de pegar JSON** («Parte»): no se vuelve a agregar.

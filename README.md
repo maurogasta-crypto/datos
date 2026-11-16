@@ -357,7 +357,16 @@ lugar de un toque.
 1. **Las reglas sin publicar.** Primero porque son lo único de la lista que deja
    una base abierta mientras espera, y porque nadie más que vos puede hacerlas:
    publicar reglas es entrar a la consola de Firebase con tu cuenta.
-2. **Las preguntas sin responder.** Segundas porque cada una tiene a un agente
+2. **«Para decidir»** (`panel-54`, 16-nov-2026, plan «Timón», etapa 7b): las
+   tres decisiones de arriba de la cola, acá mismo. Si la `pregunta` del
+   pendiente trae `opciones` (`[{t, r}]`, la misma forma que las consultas de
+   invitados; la recomendada con `r: true` dice «· sugerida», como en el
+   prototipo que aprobó Mauro), **un toque contesta**: escribe la `respuesta`,
+   pasa el pendiente a Claude y lo anota en la historia. «Otra respuesta…»
+   abre el pendiente para escribirla con sus palabras. Contestar una hace
+   subir a la siguiente: nunca una pared de preguntas. Cuando exista «Hoy» en
+   Timón (etapa 5), este bloque se muda allá.
+3. **Las preguntas sin responder.** Después porque cada una tiene a un agente
    parado esperando.
 3. **Los pendientes que te esperan.** Últimos porque no bloquean a nadie más, y
    porque ya tienen su propia urgencia adentro.
@@ -843,7 +852,7 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-53` |
+| `index.html` | `P.PANEL` | `panel-54` |
 | `invitado.html` | `P.PANEL` | `invitado-21` |
 | `intervenir.js` | pedido con `?v=` | `intervenir-5` |
 | `paquete.js` · `semaforo.js` | — | `paquete-4` |

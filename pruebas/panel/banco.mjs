@@ -120,7 +120,7 @@ const { P, $ } = nucleo({}, {}, ()=>{}, ()=>{}, ()=>{}, ()=>{}, cargarFirebase);
 const modSrc = sinImports(/<script type="module">([\s\S]*?)<\/script>/.exec(html)[1]);
 const correr = new Function("P","$","db","auth","doc","setDoc","deleteDoc","collection",
   "getDocs","serverTimestamp","writeBatch","firebaseConfig","getDoc",
-  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { APP = s === '*' ? '' : s; SITIO = s; $('cual-app').value = APP; }, elegirSitio, accesosDe, pintarAccesos, idBoveda, APP: () => APP, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, armarPedido, abrirPedido, estadoGuardable, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas, pintarPersonas };");
+  modSrc + "\n return { pintarConfigApp, armarConfigApp, copiarConfigApp, guardarClaveApp, releerReglas, pintarFichas, leerFichas, abrirFicha, FICHAS: () => FICHAS, leer, pintar, abrirPendiente, PENDIENTES: () => PENDIENTES, leerProtocolos, pintarProtocolos, abrirRegla, PROTOCOLOS: () => PROTOCOLOS, trabaA, frenadoPor, arrancar, pintarFichaTecnica, fichasDe, sacarNotaDePlantilla, MARCA_MIA, MARCA_AGENTE, SIN_AGENTE, pintarSitios, verSitio: (s) => { APP = s === '*' ? '' : s; SITIO = s; $('cual-app').value = APP; }, elegirSitio, accesosDe, pintarAccesos, idBoveda, APP: () => APP, huella, medirReglas, sinComentarios, paraPegar, estadoReglas, queEspera, esPropia, tieneReglas, reglasDelPendiente, botonesDeReglas, copiarReglasDe, marcarPublicadas, bajarReglasDe, armarPlantilla, uidAgentePropio, armarPedido, abrirPedido, estadoGuardable, paraDecidir, PROYECTOS: () => PROYECTOS, tarjeta, LINEAS: () => LINEAS, lineasDe, choques, pintarLineas, abrirLinea, cerrarLinea, vivaL, diasTomada, ordenarLineas, pintarPersonas };");
 
 /* La pantalla arranca sin sesión y muestra la puerta; para probar las fichas
    hace falta estar adentro, así que se fuerza el usuario. */
@@ -1346,6 +1346,35 @@ ok(tt.includes("tomada hace"), "«Lo primero» encabeza con el choque");
 ok(tt.indexOf("tomada hace") < tt.indexOf("las reglas sin publicar"),
    "y va ARRIBA de las reglas: es lo único de la lista que pierde trabajo mientras se lee");
 ok(!!$("te-toca").querySelector("[data-tt-linea]"), "y el botón lleva a la línea que lo causa");
+
+/* ── panel-54 (plan «Timón», etapa 7b): «Para decidir» en «Lo primero» ──
+   Las decisiones de a tres, con opciones de un toque; el toque escribe la
+   respuesta en el pendiente igual que la cola. */
+BASE.pendientes["sitio:D1"] = { proyecto: "sitio", titulo: "¿Arranco la fase 6?", estado: "abierto",
+  prioridad: "alta", creadoEn: "2026-11-14", pregunta: "La fase 6 es el Entrenador. ¿La arranco?",
+  opciones: [{ t: "Sí, arrancala", r: true }, { t: "Todavía no" }], historia: [] };
+BASE.pendientes["sitio:D2"] = { proyecto: "sitio", titulo: "Decisión vieja sin opciones", estado: "abierto",
+  prioridad: "media", creadoEn: "2026-11-01", pregunta: "¿Qué hacemos con esto?", historia: [] };
+BASE.pendientes["sitio:D3"] = { proyecto: "sitio", titulo: "Ya respondida", estado: "abierto",
+  prioridad: "alta", creadoEn: "2026-11-02", pregunta: "¿vieja?", respuesta: "sí", historia: [] };
+await api.leer(); await esperar();
+const dec = api.paraDecidir(api.PENDIENTES().filter((x) => ["sitio:D1", "sitio:D2", "sitio:D3"].includes(x.id)));
+ok(dec.map((x) => x.id).join(",") === "sitio:D1,sitio:D2", "para decidir: la alta primero, la respondida no entra");
+ok(api.paraDecidir(Array.from({ length: 9 }, (_, i) => ({ id: "p" + i, estado: "abierto", pregunta: "¿?", creadoEn: "2026-11-0" + (i + 1) }))).length === 3,
+   "de a TRES: contestar una hace subir a la siguiente, nunca una pared de preguntas");
+ok($("te-toca").textContent.includes("Para decidir") && $("te-toca").textContent.includes("un toque alcanza"),
+   "«Lo primero» muestra el bloque con sus opciones");
+const botonOp = $("te-toca").querySelector('[data-decidir="sitio:D1"]');
+ok(!!botonOp && /sugerida/.test(botonOp.textContent), "la opción recomendada se marca «sugerida», como en el prototipo");
+botonOp.click(); await esperar(); await esperar();
+const d1 = BASE.pendientes["sitio:D1"];
+ok(d1.respuesta === "Sí, arrancala" && d1.quien === "claude" && d1.tocado === true && !!d1.respondidoEn,
+   "el toque escribe la respuesta igual que la cola: me pasa la pelota");
+ok(/un toque/.test(JSON.stringify(d1.historia)) && /Sí, arrancala/.test(JSON.stringify(d1.historia)),
+   "y la historia dice que fue con un toque y con cuál opción");
+ok(!!$("te-toca").querySelector('[data-decidir-abrir="sitio:D2"]'), "una decisión sin opciones lleva a responder con sus palabras");
+delete BASE.pendientes["sitio:D2"]; delete BASE.pendientes["sitio:D3"];
+await api.leer(); await esperar();
 
 /* ── la ficha del sitio muestra las suyas ── */
 api.verSitio("casayourte"); api.pintarSitios();

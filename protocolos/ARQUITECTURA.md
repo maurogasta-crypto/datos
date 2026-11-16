@@ -121,7 +121,10 @@ Los niveles, que cada trabajo de la ronda declara:
 - **Las decisiones de Mauro le llegan a «Hoy»**, tres por día, con opciones de
   un toque; la respuesta vuelve al pendiente del panel. **(15-nov)** Hasta que
   «Hoy» exista (etapa 5), llegan a «Lo primero» del panel, que ya existe: una
-  pantalla no nace antes que su lugar.
+  pantalla no nace antes que su lugar. **(16-nov) Hecho** (panel-54): «Para
+  decidir» en «Lo primero», de a tres, con `opciones` [{t, r}] en la
+  `pregunta` del pendiente (la misma forma que las consultas de invitados); el
+  toque escribe la `respuesta` igual que la cola.
 
 ## 5. Lo que queda congelado
 
@@ -143,7 +146,7 @@ se borró, y el interruptor de cada teléfono no se toca al actualizar.
 | 4 | Ítems y espacios en Timón, de a un tipo por vez | **(15-nov)** Un solo tipo en paralelo a la vez, y cada tipo dice en su tanda el costo contra el cupo: el paralelo de la regla 8 duplica lecturas y escrituras por definición, y la base ya se quedó sin cupo una vez (27-oct). **En curso desde el 16-nov — primer tipo: `tarea`** (tiempos app-42): la solapa «Hoy» nueva (`hoy.js`, el prototipo aprobado), `items/` con la regla v25 **que Mauro tiene que publicar**, los espacios `familia` y `p-<uid>` implícitos (la regla decide por el id; `espacios/` con miembros nace con el primer negocio, regla 7), y `hoy/{uid}` materializado por la app del dueño (regla 3; sellado al agente, en `selladas` de firestore.mjs). Mauro publicó las reglas v25 ese mismo día: la semana del paralelo con Tareas corre hasta el 23-nov; costo contra el cupo en el README de tiempos (muy por debajo de Spark) |
 | 5 | La Pizarra como cáscara, con los widgets nuevos | — |
 | 6 | Los hilos dentro de Timón: mensaje a ítem, archivos, Claude en el hilo | — |
-| 7 | La ronda por trabajos y «Para decidir» (en paralelo desde la 2) | **(15-nov)** En dos partes, porque la mitad dependía de la 4 sin que la tabla lo dijera. **7a hecha el 16-nov**: la ronda corre por trabajos — `ronda/trabajos/` de `datos`, un archivo por trabajo (app, cuándo, qué lee, criterio, qué puede dejar, nivel), índice en `ronda/LEEME.md`, banco `pruebas/trabajos.mjs` (325 casos); `TRASPASO.md` § 4 conserva el arranque y el NUNCA, que mandan sobre todos. Falta **7b**, «Para decidir»: nace en «Lo primero» del panel (que ya existe) y se muda a «Hoy» en la 5 |
+| 7 | La ronda por trabajos y «Para decidir» (en paralelo desde la 2) | **(15-nov)** En dos partes, porque la mitad dependía de la 4 sin que la tabla lo dijera. **7a hecha el 16-nov**: la ronda corre por trabajos — `ronda/trabajos/` de `datos`, un archivo por trabajo (app, cuándo, qué lee, criterio, qué puede dejar, nivel), índice en `ronda/LEEME.md`, banco `pruebas/trabajos.mjs` (325 casos); `TRASPASO.md` § 4 conserva el arranque y el NUNCA, que mandan sobre todos. **7b hecha el 16-nov** (panel-54): «Para decidir» nació en «Lo primero» del panel — las decisiones de a tres, con opciones de un toque (`opciones` [{t, r}] en la `pregunta`); el toque escribe la `respuesta` en el pendiente igual que la cola. Se muda a «Hoy» en la 5. **Etapa 7 completa** |
 | 8 | Los negocios, de a uno: su espacio, sus flujos dibujados, sus pantallas simples | — |
 
 *Cuando una etapa cambia de estado, cambia esta tabla en la misma tanda.*

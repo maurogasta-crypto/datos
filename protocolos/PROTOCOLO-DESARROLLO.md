@@ -1247,6 +1247,22 @@ y cambian):
 | Gemini | un tope de pedidos por día y por minuto, distinto por modelo (`flash-lite` tiene el más amplio) | facturas, boletas, consultas y las transcripciones de la ronda (`charla.mjs`, con tope por corrida) |
 | Cloudinary | 25 créditos por mes | fotos de los sitios |
 
+### 13.2 bis Se comprueba AL PLANIFICAR, con una fuente de ese día (16-nov-2026)
+
+Mauro, 15-nov (`general:C3`): «es un control que debe hacerse al momento de
+planificar desarrollos por la propia IA, buscando información sobre los costos
+de la implementación de servicios nuevos al ecosistema en cualquiera de las
+áreas que se desarrollan». O sea: no es una revisión suelta de cuentas, es un
+**punto fijo de todo plan**. Todo plan (de ORGANIZAR, de una etapa del plan
+«Timón», de un pedido) que sume un servicio, una función, una llamada a una IA
+o un almacenamiento nuevos lleva una línea **«Costo»** que dice: qué servicio
+es, **cuál es su cupo gratuito hoy** (consultado ese día en su documentación
+oficial, no de memoria: los planes cambian), cuánto agrega el desarrollo para
+10 personas y **si el plan pide tarjeta o facturación**. Si la pide, o si no
+entra con margen, **no se hace**: se rediseña o se deja. La comprobación de que
+cada cuenta esté en un plan que no cobra (13.1) sigue siendo de Mauro en cada
+consola; esto es lo que hace el que planifica.
+
 ### 13.3 Lo que no se hace
 
 - Nada que **exija** activar facturación: Cloud Storage para Firebase (pide

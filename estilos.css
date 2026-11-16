@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    estilos.css — el sistema de diseño del panel.
-   Sello: estilos-14
+   Sello: estilos-15 (16-nov-2026: .fila-btn con wrap)
 
    Teléfono Android primero (PROTOCOLO-INTERFAZ §0.1). Los respiros de
    sistema son VARIABLES, nunca números a mano: --piso y --techo. Sin eso,
@@ -56,8 +56,13 @@ a { color:var(--acento); }
   font-size:.9rem; cursor:pointer; }
 .btn.p { background:var(--acento); border-color:var(--acento); color:var(--tinta); font-weight:600; }
 .btn:disabled { opacity:.45; }
-.fila-btn { display:flex; gap:.5rem; margin:.7rem 0; }
-.fila-btn .btn { flex:1; }
+/* estilos-15 (16-nov-2026, Mauro: «la estética está fallando» en el panel de
+   invitados): sin `wrap`, un enlace largo que no se encoge aplastaba a los
+   botones de al lado hasta una letra por renglón (y el radio los volvía
+   óvalos). Una fila de botones SIEMPRE puede bajar de renglón. */
+.fila-btn { display:flex; flex-wrap:wrap; gap:.5rem; margin:.7rem 0; }
+.fila-btn .btn { flex:1 1 auto; }
+.fila-btn > * { min-width:0; max-width:100%; }
 
 /* ── campos ── */
 label { display:block; font-size:.78rem; color:var(--gris); margin:.7rem 0 .2rem; }

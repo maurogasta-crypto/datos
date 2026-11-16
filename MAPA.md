@@ -153,6 +153,12 @@
 | `pruebas/panel/reglas-emulador-v9.mjs` | _(sin describir)_ | — |
 | `pruebas/panel/reglas-emulador.mjs` | las reglas v6 y v7 contra el EMULADOR de Firestore. | — |
 
+## `respaldos/`
+
+| Archivo | Qué es | Usa |
+|---|---|---|
+| `respaldos/2026-11-16-panel.json` | _(sin describir)_ | — |
+
 ## `ronda/`
 
 | Archivo | Qué es | Usa |

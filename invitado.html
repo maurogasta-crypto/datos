@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Panel · invitados</title>
-<link rel="stylesheet" href="estilos.css?v=estilos-14">
+<link rel="stylesheet" href="estilos.css?v=estilos-15">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <meta name="theme-color" content="#14161a">
@@ -180,7 +180,7 @@
 <script type="module">
 import { P, $, db, auth } from "./nucleo.js?v=nucleo-13";
 import { GLOSARIO } from "./glosario.js?v=glosario-1";
-import * as CH from "./chat.js?v=chat-5";
+import * as CH from "./chat.js?v=chat-6";
 import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeArea, ESTADOS } from "./esquema.js?v=esquema-2";
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
@@ -440,7 +440,7 @@ function pintar() {
         <div data-secciones="${P.esc(pr.id)}"></div>
         <textarea data-chat="${P.esc(pr.id)}" rows="4" placeholder="Pegá acá lo que te contestó tu Claude…"></textarea>
         <div class="fila-btn">
-          <label class="mini">📄 Subir un archivo (.md o .txt)<input type="file" accept=".md,.markdown,.txt,text/plain,text/markdown" data-chat-arch="${P.esc(pr.id)}" hidden></label>
+          <label class="mini">📄 Subir un archivo (.md, .txt o el código que te devolvió)<input type="file" accept=".md,.markdown,.txt,.js,.jsx,.mjs,.css,.html,.json,text/plain,text/markdown" data-chat-arch="${P.esc(pr.id)}" hidden></label>
           <button class="btn p" data-chat-mandar="${P.esc(pr.id)}">Mandar a Claude</button>
         </div>
         <p class="gris" data-chat-estado="${P.esc(pr.id)}"></p>
@@ -645,9 +645,9 @@ function htmlConsulta(x) {
    leído sin credencial. */
 const crudo = (repo, ruta) => `https://raw.githubusercontent.com/${repo}/main/${ruta}`;
 async function leerTexto(url) { const r = await fetch(url); if (!r.ok) throw new Error("GitHub contestó " + r.status); return r.text(); }
-function descargar(nombre, texto) {
+function descargar(nombre, datos, tipo = "text/markdown;charset=utf-8") {
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([texto], { type: "text/markdown;charset=utf-8" }));
+  a.href = URL.createObjectURL(new Blob([datos], { type: tipo }));
   a.download = nombre; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
@@ -664,7 +664,9 @@ async function traerAreas(pr) {
     await Promise.all(mapa.areas.filter((a) => Array.isArray(a.archivos) && a.archivos.length).map(async (a) => {
       const ts = await Promise.all(a.archivos.map((f) => leerTexto(crudo(pr.sitio.repo, f)).catch(() => "")));
       const texto = ts.map((t, i) => "// ═══ " + a.archivos[i] + " ═══\n" + t).join("\n");
-      ARCH[a.id] = { texto, lineas: texto.split("\n").length, tokens: Math.round(texto.length / 3.3), partes: a.archivos.length };
+      // chat-6: para el zip, cada archivo real por separado, con su ruta del repositorio.
+      ARCH[a.id] = { texto, lineas: texto.split("\n").length, tokens: Math.round(texto.length / 3.3), partes: a.archivos.length,
+        reales: a.archivos.map((f, i) => ({ ruta: f, texto: ts[i] })) };
     }));
     const extraerDe = (a) => ARCH[a.id] || CH.extraer(fuente, a, decls);
     const filas = mapa.areas.map((a) => { const e = extraerDe(a); return { a, e }; });
@@ -672,7 +674,7 @@ async function traerAreas(pr) {
       <select data-area-sel="${P.esc(pr.id)}" style="width:100%;margin:.2rem 0">${filas.map(({ a, e }) =>
         `<option value="${P.esc(a.id)}">${P.esc(a.titulo)} · ${e.lineas} líneas · ~${Math.max(1, Math.round(e.tokens / 1000))} mil</option>`).join("")}</select>
       <div class="fila-btn">
-        <button class="btn p" data-paquete="${P.esc(pr.id)}">⬇ Paquete del área (.md)</button>
+        <button class="btn p" data-paquete="${P.esc(pr.id)}">⬇ Paquete del área (.zip)</button>
         <button class="mini" data-guia="${P.esc(pr.id)}">⬇ Guía de desarrollo (.md)</button>
         <a class="mini" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${P.esc(pr.sitio.repo)}/blob/main/ARQUITECTURA.md">Ver la propuesta de arquitectura</a>
       </div>
@@ -684,7 +686,13 @@ async function traerAreas(pr) {
       const area = mapa.areas.find((x) => x.id === sel.value); if (!area) return;
       ev.target.disabled = true;
       let guia = ""; try { guia = await leerTexto(crudo(pr.sitio.repo, mapa.guia || "GUIA-PARA-TU-CHAT.md")); } catch (e) { P.aviso("No pude bajar la guía general: va el paquete sin ella.", "error"); }
-      descargar(CH.nombrePaquete(pr, area, P.hoy()), CH.armarPaquete({ proyecto: pr.nombre || pr.id, area, codigo: extraerDe(area), guia, fecha: P.hoy(), archivo: Array.isArray(area.archivos) && area.archivos.length ? area.archivos.join(", ") : mapa.archivo, usadas: CH.usa(fuente, area, mapa.areas, decls) }));
+      /* chat-6 (16-nov-2026, Mauro): el paquete baja como ZIP con los archivos de verdad y su
+         LEEME, para que el chat devuelva el archivo completo listo para sustituir. */
+      const archivos = CH.archivosDelPaquete({ proyecto: pr.nombre || pr.id, repo: pr.sitio.repo, area,
+        codigo: extraerDe(area), guia, fecha: P.hoy(),
+        reales: (ARCH[area.id] || {}).reales || null,
+        usadas: CH.usa(fuente, area, mapa.areas, decls) });
+      descargar(CH.nombreZip(pr, area, P.hoy()), CH.armarZip(archivos, P.hoy()), "application/zip");
       ev.target.disabled = false;
     };
     caja.querySelector("[data-guia]").onclick = async () => {

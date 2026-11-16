@@ -126,5 +126,57 @@ t("chat.js no habla con Firebase ni con la red", () => {
   assert.doesNotMatch(s, /^import /m); assert.doesNotMatch(s, /fetch\(|firebase|claves/i);
 });
 
+/* ═══ chat-6: el paquete como ZIP (16-nov-2026) ═══ */
+const AREA = { id: "formas", titulo: "Formas recomendadas", que: "las formas", destino: "src/features/formas", probar: "node pruebas/teoria.mjs", riesgo: "bajo" };
+const COD = { texto: "// ── formas: líneas 10–12 de src/App.jsx ──\nconst f = 1;", lineas: 3, tokens: 20 };
+
+t("el crc32 es el de verdad (el valor publicado de «abc»)", () => {
+  assert.equal(C.crc32(new TextEncoder().encode("abc")), 0x352441C2);
+  assert.equal(C.crc32(new Uint8Array(0)), 0);
+});
+t("el LEEME del zip es el manual preciso: archivo completo, mismo nombre, no inventar lo que falta", () => {
+  const arch = C.archivosDelPaquete({ proyecto: "BandoMaps", repo: "masotromauro-ai/tocatoca", area: AREA, codigo: COD, guia: "GUÍA", fecha: "2026-11-16",
+    usadas: [{ nombre: "pequena", area: "a", lineas: 3, texto: "function pequena(){}" }, { nombre: "enorme", area: "b", lineas: 999, texto: "function enorme(){}" }] });
+  assert.deepEqual(arch.map((x) => x.nombre), ["LEEME.md", "formas.jsx", "guia-general.md", "solo-leer/piezas-de-otras-areas.jsx"]);
+  const leeme = arch[0].texto;
+  for (const s of ["COMPLETO", "MISMO nombre", "no lo inventes", "Tu pedido", "masotromauro-ai/tocatoca", "`formas.jsx`", "src/App.jsx", "la hace el equipo", "`enorme`"])
+    assert.ok(leeme.includes(s), s);
+  assert.equal(arch[1].texto, COD.texto);
+  assert.ok(arch[3].texto.includes("NO SE CAMBIAN") && arch[3].texto.includes("pequena") && !arch[3].texto.includes("function enorme"));
+});
+t("un área que ya vive en archivos de verdad viaja con sus rutas del repositorio", () => {
+  const arch = C.archivosDelPaquete({ proyecto: "P", repo: "r/r", area: AREA, codigo: COD,
+    reales: [{ ruta: "src/shared/teoria/color.js", texto: "export const NC = 1;" }] });
+  assert.ok(arch.some((x) => x.nombre === "src/shared/teoria/color.js" && x.texto === "export const NC = 1;"));
+  assert.ok(!arch.some((x) => x.nombre === "formas.jsx"), "con archivos reales no se inventa el .jsx del tramo");
+  assert.ok(arch[0].texto.includes("se sustituye directo"));
+});
+t("el zip se desarma byte a byte: firmas, nombres, datos intactos y crc de verdad", () => {
+  const arch = [{ nombre: "LEEME.md", texto: "# Hola" }, { nombre: "solo-leer/p.jsx", texto: "const í = 1;" }];
+  const z = C.armarZip(arch, "2026-11-16");
+  const dv = new DataView(z.buffer), dec = new TextDecoder();
+  let o = 0;
+  const leidos = [];
+  while (dv.getUint32(o, true) === 0x04034b50) {
+    const crc = dv.getUint32(o + 14, true), largo = dv.getUint32(o + 18, true), nLen = dv.getUint16(o + 26, true), eLen = dv.getUint16(o + 28, true);
+    const nombre = dec.decode(z.slice(o + 30, o + 30 + nLen));
+    const datos = z.slice(o + 30 + nLen + eLen, o + 30 + nLen + eLen + largo);
+    assert.equal(C.crc32(datos), crc, "crc de " + nombre);
+    leidos.push([nombre, dec.decode(datos)]);
+    o += 30 + nLen + eLen + largo;
+  }
+  assert.deepEqual(leidos, arch.map((x) => [x.nombre, x.texto]));
+  assert.equal(dv.getUint32(o, true), 0x02014b50, "arranca el directorio central");
+  const eocd = z.length - 22;
+  assert.equal(dv.getUint32(eocd, true), 0x06054b50, "el cierre está donde tiene que estar");
+  assert.equal(dv.getUint16(eocd + 10, true), 2, "el cierre cuenta los archivos");
+  assert.equal(C.nombreZip({ nombre: "BandoMaps" }, AREA, "2026-11-16"), "bandomaps-paquete-formas-2026-11-16.zip");
+});
+t("los archivos de código que devuelve el chat se pueden subir como respuesta", () => {
+  assert.equal(C.esArchivoDeTexto({ name: "formas.jsx" }), true);
+  assert.equal(C.esArchivoDeTexto({ name: "color.js" }), true);
+  assert.equal(C.esArchivoDeTexto({ name: "app.apk" }), false);
+});
+
 console.log(`\n${ok} pasadas, ${mal} fallidas`);
 process.exit(mal ? 1 : 0);

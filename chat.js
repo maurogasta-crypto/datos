@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    chat.js — el canal entre un invitado y SU propio chat de IA
-   Sello: chat-5 (14-nov-2026: habla de sesiones gratuitas de Claude y de los dos caminos; chat-4, 10-nov)
+   Sello: chat-6 (16-nov-2026: el paquete de un área baja como ZIP con archivos de verdad y su LEEME; chat-5, 14-nov)
 
    Mauro, 9-nov-2026: «una herramienta que permita descargar un md que resuma
    el desarrollo de la app para su chat y un espacio en el que pueda cargar la
@@ -19,7 +19,7 @@
    falta una regla nueva.
    ═══════════════════════════════════════════════════════════ */
 
-export const SELLO = "chat-5";
+export const SELLO = "chat-6";
 /* Una respuesta de un chat va entera como comentario de un pedido. Un
    documento de Firestore no pasa de 1 MiB: con 200 mil caracteres queda lugar
    para la conversación de después. */
@@ -147,8 +147,9 @@ export function prepararRespuesta(texto) {
   return { ok: true, texto: t, resumen: linea(t).slice(0, 280) };
 }
 
-/** Un archivo que no es texto no se lee: se dice. */
-export const esArchivoDeTexto = (f) => !!f && (/\.(md|markdown|txt)$/i.test(f.name || "") || /^text\//.test(f.type || ""));
+/** Un archivo que no es texto no se lee: se dice. Desde chat-6 entran también los archivos de
+ *  código que devuelve el chat con el paquete zip (regla 1 del LEEME: el archivo completo). */
+export const esArchivoDeTexto = (f) => !!f && (/\.(md|markdown|txt|js|jsx|mjs|css|html|json)$/i.test(f.name || "") || /^text\//.test(f.type || ""));
 
 /* ═══ ÁREAS (copia EXACTA de herramientas/areas.mjs de tocatoca; pruebas/chat.mjs las compara) ═══
    Parten el código de un proyecto en las áreas que dice su areas.json, para bajar «el paquete de
@@ -273,3 +274,135 @@ export function armarPaquete({ proyecto = "", area, codigo, guia = "", fecha = "
 /** El nombre del archivo del paquete: `bandomaps-paquete-formas-recomendadas-2026-11-10.md`. */
 export const nombrePaquete = (pr, area, fecha) =>
   nombreArchivo({ nombre: `${pr.nombre || pr.id} paquete ${area.id}` }, fecha).replace("-resumen", "");
+
+/* ═══ EL PAQUETE COMO ZIP (chat-6, 16-nov-2026) ═══
+   Mauro: «la exportación debería descargar los archivos propiamente dentro de un zip, y si es muy
+   complejo cada archivo que componga esa sesión en el repositorio con el manual de explicación,
+   para que el chat sea capaz de devolver en la sesión el archivo con las modificaciones pronto
+   para sustituir en el repositorio. El manual debe ser lo suficientemente preciso para posibilitar
+   al chat gratuito hacer la modificación que se le pida sin romper o pidiendo que se le descarguen
+   los archivos que le estén faltando». La idea: que Mariano siga haciendo sus modificaciones
+   chicas mientras Mauro avanza con la estructura general.
+
+   · Un área que YA vive en archivos de verdad (`archivos` en areas.json) viaja con SUS rutas del
+     repositorio: lo que vuelve con esa ruta se sustituye tal cual.
+   · Un área que sigue adentro de src/App.jsx viaja como UN archivo `<id>.jsx` (sus tramos): vuelve
+     completo con ese mismo nombre, y la sustitución adentro de App.jsx la hace el equipo con sus
+     herramientas (areas.mjs / mover.mjs de tocatoca), nunca el chat gratuito.
+   · El zip se arma acá, sin dependencias: ZIP sin compresión (STORE), que abre cualquier sistema;
+     el banco lo desarma byte a byte. Son textos chicos: comprimir no pagaba una dependencia. */
+
+/** Los archivos que van adentro del zip de un área: el LEEME (el manual), el código (como archivos
+ *  de verdad), la guía general y lo de otras áreas en una carpeta `solo-leer/`. */
+export function archivosDelPaquete({ proyecto = "", repo = "", area, codigo, guia = "", fecha = "", reales = null, usadas = [] }) {
+  const deAppJsx = !(Array.isArray(reales) && reales.length);
+  const rutas = deAppJsx ? [`${area.id}.jsx`] : reales.map((r) => r.ruta);
+  let presupuesto = 400;
+  const trae = [], sinCodigo = [];
+  for (const u of usadas) { if (u.lineas <= presupuesto) { presupuesto -= u.lineas; trae.push(u); } else sinCodigo.push(u); }
+  const L = [];
+  L.push(`# ${linea(proyecto)} · ${linea(area.titulo)} — paquete para trabajar con tu chat`);
+  L.push("");
+  L.push(`Armado desde el panel${fecha ? " el " + fecha : ""}. El código vive en el repositorio${repo ? ` \`${repo}\`` : ""}.`);
+  L.push("");
+  L.push("## Tu pedido");
+  L.push("");
+  L.push("_(escribí acá qué querés cambiar en esta área, con tus palabras, y dale este zip a tu Claude: una sesión gratuita alcanza)_");
+  L.push("");
+  L.push("## Qué hay en este zip");
+  L.push("");
+  L.push("- `LEEME.md` — esto: las reglas para que tu chat trabaje sin romper nada.");
+  for (const r of rutas) L.push(`- \`${r}\` — el código del área: **esto es lo que se puede cambiar**.`);
+  if (guia) L.push("- `guia-general.md` — las reglas del proyecto entero: mandan sobre todo.");
+  if (trae.length) L.push("- `solo-leer/piezas-de-otras-areas.jsx` — lo de otras áreas que esta usa: para entender, **nunca para cambiar**.");
+  L.push("");
+  L.push("## Para tu chat: las reglas, precisas");
+  L.push("");
+  L.push("1. **Devolvé cada archivo que cambies COMPLETO**, con el MISMO nombre y la misma ruta que tiene en este zip, listo para sustituir tal cual en el repositorio. Nada de fragmentos, diffs ni «…el resto queda igual».");
+  if (deAppJsx) L.push(`2. \`${area.id}.jsx\` son las líneas de \`${linea(area.archivoOrigen || "src/App.jsx")}\` que forman esta área (${codigo.lineas} líneas). Devolvelo completo con ese mismo nombre: la sustitución adentro del archivo grande la hace el equipo con sus herramientas, no vos.`);
+  else L.push("2. Cada archivo de código conserva su ruta real del repositorio: lo que devuelvas con esa ruta se sustituye directo.");
+  L.push("3. **No cambies** el nombre, los parámetros ni el comportamiento de una pieza que usan otras áreas (las de `solo-leer/` y las que la guía marque como intocables): otras partes del sitio dependen de eso.");
+  L.push("4. **Si te falta algo** —un archivo, una pieza que no está acá—, **no lo inventes ni lo supongas**: decí exactamente qué archivo o pieza necesitás, y la persona te baja el paquete del área que lo tiene.");
+  L.push("5. No agregues dependencias (npm) ni archivos nuevos sin decirlo y explicar por qué. En todo lo demás manda `guia-general.md`.");
+  L.push("6. Terminá tu respuesta con la lista de los archivos que devolvés y, en una línea cada uno, qué cambiaste y por qué.");
+  L.push("");
+  L.push("## Cómo vuelve el trabajo");
+  L.push("");
+  L.push("La persona carga tu respuesta en su panel («Trabajar con una sesión gratuita de Claude»), o —si es colaboradora del repositorio— sube el archivo siguiendo la guía. En los dos caminos se verifica contra el resto del proyecto antes de llegar a los alumnos.");
+  L.push("");
+  L.push("## Esta área");
+  L.push("");
+  L.push(`- **Qué hace:** ${linea(area.que)}`);
+  L.push(`- **Tamaño:** ${codigo.lineas} líneas, unas ${Math.max(1, Math.round(codigo.tokens / 1000))} mil unidades de lectura.`);
+  if (area.destino) L.push(`- **Adónde va cuando se parta:** ${linea(area.destino)}`);
+  if (area.probar) L.push(`- **Cómo probarla:** ${linea(area.probar)}`);
+  if (area.riesgo) L.push(`- **Riesgo de tocarla:** ${linea(area.riesgo)}`);
+  if (codigo.tokens > 20000) L.push("- ⚠ **Es un área grande**: conviene pedir un cambio muy puntual, o partirla primero (está en el plan de arquitectura).");
+  if (sinCodigo.length) {
+    L.push("");
+    L.push(`Piezas que esta área usa y NO vienen en el zip (regla 4: pedilas antes de suponer qué hacen): ${sinCodigo.map((u) => `\`${u.nombre}\` (${linea(u.area)})`).join(", ")}.`);
+  }
+  L.push("");
+  const archivos = [{ nombre: "LEEME.md", texto: L.join("\n") }];
+  if (deAppJsx) archivos.push({ nombre: `${area.id}.jsx`, texto: codigo.texto });
+  else for (const r of reales) archivos.push({ nombre: r.ruta, texto: String(r.texto) });
+  if (guia) archivos.push({ nombre: "guia-general.md", texto: String(guia).trim() });
+  if (trae.length) archivos.push({
+    nombre: "solo-leer/piezas-de-otras-areas.jsx",
+    texto: "// SÓLO PARA LEER: piezas de otras áreas que esta área usa. NO SE CAMBIAN.\n\n"
+      + trae.map((u) => `// ── ${u.nombre} (área ${u.area}) ──\n${u.texto}`).join("\n\n"),
+  });
+  return archivos;
+}
+
+/* El CRC32 que el formato ZIP exige para cada archivo, tabla clásica (polinomio 0xEDB88320). */
+let TABLA_CRC = null;
+export function crc32(bytes) {
+  if (!TABLA_CRC) {
+    TABLA_CRC = new Int32Array(256);
+    for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; TABLA_CRC[n] = c; }
+  }
+  let c = -1;
+  for (let i = 0; i < bytes.length; i++) c = TABLA_CRC[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+
+/** Un ZIP sin compresión (STORE) con esos archivos de texto. Devuelve los bytes (Uint8Array). */
+export function armarZip(archivos, fecha = "") {
+  const enc = new TextEncoder();
+  const [a, m, d] = /^\d{4}-\d{2}-\d{2}/.test(fecha) ? fecha.slice(0, 10).split("-").map(Number) : [1980, 1, 1];
+  const dosFecha = ((Math.min(127, Math.max(0, a - 1980)) << 9) | ((m & 15) << 5) | (d & 31));
+  const dosHora = 12 << 11;                                        // mediodía: un zip no precisa la hora real
+  const u16 = (v) => [v & 255, (v >>> 8) & 255];
+  const u32 = (v) => [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255];
+  const partes = [], centrales = [];
+  let offset = 0;
+  for (const f of archivos) {
+    const nombre = enc.encode(String(f.nombre)), datos = enc.encode(String(f.texto));
+    const crc = crc32(datos);
+    // Cabecera local: firma PK\3\4, versión 2.0, nombres en UTF-8 (bit 11), sin compresión.
+    const cab = new Uint8Array([0x50, 0x4B, 3, 4, ...u16(20), ...u16(0x0800), ...u16(0),
+      ...u16(dosHora), ...u16(dosFecha), ...u32(crc), ...u32(datos.length), ...u32(datos.length),
+      ...u16(nombre.length), ...u16(0)]);
+    partes.push(cab, nombre, datos);
+    centrales.push({ nombre, largo: datos.length, crc, offset });
+    offset += cab.length + nombre.length + datos.length;
+  }
+  const dirInicio = offset;
+  for (const c of centrales) {
+    const e = new Uint8Array([0x50, 0x4B, 1, 2, ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0),
+      ...u16(dosHora), ...u16(dosFecha), ...u32(c.crc), ...u32(c.largo), ...u32(c.largo),
+      ...u16(c.nombre.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(c.offset)]);
+    partes.push(e, c.nombre);
+    offset += e.length + c.nombre.length;
+  }
+  partes.push(new Uint8Array([0x50, 0x4B, 5, 6, ...u16(0), ...u16(0),
+    ...u16(centrales.length), ...u16(centrales.length), ...u32(offset - dirInicio), ...u32(dirInicio), ...u16(0)]));
+  const out = new Uint8Array(partes.reduce((t, p) => t + p.length, 0));
+  let o = 0;
+  for (const p of partes) { out.set(p, o); o += p.length; }
+  return out;
+}
+
+/** El nombre del zip: como el del paquete, con su extensión. */
+export const nombreZip = (pr, area, fecha) => nombrePaquete(pr, area, fecha).replace(/\.md$/, ".zip");

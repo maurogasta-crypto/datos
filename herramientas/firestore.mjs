@@ -266,10 +266,14 @@ const PROYECTOS = {
     /* v4 (app-4): los acuerdos de tiempo, la plata, lo que propone el agente
        y sus observaciones. La plata el agente la LEE; lo que quiere agregar
        lo escribe en `propuestas` y una persona lo aprueba desde la app. */
-    filtradas: { tareas: ["alcance", "comun"] },
+    /* v25 (16-nov-2026, plan «Timón» etapa 4): `items`, la forma única hacia
+       la que migran los tipos (hoy sólo `tarea`), en espacios `familia` y
+       `p-<uid>`. Como `tareas`: el agente lee y respalda SÓLO lo de familia
+       (consulta filtrada); lo personal es de su dueño y no sale. */
+    filtradas: { tareas: ["alcance", "comun"], items: ["espacio", "familia"] },
     colecciones: ["miembros", "solicitudes", "sesiones", "familia", "turnos", "eventos", "dias",
                   "bloques", "marcas", "movimientos", "recurrentes", "propuestas", "auditoria",
-                  "reportes", "_historial", "alertas", "deseos", "extractos", "mensajes", "tareas"],
+                  "reportes", "_historial", "alertas", "deseos", "extractos", "mensajes", "tareas", "items"],
     /* v14 (10-oct-2026, tiempos:V12): `extractos`, lo que dice cada banco
        línea por línea. El agente las carga (`extractos.mjs`) y las clasifica
        mientras están pendientes; registrarlas es de una persona. */
@@ -284,7 +288,11 @@ const PROYECTOS = {
     /* `enlace_llave` (v22, 28-oct-2026, pizarra-75): el código que firma lo que
        se mandan las Pizarras cerca. Lo leen sólo los teléfonos de la familia;
        la regla se lo niega al agente y esto da el mensaje claro. */
-    selladas: ["agendas", "enlace_llave"],
+    /* `hoy` (v25, 16-nov-2026): el documento materializado del widget
+       (regla 3 de ARQUITECTURA.md). Resume TODOS los espacios de una
+       persona, también los personales: lo escribe y lo lee sólo su dueño,
+       y la regla se lo niega al agente, como a `agendas`. */
+    selladas: ["agendas", "enlace_llave", "hoy"],
     /* v11 de las reglas (8-oct-2026, Mauro: «quiero que la IA pueda
        organizar mi agenda editando los contenidos»). `agendas` SIGUE sellada
        como colección —listarla trae la de los dos, y eso no se hace nunca—,

@@ -144,8 +144,13 @@ const PROYECTOS = {
     /* `presupuestos`, `proveedores` y `presupuesto_pedidos` (3-nov-2026): pedir
        precio de materiales y comparar (presupuestos.html). El agente los lee y
        los crea o completa, con copia en `_historial`; borrar es de una persona. */
+    /* `entregas` (17-nov-2026): el link de la propuesta para un cliente
+       (propuesta.html?p=<token>; el token es el id y es la llave). El agente
+       lo lee y lo crea o actualiza (Mauro: «incluye el agente»); CREAR uno
+       pide la autorización de Mauro citada (`conAutorizacion`), porque sale
+       hacia un cliente. Borrar, nunca. */
     colecciones: ["sitio", "albums", "usuarios", "reportes", "consultas",
-                  "presupuestos", "proveedores", "presupuesto_pedidos", "_historial"],
+                  "presupuestos", "proveedores", "presupuesto_pedidos", "entregas", "_historial"],
     /* `calculos`: datos de clientes y medidas de obra, y detrás costos,
        márgenes y tarifas — lo que el CLAUDE.md del proyecto prohíbe publicar.
        `invitaciones`: mails de gente que todavía no entró.
@@ -167,7 +172,7 @@ const PROYECTOS = {
        eliminar bajo mi autorización»). La regla no puede leer el chat, así
        que lo frena esta herramienta: sin `--autorizado "<lo que dijo>"` no
        crea ni borra, y lo que dijo queda en la entrada del historial. */
-    conAutorizacion: ["albums"],
+    conAutorizacion: ["albums", "entregas"],
     /* Las capturas y los audios de una consulta (consultas-2, 27-oct-2026,
        Mauro: «sacar fotos de las conversaciones de WhatsApp… copiar también
        los audios»): `adjuntar consultas <id> <archivo>` los guarda como bytes

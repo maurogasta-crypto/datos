@@ -25,12 +25,31 @@ los proyectos y quizás alguien más».
 | **Espacio** | Personal, Familia, y uno por proyecto. Tiene miembros; compartir es estar en el mismo espacio | — |
 | **Ítem** | Una sola forma para tarea, cita, compra, pedido y pregunta: qué, cuándo, de quién, en qué espacio | — |
 | **Hilo** | La conversación de un ítem o de un espacio. Un mensaje se vuelve ítem con un toque; los archivos van en el hilo | No es un chat aparte de las cosas |
-| **Pizarra** (repo `pizarra`) | La cáscara de Timón en Android: lo muestra adentro y pone lo que la web no puede (widgets, avisos, alarmas, «Compartir», captura) | No tiene pantallas ni cuentas propias de lo que Timón ya hace |
+| **Timón en Android** (repo `pizarra`; hasta el 17-nov se llamaba «Pizarra») | La cáscara de Timón en Android: lo muestra adentro y pone lo que la web no puede (widgets, avisos, alarmas, «Compartir», captura) | No tiene pantallas ni cuentas propias de lo que Timón ya hace |
 | **Negocio** (Casa Verde, CasaYourte, remate, Paseo, BandoMaps, Hilux) | Una app independiente: su base, su gente, su libro, su código | No importa código de otro negocio ni sirve funciones para otros |
 | **Servidor** (`timon-servidor`, código en `datos/servidor/`) | Las funciones que necesitan un secreto | — |
 | **Piezas comunes** (`datos`) | Lo idéntico en todos, con número de contrato (`ojos.js`, `errores.js`, `servidor-1.js`…) | — |
 | **Claude** | Un miembro más de los espacios: propone ítems, pregunta con opciones, contesta en el hilo; y la ronda | Ver § 4 |
 | **Panel** (`datos`) | El taller: registro de las apps (`proyectos/`), desarrollo, reglas, la bóveda | No es donde Mauro contesta lo cotidiano |
+
+**Un solo nombre: Timón (17-nov, Mauro: «quiero eliminar los nombres
+diferentes: Timón, Pizarra y Tiempos deberían ser parte de una misma cosa»).**
+Todo lo que una persona ve dice Timón: el ícono y los ajustes de Android, los
+widgets (en el selector, «Timón» con «Hoy», «Mi agenda», «Mensajes y
+novedades» y «Pizarra (tareas fijadas)»), los avisos, la web y la guía de
+instalación. «Pizarra» queda sólo como el nombre de una solapa y de su widget
+—las tareas fijadas—, que se apagan cuando «Hoy» las reemplace (regla 8).
+Lo que NO cambia, aunque diga otra cosa, porque cambiarlo rompe algo que anda:
+
+| Nombre interno | Dónde | Por qué se queda |
+|---|---|---|
+| `tiempos` | repo, dirección `…github.io/tiempos/`, `id` del manifest | otra dirección es otra app instalada en cada teléfono y otro lugar donde el aparato guarda sus datos; se muda sólo junto con un dominio propio |
+| `tiempos-71d42` | base de Firebase | Firebase no deja renombrar un proyecto |
+| `pizarra`, `com.maurogasta.pizarra`, `pizarra.apk` | repo, paquete de Android, archivo que se baja | otro paquete es otra app: desinstalar en cada teléfono y perder sesiones, el token de la bodega y el enlace con la Hilux (`…pizarra.enlace`) |
+| `pizarra-N` | sello de la app (`versionName` = `SELLO`) | lo leen los partes de `salud/` y la ronda: cambiarle la forma corta la cuenta de qué teléfono tiene qué versión |
+| `pizarra-<base>` | temas de los avisos instantáneos | lo usa el servidor para despertar |
+
+Una sesión que «corrija» uno de éstos rompe la app instalada: no se toca.
 
 Los repositorios que no estaban en la tabla, para que ninguna sesión los
 acomode a su criterio **(15-nov)**: **roli** es un negocio más (app
@@ -144,7 +163,7 @@ se borró, y el interruptor de cada teléfono no se toca al actualizar.
 | 2 | El reglamento: este archivo, § 14 de interfaz, y cada `CLAUDE.md` a reglas cortas con su historia aparte | **Hecha el 15-nov-2026**: `datos` y los otros diez repos con `CLAUDE.md` corto (de 485 KB a unos 95 KB en total) y el anterior completo en su `HISTORIA.md`. `roli` (3,8 KB) y `bodega` (2,4 KB) ya eran cortos y no se tocaron. Falta, si Mauro quiere, repasar cada uno con una sesión nueva para ver si alguna regla corta quedó coja |
 | 3 | Prototipo de «Hoy» y de los widgets, para tocarlo antes de migrar nada | **Hecha**: prototipo entregado (14-nov), completado el 15-nov (el widget pinta SÓLO `hoy/{uid}` materializado, regla 3) y **aprobado por Mauro el 16-nov** («sí, confirmo»): la forma de `hoy/{uid}` y el orden (la fecha pone la urgencia, la persona la importancia, lo que espera sube) quedan fijados; destrabó la 4, la 5, la 6 y la 8 |
 | 4 | Ítems y espacios en Timón, de a un tipo por vez | **(15-nov)** Un solo tipo en paralelo a la vez, y cada tipo dice en su tanda el costo contra el cupo: el paralelo de la regla 8 duplica lecturas y escrituras por definición, y la base ya se quedó sin cupo una vez (27-oct). **En curso desde el 16-nov — primer tipo: `tarea`** (tiempos app-42): la solapa «Hoy» nueva (`hoy.js`, el prototipo aprobado), `items/` con la regla v25 **que Mauro tiene que publicar**, los espacios `familia` y `p-<uid>` implícitos (la regla decide por el id; `espacios/` con miembros nace con el primer negocio, regla 7), y `hoy/{uid}` materializado por la app del dueño (regla 3; sellado al agente, en `selladas` de firestore.mjs). Mauro publicó las reglas v25 ese mismo día: la semana del paralelo con Tareas corre hasta el 23-nov; costo contra el cupo en el README de tiempos (muy por debajo de Spark) |
-| 5 | La Pizarra como cáscara, con los widgets nuevos | — |
+| 5 | La Pizarra como cáscara, con los widgets nuevos | **En curso desde el 17-nov** (con el «avanzá con la etapa siguiente» de Mauro, junto con el nombre único). **5a escrita (pizarra-84 + tiempos app-43)**: la parte web está en `main` de `tiempos`; pizarra-84 tiene el banco en verde (280 casos, 10 de `HoyTest`) y espera la compilación publicable y el lint para entrar a `main`. Lo que hace: el widget **«Hoy»** pinta SÓLO `hoy/{uid}` —una lectura—, en el orden de Timón y sin calcular nada (regla 3, con banco `HoyTest` que falla si el widget nombra un campo de un ítem u ordena); el ○ escribe `accion.campos` del renglón tal cual y saca el renglón de `hoy/` en el mismo commit, y destildar escribe `accion.deshacer` (nucleo-47 lo agrega al renglón); el texto abre Timón en ese ítem (`?solapa=inicio&abrir=it:<id>`). `hoy/` despierta a los teléfonos con el «qué» `tareas` (el servidor no cambió). Va **en paralelo** con el widget de las tareas fijadas (regla 8). Lo que tilda otra persona no rearma mi `hoy/` hasta que abro Timón (lo que la regla 3 acepta): el encabezado dice cuándo se armó. Falta: **5b** apagar el widget y la solapa de las tareas fijadas cuando «Hoy» se haya usado una semana (lo más temprano, una semana después de instalar pizarra-84); **5c** «Para decidir» se muda del panel a «Hoy»; **5d** sacar de la app de Android lo que Timón ya hace (la pantalla de la IA, deseos y propuestas) |
 | 6 | Los hilos dentro de Timón: mensaje a ítem, archivos, Claude en el hilo | — |
 | 7 | La ronda por trabajos y «Para decidir» (en paralelo desde la 2) | **(15-nov)** En dos partes, porque la mitad dependía de la 4 sin que la tabla lo dijera. **7a hecha el 16-nov**: la ronda corre por trabajos — `ronda/trabajos/` de `datos`, un archivo por trabajo (app, cuándo, qué lee, criterio, qué puede dejar, nivel), índice en `ronda/LEEME.md`, banco `pruebas/trabajos.mjs` (325 casos); `TRASPASO.md` § 4 conserva el arranque y el NUNCA, que mandan sobre todos. **7b hecha el 16-nov** (panel-54): «Para decidir» nació en «Lo primero» del panel — las decisiones de a tres, con opciones de un toque (`opciones` [{t, r}] en la `pregunta`); el toque escribe la `respuesta` en el pendiente igual que la cola. Se muda a «Hoy» en la 5. **Etapa 7 completa** |
 | 8 | Los negocios, de a uno: su espacio, sus flujos dibujados, sus pantallas simples | — |

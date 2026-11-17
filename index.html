@@ -156,6 +156,7 @@
         <button data-v="abiertos" aria-pressed="true">Lo que falta</button>
         <button data-v="preguntas" aria-pressed="false">Preguntas</button>
         <button data-v="trabas" aria-pressed="false">Trabas</button>
+        <button data-v="guia" aria-pressed="false">🧭 Guía</button>
         <button data-v="todo" aria-pressed="false">Todo</button>
       </div>
 
@@ -564,7 +565,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-6";
 
-P.PANEL = "panel-54";
+P.PANEL = "panel-55";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -1021,7 +1022,7 @@ const respondida = (p) => !!(p.pregunta || "").trim()
 
 function colaDePreguntas() {
   const conPregunta = PENDIENTES.filter((p) =>
-    esDeLaApp(p) && (p.pregunta || "").trim());
+    esDeLaApp(p) && (p.pregunta || "").trim() && !esGuiaP(p));
   const falta = conPregunta.filter(sinResponder)
     .sort((a, b) => pesoPrio(a) - pesoPrio(b));
   const hechas = conPregunta.filter((p) => !sinResponder(p))
@@ -1031,8 +1032,13 @@ function colaDePreguntas() {
 /* Una pregunta cuenta como pendiente mientras no tenga respuesta. Es el punto
    de todo esto: que no quede una pregunta enterrada abajo de otras quince
    cosas mientras se avanza en un tema y se olvida el anterior. */
+/* panel-55 (Mauro, 17-nov-2026: «resaltar las preguntas que son necesarias de responder para
+   continuar avanzando; las accesorias, del futuro desarrollo, separadas en una pestaña de guía
+   para el desarrollo»). Un pendiente con `plano: "guia"` no traba nada ahora: no cuenta como
+   pregunta, ni en «Lo primero», ni en «Lo que falta»; se ve en el filtro «Guía». */
+const esGuiaP = (p) => p.plano === "guia";
 const sinResponder = (p) => !!(p.pregunta || "").trim()
-  && !(p.respuesta || "").trim() && abierto(p);
+  && !(p.respuesta || "").trim() && abierto(p) && !esGuiaP(p);
 
 /* panel-54 (16-nov-2026, plan «Timón», etapa 7b; ARQUITECTURA § 4): «PARA
    DECIDIR» — las decisiones que esperan a Mauro, de a TRES: primero la
@@ -1315,7 +1321,7 @@ function pintarTeToca() {
     return estadoReglas(p).mal;
   });
   const preguntas = mios.filter(sinResponder).length;
-  const esperan = mios.filter((p) => abierto(p) && p.quien !== "claude").length;
+  const esperan = mios.filter((p) => abierto(p) && p.quien !== "claude" && !esGuiaP(p)).length;
   const ch = choques();
 
   if (!PENDIENTES.length && !PROYECTOS.length) { caja.innerHTML = ""; return; }
@@ -1457,7 +1463,7 @@ function pintar() {
   const n = (f) => mios.filter(f).length;
 
   $("c-pregunta").textContent = n(sinResponder);
-  $("c-tuyo").textContent = n((p) => abierto(p) && p.quien !== "claude");
+  $("c-tuyo").textContent = n((p) => abierto(p) && p.quien !== "claude" && !esGuiaP(p));
   $("c-mio").textContent = n((p) => abierto(p) && p.quien === "claude");
   $("c-hecho").textContent = n((p) => p.estado === "hecho");
   $("c-total").textContent = mios.length;
@@ -1484,6 +1490,12 @@ function pintar() {
   if (filtro === "preguntas") { pintarCola(); return; }
 
   let h = "";
+  if (filtro === "guia") {
+    $("lista").innerHTML = '<p class="gris">Lo accesorio y lo del desarrollo futuro: no frena nada hoy. '
+      + "Se contesta o se hace cuando haya tiempo.</p>"
+      + (bloque("Guía para el desarrollo", mios.filter((p) => abierto(p) && esGuiaP(p)), "Nada en la guía por ahora.") || "");
+    return;
+  }
   if (filtro === "trabas") {
     h = bloque("Traban a otras", trabando, "Nada está trabando nada.")
       + bloque("Frenadas por otra", mios.filter((p) => abierto(p) && frenadoPor(p).length), "");
@@ -1491,11 +1503,15 @@ function pintar() {
     /* LO EXPLÍCITO: dos bloques, y no un cartelito adentro de cada tarjeta.
        Lo que tiene que hacer Mauro y lo que hago yo son dos trabajos
        distintos y se leen en momentos distintos. */
-    const abiertos = mios.filter(abierto);
+    /* panel-55: lo de Claude va en segundo plano (plegado) y lo de la guía, aparte. */
+    const abiertos = mios.filter((p) => abierto(p) && !esGuiaP(p));
+    const deClaude = abiertos.filter((p) => p.quien === "claude");
     h = bloque("Te toca a vos", abiertos.filter((p) => p.quien !== "claude"),
                "Nada te está esperando.")
-      + bloque("Lo hago yo", abiertos.filter((p) => p.quien === "claude"),
-               "Nada de mi lado.");
+      + (deClaude.length ? '<details class="plegado-claude"><summary class="proy" style="cursor:pointer">Lo hago yo · '
+          + deClaude.length + ' <span class="gris" style="font-weight:400">(tocá para ver)</span></summary>'
+          + deClaude.slice().sort(porUrgencia).map(tarjeta).join("") + "</details>"
+        : '<div class="proy">Lo hago yo</div><p class="gris">Nada de mi lado.</p>');
     if (filtro === "todo") {
       h += bloque("Hechos", mios.filter((p) => p.estado === "hecho"), "")
         + bloque("Retirados", mios.filter((p) => p.estado === "retirado"), "");
@@ -2756,7 +2772,7 @@ function filaAcceso(a) {
   fila.className = "par acc";
   fila.dataset.boveda = (a && a.boveda) || "";
   fila.dataset.publica = (a && a.publica) ? "1" : "";
-  fila.innerHTML = '<input class="k" placeholder="nombre (GEMINI_API_KEY)" autocomplete="off">'
+  fila.innerHTML = '<input class="k" placeholder="nombre (NOMBRE_DE_LA_CLAVE)" autocomplete="off">'
     + '<button class="mini quitar" type="button" aria-label="Quitar esta clave">×</button>'
     + '<textarea class="v ruta" rows="1" placeholder="el camino: Netlify › proyecto › Environment variables › NOMBRE"></textarea>'
     + '<input class="u" placeholder="la usa…" autocomplete="off">';

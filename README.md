@@ -357,6 +357,11 @@ lugar de un toque.
 1. **Las reglas sin publicar.** Primero porque son lo único de la lista que deja
    una base abierta mientras espera, y porque nadie más que vos puede hacerlas:
    publicar reglas es entrar a la consola de Firebase con tu cuenta.
+2. **Lo que frena y lo de más adelante** (`panel-55` e `invitado-23`, 17-nov-2026, Mauro: «resaltar las
+   preguntas necesarias para continuar avanzando; las accesorias, del futuro desarrollo, en una pestaña de
+   guía para el desarrollo»): un pendiente o una consulta con `plano: "guia"` no cuenta como pregunta ni en
+   «Lo primero»; va al filtro «🧭 Guía» del panel, y en el de invitados a la pestaña «Guía para el
+   desarrollo», junto con lo ya contestado (en una línea, plegado). «Lo hago yo» queda plegado.
 2. **«Para decidir»** (`panel-54`, 16-nov-2026, plan «Timón», etapa 7b): las
    tres decisiones de arriba de la cola, acá mismo. Si la `pregunta` del
    pendiente trae `opciones` (`[{t, r}]`, la misma forma que las consultas de
@@ -852,11 +857,11 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-54` |
-| `invitado.html` | `P.PANEL` | `invitado-21` |
+| `index.html` | `P.PANEL` | `panel-55` |
+| `invitado.html` | `P.PANEL` | `invitado-23` |
 | `intervenir.js` | pedido con `?v=` | `intervenir-5` |
 | `paquete.js` · `semaforo.js` | — | `paquete-4` |
-| `chat.js` | `SELLO` | `chat-5` |
+| `chat.js` | `SELLO` | `chat-7` |
 | `esquema.js` | `VERSION` | `esquema-2` |
 | `hoja.css` | comentario | `hoja-2` |
 | `glosario.js` | `VERSION` | `glosario-1` |

@@ -39,6 +39,9 @@
   .pestanas { display: flex; gap: .4rem; overflow-x: auto; padding: .2rem 0 .6rem; position: sticky; top: 0; background: var(--tinta); z-index: 2; }
   .pestana { flex: none; border: 1px solid var(--linea); background: var(--tinta2); color: var(--texto); border-radius: 999px; padding: .45rem .9rem; font: inherit; cursor: pointer; }
   .pestana.sel { background: var(--acento); color: var(--tinta); border-color: var(--acento); font-weight: 600; }
+  .sub-pest { position: static; margin: .6rem 0 .2rem; }
+  .pasos-chat { margin: .2rem 0 .6rem 1.2rem; padding: 0; line-height: 1.45; }
+  .pasos-chat li { margin: .35rem 0; }
   .esq-caja { background: var(--tinta2); border: 1px solid var(--linea); border-radius: var(--r); padding: .5rem; margin: .5rem 0; }
   .esq { display: block; max-height: 70vh; }
   .esq-ayuda { text-align: center; margin: .2rem 0 0; font-size: .8rem; }
@@ -185,7 +188,7 @@ import { nodosDe, svgEsquema, cajaDeAmpliar, mapaDe, svgMapa, svgArea, cajaDeAre
 import { doc, getDoc, setDoc, collection, getDocs, query, where, updateDoc, arrayUnion, sendEmailVerification }
   from "./firebase-init.js?v=init-6";
 
-P.PANEL = "invitado-22";
+P.PANEL = "invitado-23";
 let VISTA = false;
 document.addEventListener("click", (e) => {
   if (!VISTA) return;
@@ -207,6 +210,9 @@ const AVISAR = "https://timon-servidor.netlify.app/.netlify/functions/avisar-cla
 
 let yo = null, persona = null, PROY = [], PEND = [], FICHAS = [];
 let pestana = (() => { try { return localStorage.getItem("inv-pestana") || ""; } catch (e) { return ""; } })();
+/* invitado-23: adentro de cada proyecto, dos pestañas: «Ahora» y «Guía para el desarrollo». */
+const subDe = {};
+const sub = (pid) => subDe[pid] || (() => { try { return localStorage.getItem("inv-sub:" + pid) || "ahora"; } catch (e) { return "ahora"; } })();
 const capturas = {};       // proyecto → File elegido, se sube recién al mandar
 const AREAS = {};          // proyecto → { mapa, fuente } cuando el repositorio tiene areas.json (invitado-16)
 const COMMITS = {};        // proyecto → lo último subido, para el resumen de su chat (invitado-14)
@@ -397,75 +403,41 @@ function pintar() {
     const esPreg = (x) => String(x.titulo || "").startsWith("❓");
     const misPreg = pend.filter(esPreg);
     const sueltos = pend.filter((x) => !enPasos.has(x.id) && !esPreg(x) && !CH.esConsulta(x));
-    const consultas = CH.consultasDe(PEND, pr.id), faltan = consultas.filter((x) => !CH.contestada(x, yo.uid)).length;
+    /* invitado-23 (17-nov-2026, Mauro: «que quede bien claro lo que falta contestar y mantener
+       en un segundo plano lo que ya se contestó… las preguntas accesorias, del futuro desarrollo,
+       separadas en una pestaña de guía para el desarrollo… que sea simple»). Dos pestañas:
+       AHORA — lo que falta contestar, los pasos con el chat gratuito, pedir y preguntar —; y la
+       GUÍA — lo de más adelante, lo ya contestado, cómo va, cómo funciona, las partes. */
+    const faltan = CH.faltanDe(PEND, pr.id, yo.uid), guia = CH.guiaDe(PEND, pr.id, yo.uid), hechas = CH.contestadasDe(PEND, pr.id, yo.uid);
     const gente = pa.gente || [];
-    return `<section class="inv-proy">
-      <div class="marca-hoja">${P.esc(gente.map((g) => g.nombre).join(" · ") || "Proyecto compartido")}</div>
-      <h1>${P.esc(pr.nombre || pr.id)}</h1>
-      ${resumen1 ? `<p class="bajada">${P.esc(resumen1)}</p>` : ""}
-      ${gente.length ? `<div class="gente-chips" aria-label="Quiénes participan">${gente.map((g) => `<span>${P.esc(g.nombre)} <small>· ${P.esc(g.rol)}</small></span>`).join("")}</div>` : ""}
-      ${consultas.length ? `<div class="tarj" style="border-color:var(--acento,#0f766e)">
-        <div class="rotulo" style="margin-top:0">Te preguntamos${faltan ? ` · ${faltan} sin contestar` : " · contestadas"}</div>
-        <p class="gris" style="margin:.2rem 0 .6rem">Tocá una opción o escribí con tus palabras, aunque sea corto. Claude lo analiza contra el resto del proyecto antes de cambiar nada.</p>
-        ${CH.agrupar(consultas).map((g, i) => {
-          const f = g.items.filter((x) => !CH.contestada(x, yo.uid)).length;
-          const cuerpo = g.items.map(htmlConsulta).join("");
-          return !g.grupo ? cuerpo
-            : i === 0 ? `<div class="rotulo">${P.esc(g.grupo)}</div>${cuerpo}`
-            : `<details class="nivel"><summary><span style="flex:1">${P.esc(g.grupo)}</span><span class="chip-e">${f ? f + " sin contestar" : "contestadas"}</span></summary>${cuerpo}</details>`;
-        }).join("")}</div>` : ""}
-      ${mapaDe(es) ? `<div class="esq-caja" data-mapa="${P.esc(pr.id)}"><div class="esq-migas" data-migas="${P.esc(pr.id)}"></div>
-        <div data-mapa-svg="${P.esc(pr.id)}">${svgMapa(mapaDe(es))}</div>
-        <p class="gris esq-ayuda">Tocá un área para entrar. Lo más chico y punteado está en desarrollo o se busca.</p></div>
-        <div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""}
-      ${mapaDe(es) ? "" : (() => { const nd = nodosDe(es); return nd.length ? `<div class="esq-caja" data-esq="${P.esc(pr.id)}">${svgEsquema(nd)}
-        <p class="gris esq-ayuda">Tocá un globo para ampliarlo.</p></div><div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""; })()}
+    const s1 = sub(pr.id);
+    const contestadaHtml = (x) => `<div class="pend" style="opacity:.85"><p class="cola-de"><b>${P.esc(x.titulo || "")}</b></p>
+      <p class="gris" style="margin:.1rem 0 0">${P.esc(CH.decision(x) || "Contestada.")}</p></div>`;
+    const ahora = `
+      <div class="tarj" style="border-color:var(--acento,#0f766e)">
+        <div class="rotulo" style="margin-top:0">${faltan.length ? `Falta tu respuesta · ${faltan.length}` : "Preguntas"}</div>
+        ${faltan.length ? `<p class="gris" style="margin:.2rem 0 .6rem">Esto frena el desarrollo hasta que lo contestes. Tocá una opción o escribí con tus palabras, aunque sea corto.</p>
+          ${faltan.map(htmlConsulta).join("")}`
+          : `<p style="margin:.2rem 0 0">✔ No hay preguntas esperando tu respuesta.${hechas.length ? ` Las ${hechas.length} que contestaste están en «Guía para el desarrollo».` : ""}</p>`}
+      </div>
 
-      ${(e.pasos || []).length || sueltos.length ? `<div class="rotulo">Cómo va</div>
-      ${(e.pasos || []).map((p) => {
-        const suyos = pend.filter((x) => (p.ids || []).includes(x.id)), ab = suyos.filter(abierto).length;
-        return `<details class="nivel paso-hoja"><summary><span style="flex:1">${P.esc(p.titulo)}</span>${suyos.length ? (ab ? `<span class="chip-e e-curso">en curso</span>` : `<span class="chip-e e-hecho">listo</span>`) : ""}</summary>
-          <p class="gris" style="margin:0 0 .4rem">Lo lleva ${P.esc(p.quien === "claude" ? "Claude" : "Mauro")}${suyos.length ? ` · ${ab} abierto${ab === 1 ? "" : "s"}` : ""}.</p>
-          ${suyos.map(htmlPendiente).join("") || '<p class="gris">Sin pendientes a la vista.</p>'}</details>`;
-      }).join("")}
-      ${sueltos.length && persona.pendientes !== false ? `<details class="nivel"><summary><span style="flex:1">Otros pendientes</span><span class="chip-e">${sueltos.filter(abierto).length} abierto${sueltos.filter(abierto).length === 1 ? "" : "s"}</span></summary>${sueltos.map(htmlPendiente).join("")}</details>` : ""}
-      ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}` : ""}
-
-      <div class="rotulo">Para entender y participar</div>
-
-      <details class="nivel" data-capa-chat="${P.esc(pr.id)}"><summary>🤖 Trabajar con una sesión gratuita de Claude</summary>
-        <p class="gris">Podés trabajar con una <b>sesión gratuita de Claude</b> (claude.ai): no hace falta pagar nada. <b>1)</b> Bajá lo que necesita (el resumen del proyecto, o el paquete de un área) y dáselo a tu Claude. <b>2)</b> Lo que te devuelva llega al proyecto por uno de dos caminos, según tu experiencia:</p>
-        <ul class="gris" style="margin:.2rem 0 .4rem 1.1rem">
-          <li><b>Si usás GitHub y Mauro te dio acceso de colaborador al repositorio:</b> subí vos el archivo, directo, por la web de GitHub, con tu cuenta (los pasos están en la guía que se baja con el paquete). La ronda de Mauro lo comprueba.</li>
-          <li><b>Si no usás GitHub:</b> pegá acá lo que te contestó, o subí el archivo. Claude lo lee, lo analiza contra el resto del proyecto y se ocupa de subirlo.</li>
-        </ul>
-        <p class="gris">En los dos caminos, nada llega a los alumnos sin que Mauro lo pase del sitio de desarrollo al estable.</p>
-        <div class="fila-btn"><button class="btn" data-md="${P.esc(pr.id)}">⬇ Resumen del proyecto (.md)</button></div>
+      <details class="nivel" open data-capa-chat="${P.esc(pr.id)}"><summary>🤖 Trabajar con tu chat gratuito de Claude</summary>
+        <ol class="pasos-chat">
+          <li><b>Elegí qué querés cambiar</b> y tocá su botón abajo: se baja un <b>.zip</b> con los archivos de esa parte y una guía (LEEME) para tu Claude.</li>
+          <li>Abrí un <b>chat nuevo en claude.ai</b> (gratis), subí el .zip y contale el cambio con tus palabras.</li>
+          <li>Tu Claude te devuelve el archivo <b>entero, ya cambiado</b>. Bajalo.</li>
+          <li><b>Subilo</b>: si tenés cuenta de colaborador en GitHub, con «Add file → Upload files» en la misma carpeta, reemplazando el viejo (los pasos están en la guía del .zip). Si no, pegalo o subilo acá abajo y lo sube Claude.</li>
+        </ol>
+        <p class="gris">Nada llega a los alumnos sin que Mauro lo pase del sitio de desarrollo al estable. Antes de cada cambio, bajá el .zip de nuevo: así trabajás siempre sobre la versión de hoy.</p>
         <div data-areas="${P.esc(pr.id)}"></div>
         <div data-secciones="${P.esc(pr.id)}"></div>
-        <textarea data-chat="${P.esc(pr.id)}" rows="4" placeholder="Pegá acá lo que te contestó tu Claude…"></textarea>
+        <div class="fila-btn"><button class="btn" data-md="${P.esc(pr.id)}">⬇ Resumen del proyecto (.md)</button></div>
+        <textarea data-chat="${P.esc(pr.id)}" rows="3" placeholder="Si no usás GitHub: pegá acá lo que te contestó tu Claude…"></textarea>
         <div class="fila-btn">
-          <label class="mini">📄 Subir un archivo (.md, .txt o el código que te devolvió)<input type="file" accept=".md,.markdown,.txt,.js,.jsx,.mjs,.css,.html,.json,text/plain,text/markdown" data-chat-arch="${P.esc(pr.id)}" hidden></label>
+          <label class="mini">📄 Subir el archivo que te devolvió<input type="file" accept=".md,.markdown,.txt,.js,.jsx,.mjs,.css,.html,.json,text/plain,text/markdown" data-chat-arch="${P.esc(pr.id)}" hidden></label>
           <button class="btn p" data-chat-mandar="${P.esc(pr.id)}">Mandar a Claude</button>
         </div>
         <p class="gris" data-chat-estado="${P.esc(pr.id)}"></p>
-      </details>
-
-      ${es.intro ? `<details class="nivel"><summary>Cómo funciona, para empezar</summary><p class="explica">${P.esc(es.intro)}</p></details>` : ""}
-
-      ${(es.partes || []).length ? `<details class="nivel"><summary>Las partes, una por una</summary>
-        <p class="gris">Tocá una parte para ver qué hace; adentro, «Más técnico» para el detalle.</p>
-        ${es.partes.map((t) => `<details class="sub"><summary>${P.esc(t.nombre)} <span class="parte-que">— ${P.esc(t.que || "")}</span></summary>
-          ${t.explica ? `<p class="explica">${P.esc(t.explica)}</p>` : ""}
-          ${(t.detalle || []).length ? `<details class="tec"><summary>Más técnico</summary><ul>${t.detalle.map((d) => `<li>${P.esc(d)}</li>`).join("")}</ul></details>` : ""}
-          <button class="mini" data-preguntar-sobre="${P.esc(pr.id)}" data-parte="${P.esc(t.nombre)}">❓ Preguntar sobre esto</button></details>`).join("")}
-      </details>` : ""}
-
-      <details class="nivel" data-capa-preg="${P.esc(pr.id)}"><summary>❓ Preguntar${misPreg.length ? ` (${misPreg.length})` : ""}</summary>
-        <p class="gris">Cualquier duda, por básica que sea: qué es algo, por qué se hace así, cómo se usa. Contesta Claude acá mismo, abajo de tu pregunta.</p>
-        <textarea data-preg="${P.esc(pr.id)}" rows="3" maxlength="1500" placeholder="¿Qué es la base de datos y qué guarda?"></textarea>
-        <div class="fila-btn"><button class="btn p" data-mandar-preg="${P.esc(pr.id)}">Preguntar</button></div>
-        ${misPreg.map(htmlPregunta).join("")}
       </details>
 
       <details class="nivel"><summary>Hacer un pedido</summary>
@@ -479,13 +451,64 @@ function pintar() {
           <label class="mini">🖼 Elegir captura<input type="file" accept="image/*" data-captura="${P.esc(pr.id)}" hidden></label>
         </div>
         <div data-vista="${P.esc(pr.id)}"></div>
-        <p class="gris">Contesta Claude, una IA. Lo simple lo resuelve en el día; lo que necesita una decisión queda en la línea de trabajo, con el plan, para que lo definan.</p>
+        <p class="gris">Contesta Claude, una IA. Lo simple lo resuelve en el día; lo que necesita una decisión queda como pregunta, arriba.</p>
         <div class="fila-btn"><button class="btn p" data-mandar="${P.esc(pr.id)}">Mandar el pedido</button></div>
       </details>
 
+      <details class="nivel" data-capa-preg="${P.esc(pr.id)}"><summary>❓ Preguntar${misPreg.length ? ` (${misPreg.length})` : ""}</summary>
+        <p class="gris">Cualquier duda, por básica que sea: qué es algo, por qué se hace así, cómo se usa. Contesta Claude acá mismo, abajo de tu pregunta.</p>
+        <textarea data-preg="${P.esc(pr.id)}" rows="3" maxlength="1500" placeholder="¿Qué es la base de datos y qué guarda?"></textarea>
+        <div class="fila-btn"><button class="btn p" data-mandar-preg="${P.esc(pr.id)}">Preguntar</button></div>
+        ${misPreg.map(htmlPregunta).join("")}
+      </details>`;
+    const laGuia = `
+      ${guia.length ? `<div class="tarj"><div class="rotulo" style="margin-top:0">Para más adelante · ${guia.length}</div>
+        <p class="gris" style="margin:.2rem 0 .6rem">No frenan nada hoy: contestalas cuando quieras.</p>${guia.map(htmlConsulta).join("")}</div>` : ""}
+
+      ${hechas.length ? `<details class="nivel"><summary><span style="flex:1">Lo que ya contestaste</span><span class="chip-e e-hecho">${hechas.length}</span></summary>
+        <p class="gris">Lo que decidiste, en una línea. Si querés cambiar algo, preguntá o pedilo en «Ahora».</p>${hechas.map(contestadaHtml).join("")}</details>` : ""}
+
+      ${mapaDe(es) ? `<div class="esq-caja" data-mapa="${P.esc(pr.id)}"><div class="esq-migas" data-migas="${P.esc(pr.id)}"></div>
+        <div data-mapa-svg="${P.esc(pr.id)}">${svgMapa(mapaDe(es))}</div>
+        <p class="gris esq-ayuda">Tocá un área para entrar. Lo más chico y punteado está en desarrollo o se busca.</p></div>
+        <div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""}
+      ${mapaDe(es) ? "" : (() => { const nd = nodosDe(es); return nd.length ? `<div class="esq-caja" data-esq="${P.esc(pr.id)}">${svgEsquema(nd)}
+        <p class="gris esq-ayuda">Tocá un globo para ampliarlo.</p></div><div class="esq-detalle" data-esq-det="${P.esc(pr.id)}" hidden></div>` : ""; })()}
+
+      ${(e.pasos || []).length || sueltos.length ? `<details class="nivel"><summary>Cómo va el trabajo</summary>
+      ${(e.pasos || []).map((p) => {
+        const suyos = pend.filter((x) => (p.ids || []).includes(x.id)), ab = suyos.filter(abierto).length;
+        return `<details class="sub paso-hoja"><summary><span style="flex:1">${P.esc(p.titulo)}</span>${suyos.length ? (ab ? `<span class="chip-e e-curso">en curso</span>` : `<span class="chip-e e-hecho">listo</span>`) : ""}</summary>
+          <p class="gris" style="margin:0 0 .4rem">Lo lleva ${P.esc(p.quien === "claude" ? "Claude" : "Mauro")}${suyos.length ? ` · ${ab} abierto${ab === 1 ? "" : "s"}` : ""}.</p>
+          ${suyos.map(htmlPendiente).join("") || '<p class="gris">Sin pendientes a la vista.</p>'}</details>`;
+      }).join("")}
+      ${sueltos.length && persona.pendientes !== false ? `<details class="sub"><summary><span style="flex:1">Otros pendientes</span><span class="chip-e">${sueltos.filter(abierto).length} abierto${sueltos.filter(abierto).length === 1 ? "" : "s"}</span></summary>${sueltos.map(htmlPendiente).join("")}</details>` : ""}
+      ${(e.alertas || []).length ? '<p class="gris">⚠ ' + e.alertas.map(P.esc).join("<br>⚠ ") + "</p>" : ""}</details>` : ""}
+
+      ${es.intro ? `<details class="nivel"><summary>Cómo funciona, para empezar</summary><p class="explica">${P.esc(es.intro)}</p></details>` : ""}
+
+      ${(es.partes || []).length ? `<details class="nivel"><summary>Las partes, una por una</summary>
+        <p class="gris">Tocá una parte para ver qué hace; adentro, «Más técnico» para el detalle.</p>
+        ${es.partes.map((t) => `<details class="sub"><summary>${P.esc(t.nombre)} <span class="parte-que">— ${P.esc(t.que || "")}</span></summary>
+          ${t.explica ? `<p class="explica">${P.esc(t.explica)}</p>` : ""}
+          ${(t.detalle || []).length ? `<details class="tec"><summary>Más técnico</summary><ul>${t.detalle.map((d) => `<li>${P.esc(d)}</li>`).join("")}</ul></details>` : ""}
+          <button class="mini" data-preguntar-sobre="${P.esc(pr.id)}" data-parte="${P.esc(t.nombre)}">❓ Preguntar sobre esto</button></details>`).join("")}
+      </details>` : ""}
+
       ${pr.sitio && pr.sitio.repo ? `<details class="nivel"><summary>Lo último que se subió</summary><div data-commits="${P.esc(pr.id)}"><p class="gris">Leyendo…</p></div></details>` : ""}
 
-      ${htmlBoveda(pr.id)}
+      ${htmlBoveda(pr.id)}`;
+    return `<section class="inv-proy">
+      <div class="marca-hoja">${P.esc(gente.map((g) => g.nombre).join(" · ") || "Proyecto compartido")}</div>
+      <h1>${P.esc(pr.nombre || pr.id)}</h1>
+      ${resumen1 ? `<p class="bajada">${P.esc(resumen1)}</p>` : ""}
+      ${gente.length ? `<div class="gente-chips" aria-label="Quiénes participan">${gente.map((g) => `<span>${P.esc(g.nombre)} <small>· ${P.esc(g.rol)}</small></span>`).join("")}</div>` : ""}
+      <div class="pestanas sub-pest" role="tablist">
+        <button role="tab" class="pestana${s1 === "ahora" ? " sel" : ""}" data-sub="ahora" data-sub-de="${P.esc(pr.id)}">Ahora${faltan.length ? ` · ${faltan.length}` : ""}</button>
+        <button role="tab" class="pestana${s1 === "guia" ? " sel" : ""}" data-sub="guia" data-sub-de="${P.esc(pr.id)}">🧭 Guía para el desarrollo</button>
+      </div>
+      <div data-subtab="ahora" data-subtab-de="${P.esc(pr.id)}"${s1 === "ahora" ? "" : " hidden"}>${ahora}</div>
+      <div data-subtab="guia" data-subtab-de="${P.esc(pr.id)}"${s1 === "guia" ? "" : " hidden"}>${laGuia}</div>
     </section>`;
   })() + "</div>").join("") + htmlGlosario();
   enganchar();
@@ -496,6 +519,12 @@ function pintar() {
    sus vecinos (se anima el viewBox) y abajo abre su explicación; «Ver el
    esquema entero» vuelve. Sin animación si el teléfono pide menos movimiento. */
 function engancharEsquemas() {
+  document.querySelectorAll("[data-sub]").forEach((b) => b.onclick = () => {
+    const pid = b.dataset.subDe, v = b.dataset.sub; subDe[pid] = v;
+    try { localStorage.setItem("inv-sub:" + pid, v); } catch (e) { /* sin memoria, igual anda */ }
+    document.querySelectorAll(`[data-sub-de="${pid}"]`).forEach((x) => { x.classList.toggle("sel", x.dataset.sub === v); x.setAttribute("aria-selected", String(x.dataset.sub === v)); });
+    document.querySelectorAll(`[data-subtab-de="${pid}"]`).forEach((x) => { x.hidden = x.dataset.subtab !== v; });
+  });
   document.querySelectorAll("[data-pestana]").forEach((b) => b.onclick = () => {
     pestana = b.dataset.pestana;
     try { localStorage.setItem("inv-pestana", pestana); } catch (e) { /* sin memoria, igual anda */ }

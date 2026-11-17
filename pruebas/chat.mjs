@@ -178,5 +178,23 @@ t("los archivos de código que devuelve el chat se pueden subir como respuesta",
   assert.equal(C.esArchivoDeTexto({ name: "app.apk" }), false);
 });
 
+// chat-7 (Mauro, 17-nov-2026: «que quede claro lo que falta contestar; lo contestado, en segundo plano;
+// lo del futuro, en la guía para el desarrollo»).
+t("chat-7: lo que falta, lo de la guía y lo contestado, cada cosa en su lugar", () => {
+  const yo = "uM";
+  const P = [
+    { id: "a", proyecto: "h", tipo: "consulta", titulo: "¿Falta?", orden: 1 },
+    { id: "b", proyecto: "h", tipo: "consulta", titulo: "¿Contestada?", orden: 2, comentarios: [{ por: yo, texto: "Elegí: Sí", fecha: "2026-11-10" }] },
+    { id: "c", proyecto: "h", tipo: "consulta", titulo: "¿Más adelante?", plano: "guia", orden: 3 },
+    { id: "d", proyecto: "h", tipo: "consulta", titulo: "¿Cerrada?", estado: "hecho", respuesta: "Con la cuenta de Mariano." },
+    { id: "e", proyecto: "otro", tipo: "consulta", titulo: "¿De otro?" },
+  ];
+  assert.deepEqual(C.faltanDe(P, "h", yo).map((x) => x.id), ["a"]);
+  assert.deepEqual(C.guiaDe(P, "h", yo).map((x) => x.id), ["c"]);
+  assert.deepEqual(C.contestadasDe(P, "h", yo).map((x) => x.id).sort(), ["b", "d"]);
+  assert.equal(C.decision(P[1]), "Sí");
+  assert.equal(C.decision(P[3]), "Con la cuenta de Mariano.");
+});
+
 console.log(`\n${ok} pasadas, ${mal} fallidas`);
 process.exit(mal ? 1 : 0);

@@ -1,6 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    chat.js — el canal entre un invitado y SU propio chat de IA
-   Sello: chat-6 (16-nov-2026: el paquete de un área baja como ZIP con archivos de verdad y su LEEME; chat-5, 14-nov)
+   Sello: chat-7 (17-nov-2026: lo que falta contestar, aparte de lo contestado y de lo «para más
+   adelante» —`plano: "guia"`—, que va a la pestaña «Guía para el desarrollo»; chat-6, 16-nov-2026: el paquete de un área baja como ZIP con archivos de verdad y su LEEME; chat-5, 14-nov)
 
    Mauro, 9-nov-2026: «una herramienta que permita descargar un md que resuma
    el desarrollo de la app para su chat y un espacio en el que pueda cargar la
@@ -19,7 +20,7 @@
    falta una regla nueva.
    ═══════════════════════════════════════════════════════════ */
 
-export const SELLO = "chat-6";
+export const SELLO = "chat-7";
 /* Una respuesta de un chat va entera como comentario de un pedido. Un
    documento de Firestore no pasa de 1 MiB: con 200 mil caracteres queda lugar
    para la conversación de después. */
@@ -35,6 +36,29 @@ export function consultasDe(pend, pid) {
   const o = (x) => (Number.isFinite(x.orden) ? x.orden : 9999);
   return (pend || []).filter((x) => x.proyecto === pid && esConsulta(x) && abierto(x))
     .sort((a, b) => o(a) - o(b) || String(a.creadoEn || "").localeCompare(String(b.creadoEn || "")) || String(a.id).localeCompare(String(b.id)));
+}
+
+/* chat-7 (Mauro, 17-nov-2026: «que quede bien claro lo que falta contestar y mantener en un
+   segundo plano lo que ya se contestó… las preguntas accesorias, del futuro desarrollo,
+   separadas en una pestaña de guía para el desarrollo»). Una consulta con `plano: "guia"` no
+   traba nada ahora: va a la guía. */
+export const esGuia = (x) => !!x && x.plano === "guia";
+/** Lo que el invitado tiene que contestar AHORA: abierta, sin su respuesta y no de la guía. */
+export const faltanDe = (pend, pid, uid) => consultasDe(pend, pid).filter((x) => !esGuia(x) && !contestada(x, uid));
+/** Las «para más adelante» que todavía no contestó. */
+export const guiaDe = (pend, pid, uid) => consultasDe(pend, pid).filter((x) => esGuia(x) && !contestada(x, uid));
+/** Las ya contestadas (cerradas o con su respuesta), la más nueva primero. */
+export function contestadasDe(pend, pid, uid) {
+  const ultima = (x) => String(x.actualizado || (x.comentarios || []).map((c) => c.fecha || "").sort().pop() || x.creadoEn || "");
+  return (pend || []).filter((x) => x.proyecto === pid && esConsulta(x) && x.estado !== "retirado" && (!abierto(x) || contestada(x, uid)))
+    .sort((a, b) => ultima(b).localeCompare(ultima(a)));
+}
+/** Lo que quedó decidido de una consulta, en una línea: su respuesta o lo último que eligió. */
+export function decision(x) {
+  if (x && String(x.respuesta || "").trim()) return linea(x.respuesta);
+  const cs = (x && x.comentarios) || [];
+  const ult = cs.length ? linea(cs[cs.length - 1].texto) : "";
+  return ult.replace(/^Elegí:\s*/, "");
 }
 
 /** Las consultas agrupadas por `grupo`, en el orden de la primera de cada grupo. */
@@ -328,7 +352,11 @@ export function archivosDelPaquete({ proyecto = "", repo = "", area, codigo, gui
   L.push("");
   L.push("## Cómo vuelve el trabajo");
   L.push("");
-  L.push("La persona carga tu respuesta en su panel («Trabajar con una sesión gratuita de Claude»), o —si es colaboradora del repositorio— sube el archivo siguiendo la guía. En los dos caminos se verifica contra el resto del proyecto antes de llegar a los alumnos.");
+  L.push("1. La persona baja los archivos que le devolviste.");
+  L.push("2. **Si es colaboradora del repositorio**, los sube en GitHub: entra a la carpeta de cada archivo → «Add file» → «Upload files» → arrastra el archivo (con el mismo nombre, reemplaza al viejo) → escribe en una línea qué cambió → «Commit changes». Un cambio por subida.");
+  L.push("3. **Si no usa GitHub**, los sube en su panel («Ahora» → «Trabajar con tu chat gratuito») y los sube Claude.");
+  L.push("");
+  L.push("En los dos caminos se verifica contra el resto del proyecto antes de llegar a los alumnos. Para el próximo cambio, la persona vuelve a bajar el zip: siempre se trabaja sobre la versión de hoy.");
   L.push("");
   L.push("## Esta área");
   L.push("");

@@ -508,7 +508,7 @@ vuelve.
 | `estilos.css` | el sistema de diseño; los respiros son variables, no números |
 | `reglas.txt` | **la plantilla de las reglas de Firestore**, con marcadores en vez de UID. La lee el panel |
 | `pruebas-reglas.mjs` | el banco de pruebas de «La puerta»: `node pruebas-reglas.mjs`, sin npm |
-| `protocolos/` | **el reglamento del ecosistema**, desde el 2026-09-12. Los cuatro protocolos y `ESTADO-DE-LOS-TRES.md` |
+| `protocolos/` | **el reglamento del ecosistema**, desde el 2026-09-12: los `PROTOCOLO-*`, `ARQUITECTURA.md` (las reglas y las etapas de Timón), **`INTEGRACION.md`** (18-nov: cada colección de cada base, su clase, adónde va, cómo se accede y cómo se ve en Timón) y `ESTADO-*` |
 | `herramientas/` | `firestore.mjs`, con lo que una sesión de Claude lee y escribe las cuatro bases, y cómo darle de alta en una nueva; y `ronda.mjs`, que junta el panel y los reportes de los sitios para abrir una tanda |
 | `RUTINA-AUTOMATICA.md` | **el proceso de las rutinas de control**: la ronda que corre sola (una vez por día, tres en temporada), qué puede tocar y qué no, los límites de cuota medidos, cómo avisa y cómo se aprueba desde el teléfono, y cómo se arma la próxima. Con una suscripción Pro no cuesta nada aparte |
 | `sw.js` | el service worker: hace que se instale y abra sin señal |

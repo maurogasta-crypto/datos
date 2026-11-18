@@ -101,6 +101,17 @@ del instrumento de BandoMaps, no una pieza aparte (su fuente es `tocatoca`);
 
 ## 3. Dónde viven los datos
 
+**(18-nov) El mapa completo está en `INTEGRACION.md`**: cada colección de
+cada base con su clase (cotidiano, libro, público, sellado, taller), adónde
+va, cómo se accede desde cada sitio y cómo se ve en Timón. Mauro, ese día:
+«lo que se grabe en Casa Verde tendría que guardarse en el mismo lugar de
+Timón, y cuando es Casa Verde que lee, lo saca de ahí». Lo **cotidiano** de un
+negocio (compras, tareas, agenda, conversaciones) se GUARDA en Timón, en el
+espacio del negocio, y el negocio lo lee por `timon-1.js`. El **libro** queda
+en la base del negocio y Timón lo lee por su conector, sin copiarlo (el
+porqué, en § 1 de `INTEGRACION.md`; si el libro también se muda es la
+decisión D1 de ese archivo).
+
 - **Los espacios, sus ítems y sus hilos: en la base de Timón**
   (`tiempos-71d42`), con reglas por miembro del espacio. La plata de la
   familia queda FUERA de los espacios, como hoy.
@@ -166,6 +177,6 @@ se borró, y el interruptor de cada teléfono no se toca al actualizar.
 | 5 | La Pizarra como cáscara, con los widgets nuevos | **En curso desde el 17-nov** (con el «avanzá con la etapa siguiente» de Mauro, junto con el nombre único). **5a hecha (pizarra-84 + tiempos app-43)**, verificada con `test assembleRelease lintRelease` (280 casos, 10 de `HoyTest`): el widget **«Hoy»** pinta SÓLO `hoy/{uid}` —una lectura—, en el orden de Timón y sin calcular nada (regla 3, con banco `HoyTest` que falla si el widget nombra un campo de un ítem u ordena); el ○ escribe `accion.campos` del renglón tal cual y saca el renglón de `hoy/` en el mismo commit, y destildar escribe `accion.deshacer` (nucleo-47 lo agrega al renglón); el texto abre Timón en ese ítem (`?solapa=inicio&abrir=it:<id>`). `hoy/` despierta a los teléfonos con el «qué» `tareas` (el servidor no cambió). Va **en paralelo** con el widget de las tareas fijadas (regla 8). Lo que tilda otra persona no rearma mi `hoy/` hasta que abro Timón (lo que la regla 3 acepta): el encabezado dice cuándo se armó. Falta: **5b** apagar el widget y la solapa de las tareas fijadas cuando «Hoy» se haya usado una semana (lo más temprano, una semana después de instalar pizarra-84); **5c** «Para decidir» se muda del panel a «Hoy»; **5d** sacar de la app de Android lo que Timón ya hace (la pantalla de la IA, deseos y propuestas) |
 | 6 | Los hilos dentro de Timón: mensaje a ítem, archivos, Claude en el hilo | — |
 | 7 | La ronda por trabajos y «Para decidir» (en paralelo desde la 2) | **(15-nov)** En dos partes, porque la mitad dependía de la 4 sin que la tabla lo dijera. **7a hecha el 16-nov**: la ronda corre por trabajos — `ronda/trabajos/` de `datos`, un archivo por trabajo (app, cuándo, qué lee, criterio, qué puede dejar, nivel), índice en `ronda/LEEME.md`, banco `pruebas/trabajos.mjs` (325 casos); `TRASPASO.md` § 4 conserva el arranque y el NUNCA, que mandan sobre todos. **7b hecha el 16-nov** (panel-54): «Para decidir» nació en «Lo primero» del panel — las decisiones de a tres, con opciones de un toque (`opciones` [{t, r}] en la `pregunta`); el toque escribe la `respuesta` en el pendiente igual que la cola. Se muda a «Hoy» en la 5. **Etapa 7 completa** |
-| 8 | Los negocios, de a uno: su espacio, sus flujos dibujados, sus pantallas simples | — |
+| 8 | Los negocios, de a uno: su espacio, sus flujos dibujados, sus pantallas simples | **Plan en `INTEGRACION.md` § 8** (18-nov), empezando por Casa Verde después del paralelo de `tarea` (23-nov). **8.0 hecho el 18-nov**: las compras de Casa Verde se ven y se tildan en Timón por el conector (Casa Verde core-3, tiempos compras-7), sin mudar datos. Lo que sigue (8.1: `espacios/casaverde`, cuentas del equipo y `timon-1.js`) espera las decisiones D1 a D3 de Mauro |
 
 *Cuando una etapa cambia de estado, cambia esta tabla en la misma tanda.*

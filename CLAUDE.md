@@ -146,5 +146,5 @@ vez). Un banco que prueba lo que **NO** hace (no manda, no duplica, no sale) es 
 
 `PROTOCOLO-GENERAL` (git, sesiones, estructura del `CLAUDE.md`) · `PROTOCOLO-SECRETOS` (qué secreto va dónde) · `PROTOCOLO-DESARROLLO` (reglamento técnico común;
 § 10 qué hereda una app nueva, § 13 cupos gratuitos) · `PROTOCOLO-INTERFAZ` (§ 14: mirar, hacer, profundizar) · `PROTOCOLO-AVISOS` · `PROTOCOLO-PLATA` ·
-`ARQUITECTURA` (una app Timón con espacios, la Pizarra como cáscara, cada negocio en su app; **estado de cada etapa al final**) · `ESTADO-DE-LOS-TRES` ·
+`ARQUITECTURA` (una app Timón con espacios, la Pizarra como cáscara, cada negocio en su app; **estado de cada etapa al final**) · `INTEGRACION` (el mapa: cada colección de cada base, su clase, adónde va, cómo se accede y cómo se ve en Timón; se lee antes de mudar un dato o mostrar algo de un negocio en Timón) · `ESTADO-DE-LOS-TRES` ·
 `ESTADO-ACTUAL` (versión de cada pieza). Son públicos a propósito: ni mails, ni UID, ni teléfonos.

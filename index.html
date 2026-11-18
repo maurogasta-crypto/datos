@@ -565,7 +565,7 @@ import {
   doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, firebaseConfig
 } from "./firebase-init.js?v=init-6";
 
-P.PANEL = "panel-55";
+P.PANEL = "panel-56";
 
 /* ═══════════════════════════════════════════════════════════
    EL TABLERO
@@ -588,7 +588,13 @@ P.PANEL = "panel-55";
 
 const QUIEN = { mauro: "te espera", claude: "lo hago yo", ambos: "los dos" };
 
-let PROYECTOS = [];     // [{ id, nombre, orden }]
+let PROYECTOS = [];     // [{ id, nombre, orden }] — los que se ven (sin los que están dentro de otro)
+/* panel-56 (18-nov-2026, Mauro: «en el panel sigue apareciendo pizarra y tiempos separados»): un
+   proyecto puede declarar `dentroDe: "<id>"` (la app de Android de Timón está dentro de Timón). No
+   aparece suelto en ningún selector ni lista, y lo suyo —pendientes, tandas, fichas— se ve en el de
+   afuera. Ningún id se escribe acá: lo dice el documento del proyecto. */
+let TODOS_PROY = [], DENTRO = {};
+const deApp = (id) => DENTRO[id] || id;
 let PENDIENTES = [];    // [{ id, proyecto, clave, titulo, porQue, estado, quien, historia[] }]
 let filtro = "abiertos";
 let yo = null;
@@ -731,6 +737,9 @@ async function leer() {
     // veinte cosas): se ordena acá.
     PROYECTOS.sort((a, b) => (a.orden || 99) - (b.orden || 99)
       || String(a.nombre || a.id).localeCompare(String(b.nombre || b.id), "es"));
+    TODOS_PROY = PROYECTOS.slice(); DENTRO = {};
+    for (const x of TODOS_PROY) if (x.dentroDe && TODOS_PROY.some((y) => y.id === x.dentroDe)) DENTRO[x.id] = x.dentroDe;
+    PROYECTOS = PROYECTOS.filter((x) => !DENTRO[x.id]);
     PENDIENTES = [];
     pe.forEach((d) => PENDIENTES.push({ id: d.id, ...d.data() }));
     LINEAS = [];
@@ -916,8 +925,8 @@ let SITIO = APP || "*";     // lo mismo, para «Sitio»: "*" es el ecosistema
 /* Un pendiente es de la app elegida si es SUYO o si es un pedido que la
    nombra entre sus `sitios` (panel-31): un pedido que cruza dos sitios tiene
    que aparecer en los dos, no sólo en «Todas las apps». */
-const esDeLaApp = (p) => !APP || p.proyecto === APP
-  || (Array.isArray(p.sitios) && p.sitios.includes(APP));
+const esDeLaApp = (p) => !APP || deApp(p.proyecto) === APP
+  || (Array.isArray(p.sitios) && p.sitios.some((x) => deApp(x) === APP));
 
 function llenarApps() {
   const sel = $("cual-app");
@@ -981,7 +990,7 @@ $("btnPedidoRapido").addEventListener("click", async () => {
 });
 
 /* ---------- pintar ---------- */
-const nombreProy = (id) => (PROYECTOS.find((p) => p.id === id) || {}).nombre || id;
+const nombreProy = (id) => (TODOS_PROY.find((p) => p.id === id) || PROYECTOS.find((p) => p.id === id) || {}).nombre || id;
 
 /* Al cambiar de sitio la fila es OTRA fila, así que vuelve al principio. Sin
    esto, pasar de un proyecto con 5 preguntas a uno con 1 dejaba el índice en 4
@@ -1263,7 +1272,7 @@ function tarjeta(p) {
 const porUrgencia = (a, b) =>
   pesoPrio(a) - pesoPrio(b)
   || (frenadoPor(a).length ? 1 : 0) - (frenadoPor(b).length ? 1 : 0)
-  || (PROYECTOS.findIndex((x) => x.id === a.proyecto) - PROYECTOS.findIndex((x) => x.id === b.proyecto))
+  || (PROYECTOS.findIndex((x) => x.id === deApp(a.proyecto)) - PROYECTOS.findIndex((x) => x.id === deApp(b.proyecto)))
   || String(a.clave || "").localeCompare(String(b.clave || ""), "es", { numeric: true });
 
 function bloque(titulo, lista, vacio) {
@@ -2176,7 +2185,7 @@ function pintarTandas() {
   /* Sigue al selector de app, como todo lo demás. Una tanda puede tocar varios
      proyectos, así que se mira si el elegido está entre los suyos. */
   const mias = TANDAS.filter((t) => !APP
-    || (Array.isArray(t.proyectos) ? t.proyectos.includes(APP) : t.proyecto === APP));
+    || (Array.isArray(t.proyectos) ? t.proyectos.some((x) => deApp(x) === APP) : deApp(t.proyecto) === APP));
   /* Más nueva primero: lo que se quiere ver al abrir es qué pasó último. */
   mias.sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")));
 
@@ -2586,7 +2595,7 @@ function pintarFichas() {
 
   /* Siguen al sitio de arriba (panel-32): las de ese sitio. Con
      «Ecosistema completo», todas. */
-  const delSitio = FICHAS.filter((f) => !APP || f.proyecto === APP);
+  const delSitio = FICHAS.filter((f) => !APP || deApp(f.proyecto) === APP);
   const visibles = delSitio.filter(entra);
   $("f-estado").textContent = delSitio.length
     ? (busca ? visibles.length + " de " + delSitio.length : delSitio.length + (delSitio.length === 1 ? " ficha" : " fichas"))
@@ -3423,7 +3432,7 @@ const RX_PUBLICAR = /public/i;
 const RX_REGLAS = /regla|\.rules\b|reglas\.txt/i;
 function reglasDelPendiente(p) {
   if (!p || !p.proyecto) return null;
-  const pr = PROYECTOS.find((x) => x.id === p.proyecto);
+  const pr = TODOS_PROY.find((x) => x.id === p.proyecto) || PROYECTOS.find((x) => x.id === p.proyecto);
   if (!tieneReglas(pr)) return null;
   if (p.accion === "publicar-reglas") return pr;
   const t = String(p.titulo || "");
@@ -3443,7 +3452,7 @@ function pintarTabsSitios() {
 /* Se calcula del mismo PENDIENTES que usa el tablero: un solo origen, así
    los números no pueden discrepar entre dos pantallas. */
 function cuentaDe(id) {
-  const mios = PENDIENTES.filter((p) => p.proyecto === id);
+  const mios = PENDIENTES.filter((p) => deApp(p.proyecto) === id);
   return {
     total: mios.length,
     abiertos: mios.filter(abierto).length,

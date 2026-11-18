@@ -857,7 +857,7 @@ teléfono.
 | `ojos.js` | `VERSION` | `ojos-1` |
 | `callmebot.js` | `VERSION` | `callmebot-1` |
 | `errores.js` | `VERSION` | `errores-1` |
-| `index.html` | `P.PANEL` | `panel-55` |
+| `index.html` | `P.PANEL` | `panel-56` |
 | `invitado.html` | `P.PANEL` | `invitado-23` |
 | `intervenir.js` | pedido con `?v=` | `intervenir-5` |
 | `paquete.js` · `semaforo.js` | — | `paquete-4` |
@@ -876,7 +876,7 @@ teléfono.
 | `roli-ronda.html` | redirige al sitio de Roli | — |
 | `roli.js` | `VERSION` | `roli-js-6` |
 | `placa.js` | `VERSION` | `placa-js-10` |
-| `sw.js` | `VERSION` | `panel-shell-v63` |
+| `sw.js` | `VERSION` | `panel-shell-v71` |
 
 > Esta tabla es derivada. Si no coincide con lo que muestra el panel, **manda el
 > panel**: la tabla se copia a mano y se desactualiza en silencio.

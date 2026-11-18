@@ -1901,5 +1901,18 @@ console.log("\n· La foto de la factura");
   ok(!fs.readFileSync(RAIZ + "sw.js", "utf8").includes("album.html"), "la página pública no está en el SHELL del panel");
 }
 
+console.log("\n · un proyecto dentro de otro (panel-56: Timón y su app de Android son uno)");
+BASE.proyectos = {}; BASE.pendientes = {};
+await api.leer(); await esperar();
+await sembrar({ proyectos: [{ id: "uno", nombre: "Timón", orden: 1 }, { id: "and", nombre: "Timón · Android", orden: 2, dentroDe: "uno" }, { id: "dos", nombre: "Otra", orden: 3 }],
+  pendientes: [{ id: "a1", proyecto: "uno", titulo: "De la web", quien: "claude" }, { id: "a2", proyecto: "and", titulo: "Del teléfono", quien: "claude" },
+    { id: "a3", proyecto: "dos", titulo: "De otra", quien: "claude" }] });
+const opcionesDentro = [...$("cual-app").options].map((o) => o.value);
+ok(opcionesDentro.includes("uno") && !opcionesDentro.includes("and"), "el de adentro no aparece suelto en el selector");
+$("cual-app").value = "uno"; $("cual-app").dispatchEvent(new window.Event("change")); await esperar();
+ok($("c-total").textContent === "2", "elegido Timón, se ven lo de la web y lo del teléfono · " + $("c-total").textContent);
+ok($("lista").innerHTML.includes("Del teléfono") && !$("lista").innerHTML.includes("De otra"), "con lo de adentro y sin lo de otro proyecto");
+$("cual-app").value = ""; $("cual-app").dispatchEvent(new window.Event("change")); await esperar();
+
 console.log(fallos ? "\n" + fallos + " FALLAS\n" : "\nTodo en orden.\n");
 process.exit(fallos ? 1 : 0);

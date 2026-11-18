@@ -94,6 +94,7 @@ funciones; el servidor vive en `servidor/` y se despliega desde Termux con `node
 - **Un sitio nuevo no se agrega en ningún lado del camino**: con `acceso.base` y `acceso.reglasUrl` en su `proyectos/<id>` y su entrada en `PROYECTOS` de
   `herramientas/firestore.mjs` ya tiene botones, chip y reportes. `reportesSon: "viajes"` (en positivo) sólo si no guarda fallas. Si hay que escribir el id
   de un sitio en el código para que algo ande, eso es el error.
+- **Un proyecto que es parte de otro declara `dentroDe: "<id>"`** en su `proyectos/<id>` (panel-56, 18-nov-2026: la app de Android de Timón, `pizarra`, está dentro de `tiempos`): no aparece suelto en ningún selector y lo suyo se ve en el de afuera. Juntar dos proyectos es un dato, no código.
 - **`albumes/` es la ÚNICA colección que se lee sin cuenta** (sólo `get` por id, nunca listar). El banco de reglas falla si aparece otro `if true`.
 - **El UID del agente del propio panel sale de la base** (`acceso.uids.agente` de `proyectos/panel`), no de un teléfono. Armar reglas sin agente es un error.
 - **`empaquetado`** (cómo se empaqueta y firma una app) se declara en el `proyectos/<id>`; de un secreto se muestra el nombre, **nunca el valor**.

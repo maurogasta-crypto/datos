@@ -103,7 +103,7 @@ libro en el sitio del negocio, o actúa por su motor.
 
 | Pieza | Qué es | Estado |
 |---|---|---|
-| **Ítem** (`items/` de Timón) | La forma única de lo cotidiano: `tipo`, `titulo`, `espacio`, `dia`, `hora`, `importancia`, `hecho`, `creadoPor` (`nucleo.js`, `TIPOS_ITEM`; regla v25) | Existe, con sólo el tipo `tarea` (etapa 4, en paralelo hasta el 23-nov) |
+| **Ítem** (`items/` de Timón) | La forma única de lo cotidiano: `tipo`, `titulo`, `espacio`, `dia`, `hora`, `importancia`, `hecho`, `creadoPor` y, desde el 19-nov, `proyecto` (el id de una cuenta de Plata → Cuentas; `itemsDeProyecto` de `nucleo.js` es la consulta que pedirá cada negocio) (`nucleo.js`, `TIPOS_ITEM`; reglas v25 y v26) | Existe, con sólo el tipo `tarea` (etapa 4, en paralelo hasta el 23-nov) |
 | **Espacio** | Con quién se comparte. Hoy hay dos implícitos: `familia` y `p-<uid>` | `espacios/{id}` con miembros nace con el primer negocio, Casa Verde (etapa 8) |
 | **`hoy/{uid}`** | Lo de hoy de una persona en todos sus espacios, ya armado, con la acción de cada renglón (regla 3) | Existe; lo pinta el widget «Hoy» (pizarra-84) |
 | **Conector de un negocio** (`conector-N.js`) | El contrato por el que Timón LEE y ACTÚA sobre el libro de un negocio | Casa Verde tiene `conector-1.js` (ver § 5); los otros negocios no tienen |

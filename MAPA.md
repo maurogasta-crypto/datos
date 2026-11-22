@@ -159,24 +159,6 @@
 
 | Archivo | Qué es | Usa |
 |---|---|---|
-| `respaldos/2026-11-03-casayourte.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-03-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-04-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-07-casayourte.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-07-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-08-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-09-casaverde.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-09-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-09-tiempos.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-10-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-14-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-14-roli.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-15-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-16-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-18-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-19-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-21-panel.json` | _(sin describir)_ | — |
-| `respaldos/2026-11-22-panel.json` | _(sin describir)_ | — |
 
 ## `ronda/`
 

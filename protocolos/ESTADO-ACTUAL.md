@@ -1,6 +1,6 @@
 # Estado actual del ecosistema
 
-**Foto del 2026-10-12, al día el 20-oct**, con una auditoría de código hecha el 12 y la revisión de coherencia del 18 (§ 5).
+**Foto del 2026-10-12; la tabla de versiones (§ 1), al día el 22-nov-2026** (el resto del documento es la foto de octubre), con una auditoría de código hecha el 12 y la revisión de coherencia del 18 (§ 5).
 `ESTADO-DE-LOS-TRES.md` es la comparación de septiembre entre los tres sitios;
 este documento dice **en qué versión está cada pieza hoy** y qué se encontró
 al revisarla. Cuando una pieza cambie de versión, se corrige su renglón en la
@@ -13,15 +13,19 @@ coinciden, manda el archivo.
 
 | Pieza | Repositorio | Versión | Último cambio |
 |---|---|---|---|
-| **Tiempos** (app web de la familia) | `maurogasta-crypto/tiempos` | `app-38` · `nucleo-43` · `agenda-19` · `sugerir-22` · `plata-15` · `proyecto-1` · `sw tiempos-64` · reglas **v15** | 19-oct: al guardar una pieza en otra semana, la agenda la sigue (agenda-19). 18-oct: reglas v15 (`mensajes/`). Antes: ver § 3 |
-| **Pizarra** (app de Android del ecosistema) | `maurogasta-crypto/pizarra` | `pizarra-56` | 19 a 21-oct: todas las notificaciones del 13C a Casa Verde (pizarra-42/43) y el lector de Facebook por accesibilidad con la respuesta según la ocupación (pizarra-44 a 56: registra todo pedido al recorrer, cartel en vez de notificación). Ver § 6 |
-| **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `nucleo-avisos-19` · `pedidos-alquiler-7` · `reservas-ical-13` · `sw cv2-shell-v130` | 21-oct: qué pedidos de Facebook caen en fechas libres (lista e Inicio) y «Copiar para buscar»; 20-oct: «🔎 Qué busco ahora» (`pedidos_busqueda/`), la respuesta al crear un pedido, `notificaciones/`, y en Cabañas la condición del máximo y el extra por persona — **hay que publicar `interno/firestore.rules`**. Ver § 6 |
-| **CasaYourte** | `casayourte/casayourte` | `nucleo-28` · `idiomas-5` · `sw cy-shell-v63` | 19-oct: el teléfono (pestañas en rejilla, la última obra, la foto de portada) y los buscadores de Francia, Bélgica, Brasil, Argentina y Uruguay (idiomas-5, hreflang, Search Console) |
-| **remateTaller** | `rematetaller/remate` | `utils v1.23` · reglas v1.2 en el repo | 11-oct (tanda 35): el ojo 👁 |
-| **El panel** | `maurogasta-crypto/datos` | `panel-42` · `nucleo-9` · `sw panel-shell-v38` | 17-oct: las reglas del panel en un solo lugar (Sitio → Panel); obras (obra-8) |
-| **Herramientas del agente** | `maurogasta-crypto/datos`, `herramientas/` | `avisos-5` · `novedades-4` · `reservas-8` · `facebook.mjs` · `notificaciones-3` · `latido-1` · `ronda` | 20-oct: `notificaciones.mjs` (la ronda clasifica las notificaciones del 13C; descartar una app pide `--hasta`), `facebook.mjs` acepta pedidos leídos en pantalla y muestra lo que se busca |
-| **SITD-Hilux** (app de la camioneta) | `maurogasta-crypto/sitd-hilux` | `sitd-42` | 18-oct: el acelerómetro a lo más rápido (200 Hz), los picos del motor por la vibración y el giróscopo (sitd-42); borrar un viaje (sitd-41) |
-| **gestos** | `maurogasta-crypto/gestos` | — | 14-sep, sin cambios desde entonces |
+| **Timón** (app web; repo y base siguen llamándose «tiempos») | `maurogasta-crypto/tiempos` | `app-47` · `hoy-5` · `nucleo-50` · `agenda-23` · `compras-7` · `plata-18` · `proyecto-2` · `sugerir-25` · `estilos.css?v=36` · `sw tiempos-82` · reglas **v26** | 22-nov: Timón simplificado — «Hoy» y el widget muestran también las tareas de siempre (`tareasComoItems`), colores leves por proyecto (`colorDeProyecto`), un solo botón redondo y el ❓ dentro de «Más»; 275 pruebas. 19-nov: el proyecto de un ítem (v26) y la barra de abajo. 18-nov: las compras de Casa Verde (compras-7). Ver `ARQUITECTURA.md` § 6, etapas 4, 5 y 8 |
+| **Timón Android** (repo `pizarra`) | `maurogasta-crypto/pizarra` | `pizarra-85` | 19-nov: el widget «Hoy» pinta el proyecto del renglón; 21-nov: `CONTEXTO.md` para una sesión nueva. pizarra-83 apaga lo congelado; pizarra-84 trae el widget «Hoy» |
+| **Casa Verde** (sitio y panel interno) | `casaverdecanas-blip/casaverdecanas` | `core-3` · `conector-1` (y `conector-2`) · `nucleo-avisos-26` · `sw cv2-shell-v145` | 18-nov: las compras en el motor y en el conector, para la solapa Compras de Timón (core-3) |
+| **CasaYourte** | `casayourte/casayourte` | `nucleo-34` · `geo-16` · `3d-19` · `calculo-36` · `propuesta-7` · `consultas-2` · `presupuestos-3` · `sw cy-shell-v103` | 18-nov: el anillo del piso de listones curvados (geo-16); antes, los montantes de ventana de piso a techo (geo-15) |
+| **remateTaller** | `rematetaller/remate` | `utils v1.27` · reglas v1.2 en el repo | 15-nov: `CLAUDE.md` a reglas cortas |
+| **El panel** | `maurogasta-crypto/datos` | `panel-56` · `nucleo-13` · `invitado-23` · `chat-7` · `obra-12` · `sw panel-shell-v71` | 19-nov: el modo ahorro de la ronda (`TRASPASO.md` § 4); 18-nov: un proyecto dentro de otro (`dentroDe`, panel-56) e `INTEGRACION.md` |
+| **Herramientas del agente** | `maurogasta-crypto/datos`, `herramientas/` | `avisos-5` · `novedades-4` · `charla-7` · `invitados-3` · `grabaciones-1` · `ronda` por trabajos (`ronda/trabajos/`) | 16-nov: la ronda por trabajos (etapa 7a) |
+| **SITD-Hilux** (app de la camioneta) | `maurogasta-crypto/sitd-hilux` | `sitd-57` | 15-nov: `CLAUDE.md` a reglas cortas |
+| **BandoMaps** (la app de Mariano) | `masotromauro-ai/tocatoca` | `registro-5` · `usuarios-3` · `puerta-2` · `bandomaps-sw-1` · reglas **v3** (publicadas el 22-nov) | 22-nov: la v3 de Mariano (solicitud sin invitación) con sus 21 casos (81 en total), el marcato del profesor en su propio archivo (`shared/bandoneon/marcato.js`) y la guía de cómo subir varios archivos sin romper el sitio (11 subidas del 17 al 21-nov no compilaban, todas por el orden de subida) |
+| **Harmonía** (el fork viejo) | `maurogasta-crypto/harmonia` | — | La línea de desarrollo pasó a BandoMaps el 3-nov |
+| **gestos** | `maurogasta-crypto/gestos` | `gestos-apk-4` | 15-nov: `CLAUDE.md` a reglas cortas |
+| **Paseo** (Primero de Mayo) | `maurogasta-crypto/paseo` | `portada-7` · `album-1` · `admin-1` · reglas v2 | 20-nov: subida de Mauro por la web |
+| **Roli** | `maurogasta-crypto/roli` | `jugar-2` · `index-2` · `registro-2` · `acceso-1` · reglas v2 | 21-nov: subida de Mauro por la web; 19-nov: lo aclarado al armar quedó en `docs/CABLEADO.md` |
 
 ---
 

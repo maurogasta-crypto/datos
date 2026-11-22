@@ -103,9 +103,9 @@ libro en el sitio del negocio, o actúa por su motor.
 
 | Pieza | Qué es | Estado |
 |---|---|---|
-| **Ítem** (`items/` de Timón) | La forma única de lo cotidiano: `tipo`, `titulo`, `espacio`, `dia`, `hora`, `importancia`, `hecho`, `creadoPor` y, desde el 19-nov, `proyecto` (el id de una cuenta de Plata → Cuentas; `itemsDeProyecto` de `nucleo.js` es la consulta que pedirá cada negocio) (`nucleo.js`, `TIPOS_ITEM`; reglas v25 y v26) | Existe, con sólo el tipo `tarea` (etapa 4, en paralelo hasta el 23-nov) |
+| **Ítem** (`items/` de Timón) | La forma única de lo cotidiano: `tipo`, `titulo`, `espacio`, `dia`, `hora`, `importancia`, `hecho`, `creadoPor` y, desde el 19-nov, `proyecto` (el id de una cuenta de Plata → Cuentas; `itemsDeProyecto` de `nucleo.js` es la consulta que pedirá cada negocio) (`nucleo.js`, `TIPOS_ITEM`; reglas v25 y v26) | Existe, con sólo el tipo `tarea` (etapa 4, en paralelo hasta el 23-nov). Desde el 22-nov (nucleo-50) «Hoy» muestra también las tareas de siempre como ítems (`tareasComoItems`), **sin copiarlas**: el dato sigue en `tareas/` |
 | **Espacio** | Con quién se comparte. Hoy hay dos implícitos: `familia` y `p-<uid>` | `espacios/{id}` con miembros nace con el primer negocio, Casa Verde (etapa 8) |
-| **`hoy/{uid}`** | Lo de hoy de una persona en todos sus espacios, ya armado, con la acción de cada renglón (regla 3) | Existe; lo pinta el widget «Hoy» (pizarra-84) |
+| **`hoy/{uid}`** | Lo de hoy de una persona en todos sus espacios, ya armado, con la acción de cada renglón (regla 3) | Existe; lo pinta el widget «Hoy» (pizarra-84). Desde el 22-nov lleva también las tareas de siempre: su renglón trae `accion.coleccion: "tareas"` y el widget escribe ahí sin saber qué es |
 | **Conector de un negocio** (`conector-N.js`) | El contrato por el que Timón LEE y ACTÚA sobre el libro de un negocio | Casa Verde tiene `conector-1.js` (ver § 5); los otros negocios no tienen |
 | **`timon-1.js`** (nuevo) | El contrato inverso: por él un negocio lee y escribe SU espacio de Timón (sus ítems, su agenda, sus hilos) | **[a hacer en 8.1]** Vive en `maurogasta-crypto/tiempos`, se sirve en `…github.io/tiempos/timon-1.js` y tiene su `OFRECE` y su banco en los dos repos, igual que el `conector-1` |
 | **Cuentas** | Firebase no comparte usuarios entre proyectos, así que una persona tiene una cuenta en Timón y otra en cada negocio. `miembros/{uid}` de Timón lleva `cuentas: { casaverde: "<uid de allá>" }`, que escribe el agente al invitar y con autorización | Hoy Timón guarda `miembros/{uid}.cvUid` al conectar Casa Verde. Se generaliza a `cuentas` en 8.1 |
@@ -331,7 +331,7 @@ Siguiendo `PROTOCOLO-INTERFAZ` § 14 (mirar, hacer, profundizar):
 
 | Pantalla | Hoy | Al terminar |
 |---|---|---|
-| **«Hoy»** (`hoy.js`; widget `Hoy.kt`) | Ítems de `familia` y `p-<uid>` | **Mirar:** lo de hoy de TODOS mis espacios, con un chip por espacio (Mío, Familia, Casa Verde, CasaYourte…). **Hacer:** tildar. **Señales** del libro, leídas por su conector. «Para decidir» (5c) |
+| **«Hoy»** (`hoy.js`; widget `Hoy.kt`) | Ítems de `familia` y `p-<uid>` y, desde el 22-nov, las tareas de siempre que se hacen; un chip por proyecto con su color leve (`colorDeProyecto`) y Mío/Familia al agregar | **Mirar:** lo de hoy de TODOS mis espacios, con un chip por espacio (Mío, Familia, Casa Verde, CasaYourte…). **Hacer:** tildar. **Señales** del libro, leídas por su conector. «Para decidir» (5c) |
 | **La pantalla de un espacio** (nueva, etapa 8: «sus pantallas simples») | — | **Mirar:** lo de hoy del espacio y dos o tres números del libro (ocupación, cobros del mes, si hay permiso). **Hacer:** los ítems (tareas, compras, limpiezas con su reloj). **Profundizar:** enlaces a las páginas del libro en el sitio del negocio. Sus flujos, dibujados (regla 5) |
 | **Tareas** | Familia, más la lista de Casa Verde por el conector; «Ahora» con el reloj que cobra | Se vacía hacia «Hoy» y las pantallas de espacio, de a un tipo por vez (regla 8). El reloj queda en la ficha del ítem que se cobra |
 | **Compras** | Listas de `familia/compras`, más la tarjeta **🏡 Casa Verde** (compras-7) | Una sola solapa: una tarjeta por espacio, modo súper y compartir en todas |
@@ -339,7 +339,7 @@ Siguiendo `PROTOCOLO-INTERFAZ` § 14 (mirar, hacer, profundizar):
 | **Plata** | La familia, las propuestas de ingreso de Casa Verde y remate, y el libro de Casa Verde con `finanzas` | Igual: la plata del negocio no entra a la familia salvo como ingreso aprobado (`PROTOCOLO-PLATA`) |
 | **Balance** | Horas de la familia y de Casa Verde | Igual |
 | **Hilos** (etapa 6) | — | Por espacio. Las comunicaciones de Casa Verde se mudan acá (8.5) |
-| **Android** | Widgets «Hoy», Mi agenda, Mensajes y novedades, Pizarra (tareas fijadas, se apaga en 5b) | «Hoy» pinta todos los espacios sin cambiar su forma: el renglón ya trae `espacio` |
+| **Android** | Widgets «Hoy» (ítems y tareas de siempre, desde el 22-nov), Mi agenda, Mensajes y novedades, Pizarra (tareas fijadas, se apaga en 5b) | «Hoy» pinta todos los espacios sin cambiar su forma: el renglón ya trae `espacio` |
 
 **Lo que Timón NO muestra:**
 - lo P (salvo un enlace);

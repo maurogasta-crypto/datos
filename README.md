@@ -515,6 +515,7 @@ vuelve.
 | `manifest.json` | nombre, colores e iconos de la app instalada |
 | `icono-192.png` · `icono-512.png` · `apple-touch-icon.png` | el icono del tablero |
 | `.github/workflows/pages.yml` | publica el sitio; el único workflow, sin secretos |
+| `CONTEXTO.md` | **para una sesión nueva sin conocimiento del ecosistema**: qué es el panel, el ecosistema, las dos zonas, el mapa de archivos, las herramientas, el ritual de arranque, la ronda, las reglas con su porqué, cómo se verifica y despliega, el estado y un glosario |
 | `guias/` | procedimientos en PDF para leer en el teléfono, enlazados desde los avisos de la Pizarra. Desde el 19-oct-2026: `instagram-casayourte.pdf` e `instagram-casaverde.pdf`. Desde el 20-oct, `pedidos-de-facebook.md`: cómo funciona y cómo se usa la lectura de los grupos de Facebook en el 13C. **Sin datos ni claves**: el repositorio es público |
 
 ## Exportar para Gemini (`gemini.html`, desde el 29-oct-2026)

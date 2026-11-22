@@ -23,6 +23,7 @@
 | Archivo | Qué es | Usa |
 |---|---|---|
 | `CLAUDE.md` | Reglas de trabajo del panel: qué es, las dos zonas (`claves/` y `fichas/`), cómo se publica, la ronda y los invitados. | — |
+| `CONTEXTO.md` | datos (el panel y el reglamento del ecosistema) — CONTEXTO para una sesión nueva | — |
 | `HISTORIA.md` | panel de datos — HISTORIA y porqués de las reglas | `ojos.js` |
 | `MAPA.md` | Este archivo: qué es cada archivo del repositorio y dónde está. Se actualiza con `node herramientas/secciones.mjs mapa`. | — |
 | `README.md` | Cómo está armado el panel, cómo se instala y cómo se publican las reglas (la puerta). | — |
@@ -148,6 +149,7 @@
 |---|---|---|
 | `pruebas/panel/LEEME.md` | Banco de pruebas del panel | — |
 | `pruebas/panel/banco.mjs` | Banco de pruebas: DOM real (jsdom) y Firestore de mentira. Corre el código | — |
+| `pruebas/panel/package-lock.json` | _(sin describir)_ | — |
 | `pruebas/panel/package.json` | _(sin describir)_ | — |
 | `pruebas/panel/parte-1-inicial.json` | _(sin describir)_ | — |
 | `pruebas/panel/reglas-emulador-v9.mjs` | _(sin describir)_ | — |
@@ -157,7 +159,24 @@
 
 | Archivo | Qué es | Usa |
 |---|---|---|
+| `respaldos/2026-11-03-casayourte.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-03-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-04-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-07-casayourte.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-07-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-08-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-09-casaverde.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-09-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-09-tiempos.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-10-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-14-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-14-roli.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-15-panel.json` | _(sin describir)_ | — |
 | `respaldos/2026-11-16-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-18-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-19-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-21-panel.json` | _(sin describir)_ | — |
+| `respaldos/2026-11-22-panel.json` | _(sin describir)_ | — |
 
 ## `ronda/`
 

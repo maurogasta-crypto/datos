@@ -17,3 +17,6 @@ En lo que Mauro o Florencia hayan escrito en este chat desde la última ronda (W
 con {clase: "gasto"|"tarea"|"evento", estado: "pendiente", fuente: "chat", resumen (una línea, sin datos de más), datos, dudas: [campos que no sabés seguro], creadoEn}.
 Gasto: datos = {monto, moneda BRL|UYU|USD, fecha AAAA-MM-DD, comercio, categoria (una de las CATEGORIAS de tiempos/nucleo.js), detalle, uid de quien pagó si se sabe}. Tarea: {titulo, tipo, detalle}. Evento: {titulo, fecha, hora, semanal, ninos (ids de familia/config), nota}.
 Lo que no sepas con certeza va vacío y en `dudas`: nunca inventes un monto ni una fecha. El agente PROPONE: aprobar es de Mauro o Florencia, desde la solapa Plata.
+
+**Boletas con foto** (desde plata-19, 23-nov-2026): un reporte `pedido` que empieza «Boleta con foto cargada en Plata (movimiento <id>…)» es un aviso de que alguien guardó un gasto con foto. Leé ese movimiento (`factura.renglones`); si mezcla categorías, aplicá `PROTOCOLO-PLATA.md` § 9 (una propuesta por categoría que sume el total) y dejá en el resumen que hay que descartar o ajustar el movimiento original. Si ya es de una sola categoría, no hagas nada.
+

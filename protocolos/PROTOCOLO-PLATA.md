@@ -197,3 +197,30 @@ JSON en la carpeta de trabajo del chat, y nada más—.
 | Temporada, conceptos base, estimado contra real | `montoDelMes`, `anualDe`, `estimadoVsReal` | banco de Tiempos |
 | La cuenta que se propone sola | `cuentaSugerida`, `leerSugerencia` | banco de Tiempos |
 | Lo que lleva el análisis de Claude | `armarDatos` en `herramientas/analisis.mjs` | `node pruebas/herramientas/analisis.mjs` |
+
+---
+
+## 9 · Una boleta que mezcla categorías: se separa desde el ingreso
+
+Desde el **23-nov-2026** (Mauro: «dejá ya los datos separados desde el ingreso
+y buscá realizar esa separación desde el primer momento»). Una boleta de
+supermercado trae comida, limpieza, vajilla, higiene: contarla entera como
+«comida» ensucia el análisis.
+
+1. **Se lee renglón por renglón** (la foto ampliada, si hace falta) y se
+   comprueba que **los renglones suman exacto el total** (netos de descuento).
+   Si no suman, se dice y no se carga.
+2. **Una propuesta por categoría** (`propuestas`, clase `gasto`, id
+   `<comercio>-<fecha>-<comprobante>-<categoria>`), cada una con su
+   `datos.factura.renglones` y el mismo comprobante en el detalle, para que
+   dos propuestas de una misma boleta se reconozcan. Cuenta y «para quién»
+   van en `dudas` si no se pueden deducir.
+3. **No se guarda el CPF ni el número de la tarjeta** de la boleta.
+4. **El aviso**: desde plata-19, un gasto guardado con foto crea un reporte
+   `pedido` con el id del movimiento y despierta al chat. Ese movimiento ya lo
+   escribió una persona, y el agente no escribe movimientos: lo que hace es
+   **proponer la separación** y pedir que descarten o ajusten el movimiento
+   original, para que nada se cuente dos veces.
+5. Una boleta **mandada al chat** (sin pasar por la app) se separa de entrada,
+   y el chat avisa que no quede además cargada por «Día a día».
+

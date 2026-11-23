@@ -174,12 +174,17 @@ export async function manejar(event, deps = {}) {
   if (frenar(quien.uid, deps.ahora)) return respuesta(202, origen, { ok: true, frenado: true });
 
   const env = deps.env || process.env;
-  if (!env.CLAUDE_RUTINA_URL || !env.CLAUDE_RUTINA_TOKEN)
+  // 23-nov-2026: un token o una URL pegados desde el celular pueden traer un salto de línea o un espacio
+  // (pasó: «Invalid bearer token» sin que nadie lo notara y 5 semanas sin despertar a nadie). Ninguno de
+  // los dos lleva espacios adentro: se sacan todos.
+  const limpio = (x) => String(x == null ? "" : x).replace(/\s+/g, "");
+  const rutinaUrl = limpio(env.CLAUDE_RUTINA_URL), rutinaToken = limpio(env.CLAUDE_RUTINA_TOKEN);
+  if (!rutinaUrl || !rutinaToken)
     return respuesta(503, origen, { error: "la rutina no está configurada en Netlify" });
-  const r = await (deps.fetch || fetch)(env.CLAUDE_RUTINA_URL, {
+  const r = await (deps.fetch || fetch)(rutinaUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${env.CLAUDE_RUTINA_TOKEN}`,
+      Authorization: `Bearer ${rutinaToken}`,
       "anthropic-version": "2023-06-01",
       "anthropic-beta": env.CLAUDE_RUTINA_BETA || BETA_POR_DEFECTO,
       "Content-Type": "application/json",

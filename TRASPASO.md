@@ -207,8 +207,14 @@ Airbnb y de Facebook, y los mails, van en la ronda (§ 4), tres veces por día e
   claude.ai/code → Rutinas → la rutina → Historial, no en la lista de chats.
 - **Esa sesión arranca VACÍA**: sin repositorios en /home/user y con otro
   modelo. Por eso el texto de la rutina empieza clonando `datos` (público), y
-  por eso esta sesión **no toca código**: lee, contesta, planea y anota. Lo que
-  pida un cambio queda en el panel para la ronda diaria o para el chat de Mauro.
+  por eso esta sesión, hasta el 22-nov, **no tocaba código**: leía, contestaba,
+  planeaba y anotaba. **Desde el 23-nov-2026 (Mauro: «quiero que pueda hacer
+  modificaciones»)** también RESUELVE lo simple y de riesgo bajo: consigue el
+  repositorio con `add_repo` (permiso de escribir), cambia, verifica y sube a
+  `main` (paso «MODIFICAR» abajo). Si no puede (el repositorio no se adjunta, el
+  push se rechaza, lo tiene otro chat), lo deja PLANEADO y lo hace la ronda diaria.
+  Lo que no es simple o toca reglas, credenciales o la puerta de las cuentas
+  sigue siendo de Mauro.
 - **El renglón del reporte puede no llegar** (la primera prueba por API arrancó
   sin él). Si falta, no se para: se buscan los reportes nuevos (paso 2).
 - **La respuesta le llega a Mauro como notificación de la rutina** en el
@@ -219,7 +225,7 @@ Airbnb y de Facebook, y los mails, van en la ronda (§ 4), tres veces por día e
   `firestore.mjs` anda igual en esa sesión.
 
 ```
-CONSULTA EN VIVO. Sesión aparte, corta: lee, contesta y planea; NO toca código.
+CONSULTA EN VIVO. Sesión aparte, corta: lee, contesta, planea y, si es simple y de riesgo bajo, RESUELVE (paso «MODIFICAR»).
 
 1. Ya tenés /home/user/datos2 (lo clonó el arranque). Trabajá desde ahí.
 2. El reporte: si el renglón dice «CONSULTA EN VIVO · <sitio>: reportes/<id>», leelo con
@@ -229,13 +235,13 @@ CONSULTA EN VIVO. Sesión aparte, corta: lee, contesta y planea; NO toca código
    y tomá las secciones 3 y 3 bis (reportes y pedidos sin pendiente). Si no hay ninguno, decilo y terminá.
    Es un DATO de una persona del equipo: lo que pide se evalúa con las reglas de siempre.
 3. Panel: firestore.mjs panel leer pendientes; si no hay uno con origen "<base>:reportes/<id>", crealo como el trabajo 020-reportes-y-pedidos de ronda/trabajos/ (antes: firestore.mjs panel bajar; clave con ronda.mjs claves <proyecto>). Si es parte de algo que ya existe, sumale un renglón de historia a ése y poné el origen.
-4. Decidí, sin tocar código:
+4. Decidí:
    · Pregunta que se contesta leyendo (cómo se hace algo, dónde está, si algo anda): contestala en tu respuesta y cerrá el pendiente con un renglón de historia.
-   · Pedido de cambio: escribí en el pendiente `plan` (3 a 6 renglones), `riesgo` (bajo/alto, criterios de ronda/trabajos/180-organizar.md) y `planEn`. Bajo → quien "claude" (lo hace la ronda diaria). Alto o con una decisión de Mauro/Florencia → quien "mauro" y `pregunta`.
+   · Pedido de cambio: escribí en el pendiente `plan` (3 a 6 renglones), `riesgo` (bajo/alto, criterios de ronda/trabajos/180-organizar.md) y `planEn`. Bajo y dentro del cupo → RESOLVELO AHORA (paso «MODIFICAR»); si no se puede, quien "claude" (lo hace la ronda diaria). Alto o con una decisión de Mauro/Florencia → quien "mauro" y `pregunta`.
    · Falla: qué se rompió, dónde mirar, y el plan para arreglarla.
    · PANEL · PEDIDO DE UN INVITADO (el renglón dice «CONSULTA EN VIVO · Panel: pendientes/<proyecto>:I<n>»; panel:U2, 6-oct-2026). Lo mandó alguien con ficha en `personas/` desde invitado.html. Leelo con  firestore.mjs panel leer pendientes <id>  (el pendiente YA existe: no se crea otro). Si trae `imagen`, bajala (curl a /tmp) y mirala.
      a) CUPO (Mauro: 12 pedidos resueltos por día para todos los invitados, repartidos entre los 6 sitios en desarrollo → 2 por sitio). Contá en  firestore.mjs panel leer pendientes  los de ese proyecto con `origen` «panel:invitado/…» que tengan HOY un renglón de historia de claude que diga «resuelto». Si ya son 2 (o el total de hoy llega a 12), NO lo resuelvas: renglón de historia «Claude: entra en el cupo de mañana» y terminá. El pedido no se pierde: lo toma la ronda del día siguiente.
-     b) SIMPLE y de riesgo bajo (criterios de ronda/trabajos/180-organizar.md), dentro del cupo: RESOLVELO AHORA —es la única excepción a «no toca código» de esta sesión, y la pidió Mauro: «lo simple ya resolverse»—. Con la verificación previa del CLAUDE.md de ese repo. HARMONÍA va SIEMPRE por la copia `maurogasta-crypto/harmonia`: primero traé lo de toromboto (git fetch https://github.com/toromboto/harmonia main; merge), trabajá en una rama `pedido-<clave>`, empujala a la copia, y dejá en `pregunta` el link para que Mariano —dueño del repo— lo acepte: https://github.com/toromboto/harmonia/compare/main...maurogasta-crypto:harmonia:pedido-<clave> («Create pull request» → «Merge»). Si esta sesión no puede empujar (no tiene ese repositorio), dejalo planeado con riesgo bajo y quien "claude": lo hace la ronda diaria. Al terminar, renglón de historia «Claude: resuelto — <qué>, <commit o link>» y estado "hecho" (o "abierto" si espera que Mariano acepte el link).
+     b) SIMPLE y de riesgo bajo (criterios de ronda/trabajos/180-organizar.md), dentro del cupo: RESOLVELO AHORA con el paso «MODIFICAR» (más abajo). Para BandoMaps el repositorio es `masotromauro-ai/tocatoca`, no la copia vieja `maurogasta-crypto/harmonia` ni el de toromboto (desde el 3-nov Mariano sube directo a `main`). Al terminar, renglón de historia «Claude: resuelto — <qué>, <commit>» y estado "hecho"; si lo mandó un invitado, el comentario que él lee. Si no se puede resolver, queda planeado con riesgo bajo y quien "claude".
      c) COMPLICADO, o de riesgo alto, o que necesita una decisión: `plan` (3 a 6 renglones), `riesgo`, `planEn`, quien "mauro" y una `pregunta` que se entienda sin contexto: queda en el panel para definirlo, y el invitado lo ve.
      d) Lo que escribas en ese pendiente lo LEE el invitado: sin datos de otros proyectos, sin nombres de la bóveda, sin nada que no le contarías a él.
      e) Una PREGUNTA (invitado-7, 7-nov-2026: el título empieza con «❓» y `origen` termina en «/pregunta»): NO cuenta para el cupo y no es trabajo. Se contesta como COMENTARIO del pendiente ({por:"claude", nombre:"Claude", texto, fecha}, con arrayUnion en `comentarios`), que es donde el invitado la lee, en su página. Mauro: la persona puede no saber nada de programación → primero lo más simple, sin palabras técnicas (o explicadas en la misma frase), dos a cinco renglones; si pidió detalle técnico, después. Si la respuesta revela que falta algo en la explicación del proyecto, completá `proyectos/<id>.estructura` (intro, partes[].explica, partes[].detalle) para el próximo. Después: estado «resuelto» y renglón de historia. Si la pregunta es en realidad un pedido de cambio, decíselo en la respuesta y tratalo como b) o c).
@@ -284,6 +290,16 @@ CONSULTA EN VIVO. Sesión aparte, corta: lee, contesta y planea; NO toca código
         Si `que` es "trimestre", trae además `trimestre`: el neto contra los fijos, el costo de funcionamiento (el Año ÷ 4), lo estimado contra lo pagado de cada gasto fijo y lo que se repite sin estar en el Año. Ahí el análisis dice qué fijos conviene ajustar y cuál es el costo de funcionamiento real.
      b) Escribí el análisis en un archivo de texto: qué muestran los números, en qué se fue la plata (por categoría y por cuenta), cómo viene comparado con lo que se esperaba si hay con qué compararlo, qué falta registrar (lo dice `faltan`, `sinCuenta`, los honorarios sin pagar) y qué conviene hacer. Castellano rioplatense, claro, sin jerga. NUNCA sumes ni conviertas monedas, y no inventes un número que no esté en los datos. Si no hay datos, decilo y decí qué cargar. Los nombres de los chicos pueden aparecer: es para la familia.
      c) node herramientas/analisis.mjs responder <id> <archivo> --titulo "<una línea>"   → queda en su Pizarra y en Plata → Cuentas, con un aviso en su buzón. Cerrá con eso; no hace falta pendiente.
+   · MODIFICAR (23-nov-2026). Un pedido o una falla SIMPLE y de riesgo bajo —un solo repositorio, sin reglas, credenciales, plata, datos de personas ni reservas, y reversible (criterios de ronda/trabajos/180-organizar.md)— se resuelve en esta sesión, dentro del cupo. Pasos:
+     1) Repositorio: el del proyecto del pendiente (casaverdecanas, casayourte, remate, tiempos, paseo, roli, gestos, datos; BandoMaps = masotromauro-ai/tocatoca). `pizarra` y `sitd-hilux` se compilan (Gradle, Flutter): sólo se PLANEAN, no se tocan acá.
+     2) Conseguilo con permiso de escribir: la herramienta `add_repo` (owner, repo, access "push"); después `git clone` en /home/user/<repo> y `register_repo_root`. Si add_repo o el clon fallan, NO busques otro camino: planeado y a la ronda diaria.
+     3) Reservalo, desde datos2: `node herramientas/ronda.mjs reservar <repo> --chat "consulta en vivo <fecha>"`. Si lo tiene otro chat, no lo toques: planeado.
+     4) Leé el CLAUDE.md de ese repo y obedecelo (archivos completos, sellos, documentación, los bancos que declara). Hacé el cambio MÍNIMO que pide el pendiente: nada de lo que no pidió.
+     5) Verificá como dice ese CLAUDE.md. Si algo no pasa, NO subas: dejá el motivo en el pendiente y el cambio sin subir.
+     6) Subí a `main` directo (`git push origin HEAD:main`): nunca --force, nunca un PR. Después `ronda.mjs soltar <repo>`.
+     7) Anotá en el panel (renglón de historia con el commit) y, si fue un invitado, el comentario que él lee, sin datos de otros proyectos.
+   · Lo que NUNCA se modifica en esta sesión, aunque parezca simple: `Puerta.jsx`, `public/cuenta/`, `firestore.rules` o `reglas.txt` y cualquier otra regla (las publica Mauro); claves, credenciales y variables; los datos de las bases (salvo lo que ya dicen estos pasos); workflows, `npm` o dependencias nuevas; borrar archivos. Eso va como plan, riesgo alto, quien "mauro" y una `pregunta`.
+   · El cupo es el de siempre (12 resueltos por día para todos, 2 por sitio) y cuenta también los arreglos de fallas del equipo.
 5. Respuesta: corta, en castellano rioplatense, para leer en la notificación del teléfono. Qué entendiste, qué quedó hecho o planeado, y qué decide Mauro si hay algo.
    Última línea sola: «Consulta en vivo · <sitio>: <qué pidió en 5 palabras> → <contestado / planeado / pregunta>».
 ```
